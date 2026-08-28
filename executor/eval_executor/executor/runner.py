@@ -134,6 +134,38 @@ async def _resolve_submit_token(job: EvalJob) -> str | None:
         return None
 
 
+async def refresh_input_url(job: EvalJob) -> str | None:
+    """领取后向 web 重签输入下载 URL（以提交者身份）。
+
+    提交时签发的 presigned URL 受 presignTtlSec 上限约束（≤15min，§十三）；队列积压或
+    前序长任务会把它拖过期——MinIO 回 403，任务失败为「input load failed」。
+    任一环节失败返回 None，调用方回退 job.input_presigned_url（可能仍有效）。
+    """
+    try:
+        token = await _resolve_submit_token(job)
+        if not token:
+            return None
+        cfg = load_config()
+        if not cfg.host:
+            return None
+        import httpx
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{cfg.host}/api/v1/jobs/{job.job_id}/input-url",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        if resp.status_code == 200:
+            url = (resp.json() or {}).get("url")
+            if isinstance(url, str) and url:
+                LOG.info("input.url_refreshed", job_id=job.job_id)
+                return url
+        LOG.warning("input.url_refresh_bad_status", job_id=job.job_id, status_code=resp.status_code)
+    except Exception as exc:  # noqa: BLE001 — 刷新失败回退原 URL，不阻断任务
+        LOG.warning("input.url_refresh_failed", job_id=job.job_id, error=str(exc)[:200])
+    return None
+
+
 def _flush_result(
     result: Any,
     package_dir: Path,

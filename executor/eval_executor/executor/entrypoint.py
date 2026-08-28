@@ -18,7 +18,7 @@ from typing import Any
 
 from eval_executor.config.settings import get_settings
 from eval_executor.core.logging import get_logger, setup_logging
-from eval_executor.executor.runner import run_job
+from eval_executor.executor.runner import refresh_input_url, run_job
 from eval_executor.queue.jobs import get_job, mark_failed, mark_running
 from eval_executor.storage.input_loader import load_input
 from eval_executor.storage.session import make_sessionmaker
@@ -59,8 +59,11 @@ async def _run_single_job(event: dict[str, Any]) -> None:
     if not ok:
         LOG.warning("entrypoint.mark_running_skipped", job_id=job_id, status=job.status)
 
-    # 下载输入（优先用事件里的 URL，回退 job 记录里的 presigned URL）
-    url = event.get("input_presigned_url") or job.input_presigned_url
+    # 下载输入（领取即重签——SCF invoke 延迟也可能拖过期提交时签发的 URL；
+    # 刷新失败回退事件里的 URL，再回退 job 记录里的 presigned URL）
+    url = (
+        await refresh_input_url(job) or event.get("input_presigned_url") or job.input_presigned_url
+    )
     contents = settings.workspace_dir / job_id / "contents"
     contents.mkdir(parents=True, exist_ok=True)
     try:
