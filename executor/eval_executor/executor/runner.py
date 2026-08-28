@@ -130,7 +130,14 @@ async def _resolve_submit_token(job: EvalJob) -> str | None:
     try:
         return decrypt_token(key.token_encrypted, settings.key_encryption_key)
     except Exception as exc:  # noqa: BLE001
-        LOG.warning("job.flush.decrypt_failed", job_id=job.job_id, error=str(exc))
+        # cryptography 的 InvalidTag（加密密钥与 web 不一致时）str() 为空串：只打 error=
+        # 会得到空串，补 error_type 才能定位是解密失败而非其他异常。
+        LOG.warning(
+            "job.flush.decrypt_failed",
+            job_id=job.job_id,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
         return None
 
 
