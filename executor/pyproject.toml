@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "eval-executor"
 version = "0.1.0"
 description = "评估执行器（SCF 事件函数镜像 / worker 轮询）"
-readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 dependencies = [
