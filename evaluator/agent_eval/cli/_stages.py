@@ -67,7 +67,7 @@ def resolve_run_inputs(
     sut_config: str | None = None,
     sut_name: str | None = None,
 ) -> RunInputs:
-    """解析执行输入：显式路径优先，缺省从场景包内取（arch/16 §2.1）。"""
+    """解析执行输入：显式路径优先，缺省从场景包内取（arch/13 §4.1）。"""
     from agent_eval.config.loader import ConfigLoader
     from agent_eval.execution.registry import SUTRegistry
     from agent_eval.packages.assets import (
@@ -243,7 +243,7 @@ def execute_stage(
 
     _, packages = asyncio.run(_run_and_close())
 
-    # 运行清单（W7 + 绑定显式化，arch/16 §五）
+    # 运行清单（W7 + 绑定显式化，arch/13 §二十一）
     write_run_manifest(
         workspace_root / "runs" / run_id,
         {

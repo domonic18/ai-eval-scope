@@ -26,7 +26,7 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-# 子命令组：模型配置管理（arch/16 §6.2-四 CLI 形态）
+# 子命令组：模型配置管理（arch/13 §19.2 CLI 形态）
 from agent_eval.cli.models import models_app  # noqa: E402
 from agent_eval.cli.secrets import secrets_app  # noqa: E402
 from agent_eval.cli.suite import suite_app  # noqa: E402
@@ -270,7 +270,7 @@ def run(
     package: str | None = typer.Option(
         None,
         "--package",
-        help="场景包引用（如 chat / chat:1.0.0）——考卷与 SUT 从包内解析（arch/16 §2.1）",
+        help="场景包引用（如 chat / chat:1.0.0）——考卷与 SUT 从包内解析（arch/13 §4.1）",
     ),
     task_set: str | None = typer.Option(
         None, "--task-set", help="任务集：文件路径，或包内名（与 --package 配合，如 default）"

@@ -141,6 +141,20 @@ router.get(
   }),
 )
 
+// executor 领取任务后重签输入下载 URL（提交时签发的 presigned URL ≤15min，排队积压会拖过期）
+router.get(
+  "/:jobId/input-url",
+  requireApiKey,
+  wrap(async (req, res) => {
+    const svc = createEvalJobService(req.tenant!)
+    const r = await svc.refreshInputUrl(req.params.jobId)
+    if (!r) {
+      throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
+    }
+    res.json(r)
+  }),
+)
+
 // executor 完成 job 后通知 web → web 异步投递 webhook 回调（fire-and-forget，不阻塞响应）
 router.post(
   "/:jobId/notify-completion",

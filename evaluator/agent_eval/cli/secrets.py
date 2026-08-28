@@ -1,4 +1,4 @@
-"""agent-eval secrets — SUT 凭证管理（arch/16 §2.2 本机密钥区）。
+"""agent-eval secrets — SUT 凭证管理（arch/13 §19.1 本机密钥区）。
 
 通用 KV 录入（<ref>.<field>，字段名自由、隐藏输入），保存到
 `~/.agent_eval/sut_credentials.json`（0600）。值不打印、不入日志。

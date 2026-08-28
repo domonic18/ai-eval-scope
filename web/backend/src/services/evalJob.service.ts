@@ -388,6 +388,20 @@ export function createEvalJobService(tenant: Tenant) {
     return job ? serializeJob(job) : null
   }
 
+  /**
+   * executor 领取后重签输入下载 URL（以提交者 Key 鉴权，findById 强制 projectId 租户过滤）。
+   * 提交时签发的 presigned URL 有 presignTtlSec 上限（≤15min，§十三）；队列积压或前序长任务
+   * 会把它拖过期——MinIO 403 → 任务失败 input load failed。现签保证领取时新鲜。
+   */
+  async function refreshInputUrl(
+    jobId: string,
+  ): Promise<{ url: string; expires_at: number } | null> {
+    const job = await repo.findById(jobId)
+    if (!job) return null
+    const presigned = await storage.presignGet({ key: job.inputObjectKey })
+    return { url: presigned.url, expires_at: presigned.expiresAt }
+  }
+
   /** 速览（docs/arch/12 §6.6）：job 维度解析其 run，聚合成 verdict/score + 各项失败原因。 */
   async function overview(jobId: string): Promise<OverviewResult | null> {
     const job = await repo.findById(jobId)
@@ -421,5 +435,5 @@ export function createEvalJobService(tenant: Tenant) {
     }
   }
 
-  return { submit, get, overview }
+  return { submit, get, overview, refreshInputUrl }
 }
