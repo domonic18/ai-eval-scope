@@ -29,7 +29,7 @@
 **/docs
 *.md
 !web/frontend/README.md
-# 运行产物目录：所有层级（根/evaluator/gateway 的 workspace/）。裸 workspace 只匹配根，会漏掉 evaluator/workspace
+# 运行产物目录：所有层级（根/evaluator/executor 的 workspace/）。裸 workspace 只匹配根，会漏掉 evaluator/workspace
 **/workspace
 !workspace/.gitkeep
 **/tests

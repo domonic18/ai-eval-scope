@@ -1,5 +1,5 @@
 /**
- * 评测任务路由（/api/v1/jobs）—— 合并自 eval-gateway。
+ * 评测任务路由（/api/v1/jobs）—— 第三方系统 / 调试台共用的评测任务提交通道。
  *  - POST /          提交评估（octet-stream 原始字节 + 查询串元数据 / application/json 内联）
  *  - GET  /:jobId    查询任务态
  *

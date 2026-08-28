@@ -1,6 +1,6 @@
 # eval-executor
 
-评估执行器镜像 —— 从 `eval-gateway` 拆分出的 SCF **事件函数（Job 镜像 + 异步执行）**，承担评测的
+评估执行器镜像 —— SCF **事件函数（Job 镜像 + 异步执行）**，承担评测的
 长时执行（摆脱 Web 函数 900s 限制，最长 24h）。
 
 > 设计基线：[docs/arch/09Web可观测平台架构设计.md §7.7](../docs/arch/09Web可观测平台架构设计.md) 与 [docs/arch/12第三方系统对接方案.md](../docs/arch/12第三方系统对接方案.md)
@@ -12,8 +12,6 @@
 - 调评估器 `eval_packages()` 评估；
 - 以提交者身份经 `ResultSink` 回传结果到 Web `/api/public/ingest`；
 - 更新 `public.eval_jobs` 状态机。
-
-不再承担 gateway 的 Web API（已并入 `web/backend`）。
 
 ## 环境
 

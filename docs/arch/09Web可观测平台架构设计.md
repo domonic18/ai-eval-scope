@@ -115,7 +115,7 @@ web/backend/
 │   │   │   ├── llmConfig.ts          # GET /api/public/llm-config 按角色下发 LLM 配置（解密 key）
 │   │   │   ├── secrets.ts            # GET /api/public/secrets 下发 org 级平台 Secrets（executor 启动注入）
 │   │   │   └── health.js
-│   │   ├── eval/                     # 评测任务（合并自 gateway；Bearer API Key）
+│   │   ├── eval/                     # 评测任务（Bearer API Key）
 │   │   │   ├── jobs.ts               # POST /api/v1/jobs、GET /api/v1/jobs/:id
 │   │   │   ├── ruleSets.ts           # GET /api/v1/rule-sets（DB 资产优先、静态兜底）
 │   │   │   ├── mcp.ts                # MCP 工具接入
@@ -440,7 +440,7 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ── 评测执行任务（gateway 合并至 Web；executor 消费）──────────────────
+// ── 评测执行任务（Web 治理；executor 消费）──────────────────
 model EvalJob {
   id                String    @id @default(uuid()) @map("job_id")
   projectId         String    @map("project_id")

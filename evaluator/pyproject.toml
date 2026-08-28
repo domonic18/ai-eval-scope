@@ -68,7 +68,7 @@ agent = [
 vision = [
     "agent-eval[llm]",
     # 精确锁定：与 docker/playwright-base 基础镜像内预装的 chromium 版本严格对齐，
-    # 保证 gateway 构建时命中已烘焙的 chromium（无需联网下载）。升级时需同步重建基础镜像。
+    # 保证 executor 镜像构建时命中已烘焙的 chromium（无需联网下载）。升级时需同步重建基础镜像。
     "playwright==1.60.0",
 ]
 datasets = [

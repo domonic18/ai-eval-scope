@@ -1,13 +1,13 @@
 /**
  * 调试台路由（/api/v1/debug）—— SSO 登录用户共享的评估沙盒。
- *  - POST /jobs          提交评估（原始文件字节 + 查询串元数据）→ evalJobService（合并自 gateway）
+ *  - POST /jobs          提交评估（原始文件字节 + 查询串元数据）→ evalJobService
  *  - GET  /jobs/:jobId   查询任务态
  *  - GET  /rule-sets     规则集目录（静态 catalog）
  *
  * 鉴权：requireAuth（SSO 登录，作为审计 actor）+ 必填 api_key（query，明文 Bearer token）。
  *   - 授权 = 持有一把有效 API Key；结果按 Key 归属落到对应项目。
  *   - api_key 必填：任何登录用户必须自带 Key，绝不能"留空则取项目库里的 Key"（否则越权）。
- *   - 不再转发 gateway：直接在 Web 进程内调用 evalJobService（提交后由 executor 执行）。
+ *   - 直接在 Web 进程内调用 evalJobService（提交后由 executor 执行）。
  *
  * 状态码语义：JWT 会话失败 = 401（前端拦截器据此登出）；api_key 验签失败 = 403 API_KEY_INVALID。
  *   api_key 是会话已认证后用户自填的凭证，失败不能回 401——前端 axios 拦截器把一切 401
