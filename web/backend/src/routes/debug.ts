@@ -8,6 +8,11 @@
  *   - 授权 = 持有一把有效 API Key；结果按 Key 归属落到对应项目。
  *   - api_key 必填：任何登录用户必须自带 Key，绝不能"留空则取项目库里的 Key"（否则越权）。
  *   - 不再转发 gateway：直接在 Web 进程内调用 evalJobService（提交后由 executor 执行）。
+ *
+ * 状态码语义：JWT 会话失败 = 401（前端拦截器据此登出）；api_key 验签失败 = 403 API_KEY_INVALID。
+ *   api_key 是会话已认证后用户自填的凭证，失败不能回 401——前端 axios 拦截器把一切 401
+ *   视为会话过期并强制登出（web/frontend/src/api/client.ts），回 401 会让"Key 填错"
+ *   表现成"掉登录"。与第三方契约 /api/v1/jobs 的 401 AUTH_INVALID（docs/arch/12 §6.5）无关。
  */
 
 import { raw, Router, type RequestHandler } from "express"
@@ -42,18 +47,21 @@ function maskToken(token: string): string {
   return token.length > 16 ? `${token.slice(0, 12)}…${token.slice(-4)}` : "***"
 }
 
-/** 由明文 token 解析 tenant（复用鉴权逻辑，调试台从 query 而非 Bearer 头取 token）。 */
+/**
+ * 由明文 token 解析 tenant（复用鉴权逻辑，调试台从 query 而非 Bearer 头取 token）。
+ * 失败一律 403 API_KEY_INVALID（非 401，见文件头状态码语义说明）。
+ */
 async function resolveTenant(token: string): Promise<Tenant> {
   const repo = new ApiKeyRepository()
   const key = await repo.findByTokenHash(hashToken(token))
   if (!key || !key.project) {
-    throw new PlatformError("invalid api key", { status: 401, code: "AUTH_INVALID" })
+    throw new PlatformError("invalid api key", { status: 403, code: "API_KEY_INVALID" })
   }
   if (key.revokedAt) {
-    throw new PlatformError("key revoked", { status: 401, code: "AUTH_INVALID" })
+    throw new PlatformError("key revoked", { status: 403, code: "API_KEY_INVALID" })
   }
   if (key.expiresAt && key.expiresAt.getTime() < Date.now()) {
-    throw new PlatformError("key expired", { status: 401, code: "AUTH_INVALID" })
+    throw new PlatformError("key expired", { status: 403, code: "API_KEY_INVALID" })
   }
   return {
     kind: "apikey",
