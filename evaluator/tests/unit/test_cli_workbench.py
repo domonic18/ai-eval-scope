@@ -55,6 +55,57 @@ class TestRuns:
     def test_scan_empty_workspace(self, tmp_path: Path) -> None:
         assert runs.scan_runs(tmp_path) == []
 
+    def test_scan_status_and_error_from_agent_logs(self, tmp_path: Path) -> None:
+        # 执行失败型 run：无清单无报告，agent_logs 有 error 事件
+        run_dir = tmp_path / "runs" / "20260831_120808"
+        (run_dir / "agent_logs").mkdir(parents=True)
+        (run_dir / "agent_logs" / "agent_t1.jsonl").write_text(
+            json.dumps(
+                {
+                    "event": "error",
+                    "error_message": "凭证未配置: AGENT_SERVER.username"
+                    "（sut_config 引用 credential_ref='AGENT_SERVER'）",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        scanned = runs.scan_runs(tmp_path)
+        assert scanned[0]["status"] == "执行失败"
+        assert "凭证未配置" in scanned[0]["error"]
+
+    def test_scan_status_executed_without_eval(self, tmp_path: Path) -> None:
+        run_dir = tmp_path / "runs" / "20260831_130000"
+        (run_dir / "packages").mkdir(parents=True)
+        (run_dir / "run_manifest.json").write_text(
+            json.dumps({"mode": "run", "package_ref": "chat"}), encoding="utf-8"
+        )
+        assert runs.scan_runs(tmp_path)[0]["status"] == "已执行"
+
+    def test_show_failed_run_diagnostics(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        run_dir = tmp_path / "runs" / "20260831_120808"
+        (run_dir / "agent_logs").mkdir(parents=True)
+        (run_dir / "agent_logs" / "agent_t1.jsonl").write_text(
+            json.dumps(
+                {
+                    "event": "error",
+                    "error_message": "凭证未配置: AGENT_SERVER.username"
+                    "（sut_config 引用 credential_ref='AGENT_SERVER'）",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        result = runner.invoke(runs.runs_app, ["show", "20260831_120808"])
+        assert result.exit_code == 0, result.output
+        assert "执行失败" in result.output and "失败原因" in result.output
+        assert "secrets set AGENT_SERVER.username" in result.output  # 可操作引导
+
     def test_show_run_renders_metrics_and_breakdown(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

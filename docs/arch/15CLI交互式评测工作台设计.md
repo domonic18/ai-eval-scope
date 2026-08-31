@@ -350,8 +350,9 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 
 ### 7.2 `runs list / show`
 
-- `list`：读 `workspace/index/runs_index.json`（06 §3.8；缺失时提示 `agent-eval index` 重建）→ 表格（时间/包/任务数/Reward/DR/CPR/上传态）。
-- `show <run_id>`：直读 run 目录（`run_manifest.json` + `reports/summary.json` + `results/*/rule_results.json`）→ 指标卡按 `RunConfigSnapshot.metricDefinitions` 动态渲染（不硬编码）；失败 breakdown TopN；任务下钻约束级 `reason` 与 `source_files`。
+- `list`：直接扫描 `workspace/runs/` 目录（manifest + summary 即读）→ 表格（run_id/模式/**状态**/包/任务数/Reward）。状态推导：`已评估`（有 summary）→ `已执行⚠/已执行`（有清单，⚠=日志含错误）→ `执行失败`（无清单但 agent_logs 有 error 事件）→ `中断`（无产物）。
+- `show <run_id>`：直读 run 目录 → 指标卡按 `metric_definitions` 动态渲染（不硬编码）；失败 breakdown TopN。**无报告时不再是干巴巴一句「无 summary.json」**：展示状态 + 从 `agent_logs/*.jsonl` 提取最后一条 error 的失败原因；凭证类错误附 `secrets set <ref>.<field>` 录入指引；已执行未评估给出补评估命令。
+- 配套（2026-08-31 实测反馈修复）：执行前**凭证预检**（`preflight_sut_credentials`，按 `auth.type` 逐字段 require）——缺凭证立即失败并给出录入命令，不再进 Agent 循环换通道试探烧完 `max_turns` 才以「超过轮次限制」收场；`run`/`suite` 的 workspace 根统一走 `paths.default_workspace`（`WORKSPACE_DIR` 生效），消除与 `runs list`/`pipeline` 各读各的漂移（此前还把 pytest 执行段漏进真实 workspace）。
 
 ---
 

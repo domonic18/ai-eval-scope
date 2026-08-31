@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from agent_eval.core.exceptions import SUTAuthError, SUTChannelError
-from agent_eval.execution.auth.credentials import CredentialStore
+from agent_eval.execution.auth.credentials import CredentialStore, preflight_sut_credentials
 from agent_eval.execution.auth.provider import AuthProvider
 from agent_eval.execution.auth.session import SessionStore, SUTSession
 from agent_eval.execution.registry import (
@@ -249,3 +249,30 @@ def test_session_store_default_in_workspace(monkeypatch: pytest.MonkeyPatch, tmp
     assert store.base_dir == workspace / "sut_sessions"
     assert (workspace / "sut_sessions" / "sys-a.json").exists()  # 旧会话已搬迁
     assert not (legacy / "sys-a.json").exists()
+
+
+# ── 执行前凭证预检（fail fast，不进 Agent 循环烧轮次）───────────────────────
+
+
+def test_preflight_passes_when_credentials_present(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENT_EVAL_SUT__AGENT_SERVER__USERNAME", "u")
+    monkeypatch.setenv("AGENT_EVAL_SUT__AGENT_SERVER__PASSWORD", "p")
+    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=None))
+    preflight_sut_credentials(sut)  # 不抛即通过
+
+
+def test_preflight_missing_credential_raises_with_guidance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AGENT_EVAL_SUT__AGENT_SERVER__USERNAME", raising=False)
+    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=None))
+    with pytest.raises(SUTAuthError) as ei:
+        preflight_sut_credentials(sut)
+    assert "凭证未配置" in str(ei.value)
+    assert "secrets set AGENT_SERVER.username" in str(ei.value)  # 可操作引导
+
+
+def test_preflight_noop_for_auth_none_and_flags_missing_ref() -> None:
+    preflight_sut_credentials(_sut(AuthConfig(type="none")))  # 无凭证要求 → no-op
+    with pytest.raises(SUTAuthError, match="credential_ref"):
+        preflight_sut_credentials(_sut(AuthConfig(type="static_token", credential_ref=None)))

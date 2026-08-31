@@ -33,6 +33,13 @@ def _isolate_project_packages(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "no-project-packages"))
 
 
+@pytest.fixture(autouse=True)
+def _isolate_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """workspace 根指向测试临时目录：走到真实执行段的 CLI 测试（如 run --sut-name）
+    曾把 pytest 运行写进 evaluator/workspace/runs/，污染用户的「查看结果」列表。"""
+    monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "workspace"))
+
+
 # ─── SampleResult fixtures ───
 
 

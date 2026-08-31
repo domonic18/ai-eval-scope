@@ -432,16 +432,19 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 安装：`uv sync --extra agent`。该组仅在 `run`/`pipeline` 链路惰性导入。
 
 **Q3：提示缺少 SUT 凭证？**
-看报错中的 `credential_ref`，执行 `agent-eval secrets set <ref>.username` / `<ref>.password`，或设置对应 `AGENT_EVAL_SUT__<REF>__*` 环境变量。sut_config 中出现明文密码属于安全红线违规。
+执行前会做**凭证预检**（按 sut_config 的 `auth.type` 逐字段检查），缺失立即失败并给出录入命令，不会浪费 Agent 轮次。看报错中的 `credential_ref`，执行 `agent-eval secrets set <ref>.username` / `<ref>.password`，或设置对应 `AGENT_EVAL_SUT__<REF>__*` 环境变量。sut_config 中出现明文密码属于安全红线违规。
 
-**Q4：`--task` 选出来的任务比预期少 / 为空？**
+**Q4：`runs list` 状态列的含义？**
+`已评估`（有 summary 报告）｜`已执行`（执行完成未评估，用 `eval --package-dir` 补评估）｜`已执行⚠`/`执行失败`（agent_logs 中有错误，`runs show <run_id>` 看失败原因与修复指引）｜`中断`（无任何产物）。
+
+**Q5：`--task` 选出来的任务比预期少 / 为空？**
 非排除条件命中 0 个会列错误并列出可用 ID，据此核对拼写；glob 也可先用 `--task "*"` 确认全集再收窄。
 
-**Q5：重复评估没有重新调 LLM？**
+**Q6：重复评估没有重新调 LLM？**
 评估缓存按「执行包内容指纹 + 规则集 + LLM 配置指纹」命中复用。强制重评加 `--no-cache`。
 
-**Q6：包内多个规则集/多个 SUT 怎么定？**
+**Q7：包内多个规则集/多个 SUT 怎么定？**
 `--rule-set <名字>` 指定规则集（不给且包内有多个时报错列出）；`--sut-name <name>` 指定被测系统（唯一系统自动选中）。两者都不必带路径，仅当使用包外文件时才写路径。
 
-**Q7：第三方系统想触发我的评测怎么办？**
+**Q8：第三方系统想触发我的评测怎么办？**
 第三方经 Web 后端 `/api/v1/jobs` 提交、executor 异步执行、Webhook 回流，见 [12 第三方系统对接方案](../arch/12第三方系统对接方案.md)。本地 CLI 的 `--task/--sut` 维度选择不经 jobs 通道。

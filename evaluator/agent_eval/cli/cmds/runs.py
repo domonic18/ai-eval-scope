@@ -39,6 +39,40 @@ def _reward_of(summary: dict[str, Any]) -> str:
     return "—"
 
 
+def _last_error(run_dir: Path) -> str:
+    """agent_logs 里最后一条 error 事件的 error_message（无则空串）。"""
+    logs = run_dir / "agent_logs"
+    if not logs.is_dir():
+        return ""
+    for log_file in sorted(logs.glob("*.jsonl"), reverse=True):
+        try:
+            lines = log_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+        except OSError:
+            continue
+        for line in reversed(lines):
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get("event") == "error" and event.get("error_message"):
+                return str(event["error_message"])
+    return ""
+
+
+def _run_status(
+    run_dir: Path, manifest: dict[str, Any], summary: dict[str, Any]
+) -> tuple[str, str]:
+    """推导运行状态与失败原因：(状态, error_message)。"""
+    error = _last_error(run_dir)
+    if summary:
+        return "已评估", error
+    if manifest:
+        return ("已执行⚠" if error else "已执行"), error
+    if error:
+        return "执行失败", error
+    return "中断", error
+
+
 def scan_runs(ws: Path | None = None) -> list[dict[str, Any]]:
     """扫描 workspace/runs/ 下的运行目录（新→旧），读取 manifest 与 summary。"""
     root = (ws or _workspace_root()) / "runs"
@@ -48,6 +82,7 @@ def scan_runs(ws: Path | None = None) -> list[dict[str, Any]]:
     for run_dir in sorted((d for d in root.iterdir() if d.is_dir()), reverse=True):
         manifest = _load_json(run_dir / "run_manifest.json")
         summary = _load_json(run_dir / "reports" / "summary.json")
+        status, error = _run_status(run_dir, manifest, summary)
         runs.append(
             {
                 "run_id": run_dir.name,
@@ -55,6 +90,8 @@ def scan_runs(ws: Path | None = None) -> list[dict[str, Any]]:
                 "package_ref": manifest.get("package_ref", "—"),
                 "tasks": summary.get("total_samples", manifest.get("total_tasks", "—")),
                 "reward": _reward_of(summary) if summary else "—",
+                "status": status,
+                "error": error,
                 "has_summary": bool(summary),
                 "dir": str(run_dir),
             }
@@ -76,11 +113,14 @@ def list_runs() -> list[dict[str, Any]]:
     table = Table(title=f"本地运行（{len(runs)} 次）")
     table.add_column("run_id", style="cyan")
     table.add_column("模式")
+    table.add_column("状态")
     table.add_column("包")
     table.add_column("任务数", justify="right")
     table.add_column("Reward", justify="right")
     for r in runs:
-        table.add_row(r["run_id"], r["mode"], r["package_ref"], str(r["tasks"]), r["reward"])
+        table.add_row(
+            r["run_id"], r["mode"], r["status"], r["package_ref"], str(r["tasks"]), r["reward"]
+        )
     rprint(table)
     rprint("[dim]详情: agent-eval runs show <run_id>[/dim]")
     return runs
@@ -115,9 +155,24 @@ def show_run(run_id: str) -> None:
             f"SUT: [cyan]{(manifest.get('sut') or {}).get('name', '—')}[/cyan]"
         )
     if not summary:
-        rprint(
-            "[yellow]无 reports/summary.json（仅执行未评估？先 agent-eval eval 或 runs show 对应 pipeline 运行）[/yellow]"
-        )
+        status, error = _run_status(run_dir, manifest, summary)
+        rprint(f"  状态: [yellow]{status}[/yellow]（无 reports/summary.json）")
+        if error:
+            rprint(f"  失败原因: [red]{error}[/red]")
+            if "凭证未配置" in error:  # 常见根因：给出录入命令
+                import re
+
+                for ref_field in re.findall(r"凭证未配置: (\S+?)（", error):
+                    rprint(f"  [dim]→ 录入: agent-eval secrets set {ref_field}[/dim]")
+        pkg_dir = run_dir / "packages"
+        n_pkgs = len(list(pkg_dir.iterdir())) if pkg_dir.is_dir() else 0
+        if manifest:
+            rprint(
+                f"  [dim]已执行 {n_pkgs} 个任务包；评估: agent-eval eval "
+                f"--package-dir {pkg_dir} --package <场景包>[/dim]"
+            )
+        else:
+            rprint("  [dim]执行未写运行清单（早期失败）——修复后重跑；结构化日志: agent_logs/[/dim]")
         return
 
     # 指标：按 metric_definitions 动态渲染（id/name/threshold），未覆盖的键兜底展示
@@ -178,6 +233,6 @@ def select_run_id(env_key: str = "AGENT_EVAL_RUN_ID") -> str:
     if not found:
         rprint("[yellow]本地无运行记录（workspace/runs/ 为空，先 agent-eval pipeline）。[/yellow]")
         raise typer.Exit(code=1)
-    options = [f"{r['run_id']}  {r['mode']}  R={r['reward']}" for r in found]
+    options = [f"{r['run_id']}  {r['status']}  R={r['reward']}" for r in found]
     bypassed = resolve_bypass(env_key, options)
     return bypassed.split("  ")[0] if bypassed else select("选择运行", options).split("  ")[0]

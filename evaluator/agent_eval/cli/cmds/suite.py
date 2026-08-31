@@ -98,10 +98,12 @@ def run_suite(
                 continue
 
             run_id = generate_run_id()
+            from agent_eval.config.paths import paths
+
             packages = execute_stage(
                 inputs,
                 run_id=run_id,
-                workspace_root=Path("./workspace"),
+                workspace_root=paths.default_workspace,  # WORKSPACE_DIR 生效（与 run/pipeline 一致）
                 mode="run",
             )
             ok = sum(1 for p in packages if p.manifest.status == "success")

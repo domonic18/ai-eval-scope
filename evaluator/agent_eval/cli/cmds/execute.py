@@ -135,7 +135,11 @@ def execute_run(
     )
     rprint(f"[blue]运行 ID:[/blue] {run_id}")
 
-    workspace_root = Path(output_dir) if output_dir else Path("./workspace")
+    # workspace 根统一走 paths（WORKSPACE_DIR 生效）——曾硬编码 ./workspace，
+    # run 与 runs list/pipeline 各读各的，还把 pytest 执行段漏进真实 workspace
+    from agent_eval.config.paths import paths as _paths
+
+    workspace_root = Path(output_dir) if output_dir else _paths.default_workspace
     try:
         with stage_progress(enabled=not verbose and not is_json()) as sp:
             sp.advance(f"执行 {len(inputs.task_set_model.tasks)} 个任务（SUT: {inputs.sut.name}）")

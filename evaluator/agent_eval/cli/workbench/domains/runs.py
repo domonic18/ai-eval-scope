@@ -15,9 +15,9 @@ def main(session) -> None:  # noqa: ANN001
     if not runs:
         rprint("[yellow]本地无运行记录（workspace/runs/ 为空）。[/yellow]")
         return
-    options = [f"{r['run_id']}  {r['mode']}  任务 {r['tasks']}  R={r['reward']}" for r in runs] + [
-        "返回"
-    ]
+    options = [
+        f"{r['run_id']}  {r['status']}  任务 {r['tasks']}  R={r['reward']}" for r in runs
+    ] + ["返回"]
     pick = select("选择运行", options)
     if pick == "返回":
         return

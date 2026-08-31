@@ -216,10 +216,12 @@ def execute_stage(
     """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。"""
     from agent_eval.agent.execution_agent import ExecutionAgent
     from agent_eval.agent.protocol_tools import AgentProtocolToolServer
+    from agent_eval.execution.auth.credentials import preflight_sut_credentials
     from agent_eval.execution.channels.base import create_channel
     from agent_eval.execution.models import AgentConfig
 
     sut = run_inputs.sut
+    preflight_sut_credentials(sut)  # 凭证缺失 fail fast（不进 Agent 循环烧轮次）
     channel = create_channel(sut)
     protocol_tools = AgentProtocolToolServer(
         channel, default_metadata={"eval_run_id": run_id, "sut_name": sut.name}

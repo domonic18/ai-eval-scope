@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 from agent_eval.core.exceptions import SUTAuthError
 
@@ -65,3 +66,35 @@ class CredentialStore:
                 details={"credential_ref": credential_ref, "field": field},
             )
         return value
+
+
+# auth.type → 所需凭证字段（对齐 AuthProvider.require 消费面）
+AUTH_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
+    "none": (),
+    "static_token": ("TOKEN",),
+    "api_login": ("USERNAME", "PASSWORD"),
+    "session_cookie": ("USERNAME", "PASSWORD"),
+}
+
+
+def preflight_sut_credentials(sut: Any) -> None:
+    """执行前凭证预检：缺凭证立即失败（fail fast），不进 Agent 循环烧轮次。
+
+    实测教训：凭证缺失时 SUTAuthError 只是工具返回值，ExecutionAgent 会换
+    invoke_cli_sut/invoke_http_sut 反复试探，烧完 max_turns 才以「超过轮次限制」
+    收场——真实原因被轮次错误掩盖。此处按 auth.type 提前逐字段 ``require``，
+    缺失即抛带 ``secrets set`` 引导的 SUTAuthError。
+    """
+    auth = getattr(sut, "auth", None)
+    auth_type = getattr(auth, "type", "none")
+    ref = getattr(auth, "credential_ref", None)
+    fields = AUTH_REQUIRED_FIELDS.get(auth_type, ())
+    if not fields:
+        return
+    if not ref:
+        raise SUTAuthError(
+            f"auth.type={auth_type!r} 需要 credential_ref（sut_config {sut.name} 的 auth 段）"
+        )
+    store = CredentialStore()
+    for field in fields:  # require 缺失即抛（含录入引导）
+        store.require(ref, field)
