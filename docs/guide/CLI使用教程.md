@@ -10,7 +10,7 @@
 2. [命令总览](#二命令总览)
 3. [配置 LLM API Key（models）](#三配置-llm-api-keymodels)
 4. [配置被测系统凭证（secrets）](#四配置被测系统凭证secrets)
-5. [场景包管理（package）](#五场景包管理package)
+5. [场景包管理（scenario）](#五场景包管理package)
 6. [实战一：课件评测（courseware）](#六实战一课件评测courseware)
 7. [实战二：Agent 评测（chat）](#七实战二agent-评测chat)
 8. [任务选择 --task 详解](#八任务选择---task-详解)
@@ -54,9 +54,10 @@ uv sync                      # 基础安装（pack/eval 即可用）
 | `run` | 执行被测 Agent（ExecutionAgent 驱动），生成执行包 | 在线评测：只执行不评估 |
 | `pipeline` | 一体化流水线：执行 → 评估 → 报告/上传（单 run_id 贯通） | 在线评测一步到位 |
 | `upload` | 把历史运行的评估结果回填可观测平台 | 补报历史运行 |
-| `models login/list/test/logout` | LLM 模型配置管理 | 配置 API Key 与各角色模型 |
+| `models set/list/test/clear` | LLM 模型配置管理 | 配置 API Key 与各角色模型（Sprint 10 起 login/logout 更名 set/clear） |
 | `secrets set/list/delete` | SUT 凭证管理 | 录入被测系统账号密码 |
-| `package init/validate/list/pull` | 场景包管理 | 创建/校验/发现场景包 |
+| `scenario new/show/validate/list/pull` | 场景包管理 | 创建/查看/校验/发现场景包（Sprint 10 起 package 组更名 scenario；`init` 并入 `new --mode skeleton`） |
+| `start / doctor / runs / open` | 交互式工作台（Sprint 10） | 向导式全流程 / 一键自检 / 本地结果浏览 / 浏览器直达 |
 | `suite plan/run` | 声明式评测矩阵（suite.yaml 批量运行） | 多包多任务集对照评测 |
 | `rule-set validate/list-templates` | 规则集校验与模板浏览 | 包外规则集维护 |
 | `dataset download/list` | 评测数据集下载与索引 | 知识库/评测题数据 |
@@ -72,7 +73,7 @@ uv sync                      # 基础安装（pack/eval 即可用）
 ### 交互式向导（推荐）
 
 ```bash
-uv run agent-eval models login
+uv run agent-eval models set
 ```
 
 向导流程：
@@ -90,7 +91,7 @@ uv run agent-eval models login
 ```bash
 uv run agent-eval models list    # 查看（API Key 脱敏显示 前4…后4）
 uv run agent-eval models test    # 对每个已配角色真实调用一次，打印时延
-uv run agent-eval models logout  # 删除配置（含 key）
+uv run agent-eval models clear  # 删除配置（含 key）
 ```
 
 ### 存储位置与解析优先级
@@ -113,7 +114,7 @@ uv run agent-eval models logout  # 删除配置（含 key）
 
 1. 本地 `~/.agent_eval/llm.json`（任一角色非空即采用）；
 2. 否则若设置了 `AGENT_EVAL_HOST` + `AGENT_EVAL_API_KEY`，从可观测平台 `GET {host}/api/public/llm-config` 拉取；
-3. 均不可用 → 报错提示 `models login`。
+3. 均不可用 → 报错提示 `models set`。
 
 云端 executor 则在平台侧按角色配置，运行时经 API Key 拉取——两套形态互不感知。
 
@@ -138,7 +139,7 @@ uv run agent-eval secrets delete SASAN.password
 
 ---
 
-## 五、场景包管理（package）
+## 五、场景包管理（scenario）
 
 评测的全部要素（规则集、提示词、指标策略、考卷任务集、SUT 接入配置）以**场景包**为单位组织，见 [13 配置管理设计](../arch/13配置管理设计.md)。
 
@@ -153,10 +154,11 @@ uv run agent-eval secrets delete SASAN.password
 ### 常用操作
 
 ```bash
-uv run agent-eval package list                        # 列出内置 + 本地包
-uv run agent-eval package validate ./my-package       # 校验包结构
-uv run agent-eval package init travel-itinerary/quality   # 从脚手架新建包（--template 默认 courseware）
-uv run agent-eval package pull chat/default --remote https://<平台地址>   # 从平台拉取包到本地缓存
+uv run agent-eval scenario list                        # 列出内置 + 本地包
+uv run agent-eval scenario validate ./my-package       # 校验包结构
+uv run agent-eval scenario new travel-itinerary/quality --mode skeleton   # 生成包骨架（--template 默认 courseware）
+uv run agent-eval scenario show chat --section rules   # 查看包内容（tree/manifest/rules/tasks/sut）
+uv run agent-eval scenario pull chat/default --remote https://<平台地址>   # 从平台拉取包到本地缓存
 ```
 
 ### 包引用语法
@@ -203,6 +205,7 @@ uv run agent-eval eval \
 
 # ③ 查看报告
 cat workspace/runs/*/reports/summary.md
+# 或用 CLI 浏览：agent-eval runs list / runs show <run_id>
 ```
 
 常用变体：
@@ -240,7 +243,7 @@ uv run agent-eval eval --package-dir ... --package courseware --on-missing-capab
 
 ```bash
 uv sync --extra llm --extra agent
-uv run agent-eval models login   # 至少配 text 角色（agent 角色回退 text）
+uv run agent-eval models set     # 至少配 text 角色（agent 角色回退 text）
 ```
 
 2. 录入被测系统凭证（对应内置 `sasan-agent` SUT 的 `credential_ref: SASAN`）：
@@ -386,11 +389,11 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 | `AGENT_EVAL_SUT_CREDENTIALS` | SUT 密钥区文件路径覆盖 | `~/.agent_eval/sut_credentials.json` |
 | `AGENT_EVAL_SUT__<REF>__USERNAME/PASSWORD/TOKEN` | SUT 凭证环境变量通道（优先于密钥文件） | 无 |
 | `AGENT_EVAL_PACKAGE_DIR` | 场景包本地缓存根 | `~/.agent_eval/packages/` |
-| `AGENT_EVAL_REGISTRY_URL` | `package pull` 远端基址 | 无 |
+| `AGENT_EVAL_REGISTRY_URL` | `scenario pull` 远端基址 | 无 |
 | `AGENT_EVAL_DATASET_SOURCE` | 数据集下载源（hf/ms） | hf |
 | `LANGFUSE_PUBLIC_KEY/SECRET_KEY/HOST` | LLM 调用追踪（可选） | 未设不追踪 |
 
-仓库根 `.env` 会被 CLI 自动加载（向上查找），敏感凭证仍建议放 `models login` / `secrets` 管理的密钥区而非 `.env`。
+仓库根 `.env` 会被 CLI 自动加载（向上查找），敏感凭证仍建议放 `models set` / `secrets` 管理的密钥区而非 `.env`。
 
 ---
 

@@ -2,7 +2,7 @@
 
 优先级（两形态互不感知，仅共享本解析接口）：
 
-  1. 本地 `~/.agent_eval/llm.json`（CLI 形态，`agent-eval models login` 写入）
+  1. 本地 `~/.agent_eval/llm.json`（CLI 形态，`agent-eval models set` 写入）
   2. 平台拉取（云端形态）：`AGENT_EVAL_HOST`/`AGENT_EVAL_API_KEY` 已配置时调
      `GET /api/public/llm-config`，返回 `{roles: {text: {...含解密 api_key}, ...}}`
   3. 均不可用 → ConfigError（报缺什么、在哪补）
@@ -151,7 +151,7 @@ def resolve_llm_config(
         if roles:
             return _from_roles(roles)
     raise ConfigError(
-        "LLM 配置不可用：本地未找到 ~/.agent_eval/llm.json（运行 `agent-eval models login` "
+        "LLM 配置不可用：本地未找到 ~/.agent_eval/llm.json（运行 `agent-eval models set` "
         "交互配置），且平台拉取未启用或无角色配置（需 AGENT_EVAL_HOST/AGENT_EVAL_API_KEY）"
     )
 

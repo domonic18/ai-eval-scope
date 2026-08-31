@@ -117,7 +117,7 @@ def test_cli_pull_with_remote_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     """--remote <base_url> 直接构造 HTTP 客户端（mock httpx）→ install 到本地缓存。"""
     from typer.testing import CliRunner
 
-    from agent_eval.cli.package import package_app
+    from agent_eval.cli.cmds.scenario import scenario_app
 
     monkeypatch.setenv("AGENT_EVAL_PACKAGE_DIR", str(tmp_path / "cache"))
 
@@ -128,7 +128,7 @@ def test_cli_pull_with_remote_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
     runner = CliRunner()
     result = runner.invoke(
-        package_app, ["pull", "courseware/quality:1.0.0", "--remote", "http://reg"]
+        scenario_app, ["pull", "courseware/quality:1.0.0", "--remote", "http://reg"]
     )
     assert result.exit_code == 0, result.output
     assert "已拉取" in result.output

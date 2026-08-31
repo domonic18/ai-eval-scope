@@ -12,7 +12,7 @@ import pytest
 from typer.testing import CliRunner
 
 import agent_eval.config  # noqa: F401  触发正常初始化顺序，规避潜在 circular import
-from agent_eval.cli.package import package_app
+from agent_eval.cli.cmds.scenario import scenario_app
 from agent_eval.core.exceptions import ScenarioPackageNotFoundError, ScenarioPackageValidationError
 from agent_eval.packages import (
     FakeRemotePackageClient,
@@ -103,7 +103,15 @@ runner = CliRunner()
 
 def test_cli_init_creates_scaffold(tmp_path: Path) -> None:
     result = runner.invoke(
-        package_app, ["init", "travel-itinerary/quality", "--output", str(tmp_path / "pkg")]
+        scenario_app,
+        [
+            "new",
+            "travel-itinerary/quality",
+            "--mode",
+            "skeleton",
+            "--output",
+            str(tmp_path / "pkg"),
+        ],
     )
     assert result.exit_code == 0, result.output
     root = tmp_path / "pkg"
@@ -116,8 +124,10 @@ def test_cli_init_creates_scaffold(tmp_path: Path) -> None:
 
 def test_cli_validate(tmp_path: Path) -> None:
     # 复用 init 产出的包做 validate
-    runner.invoke(package_app, ["init", "demo/pkg", "--output", str(tmp_path / "p")])
-    result = runner.invoke(package_app, ["validate", str(tmp_path / "p")])
+    runner.invoke(
+        scenario_app, ["new", "demo/pkg", "--mode", "skeleton", "--output", str(tmp_path / "p")]
+    )
+    result = runner.invoke(scenario_app, ["validate", str(tmp_path / "p")])
     assert result.exit_code == 0, result.output
     assert "校验通过" in result.output
 
@@ -126,13 +136,13 @@ def test_cli_validate_missing_dir(tmp_path: Path) -> None:
     (tmp_path / "agent_eval.yaml").write_text(
         "package:\n  id: x\n  scenario: x\n  version: 1.0.0\n", encoding="utf-8"
     )
-    result = runner.invoke(package_app, ["validate", str(tmp_path)])
+    result = runner.invoke(scenario_app, ["validate", str(tmp_path)])
     assert result.exit_code == 1
     assert "缺少资源目录" in result.output
 
 
 def test_cli_list_builtin() -> None:
-    result = runner.invoke(package_app, ["list", "--source", "builtin"])
+    result = runner.invoke(scenario_app, ["list", "--source", "builtin"])
     assert result.exit_code == 0, result.output
     assert "courseware" in result.output
 
@@ -152,7 +162,7 @@ def test_cli_pull_with_fake_remote(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     )
     monkeypatch.setattr(pkgmod, "get_remote_client", lambda: fake)
 
-    result = runner.invoke(package_app, ["pull", "remote/remote-pkg:1.0.0"])
+    result = runner.invoke(scenario_app, ["pull", "remote/remote-pkg:1.0.0"])
     assert result.exit_code == 0, result.output
     assert "已拉取" in result.output
     installed = tmp_path / "cache" / "remote" / "remote-pkg" / "1.0.0"
@@ -162,6 +172,6 @@ def test_cli_pull_with_fake_remote(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
 def test_cli_pull_no_remote_configured() -> None:
     # 默认 get_remote_client 返回 None → 友好提示 + exit 1
-    result = runner.invoke(package_app, ["pull", "anything/x:1.0.0"])
+    result = runner.invoke(scenario_app, ["pull", "anything/x:1.0.0"])
     assert result.exit_code == 1
     assert "未配置" in result.output

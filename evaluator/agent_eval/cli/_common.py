@@ -80,7 +80,7 @@ def _check_llm_availability(rule_set_obj: object, judge_orch: object | None, str
 
     rprint("[yellow]⚠ 以下评估器依赖 LLM 但 Judge 未配置，将跳过（不计入得分）：[/yellow]")
     rprint(f"[yellow]   {', '.join(llm_evaluators)}[/yellow]")
-    rprint("[yellow]   运行 agent-eval models login 配置 LLM 后重试。[/yellow]")
+    rprint("[yellow]   运行 agent-eval models set 配置 LLM 后重试。[/yellow]")
     if strict:
         raise typer.Exit(code=1)
 

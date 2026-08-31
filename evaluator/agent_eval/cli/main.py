@@ -1,10 +1,12 @@
-"""CLI 顶层命令 — pack / eval / run / pipeline / upload / version。
+"""CLI 顶层命令 — pack / eval / run / pipeline / upload / version / start / open / doctor。
 
-子命令组（rule-set / dataset / knowledge）在各自模块，由 ``agent_eval.cli`` 包组装挂载。
+子命令组（scenario / models / secrets / suite / rule-set / dataset / knowledge / runs）在
+``cmds/`` 各自模块，由 ``agent_eval.cli`` 包统一装配（唯一 add_typer 点）。
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -26,14 +28,25 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-# 子命令组：模型配置管理（arch/06 §4.6 CLI 形态）
-from agent_eval.cli.models import models_app  # noqa: E402
-from agent_eval.cli.secrets import secrets_app  # noqa: E402
-from agent_eval.cli.suite import suite_app  # noqa: E402
 
-app.add_typer(models_app, name="models")
-app.add_typer(secrets_app, name="secrets")
-app.add_typer(suite_app, name="suite")
+@app.callback()
+def _global(
+    output_format: str = typer.Option(
+        "text", "--output-format", help="text（人读）| json（机器可读，stdout 仅 JSON）"
+    ),
+    no_input: bool = typer.Option(
+        False, "--no-input", help="禁一切交互（缺失必需输入即 exit 2，CI 用）"
+    ),
+) -> None:
+    """全局参数：输出形态与交互开关（F-C-INTEG-01/02）。"""
+    from agent_eval.cli.console import output
+
+    if output_format not in ("text", "json"):
+        rprint("[red]--output-format 仅支持 text|json[/red]")
+        raise typer.Exit(code=2)
+    output.set_output_format(output_format)
+    if no_input:
+        os.environ["AGENT_EVAL_NO_INPUT"] = "1"
 
 
 def _content_hash(source_dir: Path) -> str | None:
@@ -749,6 +762,35 @@ def version() -> None:
     from agent_eval import __version__
 
     rprint(f"agent-eval v{__version__}")
+
+
+@app.command()
+def start(
+    domain: str = typer.Option(None, "--domain", help="直达工作域：scn | exec | runs | account"),
+) -> None:
+    """交互式评测工作台（向导式覆盖评测全生命周期，Sprint 10）。"""
+    from agent_eval.cli.workbench.session import WorkbenchSession
+
+    WorkbenchSession().run(domain)
+
+
+@app.command(name="open")
+def open_(
+    target: str = typer.Argument(..., help="platform | report | docs"),
+    run_id: str | None = typer.Argument(None, help="目标 run_id（open report <run_id> 必填）"),
+) -> None:
+    """浏览器直达：平台首页 / 本地报告（arch/15 §5.3）。"""
+    from agent_eval.cli.cmds.open_url import open_target
+
+    open_target(target, run_id)
+
+
+@app.command()
+def doctor() -> None:
+    """一键自检：平台 / 模型 / 凭证 / 场景包 / workspace / 依赖 extras（F-C-CONFIG-02）。"""
+    from agent_eval.cli.cmds.doctor import doctor_action
+
+    doctor_action()
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@
 ## 配置
 
 - 环境变量从仓库根 `.env` 读取（`load_dotenv()` 自动向上查找）。
-- LLM 配置走双形态（arch/06 §4.6）：`agent-eval models login` 交互配置 → `~/.agent_eval/llm.json`（0600）；云端经 `AGENT_EVAL_HOST/API_KEY` 拉 `/api/public/llm-config`。固定三角色 text/vision/agent（`config/llm_resolution.py` 解析）。
+- LLM 配置走双形态（arch/06 §4.6）：`agent-eval models set` 交互配置 → `~/.agent_eval/llm.json`（0600）；云端经 `AGENT_EVAL_HOST/API_KEY` 拉 `/api/public/llm-config`。固定三角色 text/vision/agent（`config/llm_resolution.py` 解析）。
 
 ## 代码风格（强制）
 

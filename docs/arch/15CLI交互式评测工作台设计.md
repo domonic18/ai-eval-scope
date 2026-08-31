@@ -105,7 +105,7 @@ agent_eval/agent/
 | # | 决策 | 理由 |
 |---|------|------|
 | D-CLI-1 | **双前端同内核**：向导动作最终组装与命令行相同的参数对象，直接调 `_stages` 阶段函数；向导内不出现第二份业务逻辑 | P1 原则；等价命令显示天然成立（argv 即真相） |
-| D-CLI-2 | **交互组件选 questionary + rich**：select/confirm/path 内建、键盘导航、与既有 rich 渲染共存；全部原语收口在 `console/prompts.py` 可注入 mock | 成熟度与测试性；备选（rich Live 自研）仅在 questionary 无法满足分页/搜索时局部替换 |
+| D-CLI-2 | **交互原语收口 `console/prompts.py`：P0 以编号选择落地（gcloud 同款，零新依赖）；questionary + rich 为 P1 可选升级**（分页/搜索需求出现时） | 零依赖先行 + 升级路径保留；原语签名不变，替换不动调用方 |
 | D-CLI-3 | **PackageAgent 独立工具面**（`package_tools.py`），不复用 SUTToolServer | 两域工具语义无关（文件编辑 vs SUT 交互）；沙盒约束不同（包根 vs workspace） |
 | D-CLI-4 | **平台身份落 `.env`**（`AGENT_EVAL_HOST/API_KEY/PROJECT`，0600），不新增凭证文件 | 06 §4.7：环境接入归 `.env`；`auth` 与 `secrets`（SUT 凭证，`~/.agent_eval/`）分域 |
 | D-CLI-5 | **浏览器打开统一走 `cmds/open_url.py`**：`webbrowser.open`（`$BROWSER` 可指定浏览器）+ 无浏览器环境（SSH/未设 `$BROWSER`）降级打印 URL | gh `pkg/browser` 同款行为；单一出口便于 mock 测试（NF-C-05） |
@@ -153,7 +153,7 @@ class WorkbenchSession:
 
 | 原语 | TTY 行为 | 非 TTY 行为 |
 |------|---------|------------|
-| `select(options)` | ↑↓ + 回车；支持 `--domain` 直达 | 缺省值不存在 → `InputError`（exit 2）；存在 → 直接采用 |
+| `select(options)` | 编号列表 + 回车（P0；P1 可升级 ↑↓ 键盘导航） | `--no-input` 下 env/default 旁路，缺失 → exit 2；管道输入正常提示 |
 | `confirm(q)` | y/n | 读 `--yes`/env，缺省即错 |
 | `input(hide=)` | 文本（可隐藏回显） | 读参数/env，缺省即错 |
 | `progress(tasks)` | 单行重绘进度条 + 状态表 | 逐任务一行摘要到 stderr |
@@ -387,3 +387,4 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.0 | 2026-08-31 | 初稿：对齐 requirement/04 v1.2——双前端同内核分层、workbench 向导框架（session/原语/降级/preflight/等价命令）、命令重命名一次性切换落地清单、退出码集中映射、auth 双通道登录与设备码流 P2 接口约定、open/--web URL 规则、PackageAgent（暂存区状态机 + 沙盒六工具 + 校验门禁 + 安全红线）、runs/scenario show 数据来源 |
 | v1.1 | 2026-08-31 | **CLI 目录组织 Review 优化**（§2.2）：子命令组收拢 `cmds/`、表现层基础设施收拢 `console/`（prompts/render/output/equiv）；确立六条组织约定（装配单点 / 命令薄壳与纯函数动作分离 / 双前端同构 / 依赖单向禁横向 import / 交互与业务分离 / 粒度守恒）；全文路径引用同步 |
 | v1.2 | 2026-08-31 | **行业实践对照校准**：新增 §九「行业实践对照」表（gh project-layout / oclif topics / RFC 8628 / kubectl printers）；P2 设备码流契约对齐 RFC 8628 语义（user_code / verification_uri / interval / slow_down / expired_token）；`open_url` 补 `$BROWSER` 覆盖；标注两项刻意不采纳（显式 Factory 依赖束、命令插件化）及理由 |
+| v1.3 | 2026-08-31 | **Sprint 10 P0 实现同步**：目录重组落地（cmds/console/workbench）；交互原语 P0 采用编号选择（gcloud 同款，零新依赖），questionary 为 P1 可选升级；P1 配对码粘贴通道与 doctor/secrets 就绪态留待 Sprint 11 |
