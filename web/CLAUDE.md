@@ -2,7 +2,7 @@
 
 仿 Langfuse 的多租户可观测平台：`frontend/`（React + Vite）、`backend/`（Express + Prisma + 对象存储）。评估器（Python）经 API Key 摄取评估结果 → 落 PostgreSQL（结构化）+ 对象存储（大制品）→ 浏览器登录查看多项目趋势/详情。
 
-> 设计基线：[09 Web 可观测平台架构设计](../docs/arch/09Web可观测平台架构设计.md)、需求 [03 Web 可观测平台重构需求](../docs/requirement/03Web可观测平台重构需求.md)。
+> 设计基线：[09 Web 可观测平台架构设计](../docs/arch/09Web可观测平台架构设计.md)、需求 [03 Web 可观测平台需求](../docs/requirement/03Web可观测平台需求.md)。
 
 ## 目录结构
 

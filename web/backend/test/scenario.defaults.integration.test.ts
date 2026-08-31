@@ -1,5 +1,6 @@
 /**
- * 场景默认指标定义 + 聚合策略更新测试（PATCH /api/v1/scenarios/:id/defaults，platform admin）。
+ * 场景默认指标定义 + 聚合策略发布测试（POST /api/v1/scenarios/:id/defaults，platform admin）。
+ * 发布为版本化动作（version 必填，201 + { asset }），GET 返回最新已发布版本内容。
  * 镜像 scenario.publish.integration.test.ts 的 registerUser + 提升 admin 模式。
  */
 
@@ -35,16 +36,16 @@ async function makeAdmin(app: ReturnType<typeof createApp>, prefix: string) {
   return u
 }
 
-describe("PATCH /api/v1/scenarios/:id/defaults", () => {
+describe("POST /api/v1/scenarios/:id/defaults", () => {
   it("rejects without admin (403)", async () => {
     const app = createApp()
     const u = await registerUser(app, "def-noadmin")
     USER_EMAIL.push(u.email)
     ORG_SLUGS.push(u.org.slug)
     const res = await request(app)
-      .patch(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
+      .post(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
       .set("Authorization", `Bearer ${u.accessToken}`)
-      .send({ metric_definitions: [{ id: "DR" }] })
+      .send({ version: "1.0.0", metric_definitions: [{ id: "DR" }] })
     expect(res.status).toBe(403)
   })
 
@@ -53,7 +54,7 @@ describe("PATCH /api/v1/scenarios/:id/defaults", () => {
     const u = await makeAdmin(app, "def-empty")
     await prisma.scenario.create({ data: { id: SCENARIO_ID, name: SCENARIO_ID } })
     const res = await request(app)
-      .patch(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
+      .post(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
       .set("Authorization", `Bearer ${u.accessToken}`)
       .send({})
     expect(res.status).toBe(400)
@@ -64,13 +65,13 @@ describe("PATCH /api/v1/scenarios/:id/defaults", () => {
     const u = await makeAdmin(app, "def-bad")
     await prisma.scenario.create({ data: { id: SCENARIO_ID, name: SCENARIO_ID } })
     const res = await request(app)
-      .patch(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
+      .post(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
       .set("Authorization", `Bearer ${u.accessToken}`)
-      .send({ metric_definitions: "not-an-array" })
+      .send({ version: "1.0.0", metric_definitions: "not-an-array" })
     expect(res.status).toBe(400)
   })
 
-  it("updates metric_definitions & aggregation_policy as admin, reflected by GET", async () => {
+  it("publishes metric_definitions & aggregation_policy as admin, reflected by GET", async () => {
     const app = createApp()
     const u = await makeAdmin(app, "def-ok")
     await prisma.scenario.create({ data: { id: SCENARIO_ID, name: SCENARIO_ID } })
@@ -84,13 +85,15 @@ describe("PATCH /api/v1/scenarios/:id/defaults", () => {
     }
 
     const res = await request(app)
-      .patch(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
+      .post(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
       .set("Authorization", `Bearer ${u.accessToken}`)
-      .send({ metric_definitions: metrics, aggregation_policy: policy })
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+      .send({ version: "1.0.0", metric_definitions: metrics, aggregation_policy: policy })
+    expect(res.status).toBe(201)
+    // publishDefaultsAsset 返回 { assetId: "default", version }（assetId 固定 "default"）
+    expect(res.body.asset?.assetId).toBe("default")
+    expect(res.body.asset?.version).toBe("1.0.0")
 
-    // GET 应反映新值
+    // GET 应反映新值（最新已发布版本内容）
     const got = await request(app).get(`/api/v1/scenarios/${SCENARIO_ID}/defaults`)
     expect(got.status).toBe(200)
     expect(got.body.metric_definitions).toEqual(metrics)

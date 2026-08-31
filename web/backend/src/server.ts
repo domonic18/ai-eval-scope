@@ -46,6 +46,11 @@ import { rateLimiter } from "./middleware/rateLimiter"
 // ── 摄取路由（Bearer API Key 鉴权，7d）──
 import ingestRouter from "./routes/public/ingest"
 import publicArtifactsRouter from "./routes/public/artifacts"
+import publicLlmConfigRouter from "./routes/public/llmConfig"
+import publicSecretsRouter from "./routes/public/secrets"
+
+// ── 平台 Secrets 管理（org 级，arch/16 §2.4）──
+import secretsRouter from "./routes/secrets"
 
 /** 组装 Express app。供测试 import（supertest 直接挂在 app 上）。 */
 export function createApp(): express.Application {
@@ -70,11 +75,12 @@ export function createApp(): express.Application {
   app.use("/api/v1/auth", authRouter) // 注册/登录/me（register·login 公开）
   app.use("/api/v1/auth/sso", ssoRouter) // SAML SSO（docs/arch/12，config/metadata/login/acs/exchange 公开）
   app.use("/api/v1/orgs", orgsRouter) // 成员 + 组织下项目（requireAuth + orgGuard）
+  app.use("/api/v1", secretsRouter) // 平台 Secrets CRUD（/orgs/:org/secrets，W3）
   app.use("/api/v1", joinRouter) // 团队发现 + 加入申请/审批（/teams、/me/join-requests、/orgs/:org/join-requests）
   app.use("/api/v1/projects", projectsRouter) // 项目管理 + Query（runs/trends）
   app.use("/api/v1/projects/:id/keys", keysRouter) // API Key 管理（嵌套于项目）
   app.use("/api/v1/debug", debugRouter) // 调试台（SSO 登录 + api_key 鉴权，直接调用 evalJobService；项目由 Key 解析）
-  app.use("/api/v1/jobs", evalJobsRouter) // 评测任务提交/查询（合并自 gateway；Bearer API Key）
+  app.use("/api/v1/jobs", evalJobsRouter) // 评测任务提交/查询（Bearer API Key）
   app.use("/api/v1/rule-sets", evalRuleSetsRouter) // 规则集目录（构建期静态 catalog，迁移期保留）
   app.use("/api/v1/scenarios", configScenariosRouter) // 场景配置 catalog（Phase 3 动态，替代静态）
   app.use("/api/v1/health", evalHealthRouter) // eval 子系统健康
@@ -92,6 +98,8 @@ export function createApp(): express.Application {
   // ── 摄取路由（Bearer API Key 鉴权 + 限流，7d）──
   app.use("/api/public/ingest", ingestRouter) // POST /api/public/ingest
   app.use("/api/public/artifacts", publicArtifactsRouter) // POST /api/public/artifacts/url
+  app.use("/api/public/llm-config", publicLlmConfigRouter) // GET /（executor 角色配置拉取，LLM③）
+  app.use("/api/public/secrets", publicSecretsRouter) // GET /（executor 凭证拉取，W3）
 
   // ── 前端静态托管（生产；dev 用 vite 单独跑 :5173）──
   // 以 cwd 为基准（host: web/backend/public；Docker: /app/web/backend/public）

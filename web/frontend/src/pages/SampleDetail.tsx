@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeHighlight from "rehype-highlight"
+import { CodeBlock } from "../components/CodeBlock"
 import { useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type { ArtifactRow, ConstraintRow } from "../types"
@@ -76,7 +80,7 @@ interface SampleData {
   artifacts: ArtifactRow[]
 }
 
-type PreviewMode = "iframe" | "img" | "text" | "none"
+type PreviewMode = "iframe" | "img" | "markdown" | "json" | "text" | "none"
 interface PreviewState {
   mode: PreviewMode
   url?: string
@@ -185,7 +189,8 @@ export default function SampleDetail() {
 
   if (!sample) return <div className="p-8 text-muted-foreground">加载样本详情…</div>
 
-  const failedCount = sample.constraintResults.filter((c) => !c.passed).length
+  const failedCount = sample.constraintResults.filter((c) => !c.passed && c.status !== "skip").length
+  const skippedCount = sample.constraintResults.filter((c) => c.status === "skip").length
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
@@ -203,6 +208,11 @@ export default function SampleDetail() {
           {failedCount > 0 && (
             <SemPill tone="danger" dot>
               {failedCount} 项约束失败
+            </SemPill>
+          )}
+          {skippedCount > 0 && (
+            <SemPill tone="neutral" dot>
+              {skippedCount} 项跳过
             </SemPill>
           )}
         </div>
@@ -294,19 +304,24 @@ function ConstraintItem({
   const [open, setOpen] = useState(!c.passed)
   const method = c.judgeProvider ? "LLM_JUDGE" : "RULE"
   const sourceFiles = parseSourceFiles(c.details)
+  const skipped = c.status === "skip"
   return (
-    <div className={`rounded-md border ${!c.passed ? "border-red-500/30 bg-red-500/5" : "border-border"}`}>
+    <div className={`rounded-md border ${!c.passed && !skipped ? "border-red-500/30 bg-red-500/5" : "border-border"}`}>
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
-        {c.passed ? (
+        {skipped ? (
+          <SemPill tone="neutral">SKIP</SemPill>
+        ) : c.passed ? (
           <SemPill tone="success">PASS</SemPill>
         ) : (
           <SemPill tone="danger">FAIL</SemPill>
         )}
-        <span className="flex-1 truncate">
+        <span className={`flex-1 truncate ${skipped ? "opacity-60" : ""}`}>
           {c.name}
           <span className="ml-2 font-mono text-[10px] text-muted-foreground">{c.constraintId}</span>
         </span>
-        <span className={`font-mono text-xs tabular-nums ${c.passed ? "text-emerald-400" : "text-red-400"}`}>{c.score.toFixed(2)}</span>
+        <span className={`font-mono text-xs tabular-nums ${skipped ? "text-muted-foreground" : c.passed ? "text-emerald-400" : "text-red-400"}`}>
+          {skipped ? "—" : c.score.toFixed(2)}
+        </span>
         <ChevronRight className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
       </button>
       {open && (
@@ -565,7 +580,10 @@ function PreviewPane({
       else {
         try {
           const resp = await fetch(p.url)
-          setPreview({ mode: "text", text: await resp.text() })
+          const text = await resp.text()
+          if (p.contentType.includes("markdown")) setPreview({ mode: "markdown", text })
+          else if (p.contentType.includes("json")) setPreview({ mode: "json", text })
+          else setPreview({ mode: "text", text })
         } catch {
           setPreview({ mode: "text", text: "（无法加载文件内容）" })
         }
@@ -624,6 +642,16 @@ function PreviewPane({
         ) : preview.mode === "img" ? (
           <div className="mx-auto max-w-2xl">
             <img src={preview.url} alt="screenshot" className="w-full rounded-lg border" />
+          </div>
+        ) : preview.mode === "markdown" ? (
+          <article className="mx-auto max-w-3xl rounded-lg border bg-background p-6 text-sm leading-relaxed [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_p]:mb-2 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-inset [&_pre]:p-3 [&_code]:font-mono [&_code]:text-xs [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+              {preview.text ?? ""}
+            </ReactMarkdown>
+          </article>
+        ) : preview.mode === "json" ? (
+          <div className="mx-auto max-w-4xl">
+            <CodeBlock title={current?.originalName || "JSON"} code={preview.text ?? ""} />
           </div>
         ) : (
           <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border bg-background p-4 text-xs text-muted-foreground">

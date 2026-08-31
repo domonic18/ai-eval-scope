@@ -103,13 +103,13 @@ describe("POST /api/v1/scenarios/:id/packages", () => {
       .send({ ...body, labels: ["staging"] })
     expect(again.status).toBe(409)
 
-    // 原行未被覆盖
+    // 原行未被覆盖（labels = 首发值 + injectLatest 注入的 latest，而非重发的 staging）
     const pkg = await prisma.scenarioPackage.findUnique({
       where: {
         scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: "quality", version: "1.0.0" },
       },
     })
-    expect(pkg?.labels).toEqual(["production"])
+    expect(pkg?.labels).toEqual(["production", "latest"])
   })
 
   it("rejects missing fields (400)", async () => {

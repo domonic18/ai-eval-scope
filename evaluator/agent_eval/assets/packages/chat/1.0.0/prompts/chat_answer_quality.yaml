@@ -1,0 +1,146 @@
+template_id: chat_answer_quality
+scenario: chat
+name: 对话回答质量评估
+dimensions:
+  - dim_id: correctness
+    name: 正确性
+    description: 回答内容是否正确无误（概念/推理/计算）
+    weight: 1.0
+    score_range: [0.0, 10.0]
+  - dim_id: relevance
+    name: 切题性
+    description: 是否针对任务指令作答，覆盖预期要点
+    weight: 1.0
+    score_range: [0.0, 10.0]
+  - dim_id: completeness
+    name: 完整性
+    description: 指令要求的部分（定义/例题/步骤/验算等）是否齐全
+    weight: 1.0
+    score_range: [0.0, 10.0]
+system_prompt: |
+  # 角色
+  你是一位严格的对话质量评审专家，评估 AI 助手对用户任务的回答。
+
+  # 任务
+  对照任务指令与预期要点，对回答按 3 个维度打分（0-10），并对每个扣分点给出可溯源证据。
+
+  # 评分方法（强制）
+  1. 核对观察点，对照分档标准定档定分。
+  2. 就低不就高：只要命中更低档任一条件即归该档。
+  3. 证据先行：issues 必须引用回答原文片段，禁止臆测；无问题时 issues=[]。
+  4. 分级自洽：score≥7 不应出现 severity=high；score≤4 时 issues 不应为空。
+
+  # 维度评分标准
+  ## 正确性 correctness（权重 1.0）
+  **观察点**：①概念表述是否准确 ②推理链条是否成立 ③计算是否正确。
+  **分档标准**（命中任一即定该档，就低）：
+  - 9-10：内容完全正确，无任何事实/计算错误
+  - 7-8：主体正确，仅个别表述不严谨
+  - 5-6：存在 1 处明显错误（概念混淆或计算失误）
+  - 3-4：多处错误，结论不可信
+  - 0-2：根本性错误或答非所问
+  **证据**：引用出错的原句。
+
+  ## 切题性 relevance（权重 1.0）
+  **观察点**：①是否针对任务指令作答 ②是否覆盖预期要点（must_mention）。
+  **分档标准**：
+  - 9-10：完全切题，全部要点覆盖
+  - 7-8：切题，仅个别要点未展开
+  - 5-6：大体切题，遗漏 1 个要点或明显跑题后拉回
+  - 3-4：部分跑题，多数要点未覆盖
+  - 0-2：答非所问
+  **证据**：指出缺失的要点。
+
+  ## 完整性 completeness（权重 1.0）
+  **观察点**：指令明确要求的部分（如定义、例题、求解步骤、验算）是否逐项给出。
+  **分档标准**：
+  - 9-10：要求的组成部分逐项齐全
+  - 7-8：缺 1 个次要部分
+  - 5-6：缺 1 个主要部分
+  - 3-4：仅覆盖少数要求
+  - 0-2：几乎未按指令结构作答
+  **证据**：指出缺失的部分。
+
+  # 输出格式
+  输出一个对象：`{correctness: {…}, relevance: {…}, completeness: {…}, summary}`；
+  每维度 `{score(0-10), reason(一句话总评), issues[], highlights[]}`；
+  `issues[]` 每项 `{desc, severity(high|medium|low), evidence(原文片段, 可选)}`。
+
+  # 硬约束
+  1. 严格按指定 JSON 输出，字段名/结构不得修改，不要输出 JSON 以外内容。
+  2. issues 必须可溯源，禁止捏造；无该问题不得写入。
+  3. reason/issues/score 三者自洽。
+user_prompt_template: |
+  请评估以下 AI 助手的回答质量。
+
+  ## 任务指令
+  {{ instruction }}
+
+  ## 预期要点（must_mention）
+  {{ must_mention }}
+
+  ## 助手回答
+  {{ content }}
+
+  请严格按照以下 JSON 格式输出评估结果（score 范围 0-10）：
+
+  ```json
+  {
+    "correctness": {
+      "score": <0-10>,
+      "reason": "<一句话总评>",
+      "issues": [ {"desc": "<具体问题>", "severity": "high|medium|low", "evidence": "<原文片段>"} ],
+      "highlights": ["<亮点>"]
+    },
+    "relevance": { "score": <0-10>, "reason": "<一句话总评>", "issues": [], "highlights": [] },
+    "completeness": { "score": <0-10>, "reason": "<一句话总评>", "issues": [], "highlights": [] },
+    "summary": "<全局评语：亮点 + 主要短板>"
+  }
+  ```
+output_schema:
+  type: object
+  properties:
+    correctness:
+      type: object
+      properties:
+        score: { type: number, description: "正确性得分（0-10）" }
+        reason: { type: string, description: "该维度一句话总评" }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              evidence: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
+    relevance:
+      type: object
+      properties:
+        score: { type: number, description: "切题性得分（0-10）" }
+        reason: { type: string }
+        issues: { type: array, items: { type: object } }
+        highlights: { type: array, items: { type: string } }
+      required: [score, reason, issues]
+    completeness:
+      type: object
+      properties:
+        score: { type: number, description: "完整性得分（0-10）" }
+        reason: { type: string }
+        issues: { type: array, items: { type: object } }
+        highlights: { type: array, items: { type: string } }
+      required: [score, reason, issues]
+    summary:
+      type: string
+      description: "全局评语：亮点 + 主要短板"
+  required:
+    - correctness
+    - relevance
+    - completeness
+temperature: 0.0
+seed: 42
+num_samples: 1

@@ -6,14 +6,13 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 from typing import Any
 
 import yaml
 from dotenv import load_dotenv
 from jinja2 import Template
 
-from agent_eval.config import ConfigLoader
+from agent_eval.config.llm_resolution import resolve_llm_config
 from agent_eval.config.paths import paths
 from agent_eval.knowledge.base import Extractor
 from agent_eval.knowledge.extractors.parsers import parse_items
@@ -42,23 +41,14 @@ class LlmMisconceptionsExtractor(Extractor):
 
     field = "misconceptions"
 
-    def __init__(
-        self,
-        provider: str | None = None,
-        llm_config: Path | str | None = None,
-        limit: int | None = None,
-    ) -> None:
-        self.provider_name = provider
-        self.llm_config_path = (
-            Path(llm_config) if llm_config else paths.configs_dir / "llm_config.yaml"
-        )
+    def __init__(self, role: str = "text", limit: int | None = None) -> None:
+        self.role = role
         self.limit = limit
 
     def extract(self, questions: list[Question], **kwargs: Any) -> ExtractedBatch:
         load_dotenv(paths.assets_dir.parent.parent.parent / ".env")
-        cfg = ConfigLoader.load_llm_config(str(self.llm_config_path))
-        provider_name = self.provider_name or cfg.default
-        client = LLMClientFactory.create(provider_name, cfg.providers[provider_name])
+        cfg = resolve_llm_config()
+        client = LLMClientFactory.create(self.role, cfg.providers[self.role])
 
         system_prompt, user_tpl = _load_prompt(self.field)
 
@@ -111,23 +101,14 @@ class LlmConstantsExtractor(Extractor):
 
     field = "constants"
 
-    def __init__(
-        self,
-        provider: str | None = None,
-        llm_config: Path | str | None = None,
-        limit: int | None = None,
-    ) -> None:
-        self.provider_name = provider
-        self.llm_config_path = (
-            Path(llm_config) if llm_config else paths.configs_dir / "llm_config.yaml"
-        )
+    def __init__(self, role: str = "text", limit: int | None = None) -> None:
+        self.role = role
         self.limit = limit
 
     def extract(self, questions: list[Question], **kwargs: Any) -> ExtractedBatch:
         load_dotenv(paths.assets_dir.parent.parent.parent / ".env")
-        cfg = ConfigLoader.load_llm_config(str(self.llm_config_path))
-        provider_name = self.provider_name or cfg.default
-        client = LLMClientFactory.create(provider_name, cfg.providers[provider_name])
+        cfg = resolve_llm_config()
+        client = LLMClientFactory.create(self.role, cfg.providers[self.role])
 
         system_prompt, user_tpl = _load_prompt(self.field)
 

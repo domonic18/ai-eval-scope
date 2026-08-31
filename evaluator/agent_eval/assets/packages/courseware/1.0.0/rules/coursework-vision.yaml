@@ -47,6 +47,23 @@ rules:
       check_html_only: true
     weight: 1.0
 
+  # 空壳/占位文件检测：正文量低于包内中位数 empty_body_ratio 倍且无实质媒体 → 疑似；
+  # 疑似文件经 content_verdict LLM 二次确认后判 FAIL。交付不完整是硬伤，任一命中即
+  # 门控失败（max_empty_ratio 可按场景放宽容忍比例）。
+  - id: FMT_003
+    name: "内容完整性"
+    dimension: functional
+    stage: format
+    description: "内容文件不得为空壳/占位（交付不完整 = 不合格）"
+    method: format
+    format_type: content_completeness
+    evaluator: format.content_completeness
+    params:
+      empty_body_ratio: 0.15
+      max_empty_ratio: 0.0
+      verification_prompt_id: content_verdict
+    weight: 1.0
+
   # ── commonsense 门控（HARD_SCORE，失败归零本阶段但不阻塞）──
   - id: COMMON_INFO
     name: "知识准确性"
@@ -135,6 +152,6 @@ rules:
     prompt_id: visual_quality
     evaluator: vision.quality
     params:
-      llm_provider: kimi_vision
+      llm_role: vision
     weight: 1.0
     enabled: true

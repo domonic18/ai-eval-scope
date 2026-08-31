@@ -539,14 +539,15 @@ agent-eval serve [--port 3000] [--workspace ./workspace]
 | 2 | 技术栈 | **Python** | 执行引擎、评估引擎、SDK、CLI 均基于 Python 构建 |
 | 3 | SUT 接入方式 | **以 HTTP 服务为主**（LangGraph 封装服务、Hermes 搭建服务等），保留其他扩展方式 | SUT 驱动器默认实现为 HTTP Client，支持自定义请求模板、鉴权、重试 |
 | 4 | 规则编辑者身份 | **主要由 Agent 自动生成，人类专家校对或修改** | 规则集格式必须对 Agent 极其友好（YAML + Schema），需提供 Agent 生成/修改规则的 SDK 接口 |
-| 5 | 部署形态 | **CLI + Web Portal + REST API**，优先方便 Claude Code 类 Agent 调用，同时提供 Web 可视化 | CLI 与 Python SDK 为 P0，REST API 与 Web Portal 为 P1 |
+| 5 | 部署形态 | **CLI + Web Portal + REST API**，优先方便 Claude Code 类 Agent 调用，同时提供 Web 可视化 | CLI 与 Python SDK 为 P0，REST API 与 Web Portal 为 P1。（v0.5 注：REST API 实际形态为可观测平台 Query API + 第三方 `/api/v1/jobs` 通道，与 §8.3 草案端点不同；`serve` 命令由独立 `web/backend` 服务承担，见决策 13） |
 | 6 | LLM 评估模型 | **默认 DeepSeek**，可配置其他模型；必须兼容 Anthropic 协议（Kimi / 智谱 / MiniMax coding plan）与 OpenAI 兼容协议 | 引入 LLM Provider 抽象层，统一封装不同协议客户端 |
 | 7 | 视觉评估深度 | **使用多模态 LLM（目标 Kimi-2.6）** 进行视觉质量评估 | 视觉评估器基于多模态模型，输入课件截图或页面资源，输出结构化评分 |
-| 8 | 测试数据集 | **从零构建**，暂无现有数据集 | 系统需提供任务集构建工具与模板，支持人工标注与半自动化生成 |
-| 9 | SaaS 认证 | **本阶段暂不考虑** 用户认证、权限与租户隔离 | 前期聚焦单机/团队 CLI 与 API 使用，认证授权为后续演进项 |
+| 8 | 测试数据集 | **从零构建**，暂无现有数据集 | 系统需提供任务集构建工具与模板，支持人工标注与半自动化生成。（v0.5 注：已增补公开数据集下载能力，见 [10数据集下载设计](../arch/10数据集下载设计.md)；benchmark 数据集体系见 [13配置管理设计](../arch/13配置管理设计.md) Phase 7，未实施） |
+| 9 | SaaS 认证 | **本阶段暂不考虑** 用户认证、权限与租户隔离 | ~~前期聚焦单机/团队 CLI 与 API 使用，认证授权为后续演进项~~ **（已被推翻，见决策 13）** |
 | 10 | 实时评估 | **前期以离线批量评估为主**，未来逐步演化为实时/流式评估 | 执行引擎按批次调度，评估引擎按完整数据包处理；接口设计预留流式扩展空间 |
-| 11 | Web 可视化技术选型 | **React + Express**，适配腾讯云函数部署 | 前端 React、后端 Express，提供 REST API 供前端调用；通过 CLI `agent-eval serve` 启动 |
+| 11 | Web 可视化技术选型 | **React + Express**，适配腾讯云函数部署 | 前端 React、后端 Express，提供 REST API 供前端调用；~~通过 CLI `agent-eval serve` 启动~~（v0.5 注：serve 命令未实现，Web 由独立 `web/backend` 服务承担，前端已迁移 shadcn/ui + Tailwind v4） |
 | 12 | 目录结构评估 | **一个目录 = 一个任务**，目录内 HTML 文件逐个评估，通过 manifest 记录层级 | 引入 DirectoryCollector 组件和 output/_manifest.json 规范；支持按模块聚合结果 |
+| **13** | **平台化演进（v0.5 增补，回写已实施事实）** | **决策 9 已由 [03Web可观测平台需求](./03Web可观测平台需求.md) 推翻并落地**：用户/组织/项目三级多租户、JWT + API Key 双轨鉴权、DB 层强制隔离均已实现并生产运行 | 以下能力超出本文 v0.4 基线、已合并 develop：① 可观测平台（PG + 对象存储 + 摄取/Query API，生产部署于腾讯云 CDB + SCF）；② 独立 `executor/` 执行服务（SCF 事件函数 / 本地 worker）；③ 第三方对接四通道 HTTP/Webhook/MCP/CLI（见 [12](../arch/12第三方系统对接方案.md)）；④ 场景包配置管理体系与多场景支持（见 [13](../arch/13配置管理设计.md)，含 `code` 场景与 [14 场景扩展指南](../arch/14场景扩展指南.md)）；⑤ 知识点完善管道（见 [11](../arch/11知识点完善管道系统设计.md)）；⑥ 平台超级管理员后台与团队工作空间 |
 
 **当前遗留待确认项**：无。
 
@@ -566,3 +567,4 @@ agent-eval serve [--port 3000] [--workspace ./workspace]
 | v0.2 | 2026-06-08 | 根据用户澄清更新：明确通用框架定位、Python 技术栈、HTTP SUT 接入、Agent 生成规则、LLM Provider 抽象层、多模态视觉评估、CLI/SDK 优先策略 |
 | v0.3 | 2026-06-08 | 确认测试数据从零构建、本阶段不考虑 SaaS 认证、离线批量评估优先；补充任务集构建工具与标注需求 |
 | v0.4 | 2026-06-08 | 新增 Web 可视化与追溯需求（F-W）、目录结构评估需求（F-D）；Web Portal 升级为 P1；新增 VisualizationService；新增项目管理需求 |
+| **v0.5** | **2026-08-18** | **平台化演进回写（文档对齐实现，不改变 v0.4 功能基线）**：(1) 新增决策 13——决策 9（暂不考虑认证/租户）已由 [03Web可观测平台需求](./03Web可观测平台需求.md) 推翻并生产落地；(2) 决策 5/8/11 补演进注记（REST API 实际形态、数据集下载增补、serve 由独立 web 服务承担）；(3) 补记超出 v0.4 基线的已实施能力：可观测平台、独立 executor 服务、第三方四通道、场景包体系、知识管道、超管后台。执行引擎（Sprint 8 ExecutionAgent）仍未实施，目标重定向为「web 版 Agent 在线评测」，见 [01迭代开发计划](../plan/01迭代开发计划.md) v6.0 |

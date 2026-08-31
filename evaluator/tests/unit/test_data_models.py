@@ -138,7 +138,8 @@ class TestAgentConfig:
         config = AgentConfig()
         assert config.max_turns == 20
         assert config.max_budget_usd == 1.0
-        assert config.model == "claude-sonnet-4-20250514"
+        assert config.llm_role == "agent"  # LLM②：角色注册表（arch/16 §6.2-四）
+        assert config.model is None
         assert config.workspace_dir == Path("./workspace")
 
     def test_custom_config(self) -> None:
@@ -157,13 +158,13 @@ class TestAgentConfig:
     def test_roundtrip(self) -> None:
         config = AgentConfig(
             max_turns=30,
-            model="claude-opus",
+            model="kimi-latest",
             workspace_dir=Path("/tmp/ws"),
         )
         json_str = config.model_dump_json()
         restored = AgentConfig.model_validate_json(json_str)
         assert restored.max_turns == 30
-        assert restored.model == "claude-opus"
+        assert restored.model == "kimi-latest"
 
     def test_sut_tools_config(self) -> None:
         config = AgentConfig(
@@ -261,6 +262,27 @@ class TestSampleResult:
         assert restored.sample_id == "s001"
         assert restored.reward == 2.43
         assert restored.stage_metrics["soft"] == 0.8
+
+    def test_process_metrics_roundtrip_and_legacy_defaults(self) -> None:
+        """过程指标序列化 round-trip；旧数据（无新键）反序列化默认 0（缓存兼容）。"""
+        sr = SampleResult(
+            sample_id="s002",
+            status=EvalStatus.PASS,
+            agent_turns=3,
+            agent_tool_calls=7,
+            agent_exec_ms=1234.5,
+        )
+        restored = SampleResult.from_dict(sr.to_dict())
+        assert restored.agent_turns == 3
+        assert restored.agent_tool_calls == 7
+        assert restored.agent_exec_ms == 1234.5
+
+        legacy = SampleResult.from_dict(
+            {"sample_id": "s003", "status": "pass"}  # 旧缓存条目无新键
+        )
+        assert legacy.agent_turns == 0
+        assert legacy.agent_tool_calls == 0
+        assert legacy.agent_exec_ms == 0.0
 
 
 class TestMetricsReport:

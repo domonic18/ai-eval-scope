@@ -1,5 +1,5 @@
 /**
- * 评测任务路由（/api/v1/jobs）—— 合并自 eval-gateway。
+ * 评测任务路由（/api/v1/jobs）—— 第三方系统 / 调试台共用的评测任务提交通道。
  *  - POST /          提交评估（octet-stream 原始字节 + 查询串元数据 / application/json 内联）
  *  - GET  /:jobId    查询任务态
  *
@@ -138,6 +138,20 @@ router.get(
       throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
     }
     res.json(overview)
+  }),
+)
+
+// executor 领取任务后重签输入下载 URL（提交时签发的 presigned URL ≤15min，排队积压会拖过期）
+router.get(
+  "/:jobId/input-url",
+  requireApiKey,
+  wrap(async (req, res) => {
+    const svc = createEvalJobService(req.tenant!)
+    const r = await svc.refreshInputUrl(req.params.jobId)
+    if (!r) {
+      throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
+    }
+    res.json(r)
   }),
 )
 

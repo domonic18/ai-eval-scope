@@ -150,7 +150,7 @@ class SUTToolsConfig(BaseModel):
 
 
 class AgentConfig(BaseModel):
-    """ExecutionAgent 配置 — 控制 Agent 执行行为。"""
+    """ExecutionAgent 配置 — 控制 Agent 执行行为（arch/03 §六 v4.6：模型无关）。"""
 
     # Agent 执行参数
     max_turns: int = Field(
@@ -169,10 +169,14 @@ class AgentConfig(BaseModel):
         description="工具调用失败最大重试次数",
     )
 
-    # 模型配置
-    model: str = Field(
+    # 模型配置（v4.6 双协议桥接；LLM② 起走角色注册表，见 arch/06 §4.6）
+    llm_role: str = Field(
+        default=AGENT_DEFAULTS.llm_role,
+        description="执行侧 LLM 角色（text|vision|agent），经 build_chat_model 桥接",
+    )
+    model: str | None = Field(
         default=AGENT_DEFAULTS.model,
-        description="Agent 使用的模型",
+        description="覆盖 provider 默认模型（可选；None=用 provider 默认）",
     )
 
     # SUT 工具配置
@@ -185,16 +189,4 @@ class AgentConfig(BaseModel):
     workspace_dir: Path = Field(
         default=AGENT_DEFAULTS.workspace_dir,
         description="执行包输出目录",
-    )
-
-    # 权限模式
-    permission_mode: str = Field(
-        default=AGENT_DEFAULTS.permission_mode,
-        description="Agent 权限模式",
-    )
-
-    # 允许的工具列表
-    allowed_tools: list[str] = Field(
-        default_factory=lambda: list(AGENT_DEFAULTS.allowed_tools),
-        description="Agent 允许使用的工具列表",
     )

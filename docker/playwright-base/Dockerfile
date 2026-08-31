@@ -1,8 +1,8 @@
-# Playwright + Chromium 基础镜像（预烘焙，供 gateway 复用）
+# Playwright + Chromium 基础镜像（预烘焙，供 executor 镜像复用）
 #
 # 目的：新版 Playwright 改用 Chrome-for-Testing(cft)下载路径 /builds/cft/...，国内 npmmirror
 # 未同步 → Jenkins(腾讯云、无代理)构建时 playwright install 会 404/超时。
-# 解法：把 chromium 一次性烘焙进本基础镜像并推到 CCR，gateway 直接 FROM 它，构建时零外网下载。
+# 解法：把 chromium 一次性烘焙进本基础镜像并推到 CCR，executor 直接 FROM 它，构建时零外网下载。
 #
 # 与 evaluator/pyproject.toml 的 playwright 版本必须严格一致（否则 chromium 缓存不命中）。
 #

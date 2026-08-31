@@ -47,8 +47,13 @@ export interface ScenarioCatalog {
   rule_sets: CatalogEntry[]
   prompts: CatalogEntry[]
   datasets: Array<CatalogEntry & { role: string; backend_type: string }>
+  task_sets: Array<CatalogEntry & { task_count: number }>
+  sut_configs: Array<CatalogEntry & { channel: string | null }>
   packages: CatalogEntry[]
 }
+
+/** 通用资产 kind（content/versions/labels 通用端点 + 编辑器共用）。 */
+export type RepoAssetKind = "rule-sets" | "prompts" | "datasets" | "task-sets" | "sut-configs"
 
 export class ScenarioRepository {
   constructor(private readonly prisma: PrismaClient = getPrisma()) {}
@@ -357,10 +362,81 @@ export class ScenarioRepository {
     return { assetId: input.assetId, version: input.version }
   }
 
+  /** 发布一个任务集（考卷）资产版本（assetId=task_sets/ 文件 stem；版本不可变，同号重发 409）。 */
+  async publishTaskSetAsset(
+    scenarioId: string,
+    input: {
+      assetId: string
+      version: string
+      labels?: string[]
+      content: Record<string, unknown>
+      createdBy: string
+      packageId?: string
+    },
+  ): Promise<{ assetId: string; version: string }> {
+    const contentHash = hashContent(input.content)
+    await prismaEnsureScenario(this.prisma, scenarioId)
+    const existing = await this.prisma.taskSetAsset.findUnique({
+      where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
+      select: { id: true },
+    })
+    if (existing) throw versionConflict(input.assetId, input.version)
+    await this.prisma.taskSetAsset.create({
+      data: {
+        scenarioId,
+        packageId: input.packageId ?? null,
+        assetId: input.assetId,
+        version: input.version,
+        labels: input.labels ?? [],
+        content: input.content as never,
+        contentHash,
+        createdBy: input.createdBy,
+      },
+    })
+    return { assetId: input.assetId, version: input.version }
+  }
+
+  /**
+   * 发布一个 SUT 接入配置资产版本（assetId=sut.name，content=仅 sut: 子树——与
+   * importAssetsToDb 导入语义一致；name 一致性校验归路由层。版本不可变，同号重发 409）。
+   */
+  async publishSutConfigAsset(
+    scenarioId: string,
+    input: {
+      assetId: string
+      version: string
+      labels?: string[]
+      content: Record<string, unknown>
+      createdBy: string
+      packageId?: string
+    },
+  ): Promise<{ assetId: string; version: string }> {
+    const contentHash = hashContent(input.content)
+    await prismaEnsureScenario(this.prisma, scenarioId)
+    const existing = await this.prisma.sutConfigAsset.findUnique({
+      where: { scenarioId_assetId_version: { scenarioId, assetId: input.assetId, version: input.version } },
+      select: { id: true },
+    })
+    if (existing) throw versionConflict(input.assetId, input.version)
+    await this.prisma.sutConfigAsset.create({
+      data: {
+        scenarioId,
+        packageId: input.packageId ?? null,
+        assetId: input.assetId,
+        version: input.version,
+        labels: input.labels ?? [],
+        content: input.content as never,
+        contentHash,
+        createdBy: input.createdBy,
+      },
+    })
+    return { assetId: input.assetId, version: input.version }
+  }
+
   /** 列出某资产的全部历史版本（VersionTimeline 用）。 */
   async listAssetVersions(
     scenarioId: string,
-    kind: "rule-sets" | "prompts" | "datasets",
+    kind: RepoAssetKind,
     assetId: string,
   ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: Date }>> {
     const select = { version: true, labels: true, contentHash: true, createdAt: true }
@@ -370,13 +446,19 @@ export class ScenarioRepository {
     if (kind === "datasets") {
       return this.prisma.datasetAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
     }
+    if (kind === "task-sets") {
+      return this.prisma.taskSetAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
+    }
+    if (kind === "sut-configs") {
+      return this.prisma.sutConfigAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
+    }
     return this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId }, select, orderBy: { createdAt: "desc" } })
   }
 
   /** 获取某资产指定版本的完整 content（评测规则浏览器/编辑器 diff 用）。 */
   async getAssetContent(
     scenarioId: string,
-    kind: "rule-sets" | "prompts" | "datasets",
+    kind: RepoAssetKind,
     assetId: string,
     version?: string,
   ): Promise<Record<string, unknown> | null> {
@@ -385,7 +467,11 @@ export class ScenarioRepository {
         ? await this.prisma.ruleSetAsset.findMany({ where: { scenarioId, assetId } })
         : kind === "datasets"
           ? await this.prisma.datasetAsset.findMany({ where: { scenarioId, assetId } })
-          : await this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId } })
+          : kind === "task-sets"
+            ? await this.prisma.taskSetAsset.findMany({ where: { scenarioId, assetId } })
+            : kind === "sut-configs"
+              ? await this.prisma.sutConfigAsset.findMany({ where: { scenarioId, assetId } })
+              : await this.prisma.promptTemplateAsset.findMany({ where: { scenarioId, assetId } })
     if (!rows.length) return null
     if (version) {
       const exact = rows.find((r) => r.version === version)
@@ -402,7 +488,7 @@ export class ScenarioRepository {
    */
   async setAssetLabels(
     scenarioId: string,
-    kind: "rule-sets" | "prompts" | "datasets",
+    kind: RepoAssetKind,
     assetId: string,
     version: string,
     labels: string[],
@@ -415,6 +501,8 @@ export class ScenarioRepository {
       const filter = { scenarioId, assetId, version }
       if (kind === "rule-sets") await tx.ruleSetAsset.updateMany({ where: filter, data: { labels } })
       else if (kind === "datasets") await tx.datasetAsset.updateMany({ where: filter, data: { labels } })
+      else if (kind === "task-sets") await tx.taskSetAsset.updateMany({ where: filter, data: { labels } })
+      else if (kind === "sut-configs") await tx.sutConfigAsset.updateMany({ where: filter, data: { labels } })
       else await tx.promptTemplateAsset.updateMany({ where: filter, data: { labels } })
     })
   }
@@ -422,7 +510,7 @@ export class ScenarioRepository {
   /** 从同资产、非目标版本上摘除指定互斥标签（事务内调用）。 */
   private async _stripLabelsFromOthers(
     tx: Prisma.TransactionClient,
-    kind: "rule-sets" | "prompts" | "datasets",
+    kind: RepoAssetKind,
     scenarioId: string,
     assetId: string,
     version: string,
@@ -435,6 +523,10 @@ export class ScenarioRepository {
       others = await tx.ruleSetAsset.findMany({ where: whereOther, select })
     } else if (kind === "datasets") {
       others = await tx.datasetAsset.findMany({ where: whereOther, select })
+    } else if (kind === "task-sets") {
+      others = await tx.taskSetAsset.findMany({ where: whereOther, select })
+    } else if (kind === "sut-configs") {
+      others = await tx.sutConfigAsset.findMany({ where: whereOther, select })
     } else {
       others = await tx.promptTemplateAsset.findMany({ where: whereOther, select })
     }
@@ -443,6 +535,8 @@ export class ScenarioRepository {
       const cleaned = o.labels.filter((l) => !labels.includes(l))
       if (kind === "rule-sets") await tx.ruleSetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
       else if (kind === "datasets") await tx.datasetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
+      else if (kind === "task-sets") await tx.taskSetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
+      else if (kind === "sut-configs") await tx.sutConfigAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
       else await tx.promptTemplateAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
     }
   }
@@ -451,10 +545,12 @@ export class ScenarioRepository {
     const scenario = await this.prisma.scenario.findUnique({ where: { id: scenarioId } })
     if (!scenario) return null
 
-    const [ruleSets, prompts, datasets, packages] = await Promise.all([
+    const [ruleSets, prompts, datasets, taskSets, sutConfigs, packages] = await Promise.all([
       this.prisma.ruleSetAsset.findMany({ where: { scenarioId } }),
       this.prisma.promptTemplateAsset.findMany({ where: { scenarioId } }),
       this.prisma.datasetAsset.findMany({ where: { scenarioId } }),
+      this.prisma.taskSetAsset.findMany({ where: { scenarioId } }),
+      this.prisma.sutConfigAsset.findMany({ where: { scenarioId } }),
       this.prisma.scenarioPackage.findMany({ where: { scenarioId } }),
     ])
 
@@ -466,6 +562,16 @@ export class ScenarioRepository {
         ...this._toEntry(d),
         role: d.role,
         backend_type: d.backendType,
+      })),
+      task_sets: pickLatestPerAsset(taskSets).map((t) => ({
+        ...this._toEntry(t),
+        task_count: Array.isArray((t.content as Record<string, unknown>)?.tasks)
+          ? ((t.content as Record<string, unknown>).tasks as unknown[]).length
+          : 0,
+      })),
+      sut_configs: pickLatestPerAsset(sutConfigs).map((s) => ({
+        ...this._toEntry(s),
+        channel: ((s.content as Record<string, unknown>)?.channel as string) ?? null,
       })),
       packages: pickLatestPerAsset(packages).map((p) => this._toEntry(p)),
     }

@@ -11,43 +11,10 @@ Judge 编排器、Langfuse 追踪等各处导入使用。
 
 from __future__ import annotations
 
-import os
-import re
 from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import BaseModel, Field
-
-# 匹配 ${ENV_VAR} 或 $ENV_VAR 格式
-_ENV_VAR_PATTERN = re.compile(r"\$\{(\w+)\}|\$(\w+)")
-
-
-def resolve_api_key(api_key: str) -> str:
-    """解析 API Key 中的环境变量引用。
-
-    支持格式：
-      - ${DEEPSEEK_API_KEY}
-      - $DEEPSEEK_API_KEY
-      - 纯字符串（直接返回）
-
-    Args:
-        api_key: 可能包含环境变量引用的字符串。
-
-    Returns:
-        解析后的 API Key。
-
-    Raises:
-        ValueError: 环境变量未设置时。
-    """
-
-    def _replace(match: re.Match[str]) -> str:
-        var_name = match.group(1) or match.group(2)
-        value = os.environ.get(var_name)
-        if value is None:
-            raise ValueError(f"环境变量 {var_name} 未设置，无法解析 API Key")
-        return value
-
-    return _ENV_VAR_PATTERN.sub(_replace, api_key)
 
 
 class ProviderConfig(BaseModel):

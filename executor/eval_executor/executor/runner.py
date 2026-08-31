@@ -1,8 +1,8 @@
 """任务执行器 -- 打包、评估、按提交者身份回传、更新 eval_jobs 状态。
 
-与 gateway/worker/runner.py 的差异：
-- 输入不再来自 ``job.input_ref``（本地路径），而由调用方传入已下载物化的 ``input_dir``；
-- 工作区落 ``settings.workspace_dir/<job_id>``（原 upload_dir/workspaces）；
+职责边界：
+- 输入由调用方传入已下载物化的 ``input_dir``（下载见 ``storage/input_loader.py``）；
+- 工作区落 ``settings.workspace_dir/<job_id>``；
 - 状态机 ``mark_running`` 移至 entrypoint/loop（启动第一时间置 running）。
 """
 
@@ -14,7 +14,6 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from agent_eval.config.paths import paths as agent_eval_paths
 from agent_eval.evaluation.registry import registry
 from agent_eval.observability import ResultSink, load_config
 from agent_eval.orchestrator import eval_packages
@@ -40,7 +39,8 @@ def _resolve_rule_set_path(job: EvalJob) -> str:
 
     - 缺失 package_ref → 历史 job，拒绝（LegacyJobRejectedError，不再用 _BUILTIN 回退）。
     - 本地（builtin + 缓存）解析；未命中且配置了 ``AGENT_EVAL_REGISTRY_URL`` → 拉取后重解析。
-    - 包内规则集：优先 job.rule_set_id，其次包内唯一规则集，否则报错。
+    - 包内规则集：优先 job.rule_set_id，其次包清单 default_rule_set（courseware=coursework-vision），
+      再次包内唯一规则集，否则报错。
     """
     from agent_eval.core.exceptions import ScenarioPackageNotFoundError
     from agent_eval.packages import PackageManager, PackageStore
@@ -63,7 +63,8 @@ def _resolve_rule_set_path(job: EvalJob) -> str:
         pkg = pm.resolve_ref(ref)
 
     rules_dir = pkg.rules_dir
-    name = job.rule_set_id or pkg.manifest.id
+    # 回退链：job 显式指定 → 包清单 default_rule_set → 包 id（与规则集同名时）
+    name = job.rule_set_id or pkg.manifest.default_rule_set or pkg.manifest.id
     path = rules_dir / f"{name}.yaml"
     if path.exists():
         return str(path)
@@ -73,12 +74,6 @@ def _resolve_rule_set_path(job: EvalJob) -> str:
     if not avail:
         raise RuleSetNotFoundError(f"{ref}（包内无规则集）")
     raise RuleSetNotFoundError(f"{ref}（包内规则集不明确，请指定 rule_set_id：{avail}）")
-
-
-def _llm_config_path() -> str | None:
-    """评估器 LLM 配置路径（自动发现 llm_config.yaml）。"""
-    cfg = agent_eval_paths.configs_dir / "llm_config.yaml"
-    return str(cfg) if cfg.exists() else None
 
 
 def _eval_meta(result: Any, job: EvalJob, rule_set_path: str) -> dict[str, Any]:
@@ -135,8 +130,47 @@ async def _resolve_submit_token(job: EvalJob) -> str | None:
     try:
         return decrypt_token(key.token_encrypted, settings.key_encryption_key)
     except Exception as exc:  # noqa: BLE001
-        LOG.warning("job.flush.decrypt_failed", job_id=job.job_id, error=str(exc))
+        # cryptography 的 InvalidTag（加密密钥与 web 不一致时）str() 为空串：只打 error=
+        # 会得到空串，补 error_type 才能定位是解密失败而非其他异常。
+        LOG.warning(
+            "job.flush.decrypt_failed",
+            job_id=job.job_id,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
         return None
+
+
+async def refresh_input_url(job: EvalJob) -> str | None:
+    """领取后向 web 重签输入下载 URL（以提交者身份）。
+
+    提交时签发的 presigned URL 受 presignTtlSec 上限约束（≤15min，§十三）；队列积压或
+    前序长任务会把它拖过期——MinIO 回 403，任务失败为「input load failed」。
+    任一环节失败返回 None，调用方回退 job.input_presigned_url（可能仍有效）。
+    """
+    try:
+        token = await _resolve_submit_token(job)
+        if not token:
+            return None
+        cfg = load_config()
+        if not cfg.host:
+            return None
+        import httpx
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{cfg.host}/api/v1/jobs/{job.job_id}/input-url",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        if resp.status_code == 200:
+            url = (resp.json() or {}).get("url")
+            if isinstance(url, str) and url:
+                LOG.info("input.url_refreshed", job_id=job.job_id)
+                return url
+        LOG.warning("input.url_refresh_bad_status", job_id=job.job_id, status_code=resp.status_code)
+    except Exception as exc:  # noqa: BLE001 — 刷新失败回退原 URL，不阻断任务
+        LOG.warning("input.url_refresh_failed", job_id=job.job_id, error=str(exc)[:200])
+    return None
 
 
 def _flush_result(
@@ -235,7 +269,6 @@ async def run_job(job: EvalJob, input_dir: Path) -> None:
             rule_set_path=rule_set_path,
             output_dir=job_output_dir / "workspace",
             project=job.project_id,
-            llm_config_path=_llm_config_path(),
         )
 
         # 按 job 提交者身份回传（per-job token + project）→ 结果落到第三方项目

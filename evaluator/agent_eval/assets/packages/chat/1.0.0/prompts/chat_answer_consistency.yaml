@@ -1,0 +1,133 @@
+template_id: chat_answer_consistency
+scenario: chat
+name: 答案语义一致性评估（对照参考答案）
+description: >
+  判断被测回答与任务声明的参考答案（expected.reference）在核心语义上是否一致。
+  与回答质量评估（chat_answer_quality）互补：quality 问"回答好不好"，
+  consistency 只问"与参考答案说的是否一致"——角色认知/事实类任务的核心闸门。
+
+dimensions:
+  - dim_id: fact_consistency
+    name: 核心事实一致性
+    description: 参考答案中的每个关键主张，回答是否语义等价地表达
+    weight: 0.6
+    score_range: [0.0, 10.0]
+  - dim_id: no_contradiction
+    name: 无矛盾性
+    description: 回答是否包含与参考答案冲突的额外主张
+    weight: 0.4
+    score_range: [0.0, 10.0]
+
+system_prompt: |
+  # 角色
+  你是一位严格的事实核查评审专家，判断 AI 助手的回答与**参考答案**在语义上是否一致。
+
+  # 核心原则（强制）
+  1. **语义等价，而非措辞相同**：换个说法表达同一主张 = 一致；只要核心事实（身份/
+     能力/数值/结论/限制）等价即可得分，禁止因表述风格差异扣分。
+  2. **主张级核对**：先把参考答案拆成关键主张清单，再逐条核对回答是否等价表达。
+  3. **区分两类偏离**：
+     - 遗漏（omission）：参考中的主张回答未提及 → 部分扣分
+     - 矛盾（contradiction）：回答表达了与参考相反/编造的主张 → 重扣
+  4. **证据先行**：issues 必须同时引用参考句与回答句，禁止臆测。
+
+  # 维度评分标准
+  ## 核心事实一致性 fact_consistency（权重 0.6）
+  **方法**：参考答案拆主张（通常 2-5 条）→ 逐条核对回答。
+  - 9-10：全部主张语义等价表达
+  - 7-8：全部覆盖，个别主张表述偏差但不改变含义
+  - 5-6：遗漏 1 个主张，无矛盾
+  - 3-4：遗漏多个主张，或 1 处语义偏差
+  - 0-2：多数主张未覆盖或回答与参考根本不同
+  **证据**：遗漏的参考句 / 偏差的回答句。
+
+  ## 无矛盾性 no_contradiction（权重 0.4）
+  **方法**：检查回答中是否有与参考冲突的额外主张（编造身份/夸大能力/相反结论）。
+  - 9-10：无任何冲突主张
+  - 5-8：存在可疑但不冲突的额外说法
+  - 0-4：存在明确矛盾主张（如参考说"不能执行交易"而回答声称可以）
+  **证据**：冲突的回答句 + 对应参考句。
+
+  # 输出格式
+  输出一个对象：`{fact_consistency: {…}, no_contradiction: {…}, summary}`；
+  每维度 `{score(0-10), reason(一句话总评), issues[], highlights[]}`；
+  `issues[]` 每项 `{desc, severity(high|medium|low), reference_quote, answer_quote}`。
+
+  # 硬约束
+  1. 严格按指定 JSON 输出，字段名/结构不得修改，不要输出 JSON 以外内容。
+  2. issues 必须可溯源（双引文），禁止捏造；无该问题不得写入。
+  3. reason/issues/score 三者自洽。
+user_prompt_template: |
+  请核对以下 AI 助手的回答与参考答案的语义一致性。
+
+  ## 参考答案（语义基准）
+  {{ reference }}
+
+  ## 任务指令
+  {{ instruction }}
+
+  ## 被测回答
+  {{ content }}
+
+  请严格按照以下 JSON 格式输出评估结果（score 范围 0-10）：
+
+  ```json
+  {
+    "fact_consistency": {
+      "score": <0-10>,
+      "reason": "<一句话总评：主张覆盖率与等价性>",
+      "issues": [ {"desc": "<遗漏/偏差的主张>", "severity": "high|medium|low", "reference_quote": "<参考原句>", "answer_quote": "<回答原句，遗漏时可空>"} ],
+      "highlights": ["<等价表达得当之处>"]
+    },
+    "no_contradiction": {
+      "score": <0-10>,
+      "reason": "<一句话总评：是否存在冲突主张>",
+      "issues": [ {"desc": "<矛盾的主张>", "severity": "high|medium|low", "reference_quote": "<参考原句>", "answer_quote": "<冲突的回答原句>"} ],
+      "highlights": []
+    },
+    "summary": "<全局评语：一致的部分与偏离的部分>"
+  }
+  ```
+output_schema:
+  type: object
+  properties:
+    fact_consistency:
+      type: object
+      properties:
+        score: { type: number, description: "核心事实一致性得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              desc: { type: string }
+              severity: { type: string, enum: [high, medium, low] }
+              reference_quote: { type: string }
+              answer_quote: { type: string }
+            required: [desc, severity]
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
+    no_contradiction:
+      type: object
+      properties:
+        score: { type: number, description: "无矛盾性得分（0-10）" }
+        reason: { type: string }
+        issues:
+          type: array
+          items: { type: object }
+        highlights:
+          type: array
+          items: { type: string }
+      required: [score, reason, issues]
+    summary:
+      { type: string, description: "全局评语：一致的部分与偏离的部分" }
+  required:
+    - fact_consistency
+    - no_contradiction
+    - summary
+temperature: 0.0
+seed: 42
+num_samples: 1

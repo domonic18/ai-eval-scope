@@ -34,6 +34,18 @@ class PackageManifest(BaseModel):
     )
     dependencies: list[str] = Field(default_factory=list, description="依赖的其它包")
     artifact_types: list[str] = Field(default_factory=list, description="制品类型声明")
+    default_rule_set: str | None = Field(
+        default=None,
+        description="默认规则集 id（job 未指定 rule_set_id 时采用，如 coursework-vision）",
+    )
+    default_task_set: str | None = Field(
+        default=None,
+        description="默认任务集名（task_sets/ 下的文件 stem，如 default；arch/13 §4.1）",
+    )
+    default_sut: str | None = Field(
+        default=None,
+        description="默认被测系统名（sut_configs/ 下文件的 sut.name；唯一系统可省略）",
+    )
 
     model_config = {"extra": "allow"}
 
@@ -70,6 +82,16 @@ class ResolvedPackage:
     @property
     def metrics_dir(self) -> Path:
         return self.root / "metrics"
+
+    @property
+    def task_sets_dir(self) -> Path:
+        """包内任务集目录（考卷，arch/13 §4.1）。"""
+        return self.root / "task_sets"
+
+    @property
+    def sut_configs_dir(self) -> Path:
+        """包内 SUT 接入配置目录（不含凭证，arch/13 §4.1；eval_only 型场景无此目录）。"""
+        return self.root / "sut_configs"
 
     @property
     def manifest_path(self) -> Path:

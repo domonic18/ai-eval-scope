@@ -153,6 +153,8 @@ class LLMClientFactory:
             raise LLMError(f"不支持的 provider 类型: {config.provider}")
 ```
 
+> **v2.2 注记（2026-08-18）— 执行 Agent 的模型桥接（`build_chat_model`）**：ExecutionAgent 底座切换为 DeepAgents（Python）后（[03 执行引擎设计](./03执行引擎设计.md) v4.6），执行侧模型不经 `LLMClientFactory`，而由 `agent_eval/agent/model_bridge.py` 的 `build_chat_model(role)` 直接读同一份角色注册表（本地 `~/.agent_eval/llm.json` / 云端平台拉取，[06 §4.6](./06数据管理与配置规范.md)），按协议构造 **LangChain ChatModel**（`ChatOpenAI`——OpenAI 兼容 / `ChatAnthropic`——Anthropic 兼容，均带 `base_url`/`api_key`/`model`）传入 DeepAgents。即：**评估侧走 Provider 抽象（本章），执行侧走 LangChain 桥接，两者共用同一配置源**，双协议语义保持一致。
+
 ### 1.6 使用示例
 
 ```python
@@ -438,7 +440,7 @@ class JudgeOrchestrator:
 
 ### 2.7 降级机制
 
-当 LLM 服务不可用时（未配置 `llm_config.yaml`、Provider 连接失败等），LLM Judge 评估器自动降级为默认通过模式：
+当 LLM 服务不可用时（未配置 LLM（无 `llm.json` 且平台未配置）、Provider 连接失败等），LLM Judge 评估器自动降级为默认通过模式：
 
 ```python
 class BaseLLMJudgeEvaluator(BaseEvaluator):
@@ -472,7 +474,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
 
 | 场景 | 行为 |
 |------|------|
-| 未配置 LLM（`llm_config_path=None`） | 所有 LLM Judge 评估器返回 `score=0.7, PASS` |
+| 未配置 LLM（角色注册表为空） | 所有 LLM Judge 评估器返回 `score=0.7, PASS` |
 | Provider 连接失败 | 单个评估器降级，不阻塞管线 |
 | 模板解析失败 | 降级为 `score=0.7`，记录错误信息 |
 
@@ -513,18 +515,15 @@ class VisionEvaluator(BaseEvaluator):
 
 ### 4.1 配置级选择
 
-在 `pipeline.yaml` 的评估器配置中指定 `llm_provider`：
+评估器经规则集规则参数 `llm_role` 指定 LLM 角色（缺省 `text`），角色 → Provider/模型由三角色注册表解析（本地 `llm.json` / 平台拉取，见 [06 §4.6](./06数据管理与配置规范.md)）：
 
 ```yaml
-# 详见 06数据管理与配置规范
-evaluators:
-  - name: soft.teaching_logic
+# 规则集规则参数（packages/<scenario>/<ver>/rules/*.yaml）
+rules:
+  - id: VIS_001
+    evaluator: vision.quality
     params:
-      llm_provider: deepseek_judge       # 使用 DeepSeek 进行教学逻辑评估
-      template_id: pedagogical_logic
-  - name: vision.quality
-    params:
-      llm_provider: kimi_vision          # 使用 Kimi-2.6 进行视觉评估
+      llm_role: vision                   # 使用视觉角色进行视觉评估
 ```
 
 ### 4.2 运行时切换
@@ -552,11 +551,11 @@ result = judge.judge(
 ### 4.3 溯源链路
 
 ```
-pipeline.yaml (llm_provider: deepseek_judge)
+规则集 params.llm_role（缺省 text）→ resolve_llm_config 查三角色注册表
         ↓
-ProviderPool.get("deepseek_judge")
+ProviderPool.get(role) → 对应协议客户端
         ↓
-DeepSeekClient.chat() → LLMResponse(provider_name="deepseek_judge", model="deepseek-chat")
+Client.chat() → LLMResponse(provider_name=…, model=…)
         ↓
 JudgeOrchestrator → JudgeRecord(provider_name="deepseek_judge", model="deepseek-chat")
         ↓
@@ -795,5 +794,7 @@ sys.modules.setdefault("langfuse", MagicMock())
 | v1.0 | 2026-06-08 | 按架构层次重组，更新交叉引用 |
 | v1.1 | 2026-06-08 | 新增 ProviderPool 多模型管理、运行时切换、JudgeRecord 评审溯源、ConstraintResult 模型溯源字段 |
 | v1.2 | 2026-06-08 | 视觉评估从 PPTX 截图调整为 HTML 渲染截图；PPTX 评估标注为后续插件扩展 |
-| **v2.0** | **2026-06-12** | **§1.3 更新 Provider 实现现状（DeepSeekClient 覆盖 deepseek+openai；Anthropic 未实现）；§1.5 Factory 更新为实际代码；LLMResponse 新增 duration_ms 字段；JudgeRecord 新增 summary 字段；JudgeOrchestrator.judge() 签名更新为 keyword-only + 返回 tuple；新增 §2.7 降级机制；合并原 09 Langfuse 调用追踪设计文档到 §五** |
-| **v2.1** | **2026-07-13** | **对接 [13 配置管理设计](./13配置管理设计.md)**：`TemplateManager`（§2.3）演进为 `PromptStore` 抽象——`FilePromptStore`（从场景包 `prompts/` 加载）/ `DbPromptStore`（从 Web DB）/ `SnapshotPromptStore`（从 `RunConfigSnapshot`）；提示词模板增加 `scenario_id`/`package_id`/`namespace`/`variables` 字段；支持版本与标签（`production`/`staging`）。`JudgeOrchestrator` 通过 `PromptStore` 解析模板，不再直接读扁平 `assets/prompts/`。 |
+| **v2.0** | **2026-06-12** | **同步代码现状（Provider 实现清单 / Factory / judge 签名）；新增 §2.7 降级机制；合并原 09 Langfuse 调用追踪设计至 §五** |
+| **v2.1** | **2026-07-13** | **对接 [13 配置管理设计](./13配置管理设计.md)**：TemplateManager 演进为 PromptStore 抽象（File / Db / Snapshot 三实现），模板补 scenario / package / namespace / variables 字段与版本标签；JudgeOrchestrator 经 PromptStore 解析模板，不再读扁平 assets/prompts/ |
+| **v2.2** | **2026-08-18** | **§1.5 补执行 Agent 模型桥接注记（随 [03](./03执行引擎设计.md) v4.6）**：执行侧经 build_chat_model 构造 LangChain ChatModel（双协议），与评估侧 Provider 共用同一配置源 |
+| **v2.3** | **2026-08-25** | **LLM 配置双形态落地**（详见 [06 §4.6](./06数据管理与配置规范.md)）：移除 llm_config.yaml 与 `${VAR}` 解析，统一 resolve_llm_config()（本地 llm.json 优先、平台按角色拉取兜底）；providers 键=角色（text/vision/agent），Pool / 工厂 / 桥接零改动 |

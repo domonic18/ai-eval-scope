@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/dialog"
-import { SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../components/shared"
+import { DataTable, SectionCard, SectionCardContent, SectionCardHeader, SectionCardTitle } from "../components/shared"
 import { useCrumbs } from "../context/navigation"
 import { useToast } from "../hooks/useToast"
 import { Page, PageHead, StatusBadge } from "../components/shared"
@@ -62,6 +62,11 @@ interface OverviewData {
     passed: boolean
     failures: Array<{ name: string; reason: string; top_issues?: string[]; files?: string[] }>
   }>
+}
+
+/** 运行模式中文标签：eval_only=仅评估；agent=执行器执行+评估（run 产物）；pipeline=一体化流水线 */
+function modeLabel(mode: string): string {
+  return { eval_only: "仅评估", agent: "Agent 执行", pipeline: "流水线" }[mode] ?? mode
 }
 
 /** 从指标定义中提取大白话描述：优先 summary → explain.定义 → name */
@@ -150,7 +155,7 @@ export default function RunDetail() {
     <Page>
       <PageHead
         title={<span className="flex items-center gap-2 font-mono">运行 #{run.externalRunId} <StatusBadge status={run.status} /></span>}
-        sub={`${run.mode === "eval_only" ? "仅评估" : run.mode === "pipeline" ? "流水线" : run.mode} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
+        sub={`${modeLabel(run.mode)} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
         right={
           <div className="flex gap-2">
             {langfuseUrl && (
@@ -190,7 +195,7 @@ export default function RunDetail() {
         <Sep />
         <span className="inline-flex items-center gap-1.5">
           <span className="text-muted-foreground">评估模式</span>
-          <span className="font-medium">{run.mode === "eval_only" ? "仅评估" : run.mode === "pipeline" ? "流水线" : run.mode}</span>
+          <span className="font-medium">{modeLabel(run.mode)}</span>
         </span>
         <Sep />
         <span className="inline-flex items-center gap-1.5">
@@ -364,29 +369,51 @@ export default function RunDetail() {
             </>
           )}
 
-          {/* 查看详细评估结果 */}
+          {/* 样本明细表（全量、逐行进详情——适配多任务 run） */}
           <div className="border-t border-border pt-3">
-            <div className="flex flex-wrap gap-2">
-              {run.samples.slice(0, 5).map((s) => (
-                <Link
-                  key={s.id}
-                  to={`/run/${id}/sample/${s.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <FileText className="size-3.5 text-muted-foreground" />
-                  <span>查看详细评估</span>
-                  <ChevronRight className="size-3 text-muted-foreground" />
-                </Link>
-              ))}
-              {run.samples.length > 5 && (
-                <Link
-                  to={`/run/${id}/sample/${run.samples[5].id}`}
-                  className="inline-flex items-center gap-1 px-2 py-2 text-xs text-primary hover:underline"
-                >
-                  查看全部 {num(run.samples.length)} 个 →
-                </Link>
-              )}
-            </div>
+            <DataTable
+              rows={run.samples}
+              columns={[
+                {
+                  key: "externalSampleId",
+                  title: "样本",
+                  render: (s) => (
+                    <Link
+                      to={`/run/${id}/sample/${s.id}`}
+                      className="font-mono text-xs text-primary hover:underline"
+                    >
+                      {s.externalSampleId}
+                    </Link>
+                  ),
+                },
+                {
+                  key: "status",
+                  title: "状态",
+                  render: (s) => <StatusBadge status={s.status} />,
+                },
+                {
+                  key: "reward",
+                  title: "得分",
+                  render: (s) => <span className="font-mono text-xs">{num(s.reward)}</span>,
+                },
+                {
+                  key: "actions",
+                  title: "",
+                  render: (s) => (
+                    <Link
+                      to={`/run/${id}/sample/${s.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      <FileText className="size-3.5" />
+                      <span>详情</span>
+                      <ChevronRight className="size-3" />
+                    </Link>
+                  ),
+                },
+              ]}
+              rowKey={(s) => s.id}
+              empty="无样本"
+            />
           </div>
         </SectionCardContent>
       </SectionCard>

@@ -3,7 +3,7 @@
 import type { AuthSession, Membership, User } from "../types"
 
 const KEY = "agent_eval_session"
-const ORG_KEY = "agent_eval_org"
+export const ORG_KEY = "agent_eval_org"
 
 interface Stored {
   access_token: string

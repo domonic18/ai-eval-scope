@@ -7,6 +7,9 @@ from agent_eval.evaluation.evaluators.commonsense_evaluators import (  # noqa: F
     InfoAccuracyEvaluator,
     LogicalConsistencyEvaluator,
 )
+from agent_eval.evaluation.evaluators.content_completeness import (  # noqa: F401
+    ContentCompletenessEvaluator,
+)
 from agent_eval.evaluation.evaluators.format_evaluators import (  # noqa: F401
     HtmlValidityEvaluator,
     ResponseFormatEvaluator,
@@ -25,7 +28,7 @@ from agent_eval.evaluation.evaluators.quality_evaluators import (  # noqa: F401
     TeachingLogicEvaluator,
 )
 
-# 导入视觉评估器（opt-in，--enable-vision 时使用）
+# 导入视觉评估器（规则集声明视觉规则时使用，如 coursework-vision）
 from agent_eval.evaluation.evaluators.vision_evaluators import (  # noqa: F401
     VisionQualityEvaluator,
 )
@@ -36,6 +39,7 @@ __all__ = [
     # 格式评估器
     "ResponseFormatEvaluator",
     "HtmlValidityEvaluator",
+    "ContentCompletenessEvaluator",
     # 常识评估器
     "InfoAccuracyEvaluator",
     "ChronologicalOrderEvaluator",

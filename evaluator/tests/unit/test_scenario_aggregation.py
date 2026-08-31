@@ -100,6 +100,47 @@ def test_aggregator_exposes_per_stage_metrics() -> None:
     assert set(["reward", "soft", "pref"]).issubset(out.keys())
 
 
+def test_aggregator_gate_only_missing_quality() -> None:
+    """仅选门控（format + commonsense），质量阶段缺失时 reward 应为 1.0。
+
+    验证修复：stage 缺失时不计入分母，而非贡献 0 分占分母。
+    旧行为：(1 + 1 + 0 + 0) / 4 = 0.5（错误）
+    新行为：(1 + 1) / 2 = 1.0（正确）
+    """
+    # 构造只有 format 和 commonsense 的 SampleResult，quality 阶段完全缺失
+    sr = SampleResult(sample_id="gate-only", status=EvalStatus.PASS)
+    sr.stage_results = {
+        "format": _stage("format", EvalStatus.PASS, True),
+        "commonsense": _stage("commonsense", EvalStatus.PASS, True),
+        # quality 阶段故意不创建（None），模拟"仅选门控"场景
+    }
+
+    out = ScenarioScoreAggregator(COURSEWARE_DEFAULT_POLICY).aggregate(sr)
+
+    # 期望：只有门控参与，分母=2，reward=1.0
+    assert out["reward"] == 1.0
+    # soft/pref 不应出现在 stage_metrics 中（因未参与计算）
+    assert "soft" not in out
+    assert "pref" not in out
+
+
+def test_aggregator_gate_one_fail_missing_quality() -> None:
+    """门控部分失败，质量阶段缺失时 reward 应为 0.5。
+
+    format 通过（1.0）+ commonsense 失败（0.0），分母只计这两个 = 2.0。
+    """
+    sr = SampleResult(sample_id="gate-fail", status=EvalStatus.PASS)
+    sr.stage_results = {
+        "format": _stage("format", EvalStatus.PASS, True),
+        "commonsense": _stage("commonsense", EvalStatus.FAIL, False),
+    }
+
+    out = ScenarioScoreAggregator(COURSEWARE_DEFAULT_POLICY).aggregate(sr)
+
+    # (1.0 + 0.0) / 2 = 0.5
+    assert out["reward"] == 0.5
+
+
 def test_metrics_empty_results_returns_empty() -> None:
     new = ScenarioMetricsCalculator(COURSEWARE_DEFAULT_METRICS).compute([])
     assert new == {}
@@ -142,3 +183,43 @@ def test_safe_eval_rejects_dangerous(expr: str) -> None:
 def test_safe_eval_unknown_variable() -> None:
     with pytest.raises(ScenarioExpressionError):
         safe_eval("mean(nonexistent)", {"reward": [1.0]})
+
+
+def test_process_metrics_expressions_eval() -> None:
+    """过程指标表达式（Sprint 9 v6.0）：_SCALAR_FIELDS 暴露 agent_* 数组，mean 可求值。"""
+    from agent_eval.evaluation.scenario.metrics import ScenarioMetricsCalculator
+    from agent_eval.evaluation.scenario.models import MetricDefinition
+
+    defs = [
+        MetricDefinition(
+            id="chat:avg_turns", name="t", expression="mean(agent_turns)", unit="count"
+        ),
+        MetricDefinition(
+            id="chat:avg_tool_calls", name="c", expression="mean(agent_tool_calls)", unit="count"
+        ),
+        MetricDefinition(
+            id="chat:avg_exec_time", name="e", expression="mean(agent_exec_ms)", unit="ms"
+        ),
+    ]
+    results = [
+        SampleResult(
+            sample_id="s1",
+            status=EvalStatus.PASS,
+            stage_metrics={"reward": 0.8},
+            agent_turns=2,
+            agent_tool_calls=4,
+            agent_exec_ms=1000.0,
+        ),
+        SampleResult(
+            sample_id="s2",
+            status=EvalStatus.PASS,
+            stage_metrics={"reward": 0.6},
+            agent_turns=4,
+            agent_tool_calls=6,
+            agent_exec_ms=2000.0,
+        ),
+    ]
+    computed = ScenarioMetricsCalculator(defs).compute(results)
+    assert computed["chat:avg_turns"] == 3
+    assert computed["chat:avg_tool_calls"] == 5
+    assert computed["chat:avg_exec_time"] == 1500.0

@@ -46,7 +46,7 @@ function collectPackageFiles(packageDir: string): Record<string, string> {
       }
     }
   }
-  for (const sub of ["rules", "prompts", "datasets"]) {
+  for (const sub of ["rules", "prompts", "datasets", "task_sets", "sut_configs"]) {
     const d = join(packageDir, sub)
     if (existsSync(d)) walk(d)
   }
@@ -58,6 +58,8 @@ export interface ImportResult {
   ruleSets: number
   prompts: number
   datasets: number
+  taskSets: number
+  sutConfigs: number
 }
 
 /** 导入场景包资产到 DB（scenario/version/name 从 manifest 读取，任意场景通用）。 */
@@ -183,7 +185,47 @@ export async function importScenarioPackage(
     })
   })
 
-  return { scenarioId: SCENARIO_ID, ruleSets, prompts, datasets }
+  // 考卷与 SUT 接入（arch/16 §2.1 包内资产）：task_sets/ 按文件 stem、
+  // sut_configs/ 按 sut.name；与 rules 等同款 upsert 幂等
+  const taskSets = await importDir(packageDir, "task_sets", async (stem, content) => {
+    await prisma.taskSetAsset.upsert({
+      where: { scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: stem, version: VERSION } },
+      update: { labels, content: content as never, contentHash: hash(content) },
+      create: {
+        scenarioId: SCENARIO_ID,
+        packageId: SCENARIO_ID,
+        assetId: stem,
+        version: VERSION,
+        labels,
+        content: content as never,
+        contentHash: hash(content),
+        createdBy: "import-script",
+      },
+    })
+  })
+
+  const sutConfigs = await importDir(packageDir, "sut_configs", async (_stem, content) => {
+    const sut = content.sut as Record<string, unknown> | undefined
+    if (!sut || !sut.name) throw new Error(`sut_config 缺少 sut:/sut.name: ${JSON.stringify(_stem)}`)
+    await prisma.sutConfigAsset.upsert({
+      where: {
+        scenarioId_assetId_version: { scenarioId: SCENARIO_ID, assetId: String(sut.name), version: VERSION },
+      },
+      update: { labels, content: sut as never, contentHash: hash(sut) },
+      create: {
+        scenarioId: SCENARIO_ID,
+        packageId: SCENARIO_ID,
+        assetId: String(sut.name),
+        version: VERSION,
+        labels,
+        content: sut as never,
+        contentHash: hash(sut),
+        createdBy: "import-script",
+      },
+    })
+  })
+
+  return { scenarioId: SCENARIO_ID, ruleSets, prompts, datasets, taskSets, sutConfigs }
 }
 
 /** 导入一个子目录的 yaml 资产；目录不存在则跳过（返回 0）。 */

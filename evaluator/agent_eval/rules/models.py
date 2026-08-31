@@ -68,7 +68,7 @@ class RuleTemplate(BaseModel):
     )
     format_type: str | None = Field(
         default=None,
-        description="格式检查子类型：extension / json_validity / html_validity / markdown",
+        description="格式检查子类型：extension / json_validity / html_validity / markdown / content_completeness",
     )
     extensions: list[str] | None = Field(
         default=None, description="format_type=extension 时允许的后缀列表"
@@ -144,7 +144,7 @@ class Rule(BaseModel):
     )
     format_type: str | None = Field(
         default=None,
-        description="格式检查子类型：extension / json_validity / html_validity / markdown",
+        description="格式检查子类型：extension / json_validity / html_validity / markdown / content_completeness",
     )
     extensions: list[str] | None = Field(
         default=None, description="format_type=extension 时允许的后缀列表"

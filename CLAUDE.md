@@ -19,6 +19,7 @@ agent-eval-system/
 ## 文档索引（按需阅读，勿全量加载）
 
 - 整体架构：[`docs/arch/01整体架构设计.md`](docs/arch/01整体架构设计.md)
+- CLI 使用教程：[`docs/guide/CLI使用教程.md`](docs/guide/CLI使用教程.md)（命令总览 / LLM Key 配置 / 课件与 Agent 评测实战）
 - 评估引擎：[`docs/arch/04评估引擎设计.md`](docs/arch/04评估引擎设计.md)
 - 数据管理与配置：[`docs/arch/06数据管理与配置规范.md`](docs/arch/06数据管理与配置规范.md)
 - Web 可观测平台：[`docs/arch/09Web可观测平台架构设计.md`](docs/arch/09Web可观测平台架构设计.md)

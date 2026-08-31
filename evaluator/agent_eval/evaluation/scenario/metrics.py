@@ -21,6 +21,11 @@ _SCALAR_FIELDS = (
     "total_duration_ms",
     "llm_calls",
     "token_usage",
+    # 执行链路过程指标（Sprint 9 v6.0）：orchestrator 从包 trace/metrics 注入，
+    # 场景包 metric_definitions 可用 mean(agent_turns) 等表达式声明过程指标
+    "agent_turns",
+    "agent_tool_calls",
+    "agent_exec_ms",
 )
 
 
@@ -60,10 +65,26 @@ class ScenarioMetricsCalculator:
 
         # 2. 场景化样本指标（stage_metrics）每个 key → 同名数组变量
         #    key = StageWeight.id（soft/pref）+ reward；expression 直接引用（如 mean(soft)）
+        #    同时预填 metric definitions 表达式中引用的变量，即使该 stage 未参与也填入空数组（mean([])=0）。
         metric_keys: set[str] = set()
         for r in results:
             metric_keys.update(r.stage_metrics.keys())
+        # 从 expressions 提取变量名：支持 mean(soft)、gated_mean(reward, format_gate) 等形式
+        import re
+
+        for d in self.definitions:
+            for match in re.finditer(
+                r"(?:mean|gated_mean|count|sum|min|max|abs|round)\s*\(([^)]+)\)", d.expression
+            ):
+                for v in match.group(1).split(","):
+                    v = v.strip().split(".")[0]
+                    if v and v not in ("total", "len"):
+                        metric_keys.add(v)
         for key in metric_keys:
+            # 标量字段（含过程指标 agent_*）已在第 1 步注入，不被 stage_metrics
+            # 同名键覆盖（否则表达式引用过程指标会取到全 0）
+            if key in ctx:
+                continue
             ctx[key] = [r.stage_metrics.get(key, 0.0) for r in results]
 
         # 3. stage gate/score 数组：policy 声明的 stage ∪ results 出现的 stage（缺失填默认）

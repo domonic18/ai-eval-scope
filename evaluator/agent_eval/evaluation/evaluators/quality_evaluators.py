@@ -241,7 +241,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 context,
                 orchestrator,
                 evidence_dir,
-                self.params.get("llm_provider"),
+                self.params.get("llm_role"),
                 start,
             )
 
@@ -270,7 +270,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 text=text,
                 context=context,
                 evidence_dir=evidence_dir,
-                provider_name=self.params.get("llm_provider"),
+                provider_name=self.params.get("llm_role"),
             )
         except LLMQuotaExceededError as e:
             # 额度耗尽：设置熔断标志，同 sample 后续 LLM 评估器直接跳过

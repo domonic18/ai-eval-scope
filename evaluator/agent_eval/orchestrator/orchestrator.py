@@ -60,6 +60,14 @@ class EvalResult:
     scenario_config: Any = None
     # 评估摘要报告（LLM 生成的人话总结，LLM 不可用时为 None）
     summary_report: dict[str, Any] | None = None
+    # 运行模式（上报语义）：eval_only=仅评估；agent=执行器执行 + 评估（run 产物）；
+    # pipeline=一体化流水线（Sprint 9）。由 CLI 按包来源标注，透传至 sink → run event → 平台
+    mode: str = "eval_only"
+    # SUT 身份（W6）：完整 pipeline 路径由 cli/_stages 回填；eval-only / 调试台路径无人回填。
+    # 必须是声明字段——sink 拼 run event 无条件读取，缺失会在 flush 时 AttributeError
+    # （回归：'EvalResult' object has no attribute 'sut_version'）
+    sut_name: str = ""
+    sut_version: str = ""
 
 
 class Orchestrator:
@@ -89,7 +97,6 @@ class Orchestrator:
         *,
         judge_orchestrator: Any | None = None,
         run_workspace: RunWorkspace | None = None,
-        llm_provider: str | None = None,
         project: str | None = None,
         with_vision: bool = False,
         screenshot_renderer: Any | None = None,
@@ -97,6 +104,8 @@ class Orchestrator:
         llm_signature: str = "",
         no_cache: bool = False,
         scenario_package_dir: Any = None,
+        mode: str = "eval_only",
+        manifest_extra: dict[str, Any] | None = None,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -105,7 +114,6 @@ class Orchestrator:
             rule_set: 规则集（RuleSet 实例）。
             judge_orchestrator: LLM Judge 编排器（可选，无则评估器降级）。
             run_workspace: 运行工作空间（可选，自动创建）。
-            llm_provider: LLM Provider 名称覆盖（可选）。
             project: 项目 ID（可选，用于 workspace index）。
             with_vision: 是否启用视觉评估器 vision.quality（默认 False）。
                 视觉为 opt-in：需同时提供 screenshot_renderer 与支持视觉的 Provider。
@@ -144,13 +152,15 @@ class Orchestrator:
 
         run_workspace.write_run_manifest(
             {
-                "mode": "eval_only",
+                "mode": mode,
                 "package_dir": str(package_dir),
                 "project": project,
+                # pipeline 一体化：合并执行阶段的绑定字段（package_ref/sut/…），单次原子写
+                **(manifest_extra or {}),
             }
         )
 
-        logger.info("开始 eval-only 评估", run_id=run_id, package_dir=str(package_dir))
+        logger.info("开始评估", run_id=run_id, package_dir=str(package_dir), mode=mode)
 
         # 2. 为本次评测运行创建 Langfuse Trace
         # 同一运行内的所有 LLM/视觉 LLM 调用都归到这个 trace 下；
@@ -163,7 +173,7 @@ class Orchestrator:
                 name=f"eval:{run_id}",
                 metadata={
                     "run_id": run_id,
-                    "mode": "eval_only",
+                    "mode": mode,
                     "package_dir": str(package_dir),
                     "project": project,
                     "with_vision": with_vision,
@@ -206,8 +216,6 @@ class Orchestrator:
         extra_context: dict[str, Any] = {}
         if judge_orchestrator is not None:
             extra_context["judge_orchestrator"] = judge_orchestrator
-        if llm_provider is not None:
-            extra_context["llm_provider"] = llm_provider
         if screenshot_renderer is not None:
             extra_context["screenshot_renderer"] = screenshot_renderer
         if trace_id is not None:
@@ -231,6 +239,9 @@ class Orchestrator:
             context = self.pipeline_engine._build_context(pkg, rule_set, index=i)
             context.update(extra_context)
 
+            # W8：执行包内容指纹进缓存键（包内容变 → 缓存自动失效）
+            context["content_hash"] = pkg.manifest.content_hash or ""
+
             # 设置 evidence_dir
             task_id = context.get("sample_id", f"task_{i:03d}")
             result_dir = run_workspace.get_result_dir(task_id)
@@ -238,6 +249,22 @@ class Orchestrator:
             context["evidence_dir"] = evidence_dir
 
             sample_result = self.pipeline_engine.evaluate_sample(pkg, context)
+
+            # 过程指标注入（Sprint 9 v6.0）：执行链路的轮次/工具调用/耗时来自包内
+            # trace 与 metrics（缓存命中路径同样经过此处；缺失时保持 0）。
+            # trace 兼容两种形态：Agent 骨架（response.turns/tool_calls）与
+            # LLM write_package 直写的 SUT-run 形态（顶层 turns_used）。
+            _trace = pkg.trace if isinstance(pkg.trace, dict) else {}
+            _resp = _trace.get("response") if isinstance(_trace.get("response"), dict) else {}
+            sample_result.agent_turns = int(
+                _resp.get("turns") or _trace.get("turns_used") or _resp.get("messages") or 0
+            )
+            sample_result.agent_tool_calls = int(_resp.get("tool_calls") or 0)
+            _pkg_metrics = pkg.metrics if isinstance(pkg.metrics, dict) else {}
+            sample_result.agent_exec_ms = float(
+                _pkg_metrics.get("total_duration_ms") or _resp.get("duration_ms") or 0.0
+            )
+
             sample_results.append(sample_result)
 
             # 8. 转为 EvaluationResult 并保存
@@ -281,12 +308,13 @@ class Orchestrator:
         # 11. 生成评估摘要报告（LLM 人话总结，LLM 不可用时跳过）
         summary_report: dict[str, Any] | None = None
         try:
-            from agent_eval.config.loader import ConfigLoader
-            from agent_eval.config.paths import paths
+            from agent_eval.config.llm_resolution import resolve_llm_config
 
-            llm_cfg_path = paths.configs_dir / "llm_config.yaml"
-            if llm_cfg_path.exists():
-                llm_config = ConfigLoader.load_llm_config(llm_cfg_path)
+            try:
+                llm_config = resolve_llm_config()
+            except Exception:
+                llm_config = None
+            if llm_config is not None:
                 from agent_eval.llm.pool import ProviderPool
 
                 pool = ProviderPool(llm_config)
@@ -329,6 +357,7 @@ class Orchestrator:
             run_workspace,
             metrics_report,
             project,
+            mode,
         )
 
         logger.info(
@@ -349,6 +378,7 @@ class Orchestrator:
             rule_set=rule_set,
             scenario_config=scenario_cfg,
             summary_report=summary_report,
+            mode=mode,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:
@@ -476,6 +506,7 @@ class Orchestrator:
         run_ws: RunWorkspace,
         metrics_report: MetricsReport,
         project: str | None,
+        mode: str = "eval_only",
     ) -> None:
         """评估完成后更新 workspace 索引，供 Web Portal 读取。"""
         workspace.ensure_dirs()
@@ -493,7 +524,7 @@ class Orchestrator:
 
             run_entry: dict[str, Any] = {
                 "run_id": run_ws.run_id,
-                "mode": "eval_only",
+                "mode": mode,
                 "total_samples": metrics_report.total_samples,
                 "metrics": {
                     **metrics_report.metrics,
@@ -517,14 +548,12 @@ class Orchestrator:
 
 def _init_judge_orchestrator(
     llm_config: Any | None = None,
-    llm_provider: str | None = None,
     prompts_dir: Any = None,
 ) -> Any | None:
     """初始化 JudgeOrchestrator。
 
     Args:
         llm_config: LLMConfig 实例（可选）。
-        llm_provider: Provider 名称覆盖（可选）。
         prompts_dir: 场景包的 prompts/ 目录（code→code_correctness 等）；缺省回退
             内置 courseware prompts（paths.prompts_dir）。
 
@@ -572,9 +601,7 @@ def eval_packages(
     package_dir: str | Path,
     rule_set_path: str | Path | None = None,
     *,
-    llm_config_path: str | Path | None = None,
     output_dir: str | Path | None = None,
-    llm_provider: str | None = None,
     project: str | None = None,
 ) -> EvalResult:
     """SDK eval 接口 — Python 可直接调用。
@@ -590,9 +617,7 @@ def eval_packages(
     Args:
         package_dir: ExecutionPackage 目录路径。
         rule_set_path: 规则集 YAML 文件路径（可选）。
-        llm_config_path: LLM 配置 YAML 文件路径（可选）。
         output_dir: 输出目录（可选，默认 ./workspace）。
-        llm_provider: LLM Provider 名称覆盖（可选）。
         project: 项目 ID（可选）。
 
     Returns:
@@ -615,15 +640,18 @@ def eval_packages(
         if (_cand / "metrics" / "policy.yaml").exists():
             scenario_package_dir = _cand
 
-    # 加载 LLM 配置（可选）
+    # 解析 LLM 配置（可选；本地 llm.json → 平台拉取，见 arch/06 §4.6）
     llm_config = None
-    if llm_config_path:
-        llm_config = ConfigLoader.load_llm_config(llm_config_path)
+    try:
+        from agent_eval.config.llm_resolution import resolve_llm_config
+
+        llm_config = resolve_llm_config()
+    except Exception:
+        llm_config = None
 
     # 初始化 JudgeOrchestrator（可选）—— 模板取自场景包 prompts/（code→code_correctness）
     judge_orch = _init_judge_orchestrator(
         llm_config,
-        llm_provider,
         prompts_dir=scenario_package_dir / "prompts" if scenario_package_dir else None,
     )
 
@@ -651,7 +679,6 @@ def eval_packages(
             Path(package_dir),
             rule_set,
             judge_orchestrator=judge_orch,
-            llm_provider=llm_provider,
             project=project,
             with_vision=want_vision,
             screenshot_renderer=renderer,

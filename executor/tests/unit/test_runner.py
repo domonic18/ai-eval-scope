@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from cryptography.exceptions import InvalidTag
 
 from eval_executor.executor import runner as runner_mod
 from eval_executor.executor.runner import run_job
@@ -169,6 +170,13 @@ def test_resolve_builtin_package_by_ref(monkeypatch: pytest.MonkeyPatch) -> None
     assert path.endswith("coursework-quality.yaml")
 
 
+def test_resolve_default_rule_set_from_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
+    """未指定 rule_set_id → 取包清单 default_rule_set（courseware=coursework-vision）。"""
+    monkeypatch.delenv("AGENT_EVAL_REGISTRY_URL", raising=False)
+    path = runner_mod._resolve_rule_set_path(_job(rule_set_id=""))
+    assert path.endswith("coursework-vision.yaml")
+
+
 def test_resolve_unknown_package_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     """未知 package_ref（无远端配置）→ 解析失败抛错，而非跑错规则集。"""
     from agent_eval.core.exceptions import ScenarioPackageNotFoundError
@@ -201,3 +209,128 @@ def test_format_only_path_for_smoke() -> None:
 
     assert format_only_path().name == "format_only.yaml"
 
+
+# ── refresh_input_url：领取后重签输入下载 URL（B2b）─────────────────────
+
+
+class _FakeResp:
+    def __init__(self, status_code: int, payload: dict[str, object]) -> None:
+        self.status_code = status_code
+        self._payload = payload
+
+    def json(self) -> dict[str, object]:
+        return self._payload
+
+
+def _patch_http(
+    monkeypatch: pytest.MonkeyPatch, resp: _FakeResp | None
+) -> tuple[MagicMock, MagicMock]:
+    """mock httpx.AsyncClient：返回 (client, async_context_manager)。
+
+    runner.refresh_input_url 在函数体内 ``import httpx``，patch 全局 httpx 模块即可命中。
+    resp=None 时构造 AsyncClient 即抛异常（模拟网络故障）。
+    """
+    import httpx
+
+    client = MagicMock()
+    client.get = AsyncMock(return_value=resp)  # type: ignore[arg-type]
+    async_cm = MagicMock()
+    async_cm.__aenter__ = AsyncMock(return_value=client)
+    async_cm.__aexit__ = AsyncMock(return_value=None)
+    if resp is None:
+        monkeypatch.setattr(
+            httpx, "AsyncClient", MagicMock(side_effect=RuntimeError("connect failed"))
+        )
+    else:
+        monkeypatch.setattr(httpx, "AsyncClient", MagicMock(return_value=async_cm))
+    return client, async_cm
+
+
+def _patch_refresh_env(
+    monkeypatch: pytest.MonkeyPatch,
+    token: str | None = "eval-token",
+    host: str = "http://web:9000",
+) -> None:
+    monkeypatch.setattr(runner_mod, "_resolve_submit_token", AsyncMock(return_value=token))
+    cfg = MagicMock()
+    cfg.host = host
+    monkeypatch.setattr(runner_mod, "load_config", MagicMock(return_value=cfg))
+
+
+async def test_refresh_input_url_returns_fresh_url(
+    sample_job: EvalJob, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """200 + url → 返回新 URL，且以提交者 token 打 web 重签端点。"""
+    _patch_refresh_env(monkeypatch)
+    client, _ = _patch_http(monkeypatch, _FakeResp(200, {"url": "http://minio:9000/fresh?sig=1"}))
+
+    url = await runner_mod.refresh_input_url(sample_job)
+
+    assert url == "http://minio:9000/fresh?sig=1"
+    client.get.assert_awaited_once()
+    call_url = client.get.call_args.args[0]
+    assert call_url == f"http://web:9000/api/v1/jobs/{sample_job.job_id}/input-url"
+    assert client.get.call_args.kwargs["headers"] == {"Authorization": "Bearer eval-token"}
+
+
+async def test_refresh_input_url_none_on_bad_status(
+    sample_job: EvalJob, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """非 200（如 404 / 403）→ None，调用方回退 job 上的原 URL。"""
+    _patch_refresh_env(monkeypatch)
+    _patch_http(monkeypatch, _FakeResp(404, {}))
+
+    assert await runner_mod.refresh_input_url(sample_job) is None
+
+
+async def test_refresh_input_url_none_on_empty_url(
+    sample_job: EvalJob, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """200 但 payload 无 url / 非 str → None。"""
+    _patch_refresh_env(monkeypatch)
+    _patch_http(monkeypatch, _FakeResp(200, {"url": ""}))
+
+    assert await runner_mod.refresh_input_url(sample_job) is None
+
+
+async def test_refresh_input_url_none_on_network_error(
+    sample_job: EvalJob, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """网络异常 → None（不向上抛，不阻断任务）。"""
+    _patch_refresh_env(monkeypatch)
+    _patch_http(monkeypatch, None)
+
+    assert await runner_mod.refresh_input_url(sample_job) is None
+
+
+async def test_refresh_input_url_none_without_token(
+    sample_job: EvalJob, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """提交者 Key 不可用（token=None）→ None，且不发起 HTTP 请求。"""
+    _patch_refresh_env(monkeypatch, token=None)
+    client, _ = _patch_http(monkeypatch, _FakeResp(200, {"url": "http://x"}))
+
+    assert await runner_mod.refresh_input_url(sample_job) is None
+    client.get.assert_not_awaited()
+
+
+async def test_resolve_submit_token_logs_exc_type_on_decrypt_failure(
+    sample_job: EvalJob,
+    fake_sessionmaker: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """解密失败须带 error_type——InvalidTag（密钥不匹配）的 str() 为空串，只打 error= 无从定位。"""
+    fake_key = MagicMock(revoked_at=None, token_encrypted="v1:iv:ct:tag")
+    monkeypatch.setattr(runner_mod, "find_api_key_by_id", AsyncMock(return_value=fake_key))
+    monkeypatch.setattr(runner_mod, "decrypt_token", MagicMock(side_effect=InvalidTag()))
+    # mock LOG 而非 capture_logs：conftest setup_logging(ERROR) 的过滤型 logger 会丢 warning 事件
+    mock_log = MagicMock()
+    monkeypatch.setattr(runner_mod, "LOG", mock_log)
+
+    assert await runner_mod._resolve_submit_token(sample_job) is None
+
+    mock_log.warning.assert_called_once()
+    assert mock_log.warning.call_args.args[0] == "job.flush.decrypt_failed"
+    kwargs = mock_log.warning.call_args.kwargs
+    assert kwargs["error_type"] == "InvalidTag"
+    assert kwargs["error"] == ""

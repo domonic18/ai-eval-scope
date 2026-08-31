@@ -9,6 +9,7 @@
  */
 import type { LlmModel } from "@prisma/client"
 import { decryptToken } from "../infra/crypto"
+import { getLogger } from "../infra/logger"
 import { llmModelRepository } from "../repositories/llm-model.repository"
 import { PlatformError } from "../middleware/errorHandler"
 
@@ -189,46 +190,33 @@ class LlmClientService {
     }
   }
 
-  /** 导出 llm_config.yaml 文本（key 用 ${ENV_VAR} 占位），供 evaluator 同步。 */
-  async exportYaml(): Promise<string> {
-    const rows = await (await import("../infra/prisma")).getPrisma().llmModel.findMany({
-      where: { isActive: true },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-    })
-    if (rows.length === 0) throw new PlatformError("无可用模型", { status: 404, code: "LLM_NONE" })
-    const def = rows.find((r) => r.isDefault) ?? rows[0]
-    const envHint: string[] = []
-    const providers = rows
-      .map((r) => {
-        const env = `${r.name.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_API_KEY`
-        envHint.push(`${env}=`)
-        const extra = (r.extra as Record<string, unknown>) ?? {}
-        const lines = [
-          `      provider: ${r.provider === "openai" ? "openai" : "anthropic"}`,
-          `      model: ${r.modelName}`,
-          `      api_key: \${${env}}`,
-          r.baseUrl ? `      base_url: ${r.baseUrl}` : null,
-          typeof extra.max_tokens === "number" ? `      max_tokens: ${extra.max_tokens}` : null,
-          typeof extra.temperature === "number" ? `      temperature: ${extra.temperature}` : null,
-        ]
-          .filter(Boolean)
-          .join("\n")
-        return `    ${slug(r.name)}:\n${lines}`
-      })
-      .join("\n")
-    return `# 由 Web 后台导出 — 覆盖 evaluator/agent_eval/assets/configs/llm_config.yaml
-# 需在 evaluator/.env 配置以下变量：
-# ${envHint.join("\n# ")}
-llm:
-  default: ${slug(def.name)}
-  providers:
-${providers}
-`
+  /**
+   * 执行面角色配置拉取（LLM③，arch/16 §6.2-四）：executor 经 API Key 获取
+   * 每角色（text|vision|agent）的解密配置。每角色取 isDefault 优先/最新一行；
+   * 审计打点（角色与 actor，不含密钥）；api_key 仅在鉴权后的 HTTPS 响应中出现。
+   */
+  async resolveForExecutor(actor: string): Promise<{ roles: Record<string, Record<string, unknown>> }> {
+    const rows = await llmModelRepository.listActiveRaw()
+    const byRole = new Map<string, LlmModel>()
+    for (const row of rows) {
+      if (!byRole.has(row.role)) byRole.set(row.role, row)
+    }
+    const roles: Record<string, Record<string, unknown>> = {}
+    for (const [role, m] of byRole) {
+      const extra = (m.extra as Record<string, unknown>) ?? {}
+      roles[role] = {
+        provider: m.provider,
+        model: m.modelName,
+        api_key: resolveKey(m),
+        ...(m.baseUrl ? { base_url: m.baseUrl } : {}),
+        ...(typeof extra.max_tokens === "number" ? { max_tokens: extra.max_tokens } : {}),
+        ...(typeof extra.temperature === "number" ? { temperature: extra.temperature } : {}),
+        ...(typeof extra.seed === "number" ? { seed: extra.seed } : {}),
+      }
+    }
+    getLogger().info({ roles: Object.keys(roles), actor }, "[llm-config] executor pull")
+    return { roles }
   }
-}
-
-function slug(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "provider"
 }
 
 export const llmClientService = new LlmClientService()

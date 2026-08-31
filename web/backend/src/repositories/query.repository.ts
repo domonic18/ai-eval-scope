@@ -259,7 +259,9 @@ class QueryRepository extends BaseRepository {
           orderBy: { externalSampleId: "asc" },
           include: {
             constraintResults: {
-              where: { passed: false },
+              // 速览只收「未通过」的约束：skip（如「任务未声明 expected.answer，跳过」）
+              // 非问题——详情页已按灰色中性展示，此处排除以保持展示策略一致
+              where: { passed: false, NOT: { status: "skip" } },
               select: { name: true, reason: true, tier: true, details: true, moduleResults: true },
               orderBy: [{ tier: "asc" }, { name: "asc" }],
             },

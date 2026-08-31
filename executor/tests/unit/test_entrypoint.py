@@ -54,6 +54,7 @@ async def test_run_single_job_marks_running_then_runs(
 
     monkeypatch.setattr(ep, "mark_running", AsyncMock(return_value=True))
     monkeypatch.setattr(ep, "get_job", AsyncMock(return_value=job))
+    monkeypatch.setattr(ep, "refresh_input_url", AsyncMock(return_value="http://fresh"))
     monkeypatch.setattr(ep, "load_input", AsyncMock())
     monkeypatch.setattr(ep, "run_job", AsyncMock())
 
@@ -62,7 +63,33 @@ async def test_run_single_job_marks_running_then_runs(
     ep.mark_running.assert_awaited_once_with(ANY, "j1")
     ep.get_job.assert_awaited_once()
     ep.load_input.assert_awaited_once()
+    # 领取即重签：优先用刷新后的 URL（事件里的 URL 可能已过期）
+    assert ep.load_input.call_args.args[0] == "http://fresh"
     ep.run_job.assert_awaited_once()
+
+
+async def test_run_single_job_falls_back_to_event_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """刷新失败（None）→ 回退事件里的 URL，再回退 job 记录里的 URL。"""
+    _patch_sessionmaker(monkeypatch)
+    job = MagicMock()
+    job.job_id = "j1"
+    job.input_object_key = "k"
+    job.input_presigned_url = "http://from-job"
+
+    monkeypatch.setattr(ep, "mark_running", AsyncMock(return_value=True))
+    monkeypatch.setattr(ep, "get_job", AsyncMock(return_value=job))
+    monkeypatch.setattr(ep, "refresh_input_url", AsyncMock(return_value=None))
+    monkeypatch.setattr(ep, "load_input", AsyncMock())
+    monkeypatch.setattr(ep, "run_job", AsyncMock())
+
+    await ep._run_single_job({"job_id": "j1", "input_presigned_url": "http://from-event"})
+
+    assert ep.load_input.call_args.args[0] == "http://from-event"
+
+    await ep._run_single_job({"job_id": "j1"})
+    assert ep.load_input.call_args.args[0] == "http://from-job"
 
 
 async def test_run_single_job_marks_failed_when_input_load_fails(
@@ -76,6 +103,7 @@ async def test_run_single_job_marks_failed_when_input_load_fails(
 
     monkeypatch.setattr(ep, "mark_running", AsyncMock(return_value=True))
     monkeypatch.setattr(ep, "get_job", AsyncMock(return_value=job))
+    monkeypatch.setattr(ep, "refresh_input_url", AsyncMock(return_value=None))
     monkeypatch.setattr(ep, "load_input", AsyncMock(side_effect=RuntimeError("net")))
     monkeypatch.setattr(ep, "mark_failed", AsyncMock())
     monkeypatch.setattr(ep, "run_job", AsyncMock())

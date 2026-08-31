@@ -105,6 +105,28 @@ class TestEvalOnly:
         assert len(result.results) >= 1
         assert result.run_workspace is not None
 
+    def test_eval_only_manifest_extra_merges(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """manifest_extra 合并进运行清单（pipeline 绑定字段 + mode 单次原子写）。"""
+        import json
+
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(
+            golden_package,
+            mode="pipeline",
+            manifest_extra={"package_ref": "chat/chat:1.0.0", "sut": {"name": "sasan-agent"}},
+        )
+        manifest = json.loads(
+            (result.run_workspace.root / "run_manifest.json").read_text(encoding="utf-8")
+        )
+        assert manifest["mode"] == "pipeline"
+        assert manifest["package_ref"] == "chat/chat:1.0.0"
+        assert manifest["sut"]["name"] == "sasan-agent"
+        assert manifest["package_dir"]  # 默认键保留（extras 覆盖，不整体替换）
+
     def test_eval_only_generates_result_files(
         self,
         golden_package: Path,
@@ -129,6 +151,42 @@ class TestEvalOnly:
         assert (result_dir / "report.md").exists()
         assert (result_dir / "report.json").exists()
         assert (result_dir / "evidence").is_dir()
+
+    def test_eval_only_injects_process_metrics(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """过程指标注入：包内 trace/metrics → SampleResult；缺失时兜底 0。"""
+        import json
+
+        # golden 包写入执行链路 trace 与 metrics（模拟 run 产物）
+        (golden_package / "trace.json").write_text(
+            json.dumps(
+                {"response": {"messages": 5, "turns": 2, "tool_calls": 4, "duration_ms": 800.0}}
+            ),
+            encoding="utf-8",
+        )
+        (golden_package / "metrics.json").write_text(
+            json.dumps({"total_duration_ms": 950.0}), encoding="utf-8"
+        )
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package)
+        assert result.samples[0].agent_turns == 2
+        assert result.samples[0].agent_tool_calls == 4
+        assert result.samples[0].agent_exec_ms == 950.0  # metrics 为权威（trace.duration 同源）
+
+    def test_eval_only_process_metrics_default_zero(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """eval_only 外部包无 trace/metrics → 过程指标保持 0 不崩。"""
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package)
+        assert result.samples[0].agent_turns == 0
+        assert result.samples[0].agent_tool_calls == 0
+        assert result.samples[0].agent_exec_ms == 0.0
 
     def test_eval_only_generates_summary(
         self,

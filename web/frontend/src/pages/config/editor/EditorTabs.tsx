@@ -10,6 +10,8 @@ const KIND_SHORT: Record<string, string> = {
   "rule-sets": "规则",
   prompts: "提示词",
   datasets: "数据",
+  "task-sets": "考卷",
+  "sut-configs": "SUT",
 }
 
 export function EditorTabs({
