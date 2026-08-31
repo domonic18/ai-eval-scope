@@ -78,9 +78,9 @@ def main(session) -> None:  # noqa: ANN001
         rprint("[dim]已取消。[/dim]")
         return
 
-    from agent_eval.cli import main as cli_main
+    from agent_eval.cli.main import execute_pipeline, execute_run
 
     if mode.startswith("pipeline"):
-        cli_main.pipeline(package=ref, task_set=task_set, sut_name=sut, rule_set=rule_set)
+        execute_pipeline(package=ref, task_set=task_set, sut_name=sut, rule_set=rule_set)
     else:
-        cli_main.run(package=ref, task_set=task_set, sut_name=sut)
+        execute_run(package=ref, task_set=task_set, sut_name=sut)

@@ -221,6 +221,38 @@ def eval(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """对 ExecutionPackage 执行评估。"""
+    execute_eval(
+        package_dir=package_dir,
+        rule_set=rule_set,
+        package=package,
+        output_dir=output_dir,
+        eval_mode=eval_mode,
+        project=project,
+        upload=upload,
+        on_missing=on_missing,
+        no_cache=no_cache,
+        verbose=verbose,
+    )
+
+
+def execute_eval(
+    package_dir: str,
+    rule_set: str | None = None,
+    package: str | None = None,
+    output_dir: str | None = None,
+    eval_mode: str = "pipeline",
+    project: str | None = None,
+    upload: bool | None = None,
+    on_missing: str = "skip",
+    no_cache: bool = False,
+    verbose: bool = False,
+) -> None:
+    """评估动作（纯函数，向导/工作台复用）。
+
+    直接以 Python 调用命令函数时，typer.Option 默认值是 OptionInfo 元对象
+    （仅经 CLI 分发才注入真实值），曾致 ``Path(OptionInfo)`` TypeError——
+    故命令体只留薄壳，业务下沉本动作（arch/15 §2.2 组织约定 2）。
+    """
     from agent_eval.core.logging import setup_logging
 
     setup_logging(level="DEBUG" if verbose else "INFO")
@@ -311,6 +343,31 @@ def run(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """执行被测 Agent（ExecutionAgent/DeepAgents 驱动），生成 ExecutionPackage。"""
+    execute_run(
+        package=package,
+        task_set=task_set,
+        task_select=task_select,
+        sut_config=sut_config,
+        sut_name=sut_name,
+        output_dir=output_dir,
+        llm_role=llm_role,
+        max_turns=max_turns,
+        verbose=verbose,
+    )
+
+
+def execute_run(
+    package: str | None = None,
+    task_set: str | None = None,
+    task_select: str | None = None,
+    sut_config: str | None = None,
+    sut_name: str | None = None,
+    output_dir: str | None = None,
+    llm_role: str | None = None,
+    max_turns: int | None = None,
+    verbose: bool = False,
+) -> None:
+    """执行动作（纯函数，向导/工作台复用；理由见 execute_eval docstring）。"""
     from pathlib import Path
 
     from agent_eval.cli._stages import execute_stage, resolve_run_inputs
@@ -425,6 +482,41 @@ def pipeline(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """一体化流水线：执行被测 Agent → 评估 → 报告/上传（单 run_id 贯通，Sprint 9）。"""
+    execute_pipeline(
+        package=package,
+        task_set=task_set,
+        task=task,
+        sut_name=sut_name,
+        sut_config=sut_config,
+        rule_set=rule_set,
+        output_dir=output_dir,
+        llm_role=llm_role,
+        max_turns=max_turns,
+        project=project,
+        upload=upload,
+        on_missing=on_missing,
+        no_cache=no_cache,
+        verbose=verbose,
+    )
+
+
+def execute_pipeline(
+    package: str | None = None,
+    task_set: str | None = None,
+    task: str | None = None,
+    sut_name: str | None = None,
+    sut_config: str | None = None,
+    rule_set: str | None = None,
+    output_dir: str | None = None,
+    llm_role: str | None = None,
+    max_turns: int | None = None,
+    project: str | None = None,
+    upload: bool | None = None,
+    on_missing: str = "skip",
+    no_cache: bool = False,
+    verbose: bool = False,
+) -> None:
+    """流水线动作（纯函数，向导/工作台复用；理由见 execute_eval docstring）。"""
     from agent_eval.cli._stages import (
         build_judge_context,
         evaluate_stage,

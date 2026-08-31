@@ -176,3 +176,106 @@ class TestSession:
         # start 命令入口可被 invoke（域直达失败路径）
         result = runner.invoke(app, ["start", "--domain", "nope"])
         assert result.exit_code == 2
+
+
+# ── 回归：向导直调动作不得泄漏 typer.OptionInfo（workbench 执行域崩溃修复） ──
+
+
+class _WizardStubs:
+    """monkeypatch _stages 各阶段 + run_id 生成，隔离真实执行。"""
+
+    def __init__(self, tmp_path: Path) -> None:
+        from types import SimpleNamespace
+
+        pkg = SimpleNamespace(manifest=SimpleNamespace(ref="chat/chat:1.0.0"), root=tmp_path)
+        self.inputs = SimpleNamespace(
+            task_set_path=str(tmp_path / "default.yaml"),
+            task_set_model=SimpleNamespace(tasks=[{}, {}]),
+            sut=SimpleNamespace(name="sasan-agent", channel="agent_protocol", base_url="http://x"),
+            resolved_pkg=pkg,
+        )
+        self.calls: dict[str, dict] = {}
+
+    def no_options_info(self, kwargs: dict) -> None:
+        """任何参数值都不得是 typer.OptionInfo（回归断言核心）。"""
+        for key, value in kwargs.items():
+            assert not type(value).__name__.endswith("OptionInfo"), f"参数 {key} 泄漏 OptionInfo"
+
+    def patch(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import agent_eval.cli._stages as stages
+        import agent_eval.storage.package as storage_pkg
+
+        monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
+        monkeypatch.setattr(
+            stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/rules/chat-quality.yaml"
+        )
+        monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())
+        monkeypatch.setattr(
+            stages,
+            "execute_stage",
+            lambda *a, **k: (self.calls.setdefault("execute", dict(k)), [])[1],
+        )
+        monkeypatch.setattr(
+            stages,
+            "evaluate_stage",
+            lambda *a, **k: (self.calls.setdefault("evaluate", dict(k)), object())[1],
+        )
+        monkeypatch.setattr(
+            stages,
+            "finalize_eval",
+            lambda *a, **k: self.calls.setdefault("finalize", dict(k)),
+        )
+        monkeypatch.setattr(storage_pkg, "generate_run_id", lambda: "20260101_000000")
+
+
+class TestExecuteActionDirectCall:
+    def test_execute_pipeline_minimal_kwargs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """向导以最小 kwargs 直调（未传参数不得保留 OptionInfo 默认值）。"""
+        from agent_eval.cli.main import execute_pipeline
+
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        stubs = _WizardStubs(tmp_path)
+        stubs.patch(monkeypatch)
+
+        execute_pipeline(package="chat", task_set="default", sut_name="sasan-agent")
+        # 执行阶段参数：llm_role/max_turns 为真实 None，workspace_root 为 Path
+        assert stubs.calls["execute"]["llm_role"] is None
+        assert stubs.calls["execute"]["max_turns"] is None
+        assert isinstance(stubs.calls["execute"]["workspace_root"], Path)
+        stubs.no_options_info(stubs.calls["execute"])
+        stubs.no_options_info(stubs.calls["evaluate"])
+        stubs.no_options_info(stubs.calls["finalize"])
+
+    def test_execute_run_minimal_kwargs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from agent_eval.cli.main import execute_run
+
+        monkeypatch.chdir(tmp_path)
+        stubs = _WizardStubs(tmp_path)
+        stubs.patch(monkeypatch)
+
+        execute_run(package="chat", task_set="default", sut_name="sasan-agent")
+        assert stubs.calls["execute"]["llm_role"] is None
+        stubs.no_options_info(stubs.calls["execute"])
+
+    def test_wizard_exec_domain_invokes_action(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """向导执行域全链路（选包→考卷→SUT→规则集→模式→确认）打到动作层。"""
+        from agent_eval.cli.main import app
+
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        stubs = _WizardStubs(tmp_path)
+        stubs.patch(monkeypatch)
+
+        # 2 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline → y 确认 → 5 退出
+        result = runner.invoke(app, ["start"], input="2\n1\n1\n1\n1\n1\ny\n5\n")
+        assert result.exit_code == 0, result.output
+        assert "等价命令" in result.output
+        # 动作层被真实调用且未崩溃（此前在此处报 OptionInfo TypeError）
+        assert "execute" in stubs.calls
+        assert "配置加载失败" not in result.output
+        stubs.no_options_info(stubs.calls["execute"])
