@@ -162,7 +162,22 @@ def show_run(run_id: str) -> None:
 
 @runs_app.command("show")
 def runs_show(
-    run_id: str = typer.Argument(..., help="运行 ID（workspace/runs/{run_id}）"),
+    run_id: str | None = typer.Argument(
+        None, help="运行 ID（workspace/runs/{run_id}）；缺省进入交互选择"
+    ),
 ) -> None:
     """查看单次运行的指标 / 失败明细 / 报告位置。"""
-    show_run(run_id)
+    show_run(select_run_id() if run_id is None else run_id)
+
+
+def select_run_id(env_key: str = "AGENT_EVAL_RUN_ID") -> str:
+    """run_id 缺省时的交互选择（--no-input 下 env 唯一前缀旁路）。"""
+    from agent_eval.cli.console.prompts import resolve_bypass, select
+
+    found = scan_runs()
+    if not found:
+        rprint("[yellow]本地无运行记录（workspace/runs/ 为空，先 agent-eval pipeline）。[/yellow]")
+        raise typer.Exit(code=1)
+    options = [f"{r['run_id']}  {r['mode']}  R={r['reward']}" for r in found]
+    bypassed = resolve_bypass(env_key, options)
+    return bypassed.split("  ")[0] if bypassed else select("选择运行", options).split("  ")[0]

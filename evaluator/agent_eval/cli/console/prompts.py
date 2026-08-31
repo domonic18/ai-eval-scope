@@ -13,7 +13,7 @@ import os
 import typer
 from rich import print as rprint
 
-__all__ = ["ask", "confirm", "select"]
+__all__ = ["ask", "confirm", "resolve_bypass", "select"]
 
 
 def _no_input() -> bool:
@@ -43,6 +43,29 @@ def _default_index(default: int | str | None, options: list[str]) -> int:
     if isinstance(default, int):
         return default if 1 <= default <= len(options) else 1
     return options.index(default) + 1 if default in options else 1
+
+
+def resolve_bypass(env_key: str, options: list[str]) -> str | None:
+    """解析 env 旁路值：精确 / 编号 / 唯一前缀（空格或 ``/`` 分界）匹配选项。
+
+    供「无参交互选择」helper 在进入向导前消费 env 旁路（选项常带展示后缀，
+    如 ``chat/chat:1.0.0  (builtin)``，裸值 ``chat`` 需前缀匹配）；多义或不
+    匹配报错退出（exit 2）。无 env 值返回 None，由调用方进入交互选择。
+    """
+    raw = os.environ.get(env_key, "").strip()
+    if not raw:
+        return None
+    exact = _match_option(raw, options)
+    if exact is not None:
+        return exact
+    hits = [o for o in options if o.startswith(raw + " ") or o.startswith(raw + "/")]
+    if len(hits) == 1:
+        return hits[0]
+    if len(hits) > 1:
+        rprint(f"[red]❌ {env_key}={raw} 匹配多个候选: {'; '.join(hits)}[/red]")
+    else:
+        rprint(f"[red]❌ {env_key}={raw} 不在可选项内[/red]")
+    raise typer.Exit(code=2)
 
 
 def select(

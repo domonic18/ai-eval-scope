@@ -44,9 +44,10 @@ def open_path(path: str) -> None:
 def open_target(target: str, run_id: str | None = None) -> None:
     """``open <target>`` 动作（纯函数，命令层与 workbench 复用）。"""
     if target == "report":
-        if not run_id:
-            rprint("[red]❌ open report 需要 run_id[/red]")
-            raise typer.Exit(code=2)
+        if run_id is None:
+            from agent_eval.cli.cmds.runs import select_run_id
+
+            run_id = select_run_id()
         from agent_eval.config.paths import paths
 
         report = paths.default_workspace / "runs" / run_id / "reports" / "summary.md"

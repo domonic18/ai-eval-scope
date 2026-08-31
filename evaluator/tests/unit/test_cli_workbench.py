@@ -279,3 +279,54 @@ class TestExecuteActionDirectCall:
         assert "execute" in stubs.calls
         assert "配置加载失败" not in result.output
         stubs.no_options_info(stubs.calls["execute"])
+
+
+# ── 无参交互选择（查看类命令缺参不报 Usage 错，gh run view 同款路径） ──
+
+
+class TestNoArgInteractiveSelect:
+    def test_scenario_show_no_arg_selects_first(self) -> None:
+        result = runner.invoke(scenario_app, ["show"], input="1\n")
+        assert result.exit_code == 0, result.output
+        assert "选择场景包" in result.output
+        assert "chat" in result.output  # 内置包 1 号
+
+    def test_scenario_show_no_arg_no_input_exits_2(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("AGENT_EVAL_NO_INPUT", "1")
+        result = runner.invoke(scenario_app, ["show"])
+        assert result.exit_code == 2
+        assert "缺少必需输入" in result.output
+
+    def test_scenario_show_no_arg_env_bypass(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("AGENT_EVAL_NO_INPUT", "1")
+        monkeypatch.setenv("AGENT_EVAL_SCENARIO_REF", "chat")
+        result = runner.invoke(scenario_app, ["show", "--section", "manifest"])
+        assert result.exit_code == 0, result.output
+
+    def test_runs_show_no_arg_selects_latest(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _make_run(tmp_path, "20260831_093012")
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        result = runner.invoke(runs.runs_app, ["show"], input="1\n")
+        assert result.exit_code == 0, result.output
+        assert "选择运行" in result.output
+        assert "0.780" in result.output
+
+    def test_runs_show_no_arg_empty_ws_exits_1(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        result = runner.invoke(runs.runs_app, ["show"])
+        assert result.exit_code == 1
+        assert "无运行记录" in result.output
+
+    def test_runs_show_no_arg_env_bypass(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _make_run(tmp_path, "20260831_093012")
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        monkeypatch.setenv("AGENT_EVAL_NO_INPUT", "1")
+        monkeypatch.setenv("AGENT_EVAL_RUN_ID", "20260831_093012")
+        result = runner.invoke(runs.runs_app, ["show"])
+        assert result.exit_code == 0, result.output

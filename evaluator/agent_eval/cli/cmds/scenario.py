@@ -195,13 +195,29 @@ def show_scenario(ref: str, section: str = "tree") -> None:
 
 @scenario_app.command("show")
 def scenario_show(
-    ref: str = typer.Argument(..., help="包引用（如 chat）或包根目录路径"),
+    ref: str | None = typer.Argument(
+        None, help="包引用（如 chat）或包根目录路径；缺省进入交互选择"
+    ),
     section: str = typer.Option(
         "tree", "--section", "-s", help="tree | manifest | rules | tasks | sut"
     ),
 ) -> None:
     """查看场景包内容（结构 / 清单 / 规则集 / 考卷 / SUT 概览）。"""
-    show_scenario(ref, section)
+    show_scenario(select_scenario_ref() if ref is None else ref, section)
+
+
+def select_scenario_ref(env_key: str = "AGENT_EVAL_SCENARIO_REF") -> str:
+    """REF 缺省时的交互选择（gh run view 同款无参路径；--no-input 下 env 唯一前缀旁路）。"""
+    from agent_eval.cli.console.prompts import resolve_bypass, select
+    from agent_eval.packages import PackageManager
+
+    pkgs = PackageManager().list()
+    if not pkgs:
+        rprint("[red]❌ 未发现场景包（agent-eval scenario list 查看）[/red]")
+        raise typer.Exit(code=2)
+    options = [f"{p.manifest.ref}  ({p.source})" for p in pkgs]
+    bypassed = resolve_bypass(env_key, options)
+    return bypassed.split("  (")[0] if bypassed else select("选择场景包", options).split("  (")[0]
 
 
 @scenario_app.command("validate")
