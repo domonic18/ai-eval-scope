@@ -36,13 +36,21 @@ def _ai(text: str) -> SimpleNamespace:
 
 
 def _replay(effects: list[Any]) -> tuple[Any, list[list[Any]]]:
-    """伪造 ``_invoke``：逐次消费 effects（async fn(server) -> str 回复），记录每次入参消息。"""
+    """伪造 ``_invoke``：逐次消费 effects（async fn(server) -> str 回复），记录每次入参消息。
+
+    on_event 给定时发一条 token 事件（模拟流式），供事件链路断言。
+    """
+
     calls: list[list[Any]] = []
     remaining = list(effects)
 
-    async def fake_invoke(self: PackageAgent, messages: list[Any]) -> dict[str, Any]:
+    async def fake_invoke(
+        self: PackageAgent, messages: list[Any], *, on_event: Any = None
+    ) -> dict[str, Any]:
         calls.append(list(messages))
         reply = await remaining.pop(0)(self.server)
+        if callable(on_event):
+            on_event({"type": "token", "text": reply})
         return {"messages": [*messages, _ai(reply)]}
 
     return fake_invoke, calls
@@ -269,6 +277,149 @@ class TestAgentTurn:
         assert str(tmp_path.resolve()) in prompt  # {pkg_root} 已展开
         assert "{ type:" in prompt  # 字面大括号原样保留
 
+    def test_turn_streams_events_to_on_event(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fake, _ = _replay([_write_valid])
+        monkeypatch.setattr(PackageAgent, "_invoke", fake)
+        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        events: list[dict[str, Any]] = []
+
+        asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True, on_event=events.append))
+
+        assert {"type": "token", "text": "已生成完整场景包"} in events
+        assert {"type": "phase", "name": "confirm"} in events  # 确认前关闭流式文本行
+
+    def test_turn_interrupt_rolls_back(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Ctrl+C 中断（协内表现为 CancelledError）：暂存清空 + 历史截断，
+        # 磁盘从未见过本轮内容。不用 KeyboardInterrupt 直抛——Runner 的 SIGINT
+        # 机制会接管并重试循环（实测死循环）
+        async def boom(
+            self: PackageAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            await self.server.write_file("rules/a.yaml", RULES)
+            raise asyncio.CancelledError
+
+        monkeypatch.setattr(PackageAgent, "_invoke", boom)
+        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+
+        with pytest.raises(asyncio.CancelledError):
+            asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not agent.server.staging
+        assert agent._messages == []
+        assert not (tmp_path / "rules").exists()
+
+    def test_emit_tool_events_from_updates(self) -> None:
+        from agent_eval.agent.package_agent import _emit_tool_events
+
+        events: list[dict[str, Any]] = []
+        updates = {
+            "model": {
+                "messages": [
+                    SimpleNamespace(
+                        type="ai",
+                        content="计划",
+                        tool_calls=[{"name": "write_file", "args": {"path": "rules/a.yaml"}}],
+                    )
+                ]
+            },
+            "tools": {
+                "messages": [
+                    SimpleNamespace(
+                        type="tool",
+                        name="write_file",
+                        content='{"ok": true, "staged": "rules/a.yaml"}',
+                        status="success",
+                    )
+                ]
+            },
+        }
+        _emit_tool_events(updates, events.append)
+        assert events[0] == {
+            "type": "tool_start",
+            "name": "write_file",
+            "args": {"path": "rules/a.yaml"},
+        }
+        assert events[1]["type"] == "tool_end" and events[1]["ok"] is True
+
+    def test_invoke_streams_block_content_and_collects_state(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # KIMI/Claude 系模型 content 为 blocks（thinking/text）——真机冒烟实测曾因
+        # isinstance(str) 过滤导致 token 零输出
+        from agent_eval.agent.package_agent import _text_from_content
+
+        assert _text_from_content("纯文本") == "纯文本"
+        assert (
+            _text_from_content(
+                [{"type": "thinking", "thinking": "内心"}, {"type": "text", "text": "回复"}]
+            )
+            == "回复"
+        )
+
+        class _FakeGraph:
+            def __init__(self, script: list[tuple[str, Any]]) -> None:
+                self.script = script
+
+            async def astream(self, inp: dict, config: dict | None = None, stream_mode: Any = None):
+                for mode, payload in self.script:
+                    yield (mode, payload)
+
+            async def ainvoke(self, inp: dict, config: dict | None = None) -> dict:
+                return {"messages": ["fallback"]}
+
+        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        agent._graph = _FakeGraph(
+            [
+                (
+                    "messages",
+                    (
+                        SimpleNamespace(
+                            type="AIMessageChunk",  # 增量 chunk 的真实 type（实测）
+                            content=[{"type": "thinking", "thinking": "想一下"}],
+                        ),
+                        {},
+                    ),
+                ),
+                (
+                    "messages",
+                    (
+                        SimpleNamespace(
+                            type="AIMessageChunk", content=[{"type": "text", "text": "计划"}]
+                        ),
+                        {},
+                    ),
+                ),
+                ("messages", (SimpleNamespace(type="tool", content='{"ok": 1}'), {})),
+                (
+                    "updates",
+                    {
+                        "model": {
+                            "messages": [
+                                SimpleNamespace(
+                                    type="ai",
+                                    content=[],
+                                    tool_calls=[{"name": "validate_package", "args": {}}],
+                                )
+                            ]
+                        }
+                    },
+                ),
+                ("values", {"messages": ["final-state"]}),
+            ]
+        )
+        events: list[dict[str, Any]] = []
+        state = asyncio.run(agent._invoke([("user", "hi")], on_event=events.append))
+
+        assert {"type": "thinking", "text": "想一下"} in events
+        assert {"type": "token", "text": "计划"} in events
+        assert {"type": "tool_start", "name": "validate_package", "args": {}} in events
+        assert not any(e["type"] == "tool_end" for e in events)  # 工具消息不发 token 事件
+        assert state == {"messages": ["final-state"]}  # values 收集最终态（不走 ainvoke 兜底）
+
 
 # ── CLI 入口（guard / 非交互开关 / REPL 循环 / builtin 只读） ────────────
 
@@ -294,7 +445,7 @@ class TestCliEntries:
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.setattr(
             "agent_eval.agent.package_agent.run_turn",
-            lambda agent, text, *, confirm_fn: TurnResult(
+            lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             ),
         )
@@ -329,12 +480,61 @@ class TestCliEntries:
 
         _seed_valid_package(tmp_path)
         seen: list[str] = []
+        inputs = iter(["加一条规则", ""])  # 首轮需求 + 空行退出（勿按 seen 取值：
+        # run_turn 每轮异常会让 seen 永不增长 → REPL 无限循环吃满 CPU，实测教训）
         monkeypatch.setattr(
             "agent_eval.agent.package_agent.run_turn",
-            lambda agent, text, *, confirm_fn: (
+            lambda agent, text, *, confirm_fn, on_event=None: (
                 seen.append(text) or TurnResult(reply="ok", diff="", staged=False)
             ),
         )
-        monkeypatch.setattr(sa, "ask", lambda prompt: "加一条规则" if not seen else "")
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
         sa._session(PackageAgent(tmp_path, log_dir=tmp_path / "log"), None)
         assert seen == ["加一条规则"]  # 一轮后空输入退出
+
+
+# ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
+
+
+class TestStreamRender:
+    def test_emitter_streams_tokens_and_tools(self, capsys) -> None:
+        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        emit({"type": "token", "text": "计划："})
+        emit({"type": "token", "text": "新增一条规则"})
+        emit({"type": "tool_start", "name": "write_file", "args": {"path": "rules/a.yaml"}})
+        emit(
+            {
+                "type": "tool_end",
+                "name": "write_file",
+                "ok": True,
+                "output": '{"staged": "rules/a.yaml"}',
+            }
+        )
+        emit({"type": "tool_end", "name": "read_file", "ok": False, "output": "not json"})
+        emit({"type": "token", "text": "完成"})
+        emit({"type": "phase", "name": "confirm"})
+        finish()
+        out = capsys.readouterr().out
+        assert "计划：新增一条规则" in out  # token 直出同线拼接
+        assert "🔧 write_file · rules/a.yaml" in out  # 工具行带关键参数
+        assert "已暂存 rules/a.yaml" in out
+        assert "⚠ read_file: not json" in out  # 错误降级为可见提示
+        assert "完成" in out
+
+    def test_emitter_renders_thinking_stream(self, capsys) -> None:
+        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        emit({"type": "thinking", "text": "先想想"})
+        emit({"type": "thinking", "text": "再想想"})
+        emit({"type": "token", "text": "结论"})
+        finish()
+        out = capsys.readouterr().out
+        assert "先想想再想想" in out and "结论" in out
+        assert "✻" in out and "🤖" in out  # 思考/正文各自起行标记

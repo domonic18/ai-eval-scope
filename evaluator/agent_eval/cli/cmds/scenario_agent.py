@@ -1,13 +1,19 @@
 """场景包 Agent 会话入口 — REPL 式自然语言改包（arch/15 §六，requirement F-C-SCN-AGENT）。
 
-用户在 CLI 持续输入自然语言（``你> ...``），PackageAgent 经沙盒工具面改包，
-每轮展示计划 + diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘；
-空输入退出会话。非交互形态（CI）需 ``--instruction`` + ``--yes --trust-agent`` 双开关。
+用户在 CLI 持续输入自然语言（``你> ...``），PackageAgent 经沙盒工具面改包，工作
+过程**流式直播**（claude code 式：回复 token 直出 + 工具调用行实时可见）；每轮展示
+diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘。空行退出会话，Ctrl+C 中断当前轮
+（暂存与历史回滚，磁盘不受影响）。非交互形态（CI）需 ``--instruction`` +
+``--yes --trust-agent`` 双开关。
 """
 
 from __future__ import annotations
 
+import json
+import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich import print as rprint
@@ -15,6 +21,14 @@ from rich import print as rprint
 from agent_eval.cli.console.prompts import ask, select
 
 __all__ = ["agent_edit_package", "agent_new_package"]
+
+# 工具行首参提示：start 行只展示最关键参数，其余省略
+_TOOL_ARG_HINT = {
+    "write_file": "path",
+    "read_file": "path",
+    "delete_file": "path",
+    "search_reference": "query",
+}
 
 
 def _render_diff(diff: str, max_lines: int = 80) -> None:
@@ -24,14 +38,7 @@ def _render_diff(diff: str, max_lines: int = 80) -> None:
         rprint(f"[{color}]{line}[/{color}]" if color else line)
 
 
-def _render_turn(reply: str, result) -> None:  # noqa: ANN001 — TurnResult
-    if reply:
-        lines = reply.splitlines()
-        rprint(f"[bold cyan]🤖 {lines[0]}[/bold cyan]")
-        for line in lines[1:6]:
-            rprint(f"   [dim]{line}[/dim]")
-    if result.diff:
-        _render_diff(result.diff)
+def _render_outcome(result: Any) -> None:  # noqa: ANN001 — TurnResult
     if result.committed:
         rprint(f"[green]✅ 已落盘[/green]（{len(result.committed_files)} 个文件变更）")
     elif result.aborted_reason == "user_aborted":
@@ -44,21 +51,135 @@ def _render_turn(reply: str, result) -> None:  # noqa: ANN001 — TurnResult
         rprint("[yellow]（本轮无文件变更——可继续描述需求或换种说法）[/yellow]")
 
 
-def _cli_confirm(reply: str, diff: str) -> bool:
+def _render_turn(reply: str, result: Any) -> None:  # noqa: ANN001 — 非流式兜底渲染
     if reply:
-        rprint(f"[bold cyan]🤖 {reply.splitlines()[0]}[/bold cyan]")
+        lines = reply.splitlines()
+        rprint(f"[bold cyan]🤖 {lines[0]}[/bold cyan]")
+        for line in lines[1:6]:
+            rprint(f"   [dim]{line}[/dim]")
+    if result.diff:
+        _render_diff(result.diff)
+    _render_outcome(result)
+
+
+def _tool_end_line(event: dict[str, Any]) -> str | None:
+    """tool_end → 结果行（None = 不渲染）；error 交 Agent 自修复仅黄色提示。"""
+    name = event.get("name", "")
+    output = event.get("output", "")
+    data: dict[str, Any] = {}
+    if isinstance(output, str):
+        try:
+            parsed = json.loads(output)
+            data = parsed if isinstance(parsed, dict) else {}
+        except ValueError:
+            data = {}
+    if not event.get("ok", True) or "error" in data:
+        detail = data.get("error") or output or "失败"
+        return f"  [yellow]⚠ {name}: {str(detail)[:120]}[/yellow]"
+    if "staged" in data:
+        return f"  [green]✓[/green] [dim]已暂存 {data['staged']}[/dim]"
+    if "staged_delete" in data:
+        return f"  [green]✓[/green] [dim]已暂存删除 {data['staged_delete']}[/dim]"
+    if name == "validate_package":
+        return "  [green]✓[/green] [dim]暂存视图校验通过[/dim]"
+    if name == "preview_diff":
+        return f"  [green]✓[/green] [dim]diff 就绪（{data.get('changed', '?')} 处变更）[/dim]"
+    return None
+
+
+def _write_stream(text: str, style: str | None = None) -> None:
+    """流式片段直写：不解释 markup / 不做高亮（模型文本原样），style 用于思考态。"""
+    import rich
+
+    rich.get_console().print(text, end="", style=style, markup=False, highlight=False)
+
+
+def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]]:
+    """流式渲染器（claude code 式）：思考/回复 token 直出；工具行实时可见。"""
+    state = {"mid_line": False, "mode": ""}  # mode: "" | text | thinking
+
+    def _close_line() -> None:
+        if state["mid_line"]:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            state.update(mid_line=False, mode="")
+
+    def _hint(name: str, args: dict[str, Any]) -> str:
+        key = _TOOL_ARG_HINT.get(name)
+        if not key:
+            return ""
+        value = args.get(key)
+        if isinstance(value, dict):
+            value = ",".join(map(str, value)) or ""
+        return f" · {value}" if value else ""
+
+    def emit(event: dict[str, Any]) -> None:
+        kind = event.get("type")
+        if kind in ("token", "thinking"):
+            mode = "text" if kind == "token" else "thinking"
+            if state["mode"] != mode:  # 思考 ↔ 正文切换才起行，片段间续写不换行
+                _close_line()
+                rprint(
+                    "[dim italic]✻ [/dim italic]"
+                    if mode == "thinking"
+                    else "[bold cyan]🤖[/bold cyan] ",
+                    end="",
+                )
+                state.update(mid_line=True, mode=mode)
+            _write_stream(event.get("text", ""), "dim" if mode == "thinking" else None)
+            return
+        _close_line()
+        if kind == "tool_start":
+            rprint(
+                f"  [dim]🔧 {event.get('name', '')}{_hint(event.get('name', ''), event.get('args') or {})}[/dim]"
+            )
+        elif kind == "tool_end":
+            line = _tool_end_line(event)
+            if line:
+                rprint(line)
+
+    return emit, _close_line
+
+
+def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]] | None:
+    """流式开关：JSON 模式下 stdout 仅 JSON（F-C-INTEG-02），返回 None 走静默路径。"""
+    from agent_eval.cli.console.output import is_json
+
+    return None if is_json() else _make_stream_emitter()
+
+
+def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — PackageAgent
+    """执行并渲染一轮：流式直播（回复不重复打印）或非流式兜底。"""
+    from agent_eval.agent.package_agent import run_turn
+
+    emit, finish = _stream_pair() or (None, None)
+    if emit:
+        rprint("[dim]⏳ Agent 工作中（流式输出，Ctrl+C 中断本轮）…[/dim]")
+    try:
+        result = run_turn(agent, text, confirm_fn=_cli_confirm, on_event=emit)
+    finally:
+        if finish:
+            finish()
+    if not emit:
+        _render_turn(result.reply, result)
+        return
+    if result.diff:
+        _render_diff(result.diff)
+    _render_outcome(result)
+
+
+def _cli_confirm(reply: str, diff: str) -> bool:
+    """确认交互：回复已在流式直播中输出，这里只展示 diff 并询问。"""
     if diff:
         _render_diff(diff)
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 
 def _session(agent, first_text: str | None) -> None:  # noqa: ANN001 — PackageAgent
-    """REPL 主循环：空输入退出；每轮 确认 → 门禁 → 落盘/回滚。"""
-    from agent_eval.agent.package_agent import run_turn
-
-    rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出）[/dim]")
+    """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。"""
+    rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 中断当前轮）[/dim]")
     if first_text:
-        _render_turn("", run_turn(agent, first_text, confirm_fn=_cli_confirm))
+        _run_one(agent, first_text)
     while True:
         try:
             text = ask("你>")
@@ -69,11 +190,11 @@ def _session(agent, first_text: str | None) -> None:  # noqa: ANN001 — Package
             rprint("👋 会话结束")
             return
         try:
-            result = run_turn(agent, text, confirm_fn=_cli_confirm)
+            _run_one(agent, text)
+        except KeyboardInterrupt:
+            rprint("\n[yellow]⏹ 已中断本轮（磁盘未受影响），可继续输入[/yellow]")
         except Exception as e:  # noqa: BLE001 — 会话内错误可见可继续下一轮
             rprint(f"[red]❌ 本轮失败: {e}[/red]")
-            continue
-        _render_turn(result.reply, result)
 
 
 def _guard_llm_ready() -> None:
@@ -90,6 +211,26 @@ def _guard_llm_ready() -> None:
         raise typer.Exit(code=1) from e
 
 
+def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — PackageAgent
+    """--yes --trust-agent 单轮执行（流式进度 + 自动确认；未落盘退出码 1）。"""
+    from agent_eval.agent.package_agent import run_turn
+
+    emit, finish = _stream_pair() or (None, None)
+    if emit:
+        rprint("[dim]⏳ Agent 执行中（--yes 自动确认，Ctrl+C 中断）…[/dim]")
+    try:
+        result = run_turn(agent, text, confirm_fn=lambda reply, diff: True, on_event=emit)
+    finally:
+        if finish:
+            finish()
+    if not emit:
+        _render_turn(result.reply, result)
+    elif result.diff:
+        _render_diff(result.diff)
+    if not result.committed:
+        raise typer.Exit(code=1)
+
+
 def agent_new_package(
     *,
     ref: str,
@@ -99,7 +240,7 @@ def agent_new_package(
     trust_agent: bool,
 ) -> Path:
     """``scenario new --mode agent``：自然语言生成完整场景包（REPL 会话）。"""
-    from agent_eval.agent.package_agent import PackageAgent, run_turn
+    from agent_eval.agent.package_agent import PackageAgent
     from agent_eval.packages import parse_ref
 
     _guard_llm_ready()
@@ -122,10 +263,7 @@ def agent_new_package(
         instruction, new_package=True, ref=f"{scenario}/{package_id}"
     )
     if yes and trust_agent:
-        result = run_turn(agent, first_text, confirm_fn=lambda reply, diff: True)
-        _render_turn(result.reply, result)
-        if not result.committed:
-            raise typer.Exit(code=1)
+        _run_noninteractive(agent, first_text)
     else:
         _session(agent, first_text)
     return root
@@ -139,7 +277,7 @@ def agent_edit_package(
     trust_agent: bool,
 ) -> None:
     """``scenario edit``：对项目包做自然语言增删改查（REPL 会话）。"""
-    from agent_eval.agent.package_agent import PackageAgent, run_turn
+    from agent_eval.agent.package_agent import PackageAgent
     from agent_eval.packages import MANIFEST_FILENAME, PackageManager
 
     _guard_llm_ready()
@@ -167,10 +305,7 @@ def agent_edit_package(
         f"[dim]{root}（沙盒：仅限包内；写操作经确认 + 校验后落盘）[/dim]"
     )
     if instruction and yes and trust_agent:
-        result = run_turn(agent, instruction, confirm_fn=lambda reply, diff: True)
-        _render_turn(result.reply, result)
-        if not result.committed:
-            raise typer.Exit(code=1)
+        _run_noninteractive(agent, instruction)
         return
     if yes or trust_agent:
         rprint("[red]❌ 非交互 Agent 需同时给 --yes 与 --trust-agent（默认关闭）[/red]")

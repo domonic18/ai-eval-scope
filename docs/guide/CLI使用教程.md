@@ -56,7 +56,7 @@ uv sync                      # 基础安装（pack/eval 即可用）
 | `upload` | 把历史运行的评估结果回填可观测平台 | 补报历史运行 |
 | `models set/list/test/clear` | LLM 模型配置管理 | 配置 API Key 与各角色模型（Sprint 10 起 login/logout 更名 set/clear） |
 | `secrets set/list/delete` | SUT 凭证管理 | 录入被测系统账号密码 |
-| `scenario new/show/validate/list/pull` | 场景包管理 | 创建/查看/校验/发现场景包（Sprint 10 起 package 组更名 scenario；`init` 并入 `new --mode skeleton`） |
+| `scenario new/edit/show/validate/list/pull` | 场景包管理 | 创建（skeleton/agent）/Agent 改包/查看/校验/发现场景包（Sprint 10 起 package 组更名 scenario；`init` 并入 `new --mode skeleton`） |
 | `start / doctor / runs / open` | 交互式工作台（Sprint 10） | 向导式全流程 / 一键自检 / 本地结果浏览 / 浏览器直达 |
 | `suite plan/run` | 声明式评测矩阵（suite.yaml 批量运行） | 多包多任务集对照评测 |
 | `rule-set validate/list-templates` | 规则集校验与模板浏览 | 包外规则集维护 |
@@ -160,6 +160,23 @@ uv run agent-eval scenario new travel-itinerary/quality --mode skeleton   # 生�
 uv run agent-eval scenario show chat --section rules   # 查看包内容（tree/manifest/rules/tasks/sut）
 uv run agent-eval scenario pull chat/default --remote https://<平台地址>   # 从平台拉取包到本地缓存
 ```
+
+### Agent 生成与改包（Sprint 11）
+
+自然语言驱动 PackageAgent 创建/修改场景包——在 CLI 会话中持续输入需求（`你>` 提示符，空行退出）。Agent 经沙盒工具面改包：每轮先展示改动计划 + diff，你确认后经校验门禁落盘——**磁盘任何时刻只见「用户确认且校验通过」的内容**。
+
+```bash
+uv run agent-eval scenario edit ./my-package            # REPL 会话改包（内置包只读会被拒绝）
+uv run agent-eval scenario new travel-itinerary/quality --mode agent   # 一句话生成完整包（REPL）
+# 非交互（CI）需双开关同时显式给出（默认关闭）：
+uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
+  --instruction "生成客服对话质检包：礼貌性与准确性 LLM Judge 各 1 条" --yes --trust-agent
+```
+
+- 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
+- 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
+- 沙盒红线：仅限包内 `.yaml/.yml/.json/.md`；`sut_configs/` 禁止凭证明文（走 `credential_ref` + `agent-eval secrets set`）
+- 会话日志：`workspace/agent_logs/package_agent_<时间戳>.jsonl`
 
 ### 包引用语法
 

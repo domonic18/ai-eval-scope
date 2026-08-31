@@ -114,7 +114,7 @@ def scenario_edit(
     from agent_eval.cli.cmds.scenario_agent import agent_edit_package
 
     if ref is None:
-        ref = select_scenario_ref()
+        ref = select_editable_ref()
     agent_edit_package(ref=ref, instruction=instruction, yes=yes, trust_agent=trust_agent)
 
 
@@ -266,6 +266,22 @@ def scenario_show(
 ) -> None:
     """查看场景包内容（结构 / 清单 / 规则集 / 考卷 / SUT 概览）。"""
     show_scenario(select_scenario_ref() if ref is None else ref, section)
+
+
+def select_editable_ref() -> str:
+    """``scenario edit`` 交互选择：内置包只读不入列，另给手动输入路径入口。"""
+    from agent_eval.cli.console.prompts import ask, select
+    from agent_eval.packages import PackageManager
+
+    editable = [p for p in PackageManager().list() if p.source != "builtin"]
+    options = [f"{p.manifest.ref}  ({p.source})" for p in editable] + ["📁 输入项目包目录路径…"]
+    pick = select("选择要改的包（内置包只读）", options)
+    if pick.startswith("📁"):
+        path = ask("项目包根目录路径（含 agent_eval.yaml）")
+        if not path.strip():
+            raise typer.Exit(code=2)
+        return path.strip()
+    return pick.split("  (")[0]
 
 
 def select_scenario_ref(env_key: str = "AGENT_EVAL_SCENARIO_REF") -> str:

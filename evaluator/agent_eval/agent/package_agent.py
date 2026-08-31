@@ -105,10 +105,8 @@ class PackageAgent:
         # 字面 replace 而非 str.format：提示词是散文体，含 { type: ... } 等
         # 字面大括号示例，format 会误当占位符吞掉
         template: str = _load_prompts()["system_prompt"]
-        return (
-            template.replace("{tools}", self._describe_tools()).replace(
-                "{pkg_root}", str(self.server.root)
-            )
+        return template.replace("{tools}", self._describe_tools()).replace(
+            "{pkg_root}", str(self.server.root)
         )
 
     def _build_graph(self) -> Any:
@@ -137,43 +135,57 @@ class PackageAgent:
         user_text: str,
         *,
         confirm_fn: Callable[[str, str], bool],
+        on_event: Callable[[dict[str, Any]], None] | None = None,
     ) -> TurnResult:
-        """执行一轮：Agent 生成 → 用户确认 → 校验门禁（≤N 回改）→ 落盘/回滚。
+        """执行一轮：Agent 生成（流式）→ 用户确认 → 校验门禁（≤N 回改）→ 落盘/回滚。
 
         confirm_fn(reply, diff) 由 CLI 注入（全部应用 / 放弃）；放弃时本轮暂存清空
         且消息历史截断回本轮前，保持 Agent 上下文与磁盘/暂存一致。
+        on_event 收流式进度事件（``token`` / ``tool_start`` / ``tool_end`` / ``phase``），
+        CLI 据此直播工作过程；None = 静默。
+        中断（Ctrl+C）或异常同样回滚暂存并截断历史后原样上抛——磁盘从未见过本轮内容。
         """
         self._log("turn_start", instruction=user_text)
         history_len = len(self._messages)
         self._messages.append(("user", user_text))
+        try:
+            state = await self._invoke(self._messages, on_event=on_event)
+            self._messages = list(state.get("messages", self._messages))
+            reply = _last_ai_text(self._messages)
 
-        state = await self._invoke(self._messages)
-        self._messages = list(state.get("messages", self._messages))
-        reply = _last_ai_text(self._messages)
+            if not self.server.has_staged_changes:
+                self._log("turn_end", committed=False, reason="no_changes")
+                return TurnResult(reply=reply, diff="", staged=False)
 
-        if not self.server.has_staged_changes:
-            self._log("turn_end", committed=False, reason="no_changes")
-            return TurnResult(reply=reply, diff="", staged=False)
+            diff = self.server.render_diff()
+            if on_event:
+                on_event({"type": "phase", "name": "confirm"})
+            if not confirm_fn(reply, diff):
+                self.server.reset_staging()
+                del self._messages[history_len:]
+                self._log("turn_end", committed=False, reason="user_aborted")
+                return TurnResult(
+                    reply=reply, diff=diff, staged=True, aborted_reason="user_aborted"
+                )
 
-        diff = self.server.render_diff()
-        if not confirm_fn(reply, diff):
+            result = await self._gate_and_commit(on_event)
+            return TurnResult(
+                reply=reply,
+                diff=diff,
+                staged=True,
+                committed=result["committed"],
+                committed_files=result.get("files", []),
+                validation_errors=result.get("errors", []),
+                aborted_reason=result.get("reason", ""),
+            )
+        except BaseException:
             self.server.reset_staging()
             del self._messages[history_len:]
-            self._log("turn_end", committed=False, reason="user_aborted")
-            return TurnResult(reply=reply, diff=diff, staged=True, aborted_reason="user_aborted")
+            raise
 
-        result = await self._gate_and_commit()
-        return TurnResult(
-            reply=reply,
-            diff=diff,
-            staged=True,
-            committed=result["committed"],
-            committed_files=result.get("files", []),
-            validation_errors=result.get("errors", []),
-            aborted_reason=result.get("reason", ""),
-        )
-
-    async def _gate_and_commit(self) -> dict[str, Any]:
+    async def _gate_and_commit(
+        self, on_event: Callable[[dict[str, Any]], None] | None = None
+    ) -> dict[str, Any]:
         """校验门禁：失败注入错误回改（≤ max_fix_rounds），通过则原子落盘。"""
         templates: dict[str, str] = _load_prompts()["templates"]
         for round_no in range(1, self.max_fix_rounds + 1):
@@ -194,18 +206,55 @@ class PackageAgent:
                     ),
                 )
             )
-            state = await self._invoke(self._messages)
+            state = await self._invoke(self._messages, on_event=on_event)
             self._messages = list(state.get("messages", self._messages))
         return {"committed": False, "errors": ["校验轮次耗尽"], "reason": "max_fix_rounds"}
 
-    async def _invoke(self, messages: list[Any]) -> dict[str, Any]:
-        """单次图调用（测试注入点：monkeypatch 本方法可脱离 deepagents 回放状态机）。"""
+    async def _invoke(
+        self,
+        messages: list[Any],
+        *,
+        on_event: Callable[[dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
+        """单次图调用（测试注入点：monkeypatch 本方法可脱离 deepagents 回放状态机）。
+
+        on_event 给定时改走流式（langgraph astream 三模）：``messages`` 增量 token、
+        ``updates`` 工具调用/结果、``values`` 收集最终状态；静默路径仍为一次性 ainvoke。
+        """
         if self._graph is None:
             self._graph = self._build_graph()
-        return await self._graph.ainvoke(
+        config = {"recursion_limit": self.max_turns * 2}
+        if on_event is None:
+            return await self._graph.ainvoke({"messages": messages}, config=config)
+        final: dict[str, Any] = {}
+        async for mode, payload in self._graph.astream(
             {"messages": messages},
-            config={"recursion_limit": self.max_turns * 2},
-        )
+            config=config,
+            stream_mode=["messages", "updates", "values"],
+        ):
+            if mode == "messages":
+                chunk = payload[0] if isinstance(payload, tuple) else payload
+                # 增量 chunk 的 type 为 "AIMessageChunk"（完整消息才是 "ai"）——实测
+                if getattr(chunk, "type", "") not in ("ai", "AIMessageChunk"):
+                    continue
+                content = getattr(chunk, "content", "")
+                if isinstance(content, str):
+                    if content:
+                        on_event({"type": "token", "text": content})
+                    continue
+                # Anthropic 风格 content blocks：text 段走 token，thinking 段独立事件
+                for block in content if isinstance(content, list) else []:
+                    if not isinstance(block, dict):
+                        continue
+                    if block.get("type") == "text" and block.get("text"):
+                        on_event({"type": "token", "text": str(block["text"])})
+                    elif block.get("type") == "thinking" and block.get("thinking"):
+                        on_event({"type": "thinking", "text": str(block["thinking"])})
+            elif mode == "updates" and payload:
+                _emit_tool_events(payload, on_event)
+            elif mode == "values" and isinstance(payload, dict):
+                final = payload
+        return final or await self._graph.ainvoke({"messages": messages}, config=config)
 
     # ─── 首轮模板 ─────────────────────────────────────────────────
 
@@ -235,17 +284,71 @@ class PackageAgent:
         return self._log_path
 
 
+def _text_from_content(content: Any) -> str:
+    """content → 纯文本：str 原样；Anthropic 风格 content blocks 只取 type=text 段。
+
+    KIMI / Claude 系模型 content 为 ``[{"type": "thinking"|"text", ...}, ...]`` 列表
+    （thinking 段不并入回复文本）。
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(
+            str(block.get("text", ""))
+            for block in content
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+    return ""
+
+
 def _last_ai_text(messages: list[Any]) -> str:
     """取消息列表中最后一条 AI 文本（计划/总结展示用）。"""
     for msg in reversed(messages):
-        text = getattr(msg, "content", "")
-        if getattr(msg, "type", "") == "ai" and isinstance(text, str) and text.strip():
+        text = _text_from_content(getattr(msg, "content", ""))
+        if getattr(msg, "type", "") == "ai" and text.strip():
             return text.strip()
     return ""
 
 
+def _emit_tool_events(updates: dict[str, Any], emit: Callable[[dict[str, Any]], None]) -> None:
+    """把 langgraph ``updates`` 增量转成工具进度事件（tool_start / tool_end）。
+
+    - model 节点 AIMessage.tool_calls → tool_start（name + args）
+    - tools 节点 ToolMessage → tool_end（ok + 原始输出串，CLI 自行解析 error/staged）
+    """
+    for delta in updates.values():
+        if not isinstance(delta, dict):
+            continue
+        for msg in delta.get("messages") or []:
+            mtype = getattr(msg, "type", "")
+            if mtype == "ai":
+                for call in getattr(msg, "tool_calls", None) or []:
+                    emit(
+                        {
+                            "type": "tool_start",
+                            "name": call.get("name", ""),
+                            "args": call.get("args") or {},
+                        }
+                    )
+            elif mtype == "tool":
+                content = getattr(msg, "content", "")
+                status = getattr(msg, "status", "success")
+                emit(
+                    {
+                        "type": "tool_end",
+                        "name": getattr(msg, "name", "") or "",
+                        "ok": status != "error",
+                        "output": content if isinstance(content, str) else str(content),
+                    }
+                )
+
+
 def run_turn(
-    agent: PackageAgent, user_text: str, *, confirm_fn: Callable[[str, str], bool]
+    agent: PackageAgent,
+    user_text: str,
+    *,
+    confirm_fn: Callable[[str, str], bool],
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> TurnResult:
     """同步包装（CLI / REPL 调用）。"""
-    return asyncio.run(agent.turn(user_text, confirm_fn=confirm_fn))
+    return asyncio.run(agent.turn(user_text, confirm_fn=confirm_fn, on_event=on_event))

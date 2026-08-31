@@ -329,9 +329,11 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 ### 6.5 落地注记（2026-08-31，feat/package-agent）
 
 - 实现：`agent/package_tools.py`（§6.2 工具面九工具，staging 暂存 dict）+ `agent/package_agent.py`（`turn()` 会话 / 门禁回改 / jsonl 日志）+ 提示词资产 `assets/configs/package_agent_prompts.yaml`（字面 replace 渲染——模板内大括号均为字面内容，非 format 占位）。
+- **流式直播**（用户实测反馈补齐）：`_invoke` 改走 `astream(messages/updates/values)` 三模，事件流（`thinking` / `token` / `tool_start` / `tool_end` / `phase`）实时回调，CLI 按 claude code 式渲染（✻ 思考 dim、🤖 正文直出、🔧 工具行带关键参数）；输入后立即显示 ⏳ 工作中提示。兼容两形态：KIMI/Claude 系增量 chunk 的 `type` 为 `AIMessageChunk`（非 `"ai"`）且 content 为 blocks（thinking/text 段分列）——真机实测两坑。
+- **中断语义**：Ctrl+C 中断当前轮——暂存清空 + 历史截断（磁盘从未见过本轮内容），会话不退出可继续输入；协内以 `CancelledError` 呈现（测试勿直抛 `KeyboardInterrupt`，Runner 的 SIGINT 机制会死循环）。
 - 偏差：预算暂以 `recursion_limit = max_turns × 2` 约束，BudgetGuard 会话级预算待逐任务预算需求出现接入；确认粒度为「全部应用/放弃」整轮确认，逐文件确认（§6.3）未做。
-- CLI：`scenario new --mode agent`（目标包引用钉入首轮模板，Agent 不得自拟 ID）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`）；workbench 场景域两项入口；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
-- 验证：单测 mock `_invoke` 回放状态机（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘）+ 真机 KIMI 端到端冒烟（一句话生成 6 文件合法包；一句话升版加规则）。
+- CLI：`scenario new --mode agent`（目标包引用钉入首轮模板，斜杠前/后段 = scenario/id，Agent 不得自拟 ID）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`；交互选择器过滤内置包并给路径输入入口）；workbench 场景域两项入口；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
+- 验证：单测 mock `_invoke` 回放状态机 + `_FakeGraph` 流式事件（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘/中断回滚/blocks 解析）；真机 KIMI 端到端冒烟（一句话生成合法包、一句话改字段，思考/正文/工具全程直播）。
 
 ---
 

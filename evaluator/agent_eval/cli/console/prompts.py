@@ -140,6 +140,11 @@ def ask(
             )
         return default
     value = str(
-        typer.prompt(f"? {label}", default=default if default is not None else "", hide_input=hide)
+        typer.prompt(
+            f"? {label}",
+            default=default if default is not None else "",
+            hide_input=hide,
+            show_default=bool(default),
+        )
     ).strip()
     return value or (default or "")

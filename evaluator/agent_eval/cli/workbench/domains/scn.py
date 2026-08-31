@@ -1,4 +1,4 @@
-"""场景包管理域 — 查看 / 列出 / 校验（创建与 Agent 改包在 Sprint 11）。"""
+"""场景包管理域 — 查看 / 列出 / 校验 / Agent 生成与改包（Sprint 11）。"""
 
 from __future__ import annotations
 
@@ -17,11 +17,11 @@ def main(session) -> None:  # noqa: ANN001 — WorkbenchSession（避免循环�
     if action.startswith("查看包内容"):
         _view()
     elif action.startswith("Agent 会话改包"):
-        from agent_eval.cli.cmds.scenario import select_scenario_ref
+        from agent_eval.cli.cmds.scenario import select_editable_ref
         from agent_eval.cli.cmds.scenario_agent import agent_edit_package
 
         agent_edit_package(
-            ref=select_scenario_ref(), instruction=None, yes=False, trust_agent=False
+            ref=select_editable_ref(), instruction=None, yes=False, trust_agent=False
         )
     elif action.startswith("Agent 生成新包"):
         from agent_eval.cli.cmds.scenario_agent import agent_new_package
