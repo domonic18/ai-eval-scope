@@ -157,8 +157,8 @@ class TestSecretsWizard:
 
         cred = tmp_path / "creds.json"
         monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(cred))
-        picks = iter(["录入 / 更新凭证", "password", "查看已录凭证", "返回"])
-        answers = iter(["AGENT_SERVER", "pw-123"])  # ref（无存量→ask）→ 值（隐藏）
+        picks = iter(["录入 / 更新凭证", "➕ 新增 ref…", "查看已录凭证", "返回"])
+        answers = iter(["AGENT_SERVER", "password", "pw-123"])  # 新 ref → 字段（自由输入）→ 值
         monkeypatch.setattr(prompts, "select", lambda label, options, **kw: next(picks))
         monkeypatch.setattr(prompts, "ask", lambda label, **kw: next(answers))
 

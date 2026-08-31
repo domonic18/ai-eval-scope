@@ -123,7 +123,7 @@ agent_eval/agent/
 | 工作台能力 | 复用既有实现 |
 |-----------|-------------|
 | 模型配置向导 | `models set`（原 login 逻辑，改触发词与文案） |
-| SUT 凭证 | `secrets set`（工作台「账号与配置 → SUT 凭证」为交互子向导 `secrets_wizard`：查看表 / 录入-更新（ref 沿存量选择或新增、字段 username/password/token/自定义、值隐藏输入）/ 删除；与命令行同读写 `~/.agent_eval/sut_credentials.json`） |
+| SUT 凭证 | `secrets set`（工作台「账号与配置 → SUT 凭证」为交互子向导 `secrets_wizard`：查看表 / 录入-更新（ref 从已录键与场景包 sut_configs 的 credential_ref 数据发现、字段名自由输入、值隐藏输入）/ 删除；与命令行同读写 `~/.agent_eval/sut_credentials.json`） |
 | 执行 | `run/pipeline/eval` + `_stages.py` 五阶段 |
 | 包校验 | `package validate` 既有 Schema + 语义校验（改名后为 `scenario validate`） |
 | 包发现/解析 | `PackageManager`（内置/项目/本地仓库三源） |

@@ -2,7 +2,8 @@
 
 读取顺序：进程 env（云端注入）→ 本机密钥区文件（`~/.agent_eval/sut_credentials.json`，
 `agent-eval secrets set` 录入）；sut_config 只存 credential_ref 引用。
-env 命名约定：AGENT_EVAL_SUT__<CREDENTIAL_REF>__{USERNAME|PASSWORD|TOKEN}。
+凭证是**通用 KV**（arch/06 §4.7）：env 命名 `AGENT_EVAL_SUT__<CREDENTIAL_REF>__<FIELD>`，
+字段名自由——所需字段由配置声明（见 required_credential_fields），代码不枚举字段集。
 sut_config 中出现明文密码/token 属安全红线违规。
 """
 
@@ -16,9 +17,6 @@ from typing import Any
 from agent_eval.core.exceptions import SUTAuthError
 
 ENV_PREFIX = "AGENT_EVAL_SUT__"
-
-# 支持的凭证字段（大写形式）
-FIELDS = ("USERNAME", "PASSWORD", "TOKEN")
 
 
 class CredentialStore:
@@ -68,13 +66,29 @@ class CredentialStore:
         return value
 
 
-# auth.type → 所需凭证字段（对齐 AuthProvider.require 消费面）
-AUTH_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
-    "none": (),
-    "static_token": ("TOKEN",),
-    "api_login": ("USERNAME", "PASSWORD"),
-    "session_cookie": ("USERNAME", "PASSWORD"),
-}
+def _template_fields(body_template: str) -> list[str]:
+    """``body_template``（Jinja2）声明了哪些变量就要求哪些凭证字段——键名由配置声明。"""
+    from jinja2 import Environment, meta
+
+    return sorted(meta.find_undeclared_variables(Environment().parse(body_template)))
+
+
+def required_credential_fields(sut: Any) -> list[str]:
+    """sut_config 声明的所需凭证字段（大写）——**数据驱动，非代码枚举**（06 §4.7 通用 KV）。
+
+    - api_login / session_cookie：``auth.login.body_template`` 的 Jinja2 变量即字段
+      （模板写 ``{{ account }}`` 就要求 ``ref.account``；无 login 段由 AuthProvider 报配置错）；
+    - static_token：协议约定字段 ``token``（arch/03 §4.0.2 语义）；
+    - none：无。
+    """
+    auth = getattr(sut, "auth", None)
+    auth_type = getattr(auth, "type", "none")
+    if auth_type in ("api_login", "session_cookie"):
+        body = getattr(getattr(auth, "login", None), "body_template", None) or ""
+        return [f.upper() for f in _template_fields(body)]
+    if auth_type == "static_token":
+        return ["TOKEN"]
+    return []
 
 
 def preflight_sut_credentials(sut: Any) -> None:
@@ -82,13 +96,13 @@ def preflight_sut_credentials(sut: Any) -> None:
 
     实测教训：凭证缺失时 SUTAuthError 只是工具返回值，ExecutionAgent 会换
     invoke_cli_sut/invoke_http_sut 反复试探，烧完 max_turns 才以「超过轮次限制」
-    收场——真实原因被轮次错误掩盖。此处按 auth.type 提前逐字段 ``require``，
-    缺失即抛带 ``secrets set`` 引导的 SUTAuthError。
+    收场——真实原因被轮次错误掩盖。所需字段由 :func:`required_credential_fields`
+    从 sut_config 数据推导，缺失即抛带 ``secrets set`` 引导的 SUTAuthError。
     """
     auth = getattr(sut, "auth", None)
     auth_type = getattr(auth, "type", "none")
     ref = getattr(auth, "credential_ref", None)
-    fields = AUTH_REQUIRED_FIELDS.get(auth_type, ())
+    fields = required_credential_fields(sut)
     if not fields:
         return
     if not ref:

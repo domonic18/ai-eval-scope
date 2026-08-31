@@ -125,7 +125,8 @@ uv run agent-eval models clear  # 删除配置（含 key）
 被测系统（SUT）如使用登录鉴权，其用户名/密码/token 通过本机密钥区管理，**严禁写入 sut_config 明文**：
 
 ```bash
-# key 语法：<credential_ref>.<field>；ref 对应 sut_config 里的 credential_ref
+# key 语法：<credential_ref>.<field>（通用 KV，字段名自由）；ref 对应 sut_config 的 credential_ref，
+# 字段名 = 登录模板 body_template 引用的变量（模板写 {{ account }} 就录 account）
 uv run agent-eval secrets set SASAN.username
 uv run agent-eval secrets set SASAN.password
 
@@ -134,8 +135,8 @@ uv run agent-eval secrets delete SASAN.password
 ```
 
 - 存储于 `~/.agent_eval/sut_credentials.json`（0600），路径可用 `AGENT_EVAL_SUT_CREDENTIALS` 覆盖。
-- 也可在工作台交互式管理：`agent-eval start` → 账号与配置 → SUT 凭证——查看已录清单 / 录入更新（ref 沿存量选择或新增，字段选 username/password/token 或自定义，值隐藏输入）/ 删除，与命令行读写同一文件。
-- 也可走环境变量通道（优先级更高）：`AGENT_EVAL_SUT__<REF大写>__{USERNAME|PASSWORD|TOKEN}`，如 `AGENT_EVAL_SUT__SASAN__PASSWORD`。
+- 也可在工作台交互式管理：`agent-eval start` → 账号与配置 → SUT 凭证——查看已录清单 / 录入更新（ref 从已录键与场景包 `sut_configs` 的 `credential_ref` 中选择或新增；**字段名自由输入**——sut_config 的 `body_template` 引用什么就录什么，值隐藏输入）/ 删除，与命令行读写同一文件。
+- 也可走环境变量通道（优先级更高）：`AGENT_EVAL_SUT__<REF大写>__<FIELD大写>`（字段名同上由模板声明），如 `AGENT_EVAL_SUT__SASAN__PASSWORD`。
 - 云端 executor 启动时会从平台 Secrets（org 级 KV）拉取并注入环境变量——本机 `secrets` 与平台 Secrets 两条通道等效。平台侧凭证体系详见 [06 数据管理与配置规范 §4.7](../arch/06数据管理与配置规范.md)。
 
 ---
@@ -414,7 +415,7 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 | `AGENT_EVAL_QUEUE_DIR` | 离线队列目录 | `<workspace>/.ingest_queue` |
 | `AGENT_EVAL_LLM_CONFIG` | llm.json 路径覆盖 | `~/.agent_eval/llm.json` |
 | `AGENT_EVAL_SUT_CREDENTIALS` | SUT 密钥区文件路径覆盖 | `~/.agent_eval/sut_credentials.json` |
-| `AGENT_EVAL_SUT__<REF>__USERNAME/PASSWORD/TOKEN` | SUT 凭证环境变量通道（优先于密钥文件） | 无 |
+| `AGENT_EVAL_SUT__<REF>__<FIELD>` | SUT 凭证环境变量通道（优先于密钥文件；字段由模板声明） | 无 |
 | `AGENT_EVAL_PACKAGE_DIR` | 场景包本地缓存根 | `~/.agent_eval/packages/` |
 | `AGENT_EVAL_PROJECT_DIR` | 项目包发现根（一级子目录含 `agent_eval.yaml` 即项目包） | 当前工作目录 |
 | `AGENT_EVAL_REGISTRY_URL` | `scenario pull` 远端基址 | 无 |
@@ -434,7 +435,7 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 安装：`uv sync --extra agent`。该组仅在 `run`/`pipeline` 链路惰性导入。
 
 **Q3：提示缺少 SUT 凭证？**
-执行前会做**凭证预检**（按 sut_config 的 `auth.type` 逐字段检查），缺失立即失败并给出录入命令，不会浪费 Agent 轮次。看报错中的 `credential_ref`，执行 `agent-eval secrets set <ref>.username` / `<ref>.password`，或设置对应 `AGENT_EVAL_SUT__<REF>__*` 环境变量。sut_config 中出现明文密码属于安全红线违规。
+执行前会做**凭证预检**——所需字段由 sut_config **声明**（`api_login`/`session_cookie` 取登录模板 `body_template` 的 Jinja2 变量，`static_token` 为约定的 `token`），缺失立即失败并给出录入命令（缺哪个字段报哪个），不会浪费 Agent 轮次。按报错执行 `agent-eval secrets set <ref>.<field>`，或设置对应 `AGENT_EVAL_SUT__<REF>__*` 环境变量。sut_config 中出现明文密码属于安全红线违规。
 
 **Q4：`runs list` 状态列的含义？**
 `已评估`（有 summary 报告）｜`已执行`（执行完成未评估，用 `eval --package-dir` 补评估）｜`已执行⚠`/`执行失败`（agent_logs 中有错误，`runs show <run_id>` 看失败原因与修复指引）｜`中断`（无任何产物）。

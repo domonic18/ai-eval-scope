@@ -253,11 +253,17 @@ def test_session_store_default_in_workspace(monkeypatch: pytest.MonkeyPatch, tmp
 
 # ── 执行前凭证预检（fail fast，不进 Agent 循环烧轮次）───────────────────────
 
+_LOGIN = AuthLoginConfig(
+    method="POST",
+    path="/api/login",
+    body_template='{"u": "{{ username }}", "p": "{{ password }}"}',
+)
+
 
 def test_preflight_passes_when_credentials_present(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AGENT_EVAL_SUT__AGENT_SERVER__USERNAME", "u")
     monkeypatch.setenv("AGENT_EVAL_SUT__AGENT_SERVER__PASSWORD", "p")
-    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=None))
+    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=_LOGIN))
     preflight_sut_credentials(sut)  # 不抛即通过
 
 
@@ -265,14 +271,62 @@ def test_preflight_missing_credential_raises_with_guidance(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("AGENT_EVAL_SUT__AGENT_SERVER__USERNAME", raising=False)
-    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=None))
+    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=_LOGIN))
     with pytest.raises(SUTAuthError) as ei:
         preflight_sut_credentials(sut)
     assert "凭证未配置" in str(ei.value)
-    assert "secrets set AGENT_SERVER.username" in str(ei.value)  # 可操作引导
+    assert "secrets set AGENT_SERVER." in str(ei.value)  # 可操作引导（缺哪个字段报哪个）
 
 
 def test_preflight_noop_for_auth_none_and_flags_missing_ref() -> None:
     preflight_sut_credentials(_sut(AuthConfig(type="none")))  # 无凭证要求 → no-op
     with pytest.raises(SUTAuthError, match="credential_ref"):
         preflight_sut_credentials(_sut(AuthConfig(type="static_token", credential_ref=None)))
+
+
+def test_preflight_fields_declared_by_template_not_enumerated(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 通用 KV（06 §4.7）：模板写 {{ account }}/{{ api_key }} 就要求这两个字段——
+    # username/password 未录也不报错（字段集由配置声明，非代码枚举）
+    login = AuthLoginConfig(
+        method="POST",
+        path="/api/login",
+        body_template='{"a": "{{ account }}", "k": "{{ api_key }}"}',
+    )
+    sut = _sut(AuthConfig(type="api_login", credential_ref="SYS", login=login))
+    from agent_eval.execution.auth.credentials import required_credential_fields
+
+    assert sorted(required_credential_fields(sut)) == ["ACCOUNT", "API_KEY"]
+    monkeypatch.setenv("AGENT_EVAL_SUT__SYS__ACCOUNT", "a")
+    monkeypatch.setenv("AGENT_EVAL_SUT__SYS__API_KEY", "k")
+    preflight_sut_credentials(sut)  # 不抛：所需字段齐（username/password 无关）
+
+
+def test_provider_login_custom_template_fields() -> None:
+    # 模板变量即凭证键名：{{ account }}/{{ pwd }} 取 ref.account / ref.pwd（通用 KV）
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert b'"account": "acc-1"' in request.content
+        assert b'"pwd": "pw-1"' in request.content
+        return httpx.Response(200, json={"data": {"access_token": "tk-custom", "expires_in": 600}})
+
+    provider = AuthProvider(
+        _sut(
+            AuthConfig(
+                type="api_login",
+                credential_ref="SYS",
+                login=AuthLoginConfig(
+                    method="POST",
+                    path="/api/login",
+                    body_template='{"account": "{{ account }}", "pwd": "{{ pwd }}"}',
+                ),
+                extract=EXTRACT,
+            )
+        ),
+        credential_store=CredentialStore(
+            env={"AGENT_EVAL_SUT__SYS__ACCOUNT": "acc-1", "AGENT_EVAL_SUT__SYS__PWD": "pw-1"}
+        ),
+        http_client_factory=lambda: _factory(handler),
+    )
+    session = asyncio.run(provider.get_session())
+    assert session.token == "tk-custom"

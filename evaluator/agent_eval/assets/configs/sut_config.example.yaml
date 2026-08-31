@@ -1,7 +1,8 @@
 # sut_config v2 示例（复制为实际配置使用；凭证一律走环境变量，严禁写进本文件）
 #
-# env 命名约定：AGENT_EVAL_SUT__<CREDENTIAL_REF>__{USERNAME|PASSWORD|TOKEN}
-#   例：credential_ref: MY_SUT → AGENT_EVAL_SUT__MY_SUT__USERNAME / __PASSWORD / __TOKEN
+# env 命名约定：AGENT_EVAL_SUT__<CREDENTIAL_REF>__<FIELD>（通用 KV，字段名自由）
+#   例：credential_ref: MY_SUT → AGENT_EVAL_SUT__MY_SUT__USERNAME / __PASSWORD
+#   所需字段由 login.body_template 引用的变量声明——模板写 {{ account }} 就要求 MY_SUT.account
 #
 # 两种 protocol_flavor：
 #   runs     — POST /runs/wait 族（Agent Protocol 参考实现形态）
