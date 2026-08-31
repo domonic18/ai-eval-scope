@@ -1,0 +1,367 @@
+# CLI 交互式评测工作台设计
+
+> 本文档是 [04 CLI 交互式评测工作台需求](../requirement/04CLI交互式评测工作台需求.md) 的架构落地：向导式工作台（`start`）、命令体系重构（直接切换）、账号与浏览器联动（`auth` / `open`）、PackageAgent（场景包工程 Agent）、结果浏览（`runs`）。
+>
+> 定位为 **CLI 表现层 + 交互编排层** 设计：与 [02 编排调度层设计](./02编排调度层设计.md) 共用既有编排阶段（`cli/_stages.py`）；Agent 底座复用 [03 执行引擎设计](./03执行引擎设计.md) §3.2；配置面遵循 [06 数据管理与配置规范](./06数据管理与配置规范.md) §四；场景包规范遵循 [13 配置管理设计](./13配置管理设计.md)；平台账号对接 [09 Web 可观测平台架构设计](./09Web可观测平台架构设计.md)。
+
+---
+
+## 一、设计目标与范围
+
+### 1.1 设计目标
+
+| 需求目标 | 设计要点 |
+|---------|---------|
+| G1 全生命周期闭环 | 工作台四域（场景包/执行/结果/账号配置）统一入口；全部动作下沉到既有编排与内核 |
+| G2 场景包 Agent 化 | PackageAgent 复用 DeepAgents 底座 + 独立沙盒工具面 + 校验门禁（§六） |
+| G3 零门槛交互 | 向导原语库（选择/确认/输入）+ preflight 引导链 + 等价命令显示（§三） |
+| G4 脚本/CI 友好 | 非 TTY 降级、`--no-input`、`--output-format json`、退出码集中映射（§4.3） |
+| G5 单一事实源不变 | 配置仍落 llm.json / sut_credentials.json / .env；包结构仍走 13 规范 |
+| G6 命名语义清晰 | `models set/clear`、`scenario *`、`auth *`、顶层 `doctor`；一次性切换无兼容层（§4.2） |
+
+### 1.2 范围
+
+- **含**：向导框架（workbench）、命令重命名落地清单、auth 浏览器配对与 `open` 的 CLI 侧实现、PackageAgent（组装/工具面/门禁/日志）、`scenario show` 与 `runs` 的本地数据读取、退出码与 JSON 输出规范、平台侧配对端点的**接口约定**（P2）。
+- **不含**：平台侧 `/cli-auth` 授权页与设备码端点的实现（09 侧落地，本文仅约定契约）；评测内核与指标逻辑变更；全屏 TUI（远期）；`scenario push`（包发布通道）。
+
+---
+
+## 二、总体架构
+
+### 2.1 分层架构
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│ 表现层                                                          │
+│   agent-eval start     →  WorkbenchSession（向导域循环）         │
+│   agent-eval <cmd>     →  typer 命令（参数形态）                  │
+│        共用向导原语 prompts.py（select/confirm/input + 降级）      │
+├───────────────────────────────────────────────────────────────┤
+│ 交互编排层（新增，薄层）                                          │
+│   workbench/domains/（scn/exec/runs/account 四域动作）            │
+│   console/：prompts（原语+降级）/ render（富渲染）                │
+│             output（JSON 分流 + 退出码映射）/ equiv（等价命令）    │
+├───────────────────────────────────────────────────────────────┤
+│ 既有编排层（零改动复用）                                          │
+│   cli/_stages.py：resolve_run_inputs / execute_stage /          │
+│   evaluate_stage / finalize_eval / write_run_manifest           │
+├───────────────────────────────────────────────────────────────┤
+│ 既有内核                                                         │
+│   PackageManager / ConfigLoader / PipelineEngine /             │
+│   ExecutionAgent / ResultSink / upload                          │
+└───────────────────────────────────────────────────────────────┘
+        ▲ 工具面（沙盒：仅限包根目录）
+   PackageAgent（DeepAgents，独立于执行侧 SUTToolServer）
+```
+
+### 2.2 模块布局
+
+CLI 目录按「**装配单点 / 命令薄壳 / 表现层基础设施 / 向导层**」四区组织，子命令组统一收入 `cmds/`，交互基础设施统一收入 `console/`：
+
+```
+agent_eval/cli/
+├── __init__.py        # Typer app 装配：注册全部命令组（唯一 add_typer 点）
+├── main.py            # 顶层命令薄壳：eval/run/pipeline/pack/upload/version/start/open/doctor
+├── _stages.py         # 编排阶段（既有：解析/执行/评估/收尾；零交互，向导复用）
+├── _common.py         # 既有公共工具（env/日志）
+│
+├── console/           # 表现层基础设施（无业务语义，命令层与向导层双向复用）
+│   ├── prompts.py     # 向导原语：select/confirm/input/progress（questionary 封装 + 非 TTY 降级）
+│   ├── render.py      # rich 渲染：表格 / 指标卡 / diff 着色 / 进度视图
+│   ├── output.py      # --output-format json 与 stderr 分流 + map_exit_code() 退出码集中映射
+│   └── equiv.py       # 等价命令 argv 构造（单点映射表）
+│
+├── workbench/         # 向导工作台（start 入口专用）
+│   ├── session.py     # WorkbenchSession：上下文 / 导航栈 / preflight
+│   └── domains/       # 四域动作（调用 cmds 暴露的纯函数，不经过 typer）
+│       ├── scn.py / exec.py / runs.py / account.py
+│
+└── cmds/              # 子命令组（一组一模块：typer 绑定 + 组内纯函数动作）
+    ├── scenario.py    # 原 package.py 改名迁入：new/edit/show/validate/list/pull
+    ├── models.py      # set/list/test/clear（原 login/logout 改名）
+    ├── auth.py        # login/status/logout/register
+    ├── runs.py        # list/show
+    ├── open_url.py    # open <target>（平台 URL 构造 + webbrowser 单出口）
+    ├── doctor.py      # doctor（检查项编排）
+    └── secrets.py / suite.py / dataset.py / knowledge.py / rule_set.py   # 既有迁入
+
+agent_eval/agent/
+├── package_agent.py   # 新增：PackageAgent 组装（create_deep_agent + build_chat_model）
+├── package_tools.py   # 新增：PackageToolServer（沙盒六工具，独立于 sut_tools.py）
+└── assets/configs/package_agent_prompts.yaml   # System/Task Prompt 资产
+```
+
+**组织约定**（可维护性与扩展性的落点）：
+
+1. **装配单点**：`__init__.py` 是唯一 `add_typer` 注册处——新增命令组 = `cmds/` 新模块 + 一行注册，`main.py` 与其他组零改动。
+2. **命令薄壳**：typer 回调（`main.py` 与 `cmds/*`）只做参数绑定与结果输出；业务逻辑一律下沉为 `_stages` 阶段函数或组内导出的**纯函数动作**（无 typer 依赖）。
+3. **双前端同构**：workbench 域动作与命令行调用**同一个纯函数动作**（D-CLI-1 的落地形态）；等价命令显示由 `console/equiv.py` 从同一参数对象组装，天然不漂移。
+4. **依赖方向单向**：`cmds → (_stages / console / _common / 内核)`；`workbench → (console + cmds 纯函数)`；`console` 不依赖任何业务模块；**禁止命令组之间横向 import**（跨组复用上提到 `_common`/`console`/`_stages`）。
+5. **交互与业务分离**：`_stages` 与组内动作零交互原语调用，所有人机 IO 收口 `console/prompts.py`（非 TTY 降级因此单点生效）。
+6. **粒度守恒**：组内超过 ~300 行或出现多类职责时拆子模块（同目录 `_helper.py`），不提前建深目录。
+
+### 2.3 关键设计决策
+
+| # | 决策 | 理由 |
+|---|------|------|
+| D-CLI-1 | **双前端同内核**：向导动作最终组装与命令行相同的参数对象，直接调 `_stages` 阶段函数；向导内不出现第二份业务逻辑 | P1 原则；等价命令显示天然成立（argv 即真相） |
+| D-CLI-2 | **交互组件选 questionary + rich**：select/confirm/path 内建、键盘导航、与既有 rich 渲染共存；全部原语收口在 `console/prompts.py` 可注入 mock | 成熟度与测试性；备选（rich Live 自研）仅在 questionary 无法满足分页/搜索时局部替换 |
+| D-CLI-3 | **PackageAgent 独立工具面**（`package_tools.py`），不复用 SUTToolServer | 两域工具语义无关（文件编辑 vs SUT 交互）；沙盒约束不同（包根 vs workspace） |
+| D-CLI-4 | **平台身份落 `.env`**（`AGENT_EVAL_HOST/API_KEY/PROJECT`，0600），不新增凭证文件 | 06 §4.7：环境接入归 `.env`；`auth` 与 `secrets`（SUT 凭证，`~/.agent_eval/`）分域 |
+| D-CLI-5 | **浏览器打开统一走 `cmds/open_url.py`**：`webbrowser.open` + 无浏览器环境（SSH/无 `$BROWSER`）降级打印 URL | gh 同款降级；单一出口便于 mock 测试（NF-C-05） |
+| D-CLI-6 | **重命名一次性直接切换**，无别名层 | 用户基数小（需求 v1.2 决策）；收尾要求 = 全仓引用同版本清理 |
+| D-CLI-7 | **退出码集中映射**：`console/output.py::map_exit_code(exc)` 单点适配异常体系 → 0/1/2/3/130 | 契约可测试；新增异常不改命令层 |
+| D-CLI-8 | **`runs` 读本地索引优先**：`workspace/index/runs_index.json`（06 §3.8）列表，run 目录直读详情；平台态经 manifest 上传标记推断 | 零新存储；与 Web 平台解耦 |
+
+### 2.4 复用清单（不重造边界）
+
+| 工作台能力 | 复用既有实现 |
+|-----------|-------------|
+| 模型配置向导 | `models set`（原 login 逻辑，改触发词与文案） |
+| SUT 凭证 | `secrets set`（向导仅做缺失检测与跳转） |
+| 执行 | `run/pipeline/eval` + `_stages.py` 五阶段 |
+| 包校验 | `package validate` 既有 Schema + 语义校验（改名后为 `scenario validate`） |
+| 包发现/解析 | `PackageManager`（内置/项目/本地仓库三源） |
+| Agent 底座 | `create_deep_agent` / `build_chat_model` / BudgetGuard / tool_guard 范式（03 §3.2） |
+| 上报 | `upload` + ResultSink |
+
+---
+
+## 三、工作台向导框架
+
+### 3.1 WorkbenchSession
+
+```python
+@dataclass
+class WorkbenchContext:
+    platform: PlatformStatus | None   # auth status 缓存（host/用户/项目/Key 有效性）
+    models_ok: dict[str, bool]        # 三角色连通态
+    active_package: PackageRef | None # 当前包（scenario/版本/来源）
+    active_task_set: str | None
+    active_sut: str | None
+
+class WorkbenchSession:
+    """向导会话：上下文 + 域导航栈 + preflight 引导。"""
+    def run(self, domain: str | None = None) -> None: ...
+    def preflight(self) -> list[Guidance]   # 依上下文生成引导项（未登录→auth 等）
+```
+
+- 域循环：主菜单 → 域菜单 → 动作 →（执行/反馈）→ 返回域菜单；ESC 逐级返回，Ctrl-C 优雅退出（清理临时态，不影响 workspace 已落盘产物）。
+- 上下文跨域保持（F-C-NAV-03）：执行域选定的包/考卷/SUT 供结果域与包域复用。
+
+### 3.2 向导原语与非 TTY 降级
+
+| 原语 | TTY 行为 | 非 TTY 行为 |
+|------|---------|------------|
+| `select(options)` | ↑↓ + 回车；支持 `--domain` 直达 | 缺省值不存在 → `InputError`（exit 2）；存在 → 直接采用 |
+| `confirm(q)` | y/n | 读 `--yes`/env，缺省即错 |
+| `input(hide=)` | 文本（可隐藏回显） | 读参数/env，缺省即错 |
+| `progress(tasks)` | 单行重绘进度条 + 状态表 | 逐任务一行摘要到 stderr |
+
+全部原语收口 `console/prompts.py`，签名统一带 `default`/`env_key` 旁路参数（P2 原则），测试经依赖注入 mock。
+
+### 3.3 preflight 引导链
+
+进入工作台与各域动作前按序检查，产出 `Guidance(label, fix_action)` 列表渲染为菜单项：
+
+```
+平台未登录 → auth login ／ 模型未配置 → models set ／
+SUT 凭证缺失 → secrets set <ref>.<field> ／ 无项目包 → scenario new 或选内置包
+```
+
+### 3.4 等价命令显示
+
+`console/equiv.py` 维护「动作 → argv 构造器」映射表；向导确认页渲染 `等价命令: agent-eval pipeline --package chat ...`。argv 由向导已收集的参数组装而成——与实际执行的参数对象同源（D-CLI-1），不会漂移。
+
+---
+
+## 四、命令体系与重命名落地
+
+### 4.1 typer 应用结构（目标态）
+
+```python
+# cli/__init__.py —— 唯一装配点
+from agent_eval.cli.cmds import (auth_app, dataset_app, knowledge_app, models_app,
+                                 rule_app, runs_app, scenario_app, secrets_app, suite_app)
+app.add_typer(scenario_app)   # 原 package_app：new/edit/show/validate/list/pull
+app.add_typer(models_app)     # set/list/test/clear
+app.add_typer(auth_app)       # login/status/logout/register
+app.add_typer(runs_app)       # list/show
+app.add_typer(secrets_app); app.add_typer(suite_app); app.add_typer(rule_app)
+app.add_typer(dataset_app);  app.add_typer(knowledge_app)
+# cli/main.py 顶层：eval/run/pipeline/pack/upload/version + start/open/doctor
+```
+
+### 4.2 重命名落地清单（一次性切换）
+
+| 代码点 | 改动 |
+|--------|------|
+| `cli/package.py` → `cli/cmds/scenario.py`（随目录重组迁入） | 组名 `package`→`scenario`；`init` 并入 `new --mode skeleton` |
+| `cli/models.py` → `cli/cmds/models.py` | `login`→`set`、`logout`→`clear`；内部逻辑不变，文案随动 |
+| `packages/assets.py` 等报错文案 | `arch/13 §4.1` 字样与命令名同步 |
+| 引用清理 | `docs/guide/CLI使用教程.md`、根/子项目 README 与 CLAUDE.md、`cicd/` Jenkins 片段、`web/` 调试台提示、`executor/` 内部调用、单测断言 |
+
+验收口径：全仓 `grep -r "agent-eval package \|models login\|models logout"` 清零。
+
+### 4.3 全局参数与退出码
+
+```python
+def map_exit_code(exc: BaseException) -> int:
+    # 0 成功；1 评测业务失败（含门控未达，--no-fail-on-threshold 关闭该语义）
+    # 2 ConfigError / InputError / 包校验失败
+    # 3 SUTChannelError / AgentProtocolError / LLMUnavailable / 平台连接失败
+    # 130 用户中断（typer.Abort / KeyboardInterrupt）
+```
+
+- `--no-input`：全局回调注入，向导原语进入非 TTY 语义。
+- `--output-format json`：stdout 仅 JSON 文档（run_id/指标/失败明细/制品路径），人读进度走 stderr；对 `run/pipeline/eval/runs/doctor` 生效。
+- 契约测试：退出码 × 异常矩阵、JSON 输出 Schema 快照。
+
+---
+
+## 五、账号与浏览器联动
+
+### 5.1 `auth login` 流程（P1 双通道）
+
+```
+CLI                                          平台
+ │ ① 选通道：A 打开 Keys 页 / B /cli-auth 授权页
+ │
+ │ 通道 A（零平台改动）:
+ │   open_url.open("{host}/settings/keys") ──→ 用户登录并创建 Key
+ │   input(hide=True) ←──────────────────── 用户粘贴 Key
+ │
+ │ 通道 B（平台新增一个前端页，复用既有登录态 + 建 Key API）:
+ │   code =随机配对码(8位, 一次性, ≤10min)
+ │   open_url.open("{host}/cli-auth") ──────→ 用户登录，输入配对码
+ │                                           页面经既有 POST /api/v1/keys
+ │                                           创建 Key（name=cli-{code}）并展示
+ │   input(hide=True) ←──────────────────── 用户粘贴新 Key
+ │
+ │ ② Key 有效性探测：既有 Bearer 端点轻量调用（如 GET /api/v1/jobs?limit=1）
+ │ ③ 解析身份（团队/项目）→ 写 .env（0600）：AGENT_EVAL_HOST/API_KEY/PROJECT
+ │ ④ 回执：用户@团队 · 项目 · Key 掩码
+```
+
+- 通道 A/B 共用 ②③④；差异只在 Key 的获取方式。`auth login --token <key>`（或 env）为 CI 无浏览器形态。
+- `auth status`：读 `.env` → 平台 ping → 身份回显；`auth logout`：清除 `.env` 三项（`--revoke` 吊销为 P2，需平台删除 Key 端点授权）。
+
+### 5.2 设备码流接口约定（P2，平台侧落地）
+
+| 端点 | 契约 |
+|------|------|
+| `POST /api/v1/cli/pair` | 无鉴权（限流）；返回 `{pair_code, expires_in}`（≤600s，一次性） |
+| `GET /api/v1/cli/pair/{code}` | CLI 轮询（2s 间隔）；`pending` / `{api_key, org, project}`（授权页确认后一次性返回，再查 404） |
+| `/cli-auth?code=` 页面 | 登录态 + 确认按钮 → 调内部授权完成接口 |
+
+安全约束：配对码短时效、一次性、绑定发起会话 IP 提示展示；Key 首次返回后不可再查。
+
+### 5.3 `open <target>` 与 `--web`
+
+| target | URL 模板（host 取 `.env` `AGENT_EVAL_HOST`） |
+|--------|----------------------------------------------|
+| `platform` | `/`（项目看板） |
+| `run <run_id>` | `/projects/{project}/runs/{run_id}`（平台侧无对应 run 时降级 `report`） |
+| `report <run_id>` | 本地 `workspace/runs/{id}/reports/summary.md`（系统默认程序打开，非浏览器限定） |
+| `scenario <ref>` | `/projects/{project}/assets/scenario/{ref}` |
+| `secrets` / `keys` / `docs` | 对应平台设置页 / 文档站 |
+
+- 查看类命令 `--web` 等价 `open` 对应目标；未登录时提示 `auth login`。
+- 全部打开动作经 `cmds/open_url.py` 单出口（D-CLI-5），测试 mock。
+
+---
+
+## 六、PackageAgent
+
+### 6.1 组装
+
+```python
+def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageAgent:
+    model = build_chat_model(llm_role="agent")        # 回退 text（llm_resolution 既有语义）
+    tools = PackageToolServer(pkg_root).to_langchain_tools()
+    prompts = load_package_agent_prompts()            # assets/configs/*.yaml，fail-fast
+    agent = create_deep_agent(model=model, tools=tools,
+                              system_prompt=prompts.system, checkpointer=None)
+```
+
+- 一次性会话不挂 checkpointer；BudgetGuard 会话级预算（默认低于执行 Agent）；tool_guard 范式沿用（工具异常转 failed 结果交 Agent 决策，不中断图）。
+
+### 6.2 工具面与沙盒（PackageToolServer）
+
+| 工具 | 实现要点 |
+|------|---------|
+| `list_package_files` / `read_file` | 限包根；read 截断长文件（防上下文爆炸） |
+| `write_file` / `delete_file` | **先写暂存区**（内存/临时目录），不直接落盘——diff 确认与校验门禁通过后才由宿主提交（§6.3） |
+| `read_manifest` / `update_manifest` | manifest 读写同样走暂存 |
+| `validate_package` | 对暂存后的包快照执行 Schema + 语义校验，返回结构化 errors |
+| `search_reference` | 检索内置包（courseware/chat/code）+ [14 指南](./14场景扩展指南.md)要点 |
+| `preview_diff` | 暂存区 vs 磁盘原文的统一 diff |
+
+**沙盒规则**：路径 `resolve()` 后必须 `is_relative_to(pkg_root.resolve())`（防 `..` 与 symlink 逃逸）；写操作扩展名白名单 `.yaml/.yml/.json/.md`；无 shell、无网络、无包外路径。
+
+### 6.3 会话状态机
+
+```
+用户需求 → [计划] Agent 输出改动计划（文件清单+意图）→ 用户确认
+        → [生成] Agent 调工具写暂存区 → preview_diff 展示
+        → [确认] 全部 / 逐文件 / 放弃（放弃=清空暂存，磁盘未动）
+        → [门禁] validate_package(暂存快照)
+             ├─ 通过 → 宿主提交暂存到磁盘（原子替换）→ 记录会话日志
+             └─ 失败 → errors 注入 Agent 自修复（≤3 轮）→ 仍失败交还用户
+```
+
+关键不变量：**磁盘上的包在任何时刻都只见过「用户确认 + 校验通过」的内容**。
+
+### 6.4 安全红线实现
+
+- sut_config 内容扫描：出现 `password/token/api_key` 值字段且非 `credential_ref` 引用 → 拒绝写入并提示 `secrets set`（启发式 + System Prompt 双保险）。
+- `scenario edit --instruction ... --yes --trust-agent`：非交互模式必须双重显式旗标；默认关闭。
+- 会话日志 `workspace/agent_logs/package_agent_<ts>.jsonl`：消息、工具调用与参数（凭证字段脱敏）、token、耗时。
+
+---
+
+## 七、查看与结果浏览
+
+### 7.1 `scenario show`
+
+`PackageManager` 只读解析（内置/项目/本地仓库三源统一）→ 分区渲染：结构树（`tree`）、规则集表（`rules`：id/评估器/tier/weight/enabled）、考卷预览（`tasks`：任务数 + 首 N 条）、SUT 概览（`sut`：通道/端点/鉴权策略/`credential_ref` + 凭证就绪态，不显示值）、清单（`manifest`）。数据零新解析器，复用 ConfigLoader 与 manifest 模型。
+
+### 7.2 `runs list / show`
+
+- `list`：读 `workspace/index/runs_index.json`（06 §3.8；缺失时提示 `agent-eval index` 重建）→ 表格（时间/包/任务数/Reward/DR/CPR/上传态）。
+- `show <run_id>`：直读 run 目录（`run_manifest.json` + `reports/summary.json` + `results/*/rule_results.json`）→ 指标卡按 `RunConfigSnapshot.metricDefinitions` 动态渲染（不硬编码）；失败 breakdown TopN；任务下钻约束级 `reason` 与 `source_files`。
+
+---
+
+## 八、非功能实现要点
+
+| 项 | 实现 |
+|----|------|
+| 性能 | `start` 惰性导入（questionary/deepagents 按域加载）；进度视图 rich 单行重绘 |
+| 安全 | `.env` 0600；配对码一次性短时效；凭证不进对话/diff/日志（脱敏钩子在工具层） |
+| 可靠性 | LLM 不可用：执行路径零影响（既有 SKIP 降级），PackageAgent 报错并指引模板路径；浏览器不可用降级打印 URL |
+| 可测试 | console/prompts 原语 mock 注入；退出码/JSON 契约测试；PackageAgent 以 mock LLM 回放（禁联网）；open_url mock（测试不开真浏览器） |
+| 可维护 | 向导文案外置 YAML；等价命令映射表单点（`console/equiv.py`）；新增命令组 = cmds/ 新模块 + `__init__.py` 一行注册；新增工作域 = workbench/domains/ 新模块，均不改内核 |
+
+---
+
+## 九、关键文件清单
+
+| 文件 | 类型 | 职责 |
+|------|------|------|
+| `cli/__init__.py` / `cli/main.py` | 重组 | 唯一装配点 / 顶层命令薄壳 |
+| `cli/console/{prompts,render,output,equiv}.py` | 新增 | 表现层基础设施（原语/渲染/JSON+退出码/等价命令） |
+| `cli/workbench/session.py` + `workbench/domains/*` | 新增 | 向导框架与四域动作 |
+| `cli/cmds/`（scenario/models/auth/runs/open_url/doctor + 既有五组迁入） | 重组+新增 | 子命令组（typer 绑定 + 纯函数动作） |
+| `agent/package_agent.py` / `agent/package_tools.py` | 新增 | PackageAgent 组装与沙盒工具面 |
+| `agent_eval/assets/configs/package_agent_prompts.yaml` | 新增 | Agent 提示词资产 |
+| 平台侧 `/cli-auth` 页（P1 增强）与 pair 端点（P2） | 09 侧 | 见 §5.1/§5.2 接口约定 |
+
+---
+
+## 十、版本记录
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| v1.0 | 2026-08-31 | 初稿：对齐 requirement/04 v1.2——双前端同内核分层、workbench 向导框架（session/原语/降级/preflight/等价命令）、命令重命名一次性切换落地清单、退出码集中映射、auth 双通道登录与设备码流 P2 接口约定、open/--web URL 规则、PackageAgent（暂存区状态机 + 沙盒六工具 + 校验门禁 + 安全红线）、runs/scenario show 数据来源 |
+| v1.1 | 2026-08-31 | **CLI 目录组织 Review 优化**（§2.2）：子命令组收拢 `cmds/`、表现层基础设施收拢 `console/`（prompts/render/output/equiv）；确立六条组织约定（装配单点 / 命令薄壳与纯函数动作分离 / 双前端同构 / 依赖单向禁横向 import / 交互与业务分离 / 粒度守恒）；全文路径引用同步 |
