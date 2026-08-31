@@ -235,7 +235,7 @@ class TestExecuteActionDirectCall:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """向导以最小 kwargs 直调（未传参数不得保留 OptionInfo 默认值）。"""
-        from agent_eval.cli.main import execute_pipeline
+        from agent_eval.cli.cmds.execute import execute_pipeline
 
         monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
         stubs = _WizardStubs(tmp_path)
@@ -253,7 +253,7 @@ class TestExecuteActionDirectCall:
     def test_execute_run_minimal_kwargs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from agent_eval.cli.main import execute_run
+        from agent_eval.cli.cmds.execute import execute_run
 
         monkeypatch.chdir(tmp_path)
         stubs = _WizardStubs(tmp_path)

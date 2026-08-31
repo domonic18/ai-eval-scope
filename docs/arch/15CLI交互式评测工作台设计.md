@@ -60,14 +60,15 @@ CLI 目录按「**装配单点 / 命令薄壳 / 表现层基础设施 / 向导�
 
 ```
 agent_eval/cli/
-├── __init__.py        # Typer app 装配：注册全部命令组（唯一 add_typer 点）
-├── main.py            # 顶层命令薄壳：eval/run/pipeline/pack/upload/version/start/open/doctor
+├── __init__.py        # 唯一装配点：顶层命令 app.command()() + 子命令组 add_typer
+├── main.py            # 引导（dotenv/评估器注册/app/全局 callback）+ 轻量命令
+│                      #   version/start/open/doctor（~90 行，无业务体）
 ├── _stages.py         # 编排阶段（既有：解析/执行/评估/收尾；零交互，向导复用）
 ├── _common.py         # 既有公共工具（env/日志）
 │
 ├── console/           # 表现层基础设施（无业务语义，命令层与向导层双向复用）
-│   ├── prompts.py     # 向导原语：select/confirm/input/progress（questionary 封装 + 非 TTY 降级）
-│   ├── render.py      # rich 渲染：表格 / 指标卡 / diff 着色 / 进度视图
+│   ├── prompts.py     # 向导原语：select/confirm/ask/resolve_bypass + --no-input 旁路
+│   ├── render.py      # rich 渲染：表格 / 指标卡 / diff 着色 / 进度视图（P1）
 │   ├── output.py      # --output-format json 与 stderr 分流 + map_exit_code() 退出码集中映射
 │   └── equiv.py       # 等价命令 argv 构造（单点映射表）
 │
@@ -76,13 +77,17 @@ agent_eval/cli/
 │   └── domains/       # 四域动作（调用 cmds 暴露的纯函数，不经过 typer）
 │       ├── scn.py / exec.py / runs.py / account.py
 │
-└── cmds/              # 子命令组（一组一模块：typer 绑定 + 组内纯函数动作）
-    ├── scenario.py    # 原 package.py 改名迁入：new/edit/show/validate/list/pull
+└── cmds/              # 命令模块（顶层与子命令组同构：typer 绑定 + 纯函数动作）
+    ├── pack.py        # 顶层 pack 绑定 + execute_pack + 内容指纹
+    ├── evaluate.py    # 顶层 eval 绑定 + execute_eval + _detect_run_mode
+    ├── execute.py     # 顶层 run/pipeline 绑定 + execute_run / execute_pipeline
+    ├── upload.py      # 顶层 upload 绑定 + upload_run（回填动作）
+    ├── scenario.py    # 原 package.py 改名迁入：new/show/validate/list/pull
     ├── models.py      # set/list/test/clear（原 login/logout 改名）
-    ├── auth.py        # login/status/logout/register
-    ├── runs.py        # list/show
+    ├── runs.py        # list/show（无参交互选择）
     ├── open_url.py    # open <target>（平台 URL 构造 + webbrowser 单出口）
     ├── doctor.py      # doctor（检查项编排）
+    ├── auth.py        # login/status/logout/register（Sprint 11）
     └── secrets.py / suite.py / dataset.py / knowledge.py / rule_set.py   # 既有迁入
 
 agent_eval/agent/
@@ -93,7 +98,7 @@ agent_eval/agent/
 
 **组织约定**（可维护性与扩展性的落点）：
 
-1. **装配单点**：`__init__.py` 是唯一 `add_typer` 注册处——新增命令组 = `cmds/` 新模块 + 一行注册，`main.py` 与其他组零改动。
+1. **装配单点**：`__init__.py` 是唯一注册处（子命令组 `add_typer` + 顶层命令 `app.command()()`）——新增命令 = `cmds/` 新模块（绑定 + 纯函数动作）+ 一行注册，`main.py` 与其他模块零改动。
 2. **命令薄壳**：typer 回调（`main.py` 与 `cmds/*`）只做参数绑定与结果输出；业务逻辑一律下沉为 `_stages` 阶段函数或组内导出的**纯函数动作**（无 typer 依赖）。
 3. **双前端同构**：workbench 域动作与命令行调用**同一个纯函数动作**（D-CLI-1 的落地形态）；等价命令显示由 `console/equiv.py` 从同一参数对象组装，天然不漂移。
 4. **依赖方向单向**：`cmds → (_stages / console / _common / 内核)`；`workbench → (console + cmds 纯函数)`；`console` 不依赖任何业务模块；**禁止命令组之间横向 import**（跨组复用上提到 `_common`/`console`/`_stages`）。
@@ -388,3 +393,4 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.1 | 2026-08-31 | **CLI 目录组织 Review 优化**（§2.2）：子命令组收拢 `cmds/`、表现层基础设施收拢 `console/`（prompts/render/output/equiv）；确立六条组织约定（装配单点 / 命令薄壳与纯函数动作分离 / 双前端同构 / 依赖单向禁横向 import / 交互与业务分离 / 粒度守恒）；全文路径引用同步 |
 | v1.2 | 2026-08-31 | **行业实践对照校准**：新增 §九「行业实践对照」表（gh project-layout / oclif topics / RFC 8628 / kubectl printers）；P2 设备码流契约对齐 RFC 8628 语义（user_code / verification_uri / interval / slow_down / expired_token）；`open_url` 补 `$BROWSER` 覆盖；标注两项刻意不采纳（显式 Factory 依赖束、命令插件化）及理由 |
 | v1.3 | 2026-08-31 | **Sprint 10 P0 实现同步**：目录重组落地（cmds/console/workbench）；交互原语 P0 采用编号选择（gcloud 同款，零新依赖），questionary 为 P1 可选升级；P1 配对码粘贴通道与 doctor/secrets 就绪态留待 Sprint 11 |
+| v1.4 | 2026-08-31 | **main.py 模块化拆分**（889 → 88 行）：pack/evaluate/execute/upload 四命令模块迁入 `cmds/`（顶层与子命令组同构：绑定 + 纯函数动作）；装配点扩展 `app.command()()` 注册顶层命令；`_write_run_manifest` 无引用转发壳删除；引用随迁（workbench exec 域 + 3 个测试文件） |
