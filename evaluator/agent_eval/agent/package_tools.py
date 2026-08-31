@@ -90,6 +90,12 @@ class PackageToolServer(ToolExporterMixin):
             "search_reference",
         ),
         ToolSpec(
+            "read_reference",
+            "只读内置包文件内容（ref 如 chat；path 为包内相对路径）——参照真实格式，"
+            "read_file 仅限本包",
+            "read_reference",
+        ),
+        ToolSpec(
             "preview_diff",
             "预览暂存区 vs 磁盘原文的统一 diff（宿主确认界面同源）",
             "preview_diff",
@@ -248,6 +254,11 @@ class PackageToolServer(ToolExporterMixin):
             for sub in ("rules", "prompts", "datasets"):
                 if not (tmp_root / sub).is_dir() or not any((tmp_root / sub).iterdir()):
                     errors.append(f"缺少资源目录或为空: {sub}/")
+            # 约定：rules/ 与 prompts/ 的资产是 YAML（13 配置管理）——只写 .md 会被
+            # 下游加载器静默忽略（实测 Agent 曾把提示词写成 README 式 .md）
+            for sub in ("rules", "prompts"):
+                if (tmp_root / sub).is_dir() and not any((tmp_root / sub).glob("*.yaml")):
+                    errors.append(f"{sub}/ 缺少 YAML 资产（提示词/规则集须为 .yaml）")
             for rf in sorted((tmp_root / "rules").glob("*.yaml")):
                 try:
                     yaml.safe_load(rf.read_text(encoding="utf-8"))
@@ -265,6 +276,29 @@ class PackageToolServer(ToolExporterMixin):
                 if query.lower() in p.relative_to(pkg.root).as_posix().lower():
                     hits.append(f"{pkg.manifest.ref}::{p.relative_to(pkg.root).as_posix()}")
         return {"query": query, "matched_files": hits[:20], "notes": _REFERENCE_NOTES}
+
+    async def read_reference(self, ref: str, path: str, max_chars: int = 6000) -> dict[str, Any]:
+        """只读内置/本地缓存包的文件内容（Agent 参照真实格式的合法通道，免沙盒逃逸）。
+
+        ref 走 PackageManager 解析（如 ``chat`` / ``courseware``）；path 限目标包根内。
+        """
+        from agent_eval.packages import PackageManager
+
+        try:
+            pkg = PackageManager().resolve_ref(ref)
+        except Exception as e:  # noqa: BLE001 — 错误交 Agent 自修复
+            return {"error": f"参考包不存在: {ref}（{e}；先 search_reference 检索可用包）"}
+        try:
+            target = (pkg.root / path).resolve()
+            if not target.is_relative_to(pkg.root.resolve()):
+                raise ValueError(f"路径越出参考包根: {path}")
+            content = target.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as e:
+            return {"error": f"文件不存在或不可读: {ref}::{path}（{e}）"}
+        except ValueError as e:
+            return {"error": str(e)}
+        rel = target.relative_to(pkg.root.resolve()).as_posix()
+        return {"package": pkg.manifest.ref, "path": rel, "content": truncate(content, max_chars)}
 
     async def preview_diff(self) -> dict[str, Any]:
         """暂存 vs 磁盘的统一 diff（与宿主确认界面同源）。"""

@@ -326,6 +326,11 @@ def scenario_validate(
         d = path / sub
         if not d.is_dir():
             problems.append(f"缺少资源目录: {sub}/")
+    # 约定：rules/ prompts/ 资产是 YAML（13 配置管理）——只写 .md 会被加载器忽略
+    for sub in ("rules", "prompts"):
+        d = path / sub
+        if d.is_dir() and not any(d.glob("*.yaml")):
+            problems.append(f"{sub}/ 缺少 YAML 资产（提示词/规则集须为 .yaml）")
 
     rule_files = sorted((path / "rules").glob("*.yaml")) if (path / "rules").is_dir() else []
     for rf in rule_files:

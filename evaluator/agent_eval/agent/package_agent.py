@@ -243,6 +243,17 @@ class PackageAgent:
                 # 增量 chunk 的 type 为 "AIMessageChunk"（完整消息才是 "ai"）——实测
                 if getattr(chunk, "type", "") not in ("ai", "AIMessageChunk"):
                     continue
+                # 工具参数生成阶段（大文件内容在 args 里，不走 text/thinking）——
+                # 用户实测曾在此「卡住」数十秒无任何输出，发增量事件供宿主显示进度
+                for tc in getattr(chunk, "tool_call_chunks", None) or []:
+                    frag = tc.get("args") if isinstance(tc, dict) else getattr(tc, "args", "")
+                    on_event(
+                        {
+                            "type": "tool_args",
+                            "name": (tc.get("name") if isinstance(tc, dict) else "") or "",
+                            "delta": len(frag or ""),
+                        }
+                    )
                 content = getattr(chunk, "content", "")
                 if isinstance(content, str):
                     if content:

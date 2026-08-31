@@ -27,6 +27,7 @@ _TOOL_ARG_HINT = {
     "write_file": "path",
     "read_file": "path",
     "delete_file": "path",
+    "read_reference": "ref",
     "search_reference": "query",
 }
 
@@ -95,10 +96,30 @@ def _write_stream(text: str, style: str | None = None) -> None:
 
 
 def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]]:
-    """流式渲染器（claude code 式）：思考/回复 token 直出；工具行实时可见。"""
-    state = {"mid_line": False, "mode": ""}  # mode: "" | text | thinking
+    """流式渲染器（claude code 式）：思考/回复 token 直出；工具行实时可见。
+
+    - 段首空白吞掉：模型 text/thinking 段常以 ``\\n\\n`` 开头，直接接头部会出现
+      「🤖 后空行」（用户实测反馈）；
+    - 工具参数生成阶段（大文件内容在 tool_call args 里增量生成，不走 text 流）
+      以 ``\\r`` 单行进度显示，避免数十秒无输出的「卡住」观感；仅 TTY。
+    """
+    tty = sys.stdout.isatty()
+    state = {
+        "mid_line": False,  # 流式文本行未收尾（需先换行才能打工具行）
+        "mode": "",  # "" | text | thinking
+        "pend": "",  # 参数生成中的工具名
+        "pend_len": 0,
+        "pend_shown": False,
+    }
+
+    def _clear_pending() -> None:
+        if state["pend_shown"]:
+            sys.stdout.write("\r\033[K")  # 光标回行首并清行
+            sys.stdout.flush()
+            state["pend_shown"] = False
 
     def _close_line() -> None:
+        _clear_pending()
         if state["mid_line"]:
             sys.stdout.write("\n")
             sys.stdout.flush()
@@ -111,13 +132,19 @@ def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[
         value = args.get(key)
         if isinstance(value, dict):
             value = ",".join(map(str, value)) or ""
+        if isinstance(value, str) and len(value) > 72:  # 绝对路径过长只留尾部（含文件名）
+            value = "…" + value[-70:]
         return f" · {value}" if value else ""
 
     def emit(event: dict[str, Any]) -> None:
         kind = event.get("type")
         if kind in ("token", "thinking"):
             mode = "text" if kind == "token" else "thinking"
+            text = event.get("text", "")
             if state["mode"] != mode:  # 思考 ↔ 正文切换才起行，片段间续写不换行
+                text = text.lstrip("\r\n ")
+                if not text:
+                    return  # 段首全是空白——等首个有内容的片段再起行
                 _close_line()
                 rprint(
                     "[dim italic]✻ [/dim italic]"
@@ -126,9 +153,21 @@ def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[
                     end="",
                 )
                 state.update(mid_line=True, mode=mode)
-            _write_stream(event.get("text", ""), "dim" if mode == "thinking" else None)
+            _write_stream(text, "dim" if mode == "thinking" else None)
+            return
+        if kind == "tool_args":
+            name = event.get("name") or state["pend"]
+            if name and name != state["pend"]:
+                _clear_pending()
+                state.update(pend=name, pend_len=0)
+            state["pend_len"] += int(event.get("delta") or 0)
+            if tty and name and state["pend_len"]:
+                sys.stdout.write(f"\r  ⏳ {name} 生成参数中 · {state['pend_len']} 字")
+                sys.stdout.flush()
+                state["pend_shown"] = True
             return
         _close_line()
+        state.update(pend="", pend_len=0)
         if kind == "tool_start":
             rprint(
                 f"  [dim]🔧 {event.get('name', '')}{_hint(event.get('name', ''), event.get('args') or {})}[/dim]"
@@ -177,9 +216,20 @@ def _cli_confirm(reply: str, diff: str) -> bool:
 
 def _session(agent, first_text: str | None) -> None:  # noqa: ANN001 — PackageAgent
     """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。"""
+
+    def _attempt(text: str) -> None:
+        # 首轮与后续轮同防护：瞬时错误（如 LLM 网关断流）不杀会话，可见可重试
+        try:
+            _run_one(agent, text)
+        except KeyboardInterrupt:
+            rprint("\n[yellow]⏹ 已中断本轮（磁盘未受影响），可继续输入[/yellow]")
+        except Exception as e:  # noqa: BLE001 — 会话内错误可见可继续下一轮
+            rprint(f"[red]❌ 本轮失败: {e}[/red]")
+            rprint("[dim]暂存与上下文已回滚，可直接重新输入上一条需求重试[/dim]")
+
     rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 中断当前轮）[/dim]")
     if first_text:
-        _run_one(agent, first_text)
+        _attempt(first_text)
     while True:
         try:
             text = ask("你>")
@@ -189,12 +239,7 @@ def _session(agent, first_text: str | None) -> None:  # noqa: ANN001 — Package
         if not text.strip():
             rprint("👋 会话结束")
             return
-        try:
-            _run_one(agent, text)
-        except KeyboardInterrupt:
-            rprint("\n[yellow]⏹ 已中断本轮（磁盘未受影响），可继续输入[/yellow]")
-        except Exception as e:  # noqa: BLE001 — 会话内错误可见可继续下一轮
-            rprint(f"[red]❌ 本轮失败: {e}[/red]")
+        _attempt(text)
 
 
 def _guard_llm_ready() -> None:

@@ -123,13 +123,13 @@ def test_cli_init_creates_scaffold(tmp_path: Path) -> None:
 
 
 def test_cli_validate(tmp_path: Path) -> None:
-    # 复用 init 产出的包做 validate
+    # skeleton 骨架目录为空：validate 指出待填充项（rules/prompts 须为 YAML 资产）
     runner.invoke(
         scenario_app, ["new", "demo/pkg", "--mode", "skeleton", "--output", str(tmp_path / "p")]
     )
     result = runner.invoke(scenario_app, ["validate", str(tmp_path / "p")])
-    assert result.exit_code == 0, result.output
-    assert "校验通过" in result.output
+    assert result.exit_code == 1, result.output
+    assert "rules/ 缺少 YAML" in result.output and "prompts/ 缺少 YAML" in result.output
 
 
 def test_cli_validate_missing_dir(tmp_path: Path) -> None:

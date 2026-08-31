@@ -177,8 +177,10 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
 - **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话结束后按最终清单 id 归位到 `./<id>-package/`
 
 - 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
-- 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
-- 沙盒红线：仅限包内 `.yaml/.yml/.json/.md`；`sut_configs/` 禁止凭证明文（走 `credential_ref` + `agent-eval secrets set`）
+- 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；写大文件时显示 `⏳ write_file 生成参数中 · N 字` 单行进度（参数在生成、并非卡住）；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
+- Agent 需要参照格式时会用 `search_reference` / `read_reference` 只读内置包（chat/code/courseware）的真实文件——清单/规则集/提示词一律以内置包格式为准
+- 单轮失败（如 LLM 网关瞬时断流）不杀会话：CLI 打印失败原因并回滚暂存，直接重发上一条需求即可
+- 沙盒红线：仅限包内 `.yaml/.yml/.json/.md`；`sut_configs/` 禁止凭证明文（走 `credential_ref` + `agent-eval secrets set`）；落盘门禁要求 `rules/` 与 `prompts/` 各含至少一个 `.yaml` 资产（只写 `.md` 会被加载器忽略）
 - 会话日志：`workspace/agent_logs/package_agent_<时间戳>.jsonl`
 
 ### 包引用语法

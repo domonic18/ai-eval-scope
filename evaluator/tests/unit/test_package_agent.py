@@ -150,6 +150,21 @@ class TestSandbox:
 
         asyncio.run(run())
 
+    def test_validate_rejects_md_only_prompts(self, tmp_path: Path) -> None:
+        # 实测 Agent 曾把提示词写成 README 式 .md——下游加载器只认 .yaml，静默失效
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await server.write_file("agent_eval.yaml", MANIFEST)
+            await server.write_file("rules/quality.yaml", RULES)
+            await server.write_file("prompts/README.md", "# 说明\n")
+            await server.write_file("datasets/README.md", "占位\n")
+            result = await server.validate_package()
+            assert not result["ok"]
+            assert any("缺少 YAML" in e for e in result["errors"])
+
+        asyncio.run(run())
+
     def test_commit_is_atomic_and_reports_changes(self, tmp_path: Path) -> None:
         _seed_valid_package(tmp_path)
         server = PackageToolServer(tmp_path)
@@ -178,6 +193,19 @@ class TestSandbox:
     def test_search_reference_offline(self) -> None:
         result = asyncio.run(PackageToolServer(Path()).search_reference("chat"))
         assert result["query"] == "chat" and result["notes"]
+
+    def test_read_reference_builtin_and_escape(self) -> None:
+        server = PackageToolServer(Path())
+
+        async def run() -> None:
+            ok = await server.read_reference("chat", "rules/chat-quality.yaml")
+            assert "error" not in ok and "rules" in ok["content"]
+            escape = await server.read_reference("chat", "../../pyproject.toml")
+            assert "越出参考包根" in escape["error"]
+            missing = await server.read_reference("nope-pkg", "x.yaml")
+            assert "error" in missing
+
+        asyncio.run(run())
 
 
 # ── PackageAgent 会话状态机（mock _invoke 回放） ────────────────────────
@@ -400,6 +428,18 @@ class TestAgentTurn:
                 ),
                 ("messages", (SimpleNamespace(type="tool", content='{"ok": 1}'), {})),
                 (
+                    "messages",
+                    (
+                        SimpleNamespace(
+                            type="AIMessageChunk",
+                            content=[],
+                            # 工具参数增量生成（大文件内容不走 text 流）
+                            tool_call_chunks=[{"name": "write_file", "args": '{"path": "a"'}],
+                        ),
+                        {},
+                    ),
+                ),
+                (
                     "updates",
                     {
                         "model": {
@@ -422,6 +462,7 @@ class TestAgentTurn:
         assert {"type": "thinking", "text": "想一下"} in events
         assert {"type": "token", "text": "计划"} in events
         assert {"type": "tool_start", "name": "validate_package", "args": {}} in events
+        assert {"type": "tool_args", "name": "write_file", "delta": 12} in events
         assert not any(e["type"] == "tool_end" for e in events)  # 工具消息不发 token 事件
         assert state == {"messages": ["final-state"]}  # values 收集最终态（不走 ainvoke 兜底）
 
@@ -559,6 +600,20 @@ class TestCliEntries:
         sa._session(PackageAgent(tmp_path, log_dir=tmp_path / "log"), None)
         assert seen == ["加一条规则"]  # 一轮后空输入退出
 
+    def test_repl_first_turn_error_contained(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 首轮瞬时错误（LLM 网关断流等）不杀会话——曾因首轮在 try 外直接 traceback 退出
+        from agent_eval.cli.cmds import scenario_agent as sa
+
+        _seed_valid_package(tmp_path)
+        monkeypatch.setattr(
+            "agent_eval.agent.package_agent.run_turn",
+            lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("peer closed")),
+        )
+        monkeypatch.setattr(sa, "ask", lambda prompt: "")
+        sa._session(PackageAgent(tmp_path, log_dir=tmp_path / "log"), "首轮需求")  # 不上抛
+
 
 # ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
 
@@ -605,3 +660,29 @@ class TestStreamRender:
         out = capsys.readouterr().out
         assert "先想想再想想" in out and "结论" in out
         assert "✻" in out and "🤖" in out  # 思考/正文各自起行标记
+
+    def test_emitter_swallows_leading_blank_lines(self, capsys) -> None:
+        # 模型 text 段常以 \n\n 开头——段首空白吞掉，🤖 后不空行（用户实测反馈）
+        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        emit({"type": "token", "text": "\n\n正文开始"})
+        emit({"type": "token", "text": "继续"})
+        finish()
+        out = capsys.readouterr().out
+        assert "🤖 正文开始继续" in out
+
+    def test_emitter_tool_args_silent_non_tty(self, capsys) -> None:
+        # 非 TTY 不渲染 \r 进度行（管道日志免受控制符污染），事件本身不崩
+        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        emit({"type": "tool_args", "name": "write_file", "delta": 100})
+        emit({"type": "tool_start", "name": "write_file", "args": {}})
+        finish()
+        out = capsys.readouterr().out
+        assert "🔧 write_file" in out and "⏳" not in out and "\r" not in out

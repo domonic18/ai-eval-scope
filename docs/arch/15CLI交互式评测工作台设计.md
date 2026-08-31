@@ -303,6 +303,7 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | `read_manifest` / `update_manifest` | manifest 读写同样走暂存 |
 | `validate_package` | 对暂存后的包快照执行 Schema + 语义校验，返回结构化 errors |
 | `search_reference` | 检索内置包（courseware/chat/code）+ [14 指南](./14场景扩展指南.md)要点 |
+| `read_reference` | 只读内置包文件内容（ref + 包内 path）——Agent 参照真实格式的**合法通道**（`read_file` 限本包，曾实测 Agent 试图借它读包外路径被拒后反复试探） |
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff |
 
 **沙盒规则**：路径 `resolve()` 后必须 `is_relative_to(pkg_root.resolve())`（防 `..` 与 symlink 逃逸）；写操作扩展名白名单 `.yaml/.yml/.json/.md`；无 shell、无网络、无包外路径。
@@ -328,10 +329,13 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 
 ### 6.5 落地注记（2026-08-31，feat/package-agent）
 
-- 实现：`agent/package_tools.py`（§6.2 工具面九工具，staging 暂存 dict）+ `agent/package_agent.py`（`turn()` 会话 / 门禁回改 / jsonl 日志）+ 提示词资产 `assets/configs/package_agent_prompts.yaml`（字面 replace 渲染——模板内大括号均为字面内容，非 format 占位）。
-- **流式直播**（用户实测反馈补齐）：`_invoke` 改走 `astream(messages/updates/values)` 三模，事件流（`thinking` / `token` / `tool_start` / `tool_end` / `phase`）实时回调，CLI 按 claude code 式渲染（✻ 思考 dim、🤖 正文直出、🔧 工具行带关键参数）；输入后立即显示 ⏳ 工作中提示。兼容两形态：KIMI/Claude 系增量 chunk 的 `type` 为 `AIMessageChunk`（非 `"ai"`）且 content 为 blocks（thinking/text 段分列）——真机实测两坑。
+- 实现：`agent/package_tools.py`（§6.2 工具面十工具，staging 暂存 dict）+ `agent/package_agent.py`（`turn()` 会话 / 门禁回改 / jsonl 日志）+ 提示词资产 `assets/configs/package_agent_prompts.yaml`（字面 replace 渲染——模板内大括号均为字面内容，非 format 占位）。
+- **流式直播**（用户实测反馈补齐）：`_invoke` 改走 `astream(messages/updates/values)` 三模，事件流（`thinking` / `token` / `tool_start` / `tool_end` / `phase` / `tool_args`）实时回调，CLI 按 claude code 式渲染（✻ 思考 dim、🤖 正文直出、🔧 工具行带关键参数）；输入后立即显示 ⏳ 工作中提示。兼容两形态：KIMI/Claude 系增量 chunk 的 `type` 为 `AIMessageChunk`（非 `"ai"`）且 content 为 blocks（thinking/text 段分列）——真机实测两坑。
+- **流式观感两修**（第二轮实测反馈）：① 模型 text/thinking 段常以 `\n\n` 开头，直接拼接会出现「🤖 后空行」——段首空白吞掉，段内换行保留；② 大文件内容在 tool_call args 里增量生成（不走 text 流），数十秒无输出形同「卡住」——`tool_args` 事件以 `\r` 单行进度实时显示「⏳ write_file 生成参数中 · N 字」（仅 TTY；非 TTY 静默）。
 - **中断语义**：Ctrl+C 中断当前轮——暂存清空 + 历史截断（磁盘从未见过本轮内容），会话不退出可继续输入；协内以 `CancelledError` 呈现（测试勿直抛 `KeyboardInterrupt`，Runner 的 SIGINT 机制会死循环）。
 - 偏差：预算暂以 `recursion_limit = max_turns × 2` 约束，BudgetGuard 会话级预算待逐任务预算需求出现接入；确认粒度为「全部应用/放弃」整轮确认，逐文件确认（§6.3）未做。
+- **首轮错误遏制**：REPL 首轮（`--instruction`）与后续轮同走 `_attempt()` 防护——瞬时错误（LLM 网关断流等）打印失败原因 + 回滚提示后会话不退出，可直接重发上一条需求（真机曾因首轮回溯击穿整会话）。
+- **YAML 资产门禁**：Agent 曾把提示词写成 README 式 `.md`（加载器只认 `.yaml`，静默失效 `prompts=0`）——`validate_package` 与 `scenario validate` 双端要求 `rules/` 与 `prompts/` 各含 ≥1 个 `.yaml`，错误交 Agent 会话内自修复；真机复测 `rules=1, prompts=1` 通过。
 - CLI：`scenario new --mode agent`（REF 可省——用户实测反馈「先问包名不友好」：省略时 Agent 按需求拟定引用并在计划首行给出，会话中自然语言可改，会话结束按**最终清单 id** 归位 `./<id>-package/`（暂存目录生成 + `shutil.move`；未落盘则清理不留垃圾）；给了 REF 则钉入模板不得自拟）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`；交互选择器过滤内置包并给路径输入入口）；workbench 场景域两项入口（生成新包不再前置询问包名）；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
 - 验证：单测 mock `_invoke` 回放状态机 + `_FakeGraph` 流式事件（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘/中断回滚/blocks 解析）；真机 KIMI 端到端冒烟（一句话生成合法包、一句话改字段，思考/正文/工具全程直播）。
 
