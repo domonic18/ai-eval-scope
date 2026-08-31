@@ -56,8 +56,8 @@ templates:
   generate_new_package: |
     需求：{instruction}
 
-    目标包引用：{ref}（斜杠前段 = package.scenario 的值，后段 = package.id 的值；
-    version 从 0.1.0 起，不得自拟其它 ID）。
+    目标包引用：{ref}（斜杠前段 = package.scenario 的值、后段 = package.id 的值；
+    version 从 0.1.0 起）。
 
     目标：在空目录中生成一个完整可用的场景包，至少包含：
     agent_eval.yaml 清单、rules/ 规则集、prompts/ 判官提示词、datasets/ 目录（可为空时放一个

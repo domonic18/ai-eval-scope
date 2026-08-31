@@ -269,6 +269,11 @@ class TestAgentTurn:
         )
         assert "客服质检包" in text and "demo/quality" in text
 
+    def test_first_turn_text_agent_chosen_ref(self) -> None:
+        # ref 省略：指引 Agent 按需求拟定引用并在计划首行给出
+        text = PackageAgent.first_turn_text("研学计划质检", new_package=True)
+        assert "拟定" in text and "{ref}" not in text
+
     def test_build_system_prompt_keeps_literal_braces(self, tmp_path: Path) -> None:
         # 回归：提示词含 `{ type: ... }` 字面大括号示例，str.format 会误吞（冒烟实测）
         agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
@@ -453,6 +458,68 @@ class TestCliEntries:
             ref="x/y", output=tmp_path / "p", instruction="需求", yes=True, trust_agent=True
         )
         assert root == tmp_path / "p" and root.is_dir()
+
+    def test_new_agent_derives_ref_and_moves(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # ref 省略：不问包名，Agent 拟定清单 id，会话结束后归位 ./<id>-package/
+        from agent_eval.cli.cmds import scenario_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        monkeypatch.chdir(tmp_path)
+
+        def fake_run_turn(agent, text, *, confirm_fn, on_event=None):
+            (agent.server.root / "agent_eval.yaml").write_text(
+                "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+            )
+            return TurnResult(
+                reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
+            )
+
+        monkeypatch.setattr("agent_eval.agent.package_agent.run_turn", fake_run_turn)
+        root = sa.agent_new_package(
+            ref=None, output=None, instruction="研学计划质检", yes=True, trust_agent=True
+        )
+        assert root == tmp_path / "study-trip-package"
+        assert (root / "agent_eval.yaml").is_file()
+        assert not any(p.name.startswith("agent-eval-pkg-") for p in tmp_path.iterdir())
+
+    def test_new_agent_derived_nothing_committed_cleans_up(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from agent_eval.cli.cmds import scenario_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(
+            "agent_eval.agent.package_agent.run_turn",
+            lambda agent, text, *, confirm_fn, on_event=None: (_ for _ in ()).throw(typer.Exit(1)),
+        )
+        with pytest.raises(typer.Exit):
+            sa.agent_new_package(
+                ref=None, output=None, instruction="需求", yes=True, trust_agent=True
+            )
+        assert list(tmp_path.iterdir()) == []  # 未落盘不留暂存垃圾
+
+    def test_finalize_keeps_when_target_exists(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from agent_eval.cli.cmds.scenario_agent import _finalize_new_package
+
+        monkeypatch.chdir(tmp_path)  # 归位目标按 cwd 计算
+        root = tmp_path / "gen"
+        root.mkdir()
+        (root / "agent_eval.yaml").write_text(
+            "package:\n  id: dup\n  scenario: s\n", encoding="utf-8"
+        )
+        (tmp_path / "dup-package").mkdir()  # 目标已占位
+        assert _finalize_new_package(root, movable=True) == root
+        assert root.is_dir()
+
+    def test_finalize_not_movable_noop(self, tmp_path: Path) -> None:
+        from agent_eval.cli.cmds.scenario_agent import _finalize_new_package
+
+        assert _finalize_new_package(tmp_path, movable=False) == tmp_path
 
     def test_edit_rejects_builtin(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from agent_eval.cli.cmds.scenario_agent import agent_edit_package

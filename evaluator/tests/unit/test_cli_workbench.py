@@ -169,6 +169,11 @@ class TestScenarioShow:
         )
         assert result.exit_code == 1
 
+    def test_new_skeleton_requires_ref(self) -> None:
+        result = runner.invoke(scenario_app, ["new", "--mode", "skeleton"])
+        assert result.exit_code == 2
+        assert "需要 REF" in result.output
+
 
 # ── workbench session ──────────────────────────────────────────────────
 

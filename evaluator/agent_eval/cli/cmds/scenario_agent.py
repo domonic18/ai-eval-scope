@@ -231,42 +231,90 @@ def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — Pack
         raise typer.Exit(code=1)
 
 
+def _require_empty_dir(root: Path) -> None:
+    if root.exists() and any(root.iterdir()):
+        rprint(f"[red]❌ 目标目录非空: {root}（Agent 模式不覆盖，请换 --output）[/red]")
+        raise typer.Exit(code=1)
+
+
+def _finalize_new_package(root: Path, movable: bool) -> Path:
+    """Agent 拟定引用且未指定 --output：会话结束后按**最终清单 id** 归位 ./<id>-package/。
+
+    会话中自然语言改过包名也生效（迁移读的是最后一次落盘的清单）。
+    """
+    import re
+    import shutil
+
+    from agent_eval.packages import MANIFEST_FILENAME, load_manifest
+
+    if not movable:
+        return root
+    if not (root / MANIFEST_FILENAME).is_file():
+        shutil.rmtree(root, ignore_errors=True)  # 全程未落盘——不留暂存垃圾
+        rprint("[red]❌ 未能生成场景包（清单未落盘）[/red]")
+        raise typer.Exit(code=1)
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", load_manifest(root).id).strip("-.") or "scenario"
+    final = Path.cwd() / f"{slug}-package"
+    if final == root:
+        return root
+    if final.exists():
+        rprint(f"[yellow]⚠ 目标目录已存在，保留在生成位置: {root}[/yellow]")
+        return root
+    shutil.move(str(root), str(final))
+    rprint(f"[dim]已按清单 id 归位: {root} → {final}[/dim]")
+    return final
+
+
 def agent_new_package(
     *,
-    ref: str,
+    ref: str | None,
     output: Path | None,
     instruction: str | None,
     yes: bool,
     trust_agent: bool,
 ) -> Path:
-    """``scenario new --mode agent``：自然语言生成完整场景包（REPL 会话）。"""
+    """``scenario new --mode agent``：自然语言生成完整场景包（REPL 会话）。
+
+    ref 缺省时不问包名——Agent 按需求拟定引用写进清单（会话中自然语言可改），
+    会话结束后按最终清单 id 归位 ``./<id>-package/``；给了 ref 或 --output 则原地生成。
+    """
+    import shutil
+    import tempfile
+
     from agent_eval.agent.package_agent import PackageAgent
-    from agent_eval.packages import parse_ref
+    from agent_eval.packages import MANIFEST_FILENAME, parse_ref
 
     _guard_llm_ready()
-    scenario, package_id, _ = parse_ref(ref)
-    package_id = package_id or scenario
-    root = Path(output) if output else Path.cwd() / f"{package_id}-package"
-    if root.exists() and any(root.iterdir()):
-        rprint(f"[red]❌ 目标目录非空: {root}（Agent 模式不覆盖，请换 --output）[/red]")
-        raise typer.Exit(code=1)
+    movable = ref is None and output is None  # 目录名后定 → 会话后迁移
+    if ref:
+        scenario, package_id, _ = parse_ref(ref)
+        package_id = package_id or scenario
+        pin = f"{scenario}/{package_id}（以此为准，不得自拟其它 ID）"
+        root = Path(output) if output else Path.cwd() / f"{package_id}-package"
+    else:
+        pin = None
+        root = Path(output) if output else Path(tempfile.mkdtemp(prefix="agent-eval-pkg-"))
+    _require_empty_dir(root)
     root.mkdir(parents=True, exist_ok=True)
 
     if not instruction:
         if yes and trust_agent:
             rprint("[red]❌ --yes --trust-agent 需配合 --instruction[/red]")
             raise typer.Exit(code=2)
-        instruction = ask("描述评测需求（生成完整场景包）")
+        instruction = ask("描述评测需求（包名可由 Agent 拟定，会话中可自然语言修改）")
 
     agent = PackageAgent(root)
-    first_text = PackageAgent.first_turn_text(
-        instruction, new_package=True, ref=f"{scenario}/{package_id}"
-    )
-    if yes and trust_agent:
-        _run_noninteractive(agent, first_text)
-    else:
-        _session(agent, first_text)
-    return root
+    first_text = PackageAgent.first_turn_text(instruction, new_package=True, ref=pin)
+    try:
+        if yes and trust_agent:
+            _run_noninteractive(agent, first_text)
+        else:
+            _session(agent, first_text)
+    except BaseException:
+        if movable and not (root / MANIFEST_FILENAME).is_file():
+            shutil.rmtree(root, ignore_errors=True)
+        raise
+    return _finalize_new_package(root, movable)
 
 
 def agent_edit_package(

@@ -46,7 +46,11 @@ def _scaffold(ref: str, output: Path | None, template: str, force: bool) -> Path
 
 @scenario_app.command("new")
 def scenario_new(
-    ref: str = typer.Argument(..., help="scenario/package 引用，如 travel-itinerary/quality"),
+    ref: str | None = typer.Argument(
+        None,
+        help="scenario/package 引用（如 travel-itinerary/quality）；skeleton 必填，"
+        "agent 模式可省——Agent 按需求拟定包名，会话中自然语言可改",
+    ),
     mode: str = typer.Option(
         "skeleton",
         "--mode",
@@ -70,6 +74,9 @@ def scenario_new(
 ) -> None:
     """创建场景包（skeleton 骨架 / agent 自然语言生成 / template 模板）。"""
     if mode == "skeleton":
+        if not ref:
+            rprint("[red]❌ skeleton 模式需要 REF（如 travel-itinerary/quality）[/red]")
+            raise typer.Exit(code=2)
         root = _scaffold(ref, output, template, force)
         rprint(f"[green]✅ 已创建场景包[/green] → {root}")
         rprint(

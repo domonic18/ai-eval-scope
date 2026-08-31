@@ -37,6 +37,12 @@ _PROMPTS_PATH = (
     Path(__file__).resolve().parent.parent / "assets" / "configs" / ("package_agent_prompts.yaml")
 )
 
+# ref 缺省时的拟定指引（Agent 按需求起名，用户可在会话中自然语言改）
+_REF_AGENT_CHOSEN = (
+    "未指定——请根据评测需求拟定（小写英文与连字符，语义贴合需求），"
+    "并在改动计划第一行明确给出「拟定引用: <scenario/id>」"
+)
+
 
 @functools.lru_cache(maxsize=1)
 def _load_prompts() -> dict[str, Any]:
@@ -262,11 +268,18 @@ class PackageAgent:
     def first_turn_text(
         instruction: str, *, new_package: bool = False, ref: str | None = None
     ) -> str:
-        """组装首轮用户消息（新建包用 generate_new_package 模板并钉住目标包引用）。"""
+        """组装首轮用户消息（新建包用 generate_new_package 模板）。
+
+        ref 给定时钉住目标引用（Agent 不得自拟）；缺省时指引 Agent 按需求拟定
+        并在计划首行明确给出（用户可自然语言改）。
+        """
         templates: dict[str, str] = _load_prompts()["templates"]
         key = "generate_new_package" if new_package else "first_turn"
-        text = templates[key].replace("{instruction}", instruction)
-        return text.replace("{ref}", ref) if ref else text
+        return (
+            templates[key]
+            .replace("{instruction}", instruction)
+            .replace("{ref}", ref if ref else _REF_AGENT_CHOSEN)
+        )
 
     # ─── 会话日志 ─────────────────────────────────────────────────
 

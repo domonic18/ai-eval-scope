@@ -26,8 +26,8 @@ def main(session) -> None:  # noqa: ANN001 — WorkbenchSession（避免循环�
     elif action.startswith("Agent 生成新包"):
         from agent_eval.cli.cmds.scenario_agent import agent_new_package
 
-        ref = ask("新包引用（如 travel-itinerary/quality）")
-        agent_new_package(ref=ref, output=None, instruction=None, yes=False, trust_agent=False)
+        # 包名不前置询问——Agent 按需求拟定，会话中自然语言可改（F-C-SCN-AGENT）
+        agent_new_package(ref=None, output=None, instruction=None, yes=False, trust_agent=False)
     elif action.startswith("列出"):
         from agent_eval.cli.cmds.scenario import scenario_list
 

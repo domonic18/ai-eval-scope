@@ -166,12 +166,15 @@ uv run agent-eval scenario pull chat/default --remote https://<平台地址>   #
 自然语言驱动 PackageAgent 创建/修改场景包——在 CLI 会话中持续输入需求（`你>` 提示符，空行退出）。Agent 经沙盒工具面改包：每轮先展示改动计划 + diff，你确认后经校验门禁落盘——**磁盘任何时刻只见「用户确认且校验通过」的内容**。
 
 ```bash
-uv run agent-eval scenario edit ./my-package            # REPL 会话改包（内置包只读会被拒绝）
-uv run agent-eval scenario new travel-itinerary/quality --mode agent   # 一句话生成完整包（REPL）
+uv run agent-eval scenario new --mode agent   # 不带包名：先说需求，Agent 拟定引用并在计划首行给出
+uv run agent-eval scenario edit ./my-package  # REPL 会话改包（内置包只读会被拒绝）
+# 也可钉住引用：agent-eval scenario new travel-itinerary/quality --mode agent
 # 非交互（CI）需双开关同时显式给出（默认关闭）：
 uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
   --instruction "生成客服对话质检包：礼貌性与准确性 LLM Judge 各 1 条" --yes --trust-agent
 ```
+
+- **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话结束后按最终清单 id 归位到 `./<id>-package/`
 
 - 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
 - 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
