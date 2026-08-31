@@ -12,10 +12,22 @@ from agent_eval.cli.console.prompts import ask, select
 def main(session) -> None:  # noqa: ANN001 — WorkbenchSession（避免循环导入用 duck type）
     action = select(
         "场景包动作",
-        ["查看包内容", "列出全部包", "校验项目包", "创建 / Agent 改包（Sprint 11）", "返回"],
+        ["查看包内容", "Agent 会话改包", "Agent 生成新包", "列出全部包", "校验项目包", "返回"],
     )
     if action.startswith("查看包内容"):
         _view()
+    elif action.startswith("Agent 会话改包"):
+        from agent_eval.cli.cmds.scenario import select_scenario_ref
+        from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+
+        agent_edit_package(
+            ref=select_scenario_ref(), instruction=None, yes=False, trust_agent=False
+        )
+    elif action.startswith("Agent 生成新包"):
+        from agent_eval.cli.cmds.scenario_agent import agent_new_package
+
+        ref = ask("新包引用（如 travel-itinerary/quality）")
+        agent_new_package(ref=ref, output=None, instruction=None, yes=False, trust_agent=False)
     elif action.startswith("列出"):
         from agent_eval.cli.cmds.scenario import scenario_list
 
@@ -26,10 +38,7 @@ def main(session) -> None:  # noqa: ANN001 — WorkbenchSession（避免循环�
         path = ask("项目包根目录路径（含 agent_eval.yaml）")
         scenario_validate(Path(path))
     else:
-        rprint(
-            "[yellow]场景包创建（模板 / Agent 生成）与 Agent 会话改包将在 Sprint 11 提供；"
-            "当前可用 `agent-eval scenario new --mode skeleton` 生成骨架。[/yellow]"
-        )
+        return
 
 
 def _view() -> None:

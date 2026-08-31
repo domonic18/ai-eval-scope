@@ -48,15 +48,27 @@ def _scaffold(ref: str, output: Path | None, template: str, force: bool) -> Path
 def scenario_new(
     ref: str = typer.Argument(..., help="scenario/package 引用，如 travel-itinerary/quality"),
     mode: str = typer.Option(
-        "skeleton", "--mode", "-m", help="skeleton=目录骨架（原 init）| template | agent（P1）"
+        "skeleton",
+        "--mode",
+        "-m",
+        help="skeleton=目录骨架（原 init）| agent=自然语言生成（REPL 会话）| template（P2）",
     ),
     output: Path | None = typer.Option(
-        None, "--output", "-o", help="输出目录，默认 ./<package_id>/"
+        None, "--output", "-o", help="输出目录（skeleton 默认 ./<id>/；agent 默认 ./<id>-package/）"
     ),
-    template: str = typer.Option("courseware", "--template", "-t", help="脚手架模板"),
-    force: bool = typer.Option(False, "--force", help="目标目录非空时强制覆盖"),
+    template: str = typer.Option(
+        "courseware", "--template", "-t", help="脚手架模板（skeleton 模式）"
+    ),
+    force: bool = typer.Option(False, "--force", help="目标目录非空时强制覆盖（仅 skeleton）"),
+    instruction: str | None = typer.Option(
+        None, "--instruction", "-i", help="Agent 模式：评测需求描述（缺省进入交互输入）"
+    ),
+    yes: bool = typer.Option(False, "--yes", help="Agent 模式非交互确认（需配合 --trust-agent）"),
+    trust_agent: bool = typer.Option(
+        False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
+    ),
 ) -> None:
-    """创建场景包（skeleton 骨架 / template 模板 / agent 生成）。"""
+    """创建场景包（skeleton 骨架 / agent 自然语言生成 / template 模板）。"""
     if mode == "skeleton":
         root = _scaffold(ref, output, template, force)
         rprint(f"[green]✅ 已创建场景包[/green] → {root}")
@@ -65,10 +77,45 @@ def scenario_new(
             f"再 `agent-eval scenario validate {root}`[/dim]"
         )
         return
-    rprint(
-        f"[yellow]--mode {mode} 将在 Sprint 11（PackageAgent）提供，当前请使用 --mode skeleton。[/yellow]"
-    )
+    if mode == "agent":
+        from agent_eval.cli.cmds.scenario_agent import agent_new_package
+
+        root = agent_new_package(
+            ref=ref,
+            output=output,
+            instruction=instruction,
+            yes=yes,
+            trust_agent=trust_agent,
+        )
+        rprint(
+            f"[green]✅ 场景包已生成[/green] → {root}\n"
+            f"[dim]校验: agent-eval scenario validate {root}；"
+            f"查看: agent-eval scenario show {root}[/dim]"
+        )
+        return
+    rprint(f"[yellow]--mode {mode} 暂未提供（当前支持 skeleton | agent）。[/yellow]")
     raise typer.Exit(code=1)
+
+
+@scenario_app.command("edit")
+def scenario_edit(
+    ref: str | None = typer.Argument(
+        None, help="项目包路径或本地包引用（内置包只读会被拒绝）；缺省进入交互选择"
+    ),
+    instruction: str | None = typer.Option(
+        None, "--instruction", "-i", help="首轮需求（缺省进入 REPL 会话自由输入）"
+    ),
+    yes: bool = typer.Option(False, "--yes", help="非交互确认（需配合 --trust-agent）"),
+    trust_agent: bool = typer.Option(
+        False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
+    ),
+) -> None:
+    """Agent 会话改包：自然语言增删改查（沙盒 + diff 确认 + 校验门禁）。"""
+    from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+
+    if ref is None:
+        ref = select_scenario_ref()
+    agent_edit_package(ref=ref, instruction=instruction, yes=yes, trust_agent=trust_agent)
 
 
 def _resolve_root(ref: str) -> tuple[Path, object]:

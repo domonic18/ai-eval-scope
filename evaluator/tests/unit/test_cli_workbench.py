@@ -147,12 +147,27 @@ class TestScenarioShow:
         result = runner.invoke(scenario_app, ["show", str(tmp_path), "--section", "manifest"])
         assert result.exit_code == 0, result.output
 
-    def test_new_rejects_unimplemented_mode(self, tmp_path: Path) -> None:
+    def test_new_agent_mode_requires_llm(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # agent 模式就绪检查失败 → 给出可操作指引（F-NF-C-03 降级，非 traceback）
+        from agent_eval.core.exceptions import AgentError
+
+        def _fail(role: str, *args: object, **kwargs: object) -> None:
+            raise AgentError(f"角色 {role} 未配置")
+
+        monkeypatch.setattr("agent_eval.agent.model_bridge.build_chat_model", _fail)
         result = runner.invoke(
             scenario_app, ["new", "x/y", "--mode", "agent", "--output", str(tmp_path / "p")]
         )
         assert result.exit_code == 1
-        assert "Sprint 11" in result.output
+        assert "models set" in result.output
+
+    def test_new_rejects_unimplemented_mode(self, tmp_path: Path) -> None:
+        result = runner.invoke(
+            scenario_app, ["new", "x/y", "--mode", "template", "--output", str(tmp_path / "p")]
+        )
+        assert result.exit_code == 1
 
 
 # ── workbench session ──────────────────────────────────────────────────

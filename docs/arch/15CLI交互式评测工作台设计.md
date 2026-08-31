@@ -326,6 +326,13 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 - `scenario edit --instruction ... --yes --trust-agent`：非交互模式必须双重显式旗标；默认关闭。
 - 会话日志 `workspace/agent_logs/package_agent_<ts>.jsonl`：消息、工具调用与参数（凭证字段脱敏）、token、耗时。
 
+### 6.5 落地注记（2026-08-31，feat/package-agent）
+
+- 实现：`agent/package_tools.py`（§6.2 工具面九工具，staging 暂存 dict）+ `agent/package_agent.py`（`turn()` 会话 / 门禁回改 / jsonl 日志）+ 提示词资产 `assets/configs/package_agent_prompts.yaml`（字面 replace 渲染——模板内大括号均为字面内容，非 format 占位）。
+- 偏差：预算暂以 `recursion_limit = max_turns × 2` 约束，BudgetGuard 会话级预算待逐任务预算需求出现接入；确认粒度为「全部应用/放弃」整轮确认，逐文件确认（§6.3）未做。
+- CLI：`scenario new --mode agent`（目标包引用钉入首轮模板，Agent 不得自拟 ID）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`）；workbench 场景域两项入口；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
+- 验证：单测 mock `_invoke` 回放状态机（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘）+ 真机 KIMI 端到端冒烟（一句话生成 6 文件合法包；一句话升版加规则）。
+
 ---
 
 ## 七、查看与结果浏览
