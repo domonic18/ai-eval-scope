@@ -127,6 +127,7 @@ class TestMapExitCode:
         assert output.map_exit_code(AgentError("x")) == output.EXIT_BUSINESS
 
     def test_json_mode_toggle(self) -> None:
+        output.set_output_format("text")  # 复位（此前 json 用例可能遗留全局态）
         assert output.is_json() is False
         output.set_output_format("json")
         try:

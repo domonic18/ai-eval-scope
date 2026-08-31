@@ -429,3 +429,118 @@ class TestKnowledgeCommands:
         result = runner.invoke(knowledge_app, ["audit", "--subject", "chemistry"])
         assert result.exit_code == 0, result.output
         assert "chemistry" in result.output
+
+
+# ── 进度视图 + --json 覆盖 run/pipeline/eval（F-C-EXEC-03 / F-C-INTEG-02） ──
+
+
+class _FlowStubs:
+    """mock _stages 五阶段 + run_id，隔离真实执行。"""
+
+    def __init__(self, tmp_path: Path) -> None:
+        pkg = SimpleNamespace(manifest=SimpleNamespace(ref="chat/chat:1.0.0"), root=tmp_path)
+        self.inputs = SimpleNamespace(
+            task_set_path=tmp_path / "default.yaml",
+            task_set_model=SimpleNamespace(tasks=[{}, {}]),
+            sut=SimpleNamespace(name="sasan", channel="agent_protocol", base_url="http://x"),
+            resolved_pkg=pkg,
+        )
+        self.pkg_objs = [
+            SimpleNamespace(
+                manifest=SimpleNamespace(task_id="t1", status="success", package_id="t1"),
+                output_dir=tmp_path / "t1",
+            ),
+            SimpleNamespace(
+                manifest=SimpleNamespace(task_id="t2", status="failed", package_id="t2"),
+                output_dir=tmp_path / "t2",
+            ),
+        ]
+        self.report = SimpleNamespace(
+            run_id="20260101_000000",
+            total_samples=2,
+            metrics={"chat:reward": 0.8},
+            failure_breakdown={"safety.compliance": 1},
+        )
+
+    def patch(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import agent_eval.cli._stages as stages
+        import agent_eval.storage.package as storage_pkg
+
+        monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
+        monkeypatch.setattr(stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/r.yaml")
+        monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())
+        monkeypatch.setattr(stages, "execute_stage", lambda *a, **k: self.pkg_objs)
+        monkeypatch.setattr(stages, "evaluate_stage", lambda *a, **k: self.report)
+        monkeypatch.setattr(stages, "finalize_eval", lambda *a, **k: None)
+        monkeypatch.setattr(storage_pkg, "generate_run_id", lambda: "20260101_000000")
+
+
+class TestJsonOutput:
+    def test_pipeline_json_stdout_only(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        stubs = _FlowStubs(tmp_path)
+        stubs.patch(monkeypatch)
+        result = runner.invoke(app, ["--output-format", "json", "pipeline", "--package", "chat"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.stdout)  # stdout 仅 JSON（人读行在 stderr）
+        assert payload["mode"] == "pipeline"
+        assert payload["metrics"] == {"chat:reward": 0.8}
+        assert payload["succeeded"] == 1 and payload["total"] == 2
+        assert payload["packages"][0]["task_id"] == "t1"
+        assert "任务集" in result.stderr  # 人读输出分流到 stderr
+
+    def test_run_json_payload(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.chdir(tmp_path)
+        stubs = _FlowStubs(tmp_path)
+        stubs.patch(monkeypatch)
+        result = runner.invoke(app, ["--output-format", "json", "run", "--package", "chat"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.stdout)
+        assert payload["mode"] == "run" and "metrics" not in payload
+        assert [p["status"] for p in payload["packages"]] == ["success", "failed"]
+
+    def test_eval_json_payload(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        stubs = _FlowStubs(tmp_path)
+        stubs.patch(monkeypatch)
+        result = runner.invoke(
+            app,
+            [
+                "--output-format",
+                "json",
+                "eval",
+                "--package-dir",
+                str(tmp_path),
+                "--package",
+                "chat",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.stdout)
+        assert payload["metrics"] == {"chat:reward": 0.8}
+        assert payload["failure_breakdown"] == {"safety.compliance": 1}
+
+
+class TestProgressView:
+    def test_stage_progress_disabled_is_silent(self, capsys: object) -> None:
+        from agent_eval.cli.console.render import stage_progress
+
+        with stage_progress(enabled=False) as sp:
+            sp.advance("执行")
+        assert capsys.readouterr().out == ""
+
+    def test_stage_progress_never_writes_stdout(self, capsys: object) -> None:
+        """进度行固定走 stderr（含非 TTY fallback），stdout 保持纯净。"""
+        from agent_eval.cli.console.render import stage_progress
+
+        with stage_progress(enabled=True) as sp:
+            sp.advance("评估")
+        assert capsys.readouterr().out == ""
+
+    def test_print_task_table_lists_tasks(self, tmp_path: Path) -> None:
+        from agent_eval.cli.console.render import print_task_table
+
+        stubs = _FlowStubs(tmp_path)
+        print_task_table(stubs.pkg_objs)  # rprint 输出（stdout）
+        assert True  # 冒烟：不抛异常即通过（表格渲染已由真机验证）

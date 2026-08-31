@@ -68,7 +68,7 @@ agent_eval/cli/
 │
 ├── console/           # 表现层基础设施（无业务语义，命令层与向导层双向复用）
 │   ├── prompts.py     # 向导原语：select/confirm/ask/resolve_bypass + --no-input 旁路
-│   ├── render.py      # rich 渲染：表格 / 指标卡 / diff 着色 / 进度视图（P1）
+│   ├── render.py      # rich 渲染：stage_progress（阶段级进度，stderr 绑定）/ 任务状态表
 │   ├── output.py      # --output-format json 与 stderr 分流 + map_exit_code() 退出码集中映射
 │   └── equiv.py       # 等价命令 argv 构造（单点映射表）
 │
@@ -161,7 +161,8 @@ class WorkbenchSession:
 | `select(options)` | 编号列表 + 回车（P0；P1 可升级 ↑↓ 键盘导航） | `--no-input` 下 env/default 旁路，缺失 → exit 2；管道输入正常提示 |
 | `confirm(q)` | y/n | 读 `--yes`/env，缺省即错 |
 | `input(hide=)` | 文本（可隐藏回显） | 读参数/env，缺省即错 |
-| `progress(tasks)` | 单行重绘进度条 + 状态表 | 逐任务一行摘要到 stderr |
+| `stage_progress` | 阶段级 spinner（stderr 绑定，transient）| 单行阶段提示到 stderr；--json 下禁用 |
+| `print_task_table` | 完成态逐任务状态表（进度视图回落摘要） | 正常输出（rprint） |
 
 全部原语收口 `console/prompts.py`，签名统一带 `default`/`env_key` 旁路参数（P2 原则），测试经依赖注入 mock。
 
@@ -394,3 +395,4 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.2 | 2026-08-31 | **行业实践对照校准**：新增 §九「行业实践对照」表（gh project-layout / oclif topics / RFC 8628 / kubectl printers）；P2 设备码流契约对齐 RFC 8628 语义（user_code / verification_uri / interval / slow_down / expired_token）；`open_url` 补 `$BROWSER` 覆盖；标注两项刻意不采纳（显式 Factory 依赖束、命令插件化）及理由 |
 | v1.3 | 2026-08-31 | **Sprint 10 P0 实现同步**：目录重组落地（cmds/console/workbench）；交互原语 P0 采用编号选择（gcloud 同款，零新依赖），questionary 为 P1 可选升级；P1 配对码粘贴通道与 doctor/secrets 就绪态留待 Sprint 11 |
 | v1.4 | 2026-08-31 | **main.py 模块化拆分**（889 → 88 行）：pack/evaluate/execute/upload 四命令模块迁入 `cmds/`（顶层与子命令组同构：绑定 + 纯函数动作）；装配点扩展 `app.command()()` 注册顶层命令；`_write_run_manifest` 无引用转发壳删除；引用随迁（workbench exec 域 + 3 个测试文件） |
+| v1.5 | 2026-08-31 | **Sprint 10 收尾同步**：console/render.py 落地（阶段级 stage_progress——stderr 绑定 + transient + 非 TTY 降级，逐任务实时态待 ExecutionAgent 回调；print_task_table 完成态摘要）；--json 覆盖 run/pipeline/eval（emit_json 机器可读 payload；rich console 动态分流——json 模式 stderr 代理、text 模式 None 动态解析，不钉死流对象） |

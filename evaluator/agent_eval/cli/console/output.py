@@ -35,10 +35,26 @@ EXIT_INTERRUPT = 130
 _json_mode = False
 
 
+class _StderrProxy:
+    """转发到**当前** sys.stderr（属性动态解析，测试流替换后仍生效）。"""
+
+    def __getattr__(self, item: str) -> object:
+        return getattr(sys.stderr, item)
+
+
 def set_output_format(fmt: str) -> None:
-    """由全局 callback 注入（--output-format text|json）。"""
+    """由全局 callback 注入（--output-format text|json）。
+
+    JSON 模式同时把全局 rich console 指到 stderr——所有 ``rprint`` 人读输出让路
+    stdout，机器可读契约单点成立（F-C-INTEG-02：stdout 仅 JSON）。
+    text 模式置 None 恢复 rich 动态解析（getter 回落 sys.stdout），均不钉死流对象
+    （CliRunner 逐用例换流，钉死会跨测试污染）。
+    """
     global _json_mode
     _json_mode = fmt == "json"
+    import rich
+
+    rich.get_console().file = _StderrProxy() if _json_mode else None
 
 
 def is_json() -> bool:

@@ -54,6 +54,41 @@ def run(
     )
 
 
+def _run_json_payload(
+    *,
+    run_id: str,
+    mode: str,
+    inputs: object,
+    packages: list,
+    run_dir: Path,
+    metrics: dict | None = None,
+    total_samples: int | None = None,
+) -> dict:
+    """run/pipeline 的机器可读结果（F-C-INTEG-02）。"""
+    payload: dict = {
+        "run_id": run_id,
+        "mode": mode,
+        "package_ref": (inputs.resolved_pkg.manifest.ref if inputs.resolved_pkg else None),
+        "task_set": str(inputs.task_set_path),
+        "sut": {"name": inputs.sut.name, "base_url": inputs.sut.base_url},
+        "total": len(packages),
+        "succeeded": sum(1 for p in packages if p.manifest.status == "success"),
+        "packages": [
+            {
+                "task_id": p.manifest.task_id,
+                "status": p.manifest.status,
+                "output": str(p.output_dir or p.manifest.package_id),
+            }
+            for p in packages
+        ],
+        "run_dir": str(run_dir),
+    }
+    if metrics is not None:
+        payload["metrics"] = metrics
+        payload["total_samples"] = total_samples
+    return payload
+
+
 def execute_run(
     package: str | None = None,
     task_set: str | None = None,
@@ -69,6 +104,8 @@ def execute_run(
     from pathlib import Path
 
     from agent_eval.cli._stages import execute_stage, resolve_run_inputs
+    from agent_eval.cli.console.output import emit_json, is_json
+    from agent_eval.cli.console.render import print_task_table, stage_progress
     from agent_eval.core.exceptions import AgentEvalError
     from agent_eval.core.logging import setup_logging
     from agent_eval.storage.package import generate_run_id
@@ -100,14 +137,16 @@ def execute_run(
 
     workspace_root = Path(output_dir) if output_dir else Path("./workspace")
     try:
-        packages = execute_stage(
-            inputs,
-            run_id=run_id,
-            workspace_root=workspace_root,
-            mode="run",
-            llm_role=llm_role,
-            max_turns=max_turns,
-        )
+        with stage_progress(enabled=not verbose and not is_json()) as sp:
+            sp.advance(f"执行 {len(inputs.task_set_model.tasks)} 个任务（SUT: {inputs.sut.name}）")
+            packages = execute_stage(
+                inputs,
+                run_id=run_id,
+                workspace_root=workspace_root,
+                mode="run",
+                llm_role=llm_role,
+                max_turns=max_turns,
+            )
     except AgentEvalError as e:
         rprint(f"[red]执行失败:[/red] {e}")
         raise typer.Exit(code=1) from e
@@ -119,12 +158,18 @@ def execute_run(
         f"[green]执行完成:[/green] {succeeded}/{len(packages)} 成功；"
         f"结构化日志: {workspace_root}/runs/{run_id}/agent_logs/"
     )
-    for package in packages:
-        status_color = "green" if package.manifest.status == "success" else "red"
-        rprint(
-            f"  [{status_color}]{package.manifest.status}[/{status_color}] "
-            f"{package.manifest.task_id} → {package.output_dir or package.manifest.package_id}"
+    print_task_table(packages)
+    if is_json():
+        emit_json(
+            _run_json_payload(
+                run_id=run_id,
+                mode="run",
+                inputs=inputs,
+                packages=packages,
+                run_dir=packages_run_dir,
+            )
         )
+        return
     rprint(
         f"    评估: [blue]agent-eval eval --package-dir {packages_run_dir / 'packages'} "
         f"--package <场景包>[/blue]"
@@ -222,6 +267,8 @@ def execute_pipeline(
         resolve_eval_inputs,
         resolve_run_inputs,
     )
+    from agent_eval.cli.console.output import emit_json, is_json
+    from agent_eval.cli.console.render import print_task_table, stage_progress
     from agent_eval.core.exceptions import AgentEvalError
     from agent_eval.core.logging import setup_logging
     from agent_eval.storage.package import generate_run_id
@@ -262,14 +309,16 @@ def execute_pipeline(
 
     # ── 阶段 1：执行（清单 mode=pipeline，崩溃可溯源）──
     try:
-        packages = execute_stage(
-            inputs,
-            run_id=run_id,
-            workspace_root=ws_root,
-            mode="pipeline",
-            llm_role=llm_role,
-            max_turns=max_turns,
-        )
+        with stage_progress(enabled=not verbose and not is_json()) as sp:
+            sp.advance(f"执行 {len(inputs.task_set_model.tasks)} 个任务（SUT: {inputs.sut.name}）")
+            packages = execute_stage(
+                inputs,
+                run_id=run_id,
+                workspace_root=ws_root,
+                mode="pipeline",
+                llm_role=llm_role,
+                max_turns=max_turns,
+            )
     except AgentEvalError as e:
         rprint(f"[red]执行失败:[/red] {e}")
         raise typer.Exit(code=1) from e
@@ -279,6 +328,7 @@ def execute_pipeline(
         f"[green]执行完成:[/green] {succeeded}/{len(packages)} 成功；"
         f"结构化日志: {ws_root}/runs/{run_id}/agent_logs/"
     )
+    print_task_table(packages)
 
     # ── 阶段 2：评估（复用同一 run_id 的 RunWorkspace；清单合并 run 绑定字段）──
     run_dir = ws_root / "runs" / run_id
@@ -291,21 +341,36 @@ def execute_pipeline(
         "packages": [str(p.output_dir or p.manifest.package_id) for p in packages],
     }
     try:
-        judge_ctx = build_judge_context(rule_set_path, strict=strict)
-        scenario_pkg_dir = inputs.resolved_pkg.root if inputs.resolved_pkg else None
-        result = evaluate_stage(
-            packages_root,
-            judge_ctx,
-            run=(ws_root, run_id),
-            project=project,
-            no_cache=no_cache,
-            mode="pipeline",
-            scenario_package_dir=scenario_pkg_dir,
-            manifest_extra=run_manifest_extra,
-        )
-        finalize_eval(result, upload_override=upload, package_dir=str(packages_root))
+        with stage_progress(enabled=not verbose and not is_json()) as sp:
+            sp.advance("评估（Rule-based + LLM Judge）")
+            judge_ctx = build_judge_context(rule_set_path, strict=strict)
+            scenario_pkg_dir = inputs.resolved_pkg.root if inputs.resolved_pkg else None
+            result = evaluate_stage(
+                packages_root,
+                judge_ctx,
+                run=(ws_root, run_id),
+                project=project,
+                no_cache=no_cache,
+                mode="pipeline",
+                scenario_package_dir=scenario_pkg_dir,
+                manifest_extra=run_manifest_extra,
+            )
+            sp.advance("上报 / 收尾")
+            finalize_eval(result, upload_override=upload, package_dir=str(packages_root))
     except Exception as e:
         rprint(f"[bold red]❌ 评估失败:[/bold red] {e}")
         raise typer.Exit(code=1) from e
 
     rprint(f"[green]✅ 流水线完成[/green] — {run_dir}")
+    if is_json():
+        emit_json(
+            _run_json_payload(
+                run_id=run_id,
+                mode="pipeline",
+                inputs=inputs,
+                packages=packages,
+                run_dir=run_dir,
+                metrics=dict(result.metrics),
+                total_samples=result.total_samples,
+            )
+        )

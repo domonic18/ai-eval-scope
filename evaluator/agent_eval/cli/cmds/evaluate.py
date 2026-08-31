@@ -146,6 +146,20 @@ def execute_eval(
         # 6-8. trace 刷新 + 摘要 + SUT 身份回填 + 平台上报（共享段）
         finalize_eval(result, upload_override=upload, package_dir=package_dir)
 
+        from agent_eval.cli.console.output import emit_json, is_json
+
+        if is_json():
+            emit_json(
+                {
+                    "package_dir": package_dir,
+                    "run_id": result.run_id,
+                    "mode": run_mode,
+                    "total_samples": result.total_samples,
+                    "metrics": dict(result.metrics),
+                    "failure_breakdown": dict(result.failure_breakdown),
+                }
+            )
+
     except Exception as e:
         rprint(f"[bold red]❌ 评估失败: {e}[/bold red]")
         raise typer.Exit(code=1) from e
