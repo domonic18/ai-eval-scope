@@ -95,6 +95,40 @@ def test_store_install_then_list_local(tmp_path: Path, monkeypatch: pytest.Monke
     assert any(p.manifest.id == "t" for p in local)
 
 
+def test_project_package_discovered_and_resolvable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # 项目包：cwd 一级子目录含 agent_eval.yaml（scenario new / PackageAgent 默认落盘位置）
+    monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path))
+    root = tmp_path / "weekly-report-package"
+    root.mkdir()
+    (root / "agent_eval.yaml").write_text(
+        "package:\n  id: weekly-report\n  scenario: weekly-report\n  version: 0.1.0\n",
+        encoding="utf-8",
+    )
+    mgr = PackageManager()
+    pkgs = mgr.list()
+    mine = next(p for p in pkgs if p.manifest.id == "weekly-report")
+    assert mine.source == "project" and mine.root == root
+    assert mgr.list(source="project") == [mine]
+    # 解析链路（eval/run/pipeline/_stages 与选择器共用）可直达项目包
+    assert mgr.resolve_ref("weekly-report").manifest.version == "0.1.0"
+
+
+def test_project_package_single_level_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # 只扫一层：嵌套清单（如仓库深处的内置包布局）不重复发现，非法清单跳过
+    monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path))
+    nested = tmp_path / "sub" / "deep"
+    nested.mkdir(parents=True)
+    (nested / "agent_eval.yaml").write_text(
+        "package:\n  id: nested\n  scenario: nested\n  version: 1.0.0\n", encoding="utf-8"
+    )
+    bad = tmp_path / "bad-package"
+    bad.mkdir()
+    (bad / "agent_eval.yaml").write_text("not-a-manifest\n", encoding="utf-8")
+    assert PackageManager().list(source="project") == []
+
+
 # ── CLI ─────────────────────────────────────────────────────────────────────────
 
 
@@ -145,6 +179,18 @@ def test_cli_list_builtin() -> None:
     result = runner.invoke(scenario_app, ["list", "--source", "builtin"])
     assert result.exit_code == 0, result.output
     assert "courseware" in result.output
+
+
+def test_cli_list_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path))
+    root = tmp_path / "my-package"
+    root.mkdir()
+    (root / "agent_eval.yaml").write_text(
+        "package:\n  id: my\n  scenario: my\n  version: 0.1.0\n", encoding="utf-8"
+    )
+    result = runner.invoke(scenario_app, ["list", "--source", "project"])
+    assert result.exit_code == 0, result.output
+    assert "my/my:0.1.0" in result.output and "project" in result.output
 
 
 def test_cli_pull_with_fake_remote(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

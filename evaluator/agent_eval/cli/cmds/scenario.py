@@ -353,12 +353,14 @@ def scenario_validate(
 
 @scenario_app.command("list")
 def scenario_list(
-    source: str = typer.Option("all", "--source", "-s", help="all | builtin | local"),
+    source: str = typer.Option(
+        "all", "--source", "-s", help="all | builtin | local | project（当前目录下生成的包）"
+    ),
 ) -> None:
-    """列出场景包（内置 / 本地缓存）。"""
+    """列出场景包（内置 / 本地缓存 / 项目目录）。"""
     from agent_eval.packages import PackageManager
 
-    if source not in ("all", "builtin", "local"):
+    if source not in ("all", "builtin", "local", "project"):
         rprint("[red]--source 仅支持 all/builtin/local[/red]")
         raise typer.Exit(code=1)
 

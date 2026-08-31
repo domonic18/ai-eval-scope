@@ -26,6 +26,13 @@ from agent_eval.evaluation.models import (  # noqa: E402
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def _isolate_project_packages(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """项目包发现根指向空目录：PackageStore 现会扫描 cwd 一级子目录，
+    开发者在 evaluator/ 下真实生成的包（如 ``weekly-report-package/``）不得漏进单测。"""
+    monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "no-project-packages"))
+
+
 # ─── SampleResult fixtures ───
 
 

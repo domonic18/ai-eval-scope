@@ -154,12 +154,15 @@ uv run agent-eval secrets delete SASAN.password
 ### 常用操作
 
 ```bash
-uv run agent-eval scenario list                        # 列出内置 + 本地包
+uv run agent-eval scenario list                        # 列出全部来源的包
+uv run agent-eval scenario list --source project       # 只看当前目录下生成的项目包
 uv run agent-eval scenario validate ./my-package       # 校验包结构
 uv run agent-eval scenario new travel-itinerary/quality --mode skeleton   # 生成包骨架（--template 默认 courseware）
 uv run agent-eval scenario show chat --section rules   # 查看包内容（tree/manifest/rules/tasks/sut）
 uv run agent-eval scenario pull chat/default --remote https://<平台地址>   # 从平台拉取包到本地缓存
 ```
+
+包有三个来源：**builtin**（随工具发布，`chat/code/courseware`）、**local**（`~/.agent_eval/packages/` 缓存，`pull` 产物）、**project**（当前目录下 `*/agent_eval.yaml` 的项目包——`scenario new` / Agent 生成的默认落盘位置）。**生成即发现**：刚创建的包无需任何注册，工作台「执行评测」、`scenario show/edit` 的选择器和 `--package` 参数都能直接引用。
 
 ### Agent 生成与改包（Sprint 11）
 
@@ -174,7 +177,7 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
   --instruction "生成客服对话质检包：礼貌性与准确性 LLM Judge 各 1 条" --yes --trust-agent
 ```
 
-- **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话结束后按最终清单 id 归位到 `./<id>-package/`
+- **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话结束后按最终清单 id 归位到 `./<id>-package/`——**归位即入选择器**，工作台「执行评测」与 `--package` 直接可用，无需注册
 
 - 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
 - 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；写大文件时显示 `⏳ write_file 生成参数中 · N 字` 单行进度（参数在生成、并非卡住）；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
@@ -411,6 +414,7 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 | `AGENT_EVAL_SUT_CREDENTIALS` | SUT 密钥区文件路径覆盖 | `~/.agent_eval/sut_credentials.json` |
 | `AGENT_EVAL_SUT__<REF>__USERNAME/PASSWORD/TOKEN` | SUT 凭证环境变量通道（优先于密钥文件） | 无 |
 | `AGENT_EVAL_PACKAGE_DIR` | 场景包本地缓存根 | `~/.agent_eval/packages/` |
+| `AGENT_EVAL_PROJECT_DIR` | 项目包发现根（一级子目录含 `agent_eval.yaml` 即项目包） | 当前工作目录 |
 | `AGENT_EVAL_REGISTRY_URL` | `scenario pull` 远端基址 | 无 |
 | `AGENT_EVAL_DATASET_SOURCE` | 数据集下载源（hf/ms） | hf |
 | `LANGFUSE_PUBLIC_KEY/SECRET_KEY/HOST` | LLM 调用追踪（可选） | 未设不追踪 |

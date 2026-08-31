@@ -336,6 +336,7 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 - 偏差：预算暂以 `recursion_limit = max_turns × 2` 约束，BudgetGuard 会话级预算待逐任务预算需求出现接入；确认粒度为「全部应用/放弃」整轮确认，逐文件确认（§6.3）未做。
 - **首轮错误遏制**：REPL 首轮（`--instruction`）与后续轮同走 `_attempt()` 防护——瞬时错误（LLM 网关断流等）打印失败原因 + 回滚提示后会话不退出，可直接重发上一条需求（真机曾因首轮回溯击穿整会话）。
 - **YAML 资产门禁**：Agent 曾把提示词写成 README 式 `.md`（加载器只认 `.yaml`，静默失效 `prompts=0`）——`validate_package` 与 `scenario validate` 双端要求 `rules/` 与 `prompts/` 各含 ≥1 个 `.yaml`，错误交 Agent 会话内自修复；真机复测 `rules=1, prompts=1` 通过。
+- **生成即发现**（第三轮实测反馈「执行评测选择器只见预置包」）：`PackageStore` 增第三来源 **project**——项目根（默认 cwd，`AGENT_EVAL_PROJECT_DIR` 覆盖）一级子目录含 `agent_eval.yaml` 即项目包（source=`project`，仅扫一层防内置包经 `assets/packages/` 重复发现）。`PackageManager.list/find` 单点打通：工作台执行域与 `scenario show/edit` 选择器、`eval/run/pipeline` 的 `--package` 解析全部直达刚生成的包；单测 conftest 钉 env 隔离开发者 cwd 实包。
 - CLI：`scenario new --mode agent`（REF 可省——用户实测反馈「先问包名不友好」：省略时 Agent 按需求拟定引用并在计划首行给出，会话中自然语言可改，会话结束按**最终清单 id** 归位 `./<id>-package/`（暂存目录生成 + `shutil.move`；未落盘则清理不留垃圾）；给了 REF 则钉入模板不得自拟）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`；交互选择器过滤内置包并给路径输入入口）；workbench 场景域两项入口（生成新包不再前置询问包名）；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
 - 验证：单测 mock `_invoke` 回放状态机 + `_FakeGraph` 流式事件（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘/中断回滚/blocks 解析）；真机 KIMI 端到端冒烟（一句话生成合法包、一句话改字段，思考/正文/工具全程直播）。
 
