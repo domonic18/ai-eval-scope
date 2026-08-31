@@ -1,8 +1,6 @@
-"""账号与配置域 — doctor / models set / secrets 引导（auth 登录在 Sprint 11）。"""
+"""账号与配置域 — doctor / models set / secrets 向导（auth 登录在 Sprint 11）。"""
 
 from __future__ import annotations
-
-from rich import print as rprint
 
 from agent_eval.cli.console.prompts import select
 
@@ -32,12 +30,8 @@ def main(session) -> None:  # noqa: ANN001
 
         list_models()
     elif action.startswith("SUT"):
-        from agent_eval.execution.auth.secrets_store import secrets_file_path
+        from agent_eval.cli.cmds.secrets import secrets_wizard
 
-        rprint(f"凭证文件: [cyan]{secrets_file_path()}[/cyan]（0600）")
-        rprint(
-            "[blue]录入:[/blue] agent-eval secrets set <ref>.<field>   "
-            "[blue]查看:[/blue] agent-eval secrets list"
-        )
+        secrets_wizard()
     else:
         return

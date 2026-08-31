@@ -134,6 +134,7 @@ uv run agent-eval secrets delete SASAN.password
 ```
 
 - 存储于 `~/.agent_eval/sut_credentials.json`（0600），路径可用 `AGENT_EVAL_SUT_CREDENTIALS` 覆盖。
+- 也可在工作台交互式管理：`agent-eval start` → 账号与配置 → SUT 凭证——查看已录清单 / 录入更新（ref 沿存量选择或新增，字段选 username/password/token 或自定义，值隐藏输入）/ 删除，与命令行读写同一文件。
 - 也可走环境变量通道（优先级更高）：`AGENT_EVAL_SUT__<REF大写>__{USERNAME|PASSWORD|TOKEN}`，如 `AGENT_EVAL_SUT__SASAN__PASSWORD`。
 - 云端 executor 启动时会从平台 Secrets（org 级 KV）拉取并注入环境变量——本机 `secrets` 与平台 Secrets 两条通道等效。平台侧凭证体系详见 [06 数据管理与配置规范 §4.7](../arch/06数据管理与配置规范.md)。
 

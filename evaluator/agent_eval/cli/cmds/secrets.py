@@ -45,16 +45,21 @@ def set_secret(key: str) -> None:
 @secrets_app.command("list")
 def list_secrets() -> None:
     """查看已录凭证键清单（不显示值）。"""
-    from agent_eval.execution.auth.secrets_store import load_secrets_file, secrets_file_path
-
-    secrets = load_secrets_file()
-    if not secrets:
-        rprint(f"[yellow]未录入任何凭证（{secrets_file_path()} 不存在或为空）。[/yellow]")
+    if not _render_secrets():
         rprint(
             "[yellow]运行 [/yellow][bold]agent-eval secrets set <ref>.<field>[/bold][yellow] 录入。[/yellow]"
         )
         raise typer.Exit(code=1)
 
+
+def _render_secrets() -> bool:
+    """渲染已录凭证表（命令与工作台向导共用）；空返回 False。"""
+    from agent_eval.execution.auth.secrets_store import load_secrets_file, secrets_file_path
+
+    secrets = load_secrets_file()
+    if not secrets:
+        rprint(f"[yellow]未录入任何凭证（{secrets_file_path()} 不存在或为空）。[/yellow]")
+        return False
     table = Table(title="SUT 凭证")
     table.add_column("ref", style="bold")
     table.add_column("field")
@@ -63,6 +68,67 @@ def list_secrets() -> None:
             table.add_row(ref, field)
     rprint(table)
     rprint(f"[dim]存储于 {secrets_file_path()}（0600，值不回显）[/dim]")
+    return True
+
+
+def secrets_wizard() -> None:
+    """工作台「SUT 凭证」交互子向导：查看 / 录入 / 删除（纯函数动作，workbench 复用）。"""
+    from agent_eval.cli.console.prompts import ask, confirm, select
+    from agent_eval.execution.auth.secrets_store import load_secrets_file, save_secrets_file
+
+    rprint("[dim]凭证对应 sut_config 的 credential_ref；值隐藏输入，存储 0600。[/dim]")
+    while True:
+        action = select("SUT 凭证", ["查看已录凭证", "录入 / 更新凭证", "删除凭证", "返回"])
+        if action == "返回":
+            return
+        if action == "查看已录凭证":
+            if not _render_secrets():
+                rprint(
+                    "[dim]→ 选「录入 / 更新凭证」，或命令行 agent-eval secrets set <ref>.<field>[/dim]"
+                )
+            continue
+        if action == "录入 / 更新凭证":
+            existing = sorted(load_secrets_file())
+            ref = (
+                select("选择 ref（credential_ref）", [*existing, "➕ 新增 ref…"])
+                if existing
+                else ask("ref（sut_config 的 credential_ref，如 SASAN）")
+            )
+            if ref.startswith("➕"):
+                ref = ask("新 ref（如 SASAN / AGENT_SERVER）")
+            if not ref:
+                rprint("[yellow]未输入 ref，已取消。[/yellow]")
+                continue
+            field = select("字段", ["username", "password", "token", "自定义…"])
+            if field == "自定义…":
+                field = ask("字段名")
+            if not field:
+                rprint("[yellow]未输入字段名，已取消。[/yellow]")
+                continue
+            value = ask(f"{ref}.{field} 的值", hide=True)
+            if not value:
+                rprint("[yellow]未输入值，已取消。[/yellow]")
+                continue
+            secrets = load_secrets_file()
+            secrets.setdefault(ref, {})[field] = value
+            path = save_secrets_file(secrets)
+            rprint(f"[green]✅ 已保存[/green] {ref}.{field} → {path}（0600）")
+            continue
+        # 删除凭证
+        secrets = load_secrets_file()
+        keys = [f"{r}.{f}" for r in sorted(secrets) for f in sorted(secrets[r])]
+        if not keys:
+            rprint("[yellow]未录入任何凭证。[/yellow]")
+            continue
+        key = select("选择要删除的凭证", [*keys, "取消"])
+        if key == "取消" or not confirm(f"确认删除 {key}"):
+            continue
+        ref, field = key.split(".", 1)
+        secrets[ref].pop(field)
+        if not secrets[ref]:
+            secrets.pop(ref)
+        save_secrets_file(secrets)
+        rprint(f"[green]✅ 已删除[/green] {key}")
 
 
 @secrets_app.command("delete")

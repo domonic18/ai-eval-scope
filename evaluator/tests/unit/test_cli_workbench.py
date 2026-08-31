@@ -143,6 +143,59 @@ class TestRuns:
 # ── doctor ─────────────────────────────────────────────────────────────
 
 
+# ── secrets 工作台向导 ──────────────────────────────────────────────────
+
+
+class TestSecretsWizard:
+    def test_wizard_set_view_roundtrip(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import json
+
+        from agent_eval.cli.cmds.secrets import secrets_wizard
+        from agent_eval.cli.console import prompts
+
+        cred = tmp_path / "creds.json"
+        monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(cred))
+        picks = iter(["录入 / 更新凭证", "password", "查看已录凭证", "返回"])
+        answers = iter(["AGENT_SERVER", "pw-123"])  # ref（无存量→ask）→ 值（隐藏）
+        monkeypatch.setattr(prompts, "select", lambda label, options, **kw: next(picks))
+        monkeypatch.setattr(prompts, "ask", lambda label, **kw: next(answers))
+
+        secrets_wizard()
+
+        saved = json.loads(cred.read_text(encoding="utf-8"))
+        assert saved == {"AGENT_SERVER": {"password": "pw-123"}}
+
+    def test_wizard_delete(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        import json
+
+        from agent_eval.cli.cmds.secrets import secrets_wizard
+        from agent_eval.cli.console import prompts
+
+        cred = tmp_path / "creds.json"
+        cred.write_text(json.dumps({"SASAN": {"username": "u", "password": "p"}}), encoding="utf-8")
+        monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(cred))
+        picks = iter(["删除凭证", "SASAN.password", "返回"])
+        monkeypatch.setattr(prompts, "select", lambda label, options, **kw: next(picks))
+        monkeypatch.setattr(prompts, "confirm", lambda label, **kw: True)
+
+        secrets_wizard()
+
+        saved = json.loads(cred.read_text(encoding="utf-8"))
+        assert saved == {"SASAN": {"username": "u"}}  # 只删所选字段
+
+    def test_wizard_view_empty(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds.secrets import secrets_wizard
+        from agent_eval.cli.console import prompts
+
+        monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(tmp_path / "creds.json"))
+        picks = iter(["查看已录凭证", "返回"])
+        monkeypatch.setattr(prompts, "select", lambda label, options, **kw: next(picks))
+
+        secrets_wizard()  # 空库不抛、可见提示
+
+
 class TestDoctor:
     def test_checks_structure(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
