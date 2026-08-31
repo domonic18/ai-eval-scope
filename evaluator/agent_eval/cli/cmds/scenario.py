@@ -86,6 +86,14 @@ def _resolve_root(ref: str) -> tuple[Path, object]:
     return pkg.root, pkg.manifest
 
 
+def _count_lines(path: Path) -> int:
+    """文本文件行数（YAML 资产的信息量在行数而非字节）；二进制/不可读计 0。"""
+    try:
+        return len(path.read_text(encoding="utf-8").splitlines())
+    except (OSError, UnicodeDecodeError):
+        return 0
+
+
 def show_scenario(ref: str, section: str = "tree") -> None:
     """展示场景包内容（纯函数动作，workbench 复用）。
 
@@ -97,14 +105,21 @@ def show_scenario(ref: str, section: str = "tree") -> None:
     m = manifest
 
     if section == "tree":
-        rprint(f"[bold]📦 {m.ref}[/bold] [dim]（{root}）[/dim]")
+        rprint(f"[bold]📦 {m.ref}[/bold]")
+        rprint(f"[dim]{root}[/dim]\n")
         entries = sorted(p for p in root.rglob("*") if ".git" not in p.parts and p.is_file())
-        for p in entries[:40]:
-            rprint(
-                f"  [cyan]{p.relative_to(root).as_posix()}[/cyan] [dim]{p.stat().st_size}B[/dim]"
-            )
-        if len(entries) > 40:
-            rprint(f"  [dim]… 共 {len(entries)} 个文件[/dim]")
+        groups: dict[str, list[tuple[str, int]]] = {}
+        for p in entries:
+            rel = p.relative_to(root)
+            d = rel.parent.as_posix() if str(rel.parent) != "." else "(根)"
+            groups.setdefault(d, []).append((rel.name, _count_lines(p)))
+        total = 0
+        for d in sorted(groups, key=lambda k: (k != "(根)", k)):
+            rprint(f"  [bold]{d if d == '(根)' else d + '/'}[/bold]")
+            for name, n in groups[d]:
+                total += n
+                rprint(f"    [cyan]{name}[/cyan] [dim]· {n} 行[/dim]")
+        rprint(f"\n  [dim]合计 {len(entries)} 个文件 · {total} 行[/dim]")
         return
 
     if section == "manifest":

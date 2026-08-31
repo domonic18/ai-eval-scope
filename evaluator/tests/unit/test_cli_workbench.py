@@ -123,6 +123,8 @@ class TestScenarioShow:
         result = runner.invoke(scenario_app, ["show", "chat"])
         assert result.exit_code == 0, result.output
         assert "agent_eval.yaml" in result.output
+        assert "行" in result.output and "合计" in result.output  # 行数 + 汇总（F-C-SCN-VIEW-01）
+        assert "task_sets/" in result.output  # 按目录分组
 
     def test_show_rules_builtin(self) -> None:
         result = runner.invoke(scenario_app, ["show", "chat", "--section", "rules"])
