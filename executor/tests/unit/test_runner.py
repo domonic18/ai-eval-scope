@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from cryptography.exceptions import InvalidTag
 
 from eval_executor.executor import runner as runner_mod
 from eval_executor.executor.runner import run_job
@@ -311,3 +312,25 @@ async def test_refresh_input_url_none_without_token(
 
     assert await runner_mod.refresh_input_url(sample_job) is None
     client.get.assert_not_awaited()
+
+
+async def test_resolve_submit_token_logs_exc_type_on_decrypt_failure(
+    sample_job: EvalJob,
+    fake_sessionmaker: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """解密失败须带 error_type——InvalidTag（密钥不匹配）的 str() 为空串，只打 error= 无从定位。"""
+    fake_key = MagicMock(revoked_at=None, token_encrypted="v1:iv:ct:tag")
+    monkeypatch.setattr(runner_mod, "find_api_key_by_id", AsyncMock(return_value=fake_key))
+    monkeypatch.setattr(runner_mod, "decrypt_token", MagicMock(side_effect=InvalidTag()))
+    # mock LOG 而非 capture_logs：conftest setup_logging(ERROR) 的过滤型 logger 会丢 warning 事件
+    mock_log = MagicMock()
+    monkeypatch.setattr(runner_mod, "LOG", mock_log)
+
+    assert await runner_mod._resolve_submit_token(sample_job) is None
+
+    mock_log.warning.assert_called_once()
+    assert mock_log.warning.call_args.args[0] == "job.flush.decrypt_failed"
+    kwargs = mock_log.warning.call_args.kwargs
+    assert kwargs["error_type"] == "InvalidTag"
+    assert kwargs["error"] == ""

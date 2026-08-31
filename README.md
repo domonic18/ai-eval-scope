@@ -102,23 +102,6 @@ make docker-up                # 启动 postgres + minio + web
 ![运行详情](./docs/assets/screen_snap2.png)
 
 
-## 开发
-
-```bash
-make test        # 运行测试（= cd evaluator && uv run pytest）
-make test-cov    # 覆盖率报告
-make lint        # 代码检查
-make format      # 格式化
-```
-
-或直接用 uv（从 evaluator/）：
-
-```bash
-uv run pytest tests/ -v
-uv run pytest tests/ -v --cov=agent_eval --cov-report=term-missing
-uv run ruff format agent_eval/ tests/ && uv run ruff check --fix agent_eval/ tests/
-```
-
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！开发流程、提交规范、PR 流程见 [CONTRIBUTING.md](./CONTRIBUTING.md)。

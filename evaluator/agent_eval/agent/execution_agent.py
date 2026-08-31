@@ -64,7 +64,7 @@ def _is_recursion_error(error: BaseException) -> bool:
 class ExecutionAgent:
     """基于 DeepAgents 的执行 Agent，端到端驱动评测执行流程。
 
-    - 模型：LLM 角色注册表（arch/13 §19.2）→ build_chat_model() 构造 ChatModel（双协议，模型无关）
+    - 模型：LLM 角色注册表（arch/06 §4.6）→ build_chat_model() 构造 ChatModel（双协议，模型无关）
     - 工具：SUT Tools 经 LangChain Tool 显式绑定（白名单），未绑定工具不可用
     - 预算：BudgetGuard 回调（on_llm_end 累计 token/成本，超限抛 BudgetExceededError）
     - 状态：单任务单发 ainvoke，不接 checkpointer（见 _build_graph 说明）

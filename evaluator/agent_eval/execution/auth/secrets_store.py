@@ -1,4 +1,4 @@
-"""SUT 凭证文件（`~/.agent_eval/sut_credentials.json`）— 本机密钥区（arch/13 §19.1）。
+"""SUT 凭证文件（`~/.agent_eval/sut_credentials.json`）— 本机密钥区（arch/06 §4.7）。
 
 `agent-eval secrets set <ref>.<field>` 交互录入；**0600 权限**（与 llm.json
 同目录同惯例）。通用 KV 结构：``{"<ref>": {"<field>": "<value>"}}``——字段名

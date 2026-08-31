@@ -1,6 +1,6 @@
 """配置加载器 — YAML 解析与 JSON Schema 校验。
 
-支持加载 pipeline.yaml、rule_set.yaml、task_set.yaml 等配置文件，
+支持加载 rule_set.yaml、task_set.yaml 等配置文件，
 并通过 JSON Schema 进行合法性校验。
 """
 

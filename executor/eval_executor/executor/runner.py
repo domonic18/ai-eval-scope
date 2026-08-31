@@ -1,8 +1,8 @@
 """任务执行器 -- 打包、评估、按提交者身份回传、更新 eval_jobs 状态。
 
-与 gateway/worker/runner.py 的差异：
-- 输入不再来自 ``job.input_ref``（本地路径），而由调用方传入已下载物化的 ``input_dir``；
-- 工作区落 ``settings.workspace_dir/<job_id>``（原 upload_dir/workspaces）；
+职责边界：
+- 输入由调用方传入已下载物化的 ``input_dir``（下载见 ``storage/input_loader.py``）；
+- 工作区落 ``settings.workspace_dir/<job_id>``；
 - 状态机 ``mark_running`` 移至 entrypoint/loop（启动第一时间置 running）。
 """
 
@@ -130,7 +130,14 @@ async def _resolve_submit_token(job: EvalJob) -> str | None:
     try:
         return decrypt_token(key.token_encrypted, settings.key_encryption_key)
     except Exception as exc:  # noqa: BLE001
-        LOG.warning("job.flush.decrypt_failed", job_id=job.job_id, error=str(exc))
+        # cryptography 的 InvalidTag（加密密钥与 web 不一致时）str() 为空串：只打 error=
+        # 会得到空串，补 error_type 才能定位是解密失败而非其他异常。
+        LOG.warning(
+            "job.flush.decrypt_failed",
+            job_id=job.job_id,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
         return None
 
 

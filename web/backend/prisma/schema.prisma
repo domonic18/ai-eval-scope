@@ -121,7 +121,7 @@ model Project {
 model ApiKey {
   id             String    @id @default(uuid())
   projectId      String    @map("project_id")
-  // §6.3 方案 A（单一 Bearer token）：哈希态鉴权查找；加密态 gateway 回传解密；preview 识别用（明文永不落库）
+  // §6.3 方案 A（单一 Bearer token）：哈希态鉴权查找；加密态 executor 回传解密；preview 识别用（明文永不落库）
   tokenHash      String    @unique @map("token_hash")
   tokenEncrypted String    @map("token_encrypted")
   tokenPreview   String    @map("token_preview")
@@ -286,7 +286,7 @@ model IngestEvent {
   @@map("ingest_events")
 }
 
-// ── 评测执行任务（gateway 合并至 Web；executor 消费）──────────────────
+// ── 评测执行任务（Web 治理；executor 消费）──────────────────
 // 由 Web 写入（queued），SCF executor 消费（running → completed/failed）。
 // 见 docs/arch/09Web可观测平台架构设计.md §7.7 与 docs/arch/12第三方系统对接方案.md。
 model EvalJob {

@@ -1,6 +1,6 @@
 # Web 可观测平台架构设计
 
-> 本文档是 [03Web 可观测平台重构需求](../requirement/03Web可观测平台重构需求.md) 的工程落地设计，阐述 Web 可观测平台（仿 Langfuse 的多租户评估可观测后端）的分层架构、后端工程结构、数据库 DDL、对象存储、认证与多租户、摄取服务、评估器对接（ResultSink）、Query API、前端改造、迁移回填与部署运维。
+> 本文档是 [03Web 可观测平台需求](../requirement/03Web可观测平台需求.md) 的工程落地设计，阐述 Web 可观测平台（仿 Langfuse 的多租户评估可观测后端）的分层架构、后端工程结构、数据库 DDL、对象存储、认证与多租户、摄取服务、评估器对接（ResultSink）、Query API、前端改造、迁移回填与部署运维。
 >
 > 属于 [01 整体架构设计](./01整体架构设计.md) §二"Web 可观测平台"在平台化阶段的演进版；前端页面视觉沿用早期 Web Portal 设计（见本文 §十 前端改造），本文聚焦数据/服务/对接层。需求条目编号（F-O-* / NF-O-*）对齐需求文档。
 
@@ -115,7 +115,7 @@ web/backend/
 │   │   │   ├── llmConfig.ts          # GET /api/public/llm-config 按角色下发 LLM 配置（解密 key）
 │   │   │   ├── secrets.ts            # GET /api/public/secrets 下发 org 级平台 Secrets（executor 启动注入）
 │   │   │   └── health.js
-│   │   ├── eval/                     # 评测任务（合并自 gateway；Bearer API Key）
+│   │   ├── eval/                     # 评测任务（Bearer API Key）
 │   │   │   ├── jobs.ts               # POST /api/v1/jobs、GET /api/v1/jobs/:id
 │   │   │   ├── ruleSets.ts           # GET /api/v1/rule-sets（DB 资产优先、静态兜底）
 │   │   │   ├── mcp.ts                # MCP 工具接入
@@ -440,7 +440,7 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ── 评测执行任务（gateway 合并至 Web；executor 消费）──────────────────
+// ── 评测执行任务（Web 治理；executor 消费）──────────────────
 model EvalJob {
   id                String    @id @default(uuid()) @map("job_id")
   projectId         String    @map("project_id")
@@ -1199,11 +1199,11 @@ volumes: { pgdata: {} }
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
-| v1.0 | 2026-06-16 | 初版：基于 [03Web 可观测平台重构需求](../requirement/03Web可观测平台重构需求.md) 给出分层架构、后端工程结构、Prisma 数据模型 DDL、对象存储抽象、JWT+Bearer 认证与多租户隔离、Ingestion 摄取服务（事件 schema/幂等/校验/限流/两段式制品上传）、评估器 ResultSink 对接、Query API 与聚合、前端改造、迁移回填、部署运维、安全与测试策略 |
-| v1.1 | 2026-06-29 | 同步代码 + 合并原 14《样本级评估走势设计》：数据模型补 User SSO 字段 / `JoinRequest` / `ApiKey.secretEncrypted` / `Run.avgSoft,avgPref` / `Sample.contentHash`；§6.1 改团队中心模型（注册不自动建 Org + 申请审批），新增 §6.6 SAML SSO；§九 Query API 补 `samples`/`sample-trends`/DELETE 端点 + §9.4 样本级走势（Run 级 vs Sample 级，合并自原 doc 14）；§5.4 制品同源预览代理（raw + artifact token）；ObjectStorage 补 `deleteObjects`；§4.3 `make db-init` 替代 schema.sql；趋势 SQL 补 orgId 隔离 + Soft/Pref；前端补样本 Tab + 走势视图 + 登录/注册/加入页拆分 + SSO Tab |
-| v1.2 | 2026-06-30 | 数据库治理统一：web 的 `prisma/` 迁至仓库根 `db/web/prisma/`，与 gateway 的 `db/gateway/migrations/` 同归 `db/`；§4.1/§4.3 目录树与建库命令同步（`make db-init`=`db/apply.sh` 统一应用 web+gateway，`make db-migrate-prod`=`db/apply-prod.sh` 线上增量）；schema.prisma 显式 output 以兼容迁出 web/backend 后的 Prisma 项目根推断（见 db/README.md） |
-| v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 相关描述；新增 §7.7 评测任务提交与执行（`/api/v1/jobs` + executor）；架构图/后端工程结构/Prisma 模型补 `EvalJob`；§6.3 统一为 Bearer API Key（移除 HMAC）；§12.1/§12.3 补 executor/SCF 配置；说明 gateway SQL 已移除、任务表由 Prisma 统一治理 |
-| v1.4 | 2026-07-10 | **Prisma schema 迁回 web/backend**（反转 v1.2 的迁出决策）：schema + migrations 由 `db/web/prisma/` 移至 `web/backend/prisma/`（Prisma 项目根归位），消除「schema 跨目录导致 `prisma generate` 在仓库根触发 auto-install」的 CI 构建失败（npm i 在干净 root 失败）+ 显式 `output` hack + 根级 `node_modules`/`package.json` 副作用；`db/` 目录撤销，建库脚本迁至 `scripts/db-apply.sh` / `scripts/db-apply-prod.sh`（`make db-init` / `make db-migrate-prod` 不变）；§4.1/§4.3 目录树与建库命令同步 |
-| v1.5 | 2026-07-13 | 合并 15《评估结果文件定位与制品联动方案》：§7.7 端点表格补 `GET /api/v1/jobs/:id/overview` 并说明 `failures[].top_issues` 与 `failures[].files`；§十 前端改造补「扣分项文件定位与制品联动」（`SourceFileChips`、`matchArtifactByFilename`、预览窗受控化、双向高亮、降级策略）。 |
-| v1.6 | 2026-07-13 | **对接 [13 配置管理设计](./13配置管理设计.md)（场景化指标 + 运行配置快照）**：§4.1 `Project` 加 `default_scenario`/`default_package`，`Run`/`Sample` 加 `metrics` JSONB（指标统一存储，键=`metric_id`）+ `scenario_id`/`package_id`/`package_version`/`run_config_snapshot_id`，新增 `RunConfigSnapshot` 模型；`dr/cpr/avgReward/avgSoft/avgPref/condR` 与 `sFormat/sCommon/sSoft/sPref/reward` 降级为可空遗留列（courseware 回填，最终删除）；§7.1 摄取 schema 的 `metrics` 改为动态键值对象；§7.7 catalog 端点改为 `/api/v1/scenarios/:id/catalog`；§9.2/§9.3/§9.4 查询 SQL 改为从 `metrics` JSONB 取值；**新增 §9.5 场景化指标体系**（数据/摄取/查询/前端/迁移清理方案）；§9.1 端点补 `snapshot` 与 `scenarios`；§十 前端补「指标动态渲染」；§11 迁移补场景化指标迁移阶段 A/B/C。 |
-| v1.7 | 2026-08-27 | **评测配置资产化与平台 Secrets 同步（W1–W4，方案见 [13 配置管理设计](./13配置管理设计.md)）**：§三 后端工程结构按实际目录重写——routes 补 `config/scenarios.ts`（五类资产配置中心）、`secrets.ts`、`admin.ts`、`ai.ts`、`sso.ts`、`join.ts`，public/ 补 `llmConfig.ts`、`secrets.ts`；ruleSetsCatalog 描述改"DB 资产优先、构建期静态兜底"；新增 §4.1.1 场景资产与平台 Secrets 模型速览（Scenario/ScenarioPackage/*Asset 五类/TaskSetAsset/SutConfigAsset/LlmModel/**Secret**/WebhookDelivery）；§6.3 补公开端点全景表（llm-config / secrets 下发）；§7.7 executor 流程补启动拉取平台 Secrets 注入 env 与按 package_ref 拉取场景包两步，并注明 jobs 通道当前为文件上传型边界。 |
+| v1.0 | 2026-06-16 | 初版（基于 [03Web 可观测平台需求](../requirement/03Web可观测平台需求.md)）：分层架构 / Prisma 模型 / 对象存储 / 多租户认证 / Ingestion 摄取 / Query API / 前端改造 / 迁移与运维策略 |
+| v1.1 | 2026-06-29 | 同步代码 + 合并原 14《样本级评估走势设计》：§6.1 团队中心模型（申请审批）+ SAML SSO；§9.4 样本级走势；制品同源预览代理 |
+| v1.2 | 2026-06-30 | 数据库治理统一：web 的 prisma/ 迁至仓库根 db/web/prisma/（与 gateway 迁移同归 db/） |
+| v1.3 | 2026-07-07 | **执行拆分与网关合并**：删除 gateway 描述；新增 §7.7 评测任务提交与执行（jobs + executor）；鉴权统一 Bearer API Key |
+| v1.4 | 2026-07-10 | **Prisma schema 迁回 web/backend（反转 v1.2）**：消除 schema 跨目录引发的 CI 构建失败与根目录副作用；db/ 撤销，建库脚本迁至 scripts/ |
+| v1.5 | 2026-07-13 | 合并 15《评估结果文件定位与制品联动方案》：jobs overview 端点 + 前端扣分项文件定位与制品联动 |
+| v1.6 | 2026-07-13 | **对接 [13 配置管理设计](./13配置管理设计.md)（场景化指标 + 运行配置快照）**：Run/Sample 加 metrics JSONB 与场景/包/快照关联，DR/CPR 等降级为可空遗留列；新增 §9.5 场景化指标体系；前端指标动态渲染 |
+| v1.7 | 2026-08-27 | **W1–W4 资产化与平台 Secrets 同步（方案见 [13](./13配置管理设计.md)）**：后端工程结构按实际目录重写（config / secrets / admin 等路由）；新增 §4.1.1 场景资产与平台 Secrets 模型速览；executor 流程补拉取 Secrets 与场景包两步 |

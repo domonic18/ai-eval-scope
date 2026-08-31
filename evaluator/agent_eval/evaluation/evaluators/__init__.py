@@ -28,7 +28,7 @@ from agent_eval.evaluation.evaluators.quality_evaluators import (  # noqa: F401
     TeachingLogicEvaluator,
 )
 
-# 导入视觉评估器（opt-in，--enable-vision 时使用）
+# 导入视觉评估器（规则集声明视觉规则时使用，如 coursework-vision）
 from agent_eval.evaluation.evaluators.vision_evaluators import (  # noqa: F401
     VisionQualityEvaluator,
 )

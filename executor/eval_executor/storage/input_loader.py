@@ -5,8 +5,6 @@ executor **不持有对象存储凭据**：输入由 Web 上传到对象存储�
 
 - zip → 安全解压到 dest_dir（zip-slip 防护 + 中文文件名编码修正）；
 - 单文件 → 按 object_key 基名写入 dest_dir。
-
-解压逻辑自 gateway/storage/workspace.py 迁移（消费侧解压）。
 """
 
 from __future__ import annotations
@@ -75,10 +73,7 @@ def _extract_zip(data: bytes, dest_dir: Path) -> None:
 
 
 def _decode_zip_name(info: zipfile.ZipInfo) -> str:
-    """修正 zip 条目文件名编码（CP437 → UTF-8/GBK/GB18030）。
-
-    详见 gateway/storage/workspace.py 同名函数的说明。
-    """
+    """修正 zip 条目文件名编码（CP437 → UTF-8/GBK/GB18030）。"""
     name = info.filename
     if info.flag_bits & 0x800:  # UTF-8 标记已置位
         return name
