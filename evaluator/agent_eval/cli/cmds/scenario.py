@@ -58,7 +58,10 @@ def scenario_new(
         help="skeleton=目录骨架（原 init）| agent=自然语言生成（REPL 会话）| template（P2）",
     ),
     output: Path | None = typer.Option(
-        None, "--output", "-o", help="输出目录（skeleton 默认 ./<id>/；agent 默认 ./<id>-package/）"
+        None,
+        "--output",
+        "-o",
+        help="输出目录（skeleton 默认 ./<id>/；agent 默认 workspace/scenario-packages/<id>-package/）",
     ),
     template: str = typer.Option(
         "courseware", "--template", "-t", help="脚手架模板（skeleton 模式）"

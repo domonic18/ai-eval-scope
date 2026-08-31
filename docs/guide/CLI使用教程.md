@@ -155,14 +155,14 @@ uv run agent-eval secrets delete SASAN.password
 
 ```bash
 uv run agent-eval scenario list                        # 列出全部来源的包
-uv run agent-eval scenario list --source project       # 只看当前目录下生成的项目包
+uv run agent-eval scenario list --source project       # 只看项目包（workspace/scenario-packages/ 与当前目录）
 uv run agent-eval scenario validate ./my-package       # 校验包结构
 uv run agent-eval scenario new travel-itinerary/quality --mode skeleton   # 生成包骨架（--template 默认 courseware）
 uv run agent-eval scenario show chat --section rules   # 查看包内容（tree/manifest/rules/tasks/sut）
 uv run agent-eval scenario pull chat/default --remote https://<平台地址>   # 从平台拉取包到本地缓存
 ```
 
-包有三个来源：**builtin**（随工具发布，`chat/code/courseware`）、**local**（`~/.agent_eval/packages/` 缓存，`pull` 产物）、**project**（当前目录下 `*/agent_eval.yaml` 的项目包——`scenario new` / Agent 生成的默认落盘位置）。**生成即发现**：刚创建的包无需任何注册，工作台「执行评测」、`scenario show/edit` 的选择器和 `--package` 参数都能直接引用。
+包有三个来源：**builtin**（随工具发布，`chat/code/courseware`）、**local**（`~/.agent_eval/packages/` 缓存，`pull` 产物）、**project**（项目包——`workspace/scenario-packages/` 与当前目录下 `*/agent_eval.yaml` 双根发现；Agent 生成的包默认落 `workspace/scenario-packages/`）。**生成即发现**：刚创建的包无需任何注册，工作台「执行评测」、`scenario show/edit` 的选择器和 `--package` 参数都能直接引用。
 
 ### Agent 生成与改包（Sprint 11）
 
@@ -177,7 +177,7 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
   --instruction "生成客服对话质检包：礼貌性与准确性 LLM Judge 各 1 条" --yes --trust-agent
 ```
 
-- **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话结束后按最终清单 id 归位到 `./<id>-package/`——**归位即入选择器**，工作台「执行评测」与 `--package` 直接可用，无需注册
+- **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话结束后按最终清单 id 归位到 `workspace/scenario-packages/<id>-package/`——**归位即入选择器**，工作台「执行评测」与 `--package` 直接可用，无需注册
 
 - 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
 - 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；写大文件时显示 `⏳ write_file 生成参数中 · N 字` 单行进度（参数在生成、并非卡住）；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
@@ -370,6 +370,7 @@ uv run agent-eval suite run  --file suite.yaml --dry-run     # 只打印将执�
 
 ```
 workspace/
+├── scenario-packages/            # Agent 生成的场景包（scenario new --mode agent 默认落盘）
 ├── runs/{run_id}/                # run_id = UTC 时间戳 %Y%m%d_%H%M%S
 │   ├── run_manifest.json         # 运行绑定：mode(run|pipeline)/package_ref/task_set/sut/内容指纹…
 │   ├── packages/{task_id}/       # 各任务执行包（manifest/task/output//trace/metrics/metadata）

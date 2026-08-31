@@ -282,10 +282,18 @@ def _require_empty_dir(root: Path) -> None:
         raise typer.Exit(code=1)
 
 
-def _finalize_new_package(root: Path, movable: bool) -> Path:
-    """Agent 拟定引用且未指定 --output：会话结束后按**最终清单 id** 归位 ./<id>-package/。
+def _default_packages_root() -> Path:
+    """Agent 生成包的默认落盘根：``workspace/scenario-packages/``（不散落仓库目录）。"""
+    from agent_eval.packages.store import scenario_packages_root
 
-    会话中自然语言改过包名也生效（迁移读的是最后一次落盘的清单）。
+    return scenario_packages_root()
+
+
+def _finalize_new_package(root: Path, movable: bool) -> Path:
+    """Agent 拟定引用且未指定 --output：会话结束后按**最终清单 id** 归位。
+
+    归位到 ``workspace/scenario-packages/<id>-package/``（随 ``WORKSPACE_DIR``）；会话中
+    自然语言改过包名也生效（迁移读的是最后一次落盘的清单）。
     """
     import re
     import shutil
@@ -299,12 +307,13 @@ def _finalize_new_package(root: Path, movable: bool) -> Path:
         rprint("[red]❌ 未能生成场景包（清单未落盘）[/red]")
         raise typer.Exit(code=1)
     slug = re.sub(r"[^A-Za-z0-9._-]+", "-", load_manifest(root).id).strip("-.") or "scenario"
-    final = Path.cwd() / f"{slug}-package"
+    final = _default_packages_root() / f"{slug}-package"
     if final == root:
         return root
     if final.exists():
         rprint(f"[yellow]⚠ 目标目录已存在，保留在生成位置: {root}[/yellow]")
         return root
+    final.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(root), str(final))
     rprint(f"[dim]已按清单 id 归位: {root} → {final}[/dim]")
     return final
@@ -321,7 +330,8 @@ def agent_new_package(
     """``scenario new --mode agent``：自然语言生成完整场景包（REPL 会话）。
 
     ref 缺省时不问包名——Agent 按需求拟定引用写进清单（会话中自然语言可改），
-    会话结束后按最终清单 id 归位 ``./<id>-package/``；给了 ref 或 --output 则原地生成。
+    会话结束后按最终清单 id 归位 ``workspace/scenario-packages/<id>-package/``；
+    给了 ref 同样默认落 workspace/scenario-packages/，给了 --output 则原地生成。
     """
     import shutil
     import tempfile
@@ -335,7 +345,7 @@ def agent_new_package(
         scenario, package_id, _ = parse_ref(ref)
         package_id = package_id or scenario
         pin = f"{scenario}/{package_id}（以此为准，不得自拟其它 ID）"
-        root = Path(output) if output else Path.cwd() / f"{package_id}-package"
+        root = Path(output) if output else _default_packages_root() / f"{package_id}-package"
     else:
         pin = None
         root = Path(output) if output else Path(tempfile.mkdtemp(prefix="agent-eval-pkg-"))

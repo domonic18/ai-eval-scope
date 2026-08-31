@@ -503,7 +503,8 @@ class TestCliEntries:
     def test_new_agent_derives_ref_and_moves(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # ref 省略：不问包名，Agent 拟定清单 id，会话结束后归位 ./<id>-package/
+        # ref 省略：不问包名，Agent 拟定清单 id，会话结束后归位 workspace/packages/
+        # （conftest 已把 WORKSPACE_DIR 钉到 tmp_path/workspace）
         from agent_eval.cli.cmds import scenario_agent as sa
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
@@ -521,9 +522,9 @@ class TestCliEntries:
         root = sa.agent_new_package(
             ref=None, output=None, instruction="研学计划质检", yes=True, trust_agent=True
         )
-        assert root == tmp_path / "study-trip-package"
+        assert root == tmp_path / "workspace" / "scenario-packages" / "study-trip-package"
         assert (root / "agent_eval.yaml").is_file()
-        assert not any(p.name.startswith("agent-eval-pkg-") for p in tmp_path.iterdir())
+        assert not any(p.name.startswith("agent-eval-pkg-") for p in tmp_path.rglob("*"))
 
     def test_new_agent_derived_nothing_committed_cleans_up(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -547,13 +548,14 @@ class TestCliEntries:
     ) -> None:
         from agent_eval.cli.cmds.scenario_agent import _finalize_new_package
 
-        monkeypatch.chdir(tmp_path)  # 归位目标按 cwd 计算
+        # 归位目标在 workspace/packages/（conftest 已把 WORKSPACE_DIR 钉到 tmp_path/workspace）
         root = tmp_path / "gen"
         root.mkdir()
         (root / "agent_eval.yaml").write_text(
             "package:\n  id: dup\n  scenario: s\n", encoding="utf-8"
         )
-        (tmp_path / "dup-package").mkdir()  # 目标已占位
+        target = tmp_path / "workspace" / "scenario-packages" / "dup-package"
+        target.mkdir(parents=True)  # 目标已占位
         assert _finalize_new_package(root, movable=True) == root
         assert root.is_dir()
 

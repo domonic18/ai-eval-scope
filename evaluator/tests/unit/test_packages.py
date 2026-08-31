@@ -129,6 +129,22 @@ def test_project_package_single_level_only(tmp_path: Path, monkeypatch: pytest.M
     assert PackageManager().list(source="project") == []
 
 
+def test_workspace_packages_root_discovered(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Agent 生成包默认落 workspace/scenario-packages/——该根同样一级发现（与项目根双根并存）
+    monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "ws"))
+    pkg = tmp_path / "ws" / "scenario-packages" / "gen-package"
+    pkg.mkdir(parents=True)
+    (pkg / "agent_eval.yaml").write_text(
+        "package:\n  id: gen\n  scenario: gen\n  version: 0.1.0\n", encoding="utf-8"
+    )
+    mgr = PackageManager()
+    mine = mgr.list(source="project")
+    assert [p.manifest.id for p in mine] == ["gen"]
+    assert mine[0].source == "project" and mine[0].root == pkg
+
+
 # ── CLI ─────────────────────────────────────────────────────────────────────────
 
 

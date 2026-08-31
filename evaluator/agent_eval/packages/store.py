@@ -40,6 +40,19 @@ def default_project_root() -> Path:
     return Path(env).expanduser().resolve() if env else Path.cwd()
 
 
+def scenario_packages_root() -> Path:
+    """workspace 内场景包默认落盘根（``scenario new --mode agent`` 归位处）。
+
+    生成的包是运行产物而非源码，落 workspace（随 ``WORKSPACE_DIR``）不再散落仓库目录；
+    ``list_project`` 会对该目录做一级发现（与项目根双根并存，旧位置不搬家仍可见）。
+    注意与 ``workspace/packages/``（``pack`` 的 ExecutionPackage 产出物，manifest.json）
+    是两个概念，勿混用。
+    """
+    from agent_eval.config.paths import paths
+
+    return paths.default_workspace / "scenario-packages"
+
+
 class PackageStore:
     """场景包仓库读写。
 
@@ -76,25 +89,30 @@ class PackageStore:
         return self._list(self.local_root, "local")
 
     def list_project(self) -> list[ResolvedPackage]:
-        """列出项目根下**一级子目录**含清单的场景包。
+        """列出项目根与 workspace/scenario-packages 下**一级子目录**含清单的场景包。
 
-        只扫一层（非 rglob）：项目根常是代码仓库（如 ``evaluator/``），递归会把
+        每个根只扫一层（非 rglob）：项目根常是代码仓库（如 ``evaluator/``），递归会把
         内置包经 ``agent_eval/assets/packages/`` 重复发现、还会捞到依赖目录。
         """
-        root = self.project_root
-        if not root.is_dir():
-            return []
         out: list[ResolvedPackage] = []
-        for child in sorted(root.iterdir()):
-            if not child.is_dir() or child.name.startswith(".") or child.name == "__pycache__":
+        seen: set[Path] = set()
+        for root in (self.project_root, scenario_packages_root()):
+            if not root.is_dir():
                 continue
-            if not (child / MANIFEST_FILENAME).is_file():
-                continue
-            try:
-                manifest = load_manifest(child)
-            except ScenarioPackageError:
-                continue  # 跳过非法清单，list 不应整体失败
-            out.append(ResolvedPackage(manifest=manifest, root=child, source="project"))
+            for child in sorted(root.iterdir()):
+                if not child.is_dir() or child.name.startswith(".") or child.name == "__pycache__":
+                    continue
+                if not (child / MANIFEST_FILENAME).is_file():
+                    continue
+                key = child.resolve()
+                if key in seen:  # 双根重叠时去重
+                    continue
+                try:
+                    manifest = load_manifest(child)
+                except ScenarioPackageError:
+                    continue  # 跳过非法清单，list 不应整体失败
+                seen.add(key)
+                out.append(ResolvedPackage(manifest=manifest, root=child, source="project"))
         return out
 
     def find(
