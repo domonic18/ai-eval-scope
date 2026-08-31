@@ -108,7 +108,7 @@ agent_eval/agent/
 | D-CLI-2 | **交互组件选 questionary + rich**：select/confirm/path 内建、键盘导航、与既有 rich 渲染共存；全部原语收口在 `console/prompts.py` 可注入 mock | 成熟度与测试性；备选（rich Live 自研）仅在 questionary 无法满足分页/搜索时局部替换 |
 | D-CLI-3 | **PackageAgent 独立工具面**（`package_tools.py`），不复用 SUTToolServer | 两域工具语义无关（文件编辑 vs SUT 交互）；沙盒约束不同（包根 vs workspace） |
 | D-CLI-4 | **平台身份落 `.env`**（`AGENT_EVAL_HOST/API_KEY/PROJECT`，0600），不新增凭证文件 | 06 §4.7：环境接入归 `.env`；`auth` 与 `secrets`（SUT 凭证，`~/.agent_eval/`）分域 |
-| D-CLI-5 | **浏览器打开统一走 `cmds/open_url.py`**：`webbrowser.open` + 无浏览器环境（SSH/无 `$BROWSER`）降级打印 URL | gh 同款降级；单一出口便于 mock 测试（NF-C-05） |
+| D-CLI-5 | **浏览器打开统一走 `cmds/open_url.py`**：`webbrowser.open`（`$BROWSER` 可指定浏览器）+ 无浏览器环境（SSH/未设 `$BROWSER`）降级打印 URL | gh `pkg/browser` 同款行为；单一出口便于 mock 测试（NF-C-05） |
 | D-CLI-6 | **重命名一次性直接切换**，无别名层 | 用户基数小（需求 v1.2 决策）；收尾要求 = 全仓引用同版本清理 |
 | D-CLI-7 | **退出码集中映射**：`console/output.py::map_exit_code(exc)` 单点适配异常体系 → 0/1/2/3/130 | 契约可测试；新增异常不改命令层 |
 | D-CLI-8 | **`runs` 读本地索引优先**：`workspace/index/runs_index.json`（06 §3.8）列表，run 目录直读详情；平台态经 manifest 上传标记推断 | 零新存储；与 Web 平台解耦 |
@@ -248,11 +248,13 @@ CLI                                          平台
 
 ### 5.2 设备码流接口约定（P2，平台侧落地）
 
-| 端点 | 契约 |
+| 端点 | 契约（对齐 [RFC 8628](https://www.rfc-editor.org/info/rfc8628) 设备授权语义） |
 |------|------|
-| `POST /api/v1/cli/pair` | 无鉴权（限流）；返回 `{pair_code, expires_in}`（≤600s，一次性） |
-| `GET /api/v1/cli/pair/{code}` | CLI 轮询（2s 间隔）；`pending` / `{api_key, org, project}`（授权页确认后一次性返回，再查 404） |
-| `/cli-auth?code=` 页面 | 登录态 + 确认按钮 → 调内部授权完成接口 |
+| `POST /api/v1/cli/pair` | 无鉴权（限流）；返回 `{user_code, verification_uri, interval, expires_in}`（≤600s，一次性） |
+| `GET /api/v1/cli/pair/{user_code}` | CLI 按 `interval` 轮询（默认 2s；返回 `slow_down` 时 interval +5s）；状态机：`authorization_pending` / `slow_down` / `expired_token` / 成功一次性返回 `{api_key, org, project}`（再查 404） |
+| `verification_uri` 授权页 | 登录态 + 展示 `user_code` 供核对 + 确认按钮 → 调内部授权完成接口 |
+
+> 语义对齐 RFC 8628 的价值：未来平台接入标准 OAuth/OIDC 设备流（或复用现成服务端实现）时，CLI 端轮询状态机无需重写。
 
 安全约束：配对码短时效、一次性、绑定发起会话 IP 提示展示；Key 首次返回后不可再查。
 
@@ -345,7 +347,26 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 
 ---
 
-## 九、关键文件清单
+## 九、行业实践对照
+
+| 设计项 | 本方案 | 行业实践 | 评注 |
+|--------|--------|---------|------|
+| 命令/业务分离 | 命令薄壳 + 纯函数动作 + `_stages` | gh：命令构造器注入 Factory，业务在 `pkg/`；pip：解析与逻辑分离 | ✅ 一致 |
+| 目录组织 | `cmds/` 一组一模块 + `console/` + `workbench/` | gh：`pkg/cmd/<域>/` + `pkg/cmdutil` + `pkg/{prompter, browser, iostreams}`；oclif：目录即命令树（嵌套子目录 = topic） | ✅ 结构同构；typer 无目录自动发现，显式注册是 Python 生态惯例（huggingface-cli 等） |
+| 依赖注入 | console 模块函数 + mock 参数注入；WorkbenchContext 部分承担 | gh `cmdutil.Factory` 显式依赖束（IO / Browser / Prompter / Config 惰性构造） | ⚖️ 中型规模下模块级注入已够；命令动作需共享更多环境态时演进为显式 `CliContext`（可选，不强制） |
+| 交互抽象 | `console/prompts.py` 收口 + 非 TTY 降级 | gh `pkg/prompter` 接口 + 测试替身 | ✅ 一致 |
+| 浏览器边界 | `cmds/open_url.py` 单出口 + `$BROWSER` 覆盖 + 无浏览器降级 | gh `pkg/browser` | ✅ 一致（`$BROWSER` 为本次补齐） |
+| 浏览器登录 | P1 配对码粘贴；P2 设备码轮询 | gcloud / gh / stripe：RFC 8628 设备授权（user_code + verification_uri + 轮询状态机） | ✅ P2 契约对齐 RFC 8628 语义（§5.2） |
+| 机器可读输出 | `--output-format text\|json` + stderr 分流 + 退出码 0/1/2/3/130 | kubectl `-o` 打印器族；gh `--json` 类型化字段；sysexits 传统 | ✅ 双格式够用，需要 yaml/表格再扩 |
+| 查看即网页 | `--web` / `open` | `gh <entity> view --web`、`vercel open` | ✅ 一致 |
+| 首用引导 | preflight 引导链 | gh 主动 auth 提示；`gcloud init` 向导 | ✅ 一致 |
+| 命令插件化 | 不做（评估器插件在 evaluation 层） | oclif plugins、gh extensions | ➖ YAGNI，出现需求再议 |
+
+其他沿用范式：`flutter doctor` / `npm doctor`（顶层自检）、Claude Code / Aider（会话式 Agent：计划先行、diff 确认、工具透明）、`create-next-app` / cookiecutter（模板 scaffold）、12-factor CLI（非交互可旁路、stdout/stderr 分离、稳定退出码）。
+
+---
+
+## 十、关键文件清单
 
 | 文件 | 类型 | 职责 |
 |------|------|------|
@@ -359,9 +380,10 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 
 ---
 
-## 十、版本记录
+## 十一、版本记录
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
 | v1.0 | 2026-08-31 | 初稿：对齐 requirement/04 v1.2——双前端同内核分层、workbench 向导框架（session/原语/降级/preflight/等价命令）、命令重命名一次性切换落地清单、退出码集中映射、auth 双通道登录与设备码流 P2 接口约定、open/--web URL 规则、PackageAgent（暂存区状态机 + 沙盒六工具 + 校验门禁 + 安全红线）、runs/scenario show 数据来源 |
 | v1.1 | 2026-08-31 | **CLI 目录组织 Review 优化**（§2.2）：子命令组收拢 `cmds/`、表现层基础设施收拢 `console/`（prompts/render/output/equiv）；确立六条组织约定（装配单点 / 命令薄壳与纯函数动作分离 / 双前端同构 / 依赖单向禁横向 import / 交互与业务分离 / 粒度守恒）；全文路径引用同步 |
+| v1.2 | 2026-08-31 | **行业实践对照校准**：新增 §九「行业实践对照」表（gh project-layout / oclif topics / RFC 8628 / kubectl printers）；P2 设备码流契约对齐 RFC 8628 语义（user_code / verification_uri / interval / slow_down / expired_token）；`open_url` 补 `$BROWSER` 覆盖；标注两项刻意不采纳（显式 Factory 依赖束、命令插件化）及理由 |
