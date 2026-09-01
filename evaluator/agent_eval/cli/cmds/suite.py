@@ -15,6 +15,8 @@ import yaml
 from rich import print as rprint
 from rich.table import Table
 
+from agent_eval.cli._common import ensure_sut_credentials
+
 suite_app = typer.Typer(help="声明式评测矩阵（suite.yaml 批量运行与对照）")
 
 
@@ -98,10 +100,16 @@ def run_suite(
                 continue
 
             run_id = generate_run_id()
+            from agent_eval.config.paths import paths
+
+            ensure_sut_credentials(
+                inputs.sut
+            )  # 凭证缺失先补录（与 run/pipeline 同点位；失败计入本条目汇总）
+
             packages = execute_stage(
                 inputs,
                 run_id=run_id,
-                workspace_root=Path("./workspace"),
+                workspace_root=paths.default_workspace,  # WORKSPACE_DIR 生效（与 run/pipeline 一致）
                 mode="run",
             )
             ok = sum(1 for p in packages if p.manifest.status == "success")

@@ -8,6 +8,7 @@ import sys
 from typing import Any
 
 import structlog
+from structlog.typing import Processor
 
 
 def _ensure_utf8_streams() -> None:
@@ -36,6 +37,7 @@ def setup_logging(level: str = "INFO", json_output: bool = False) -> None:
         structlog.processors.UnicodeDecoder(),
     ]
 
+    renderer: Processor
     if json_output:
         # JSON Lines 输出（适合生产环境 / 日志收集）
         renderer = structlog.processors.JSONRenderer()

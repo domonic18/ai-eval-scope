@@ -183,7 +183,7 @@
 |--------|--------|-----------|
 | 平台身份（host / API Key / 项目） | env `AGENT_EVAL_HOST/API_KEY/PROJECT` | `auth login` 浏览器配对或粘贴 Key → 连通性测试 → 写入 `.env`（仅环境接入，遵循 06 §4.7） |
 | 模型（三角色） | `~/.agent_eval/llm.json` | `models set` 向导（可打开 Provider 控制台取 Key） |
-| 凭证（SUT） | `~/.agent_eval/sut_credentials.json` / env | 复用 `secrets set`，按所选 SUT 的 `credential_ref` 引导补齐缺失字段 |
+| 凭证（SUT） | `~/.agent_eval/sut_credentials.json` / env | 复用 `secrets set`，按所选 SUT 的 `credential_ref` 引导补齐缺失字段（`run/pipeline/suite` 执行前检测到缺失自动引导补录，补齐后继续；`--no-input` 保持 fail fast） |
 | 自检 `doctor` | — | 逐项检查：平台身份与连通、模型三角色、所选 SUT 凭证完整、包可解析、workspace 可写，输出体检表 |
 
 **auth 与 secrets 的边界**：`auth` 管平台身份（我是谁、以哪个团队/项目上报）；`secrets` 管被测系统凭证（怎么登录 SUT）。两者都是凭证，但委托对象不同，命令域不混用。
@@ -511,8 +511,8 @@ stage('评测回归') {
 | 命令 | 关键参数 | 说明 |
 |------|---------|------|
 | `start` | `--domain <scn\|exec\|runs\|auth>` | 直接进入指定工作域 |
-| `auth login` | `--browser\|--token <key>` `--host` | 浏览器配对 / 直供 Key（CI）；写 `.env` |
-| `auth status` / `auth logout` | `--revoke`（P2） | 身份体检 / 清除本地凭证 |
+| `auth login` | `--token <key>` `--host <url>` | 交互选通道（浏览器创建 / 粘贴 Key）/ `--token` 直供（CI）；写 `.env`（0600） |
+| `auth status` / `auth logout` / `auth register` | `--revoke`（P2）/ `--host` | 身份体检 / 清除本地凭证 / 打开注册页 |
 | `models set` | `--role <text\|vision\|agent>` | 交互向导（替代 `models login`） |
 | `scenario new` | `--scenario` `--mode template\|agent\|skeleton` `--instruction` `--dir` | 创建项目包 |
 | `scenario edit` | `--dir` `--instruction` `--yes` `--trust-agent` | Agent 会话 / 非交互单指令 |
@@ -565,3 +565,5 @@ stage('评测回归') {
 | v1.0 | 2026-08-31 | 初稿：向导式工作台（`start` 四工作域）、PackageAgent（DeepAgents 底座 + 沙盒工具面 + diff/校验门禁）、项目包落盘（当前目录，内置包只读）、向导式执行与结果查看、非交互/JSON/退出码集成规范、交互原型与 P0-P2 分期 |
 | v1.1 | 2026-08-31 | **命令体系整体 Review 与重规划**：`models login/logout`→`models set/clear`（login 语义留给账号）；`package *`→`scenario *`（消除与 `pack` 名词冲突）；新增 `auth` 域（浏览器配对登录/status/logout/register，无浏览器降级打印 URL）；新增 `open` 与查看类命令 `--web` 浏览器直达；`doctor` 提升为顶层命令；`results`→`runs`；行业参照补充 gh auth login / gcloud / stripe / flutter doctor 范式；需求条目重编为 F-C-NAV/AUTH/CONFIG/SCN/EXEC/RUNS/OPEN/INTEG |
 | v1.2 | 2026-08-31 | **取消向下兼容**（用户基数小，决策）：重命名一次性直接切换，移除别名层、弃用警告与 `--strict-deprecation` 机制；旧命令名随版本清除，教程/示例脚本/CI 片段与全仓引用同步更新（§3.3、F-C-CONFIG-04、P6、P0 验收同步修订） |
+| v1.3 | 2026-09-01 | **F-C-AUTH 落地同步（Sprint 11）**：`auth login/status/logout/register` 四命令 + 工作台账号域「平台账号」子向导；身份探测走平台新增 `GET /api/public/whoami`（旧平台 404 回退 `/api/public/secrets` 轻探测）；浏览器通道降级打开 `/login` 引导（前端暂无独立 Keys 页与 `/cli-auth`，B 通道与设备码流仍为 P2）；参数表按实际形态修订 |
+| v1.4 | 2026-09-01 | **secrets 执行前缺失自动补录落地（Sprint 11）**：§3.5 凭证行补执行前行为——`ensure_sut_credentials` 挂执行阶段，交互终端列缺失字段 → 确认 → 隐藏输入一次落盘 → 复检继续；取消/`--no-input` 退回 fail fast（CI 零变化） |

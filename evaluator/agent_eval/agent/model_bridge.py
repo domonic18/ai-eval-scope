@@ -43,7 +43,7 @@ def build_chat_model(
     if role not in llm_config.providers:
         raise AgentError(
             f"LLM 角色 {role!r} 未配置（可选: {sorted(llm_config.providers)}）；"
-            "运行 agent-eval models login（CLI）或在平台 admin 配置（云端）",
+            "运行 agent-eval models set（CLI）或在平台 admin 配置（云端）",
             details={"available": sorted(llm_config.providers), "role": role},
         )
     provider = llm_config.providers[role]

@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import pkgutil
 from pathlib import Path
 

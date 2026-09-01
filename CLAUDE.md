@@ -53,7 +53,7 @@ agent-eval-system/
 make install      # 安装评估器依赖
 make dev          # 安装开发依赖（含 ruff / pytest）
 make hooks        # 安装 git hooks（pre-commit + commit-msg）
-make check        # 一键质量门禁（ruff + pytest）
-make test         # 运行测试
+make check        # 一键质量门禁（ruff + pytest tests/unit——快门禁，仅单测目录）
+make test         # 全量测试（pytest tests/，与 CI 同口径；合入/发布前必跑）
 make docker-up    # 启动本地全栈（需先 cp .env.example .env）
 ```

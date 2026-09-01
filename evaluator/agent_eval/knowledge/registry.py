@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from agent_eval.knowledge.base import Converter, DataSource, Extractor
@@ -25,7 +26,7 @@ _CONVERTERS: dict[str, type[Converter]] = {}
 # ─── 装饰器 ───
 
 
-def register_source(name: str):
+def register_source(name: str) -> Callable[[type[DataSource]], type[DataSource]]:
     """装饰器：注册数据源。
 
     Usage::
@@ -41,7 +42,7 @@ def register_source(name: str):
     return decorator
 
 
-def register_extractor(name: str):
+def register_extractor(name: str) -> Callable[[type[Extractor]], type[Extractor]]:
     """装饰器：注册 LLM 提取器。"""
 
     def decorator(cls: type[Extractor]) -> type[Extractor]:
@@ -51,7 +52,7 @@ def register_extractor(name: str):
     return decorator
 
 
-def register_converter(name: str):
+def register_converter(name: str) -> Callable[[type[Converter]], type[Converter]]:
     """装饰器：注册结构化转换器。"""
 
     def decorator(cls: type[Converter]) -> type[Converter]:

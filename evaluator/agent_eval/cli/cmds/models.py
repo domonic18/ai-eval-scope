@@ -1,7 +1,8 @@
 """agent-eval models — LLM 配置管理（交互式向导，arch/06 §4.6 CLI 形态）。
 
-对标 opencode `auth login` / gh 惯例：向导式选择提供商与模型、隐藏输入 api-key，
-保存到 `~/.agent_eval/llm.json`（0600）。密钥不打印、不入日志。
+向导式选择提供商与模型、隐藏输入 api-key，保存到 ``~/.agent_eval/llm.json``（0600）。
+密钥不打印、不入日志。Sprint 10 命令重命名：``login/logout`` → ``set/clear``
+（「login」语义保留给平台账号 auth，requirement/04 §3.3）。
 """
 
 from __future__ import annotations
@@ -12,29 +13,19 @@ import typer
 from rich import print as rprint
 from rich.table import Table
 
-models_app = typer.Typer(help="LLM 模型配置管理（login / list / test / logout）")
+models_app = typer.Typer(help="LLM 模型配置管理（set / list / test / clear）")
 
 _PROVIDER_OPTIONS = ["anthropic", "openai", "deepseek", "custom（自定义 OpenAI 兼容）"]
-
-
-def _choose(label: str, options: list[str], default: int = 1) -> str:
-    """编号选择（typer 无原生 select，用编号列表交互）。"""
-    for i, opt in enumerate(options, 1):
-        rprint(f"  [cyan]{i}.[/cyan] {opt}")
-    while True:
-        raw = typer.prompt(label, default=str(default))
-        if raw.isdigit() and 1 <= int(raw) <= len(options):
-            return options[int(raw) - 1]
-        rprint(f"[red]无效选择，请输入 1-{len(options)}[/red]")
 
 
 def _mask(secret: str) -> str:
     return f"{secret[:4]}…{secret[-4:]}" if len(secret) > 8 else "****"
 
 
-@models_app.command()
-def login() -> None:
+@models_app.command("set")
+def models_set() -> None:
     """交互式配置模型（提供商/模型/api-key），保存到 ~/.agent_eval/llm.json（0600）。"""
+    from agent_eval.cli.console.prompts import select
     from agent_eval.config.llm_file import (
         PROVIDER_DEFAULT_BASE_URLS,
         ROLE_MODEL_SUGGESTIONS,
@@ -48,7 +39,7 @@ def login() -> None:
     existing = load_llm_file() or LLMFileConfig()
     rprint("[bold]═ LLM 配置向导 ═[/bold]（保存到 " + str(llm_file_path()) + "，权限 0600）")
 
-    choice = _choose("选择提供商", _PROVIDER_OPTIONS)
+    choice = select("选择提供商", _PROVIDER_OPTIONS)
     proto = "openai" if choice.startswith("custom") else choice
     current_text = existing.roles.get("text")
     default_base = PROVIDER_DEFAULT_BASE_URLS.get(proto) or (
@@ -103,7 +94,7 @@ def list_models() -> None:
     cfg = load_llm_file()
     if cfg is None:
         rprint(
-            f"[yellow]未配置（{llm_file_path()} 不存在）。运行 [/yellow][bold]agent-eval models login[/bold]"
+            f"[yellow]未配置（{llm_file_path()} 不存在）。运行 [/yellow][bold]agent-eval models set[/bold]"
         )
         raise typer.Exit(code=1)
 
@@ -136,7 +127,7 @@ def test() -> None:
 
     cfg = load_llm_file()
     if cfg is None or not any(cfg.roles.get(r) for r in ROLES):
-        rprint("[yellow]未配置模型。运行 [/yellow][bold]agent-eval models login[/bold]")
+        rprint("[yellow]未配置模型。运行 [/yellow][bold]agent-eval models set[/bold]")
         raise typer.Exit(code=1)
 
     failed = False
@@ -170,8 +161,8 @@ def test() -> None:
         raise typer.Exit(code=1)
 
 
-@models_app.command()
-def logout() -> None:
+@models_app.command("clear")
+def models_clear() -> None:
     """删除本地 LLM 配置文件（含 api-key）。"""
     from agent_eval.config.llm_file import llm_file_path
 

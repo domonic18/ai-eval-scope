@@ -13,7 +13,7 @@ from agent_eval.cli._stages import (
     execute_stage,
     resolve_run_inputs,
 )
-from agent_eval.core.exceptions import AgentEvalError
+from agent_eval.core.exceptions import AgentEvalError, SUTAuthError
 
 TASK_SET_YAML = """
 id: ts_stages
@@ -109,6 +109,26 @@ class TestExecuteStage:
         assert manifest["mode"] == "run"
         assert manifest["sut"]["name"] == "cw-agent"
         assert len(manifest["packages"]) == 1
+
+    SUT_AUTH_YAML = (
+        SUT_YAML
+        + """
+  auth:
+    type: static_token
+    credential_ref: NEEDS_KEY
+"""
+    )
+
+    def test_missing_credentials_fails_fast_no_interaction(self, tmp_path) -> None:
+        # execute_stage 层零交互（arch/15 组织约定 5）：即使交互环境也直接 fail fast；
+        # 补录发生在命令层进度启动前（_common.ensure_sut_credentials，见 test_cli_run）
+        task_set = tmp_path / "task_set.yaml"
+        sut_cfg = tmp_path / "sut.yaml"
+        task_set.write_text(TASK_SET_YAML, encoding="utf-8")
+        sut_cfg.write_text(self.SUT_AUTH_YAML, encoding="utf-8")
+        inputs = resolve_run_inputs(None, task_set=str(task_set), sut_config=str(sut_cfg))
+        with pytest.raises(SUTAuthError, match="secrets set NEEDS_KEY.token"):
+            execute_stage(inputs, run_id="r_fast", workspace_root=tmp_path / "ws", mode="run")
 
 
 class TestEvaluateStage:

@@ -12,6 +12,22 @@ from agent_eval.orchestrator.orchestrator import EvalResult, eval_packages
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def _stub_llm_judge(monkeypatch: pytest.MonkeyPatch) -> None:
+    """桩掉 LLM Judge（禁止联网红线）：默认规则集含 LLM 评估项。
+
+    无凭证环境走降级路径无害；但本机配置过 ``~/.agent_eval/llm.json`` 的开发者
+    会真连 LLM，稳定性采样逐次等待网络——曾致 3 条 SDK 用例各挂死 90s+（2026-09）。
+    消费端（quality/commonsense evaluators）对 record=None 与空 scores 均短路兼容。
+    """
+    from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
+
+    def _fake_judge(self: JudgeOrchestrator, **kwargs: object) -> tuple[dict[str, float], None]:
+        return {}, None
+
+    monkeypatch.setattr(JudgeOrchestrator, "judge", _fake_judge)
+
+
 class TestEvalPackagesSDK:
     """SDK eval_packages 接口测试。"""
 

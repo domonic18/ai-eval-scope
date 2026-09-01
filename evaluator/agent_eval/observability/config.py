@@ -46,7 +46,7 @@ class ObservabilityConfig:
 
 
 def _truthy(val: str | None) -> bool:
-    return bool(val) and val.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(val and val.strip().lower() in {"1", "true", "yes", "on"})
 
 
 def _client_version() -> str:

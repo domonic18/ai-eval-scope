@@ -39,6 +39,28 @@ class ApiKeyRepository extends BaseRepository {
     return this.prisma.apiKey.findUnique({ where: { id } })
   }
 
+  /** 全局按 Key id 查身份（CLI auth login/status 的 whoami；含项目与组织名）。 */
+  findIdentityById(id: string) {
+    return this.prisma.apiKey.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        scopes: true,
+        expiresAt: true,
+        revokedAt: true,
+        project: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            org: { select: { id: true, name: true, slug: true } },
+          },
+        },
+      },
+    })
+  }
+
   /** 列出项目下 Key（强制 projectId 归属校验）。 */
   listByProject(projectId: string): Promise<ApiKey[]> {
     const orgId = this.requireOrg()

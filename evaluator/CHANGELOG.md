@@ -1,0 +1,443 @@
+## v0.1.5 (2026-09-01)
+
+### Fix
+
+- **lint**: manager.py import 排序（I001）+ test_eval_flow 格式收编——Jenkins #7 UNSTABLE 根因
+
+## v0.1.4 (2026-09-01)
+
+### Fix
+
+- **types**: 全量清偿 mypy 债——94 错/49 文件归零（真修，非 ignore）
+
+## v0.1.3 (2026-09-01)
+
+### Fix
+
+- **test**: 桩掉 SDK 测试 LLM Judge——杜绝真实联网挂死（禁止联网红线）
+- **test**: 陈旧断言修复——llm_provider→llm_role 改名 + SDK 1.0+ 采样参数门控
+
+### Perf
+
+- **test**: 测试提速三件套——缓存共享 + xdist 并行 + 单测超时兜底
+
+## v0.1.2 (2026-09-01)
+
+### Fix
+
+- **test**: 清理 tests/config 两处陈旧断言——发布流水线全量门禁暴露
+- **ci**: tag 检出段补 git 凭证——裸 fetch 无认证致 128
+
+## v0.1.1 (2026-09-01)
+
+### Feat
+
+- **cli**: 新增 --version 旗标（eager，发布冒烟口令）
+- **eval**: sut_config 支持 ${VAR:-默认值} env 展开——内置包域名占位化
+- **cli**: secrets 执行前缺失自动补录——交互引导落盘后继续执行
+- **cli**: Sprint 11 auth 组——平台账号四命令 + whoami 身份端点
+- **cli**: 工作台 SUT 凭证交互向导——查看/录入/删除全流程不再只有提示
+- **cli**: Agent 生成包默认落 workspace/scenario-packages——不散落仓库目录
+- **cli**: 场景包第三来源 project——Agent 生成的包归位即被发现可执行
+- **cli**: scenario new --mode agent 包名后置——Agent 按需求拟定引用
+- **cli**: PackageAgent 流式直播——工作过程 claude code 式实时可见
+- **cli**: PackageAgent 场景包 REPL 改包——scenario new --mode agent / edit
+- **cli**: Sprint 10 收尾——执行进度视图 + --json 覆盖 run/pipeline/eval
+- **cli**: 查看类命令无参进入交互选择——scenario show / runs show / open report
+- **cli**: Sprint 10 P0——CLI 工作台骨架与命令体系重构
+- **executor**: 领取任务即重签输入下载 URL——修排队拖过期 presigned URL 403
+- **web**: 新增 GET /api/v1/jobs/:jobId/input-url——executor 领取即重签输入下载 URL
+- **evaluator**: Sprint 9 一体化——pipeline 命令、_stages 编排收敛与过程指标落地
+- **web**: 配置中心与编辑器适配考卷/SUT 接入——tabs、树、SUT 表单与只读详情
+- **web**: task-sets/sut-configs 资产端点——ASSET_KINDS 扩展、catalog 聚合与发布校验
+- **cli**: --task 任务选择机制——glob / 逗号 / 范围 / 排除（pytest 风格）
+- **chat**: 任务集扩充至 15 用例——基础能力 7 + 安全 8（教育场景）
+- **chat**: expected.reference 答案语义一致性评估（ANS_CONSIST）
+- **evaluator**: W8 执行包内容指纹 + workspace 分区收敛（arch/16 §六-P2）
+- **evaluator**: W6 绑定显式化 + suite 声明式评测矩阵（arch/16 §五）
+- **evaluator**: W7 执行包归位 run_id + 运行清单登记（arch/16 §三/§五）
+- **evaluator**: W5 会话目录迁移 workspace——评测状态单一聚集（arch/16 §三）
+- W3+W4 平台 Secrets（org 级 KV，GitHub Secrets 式）+ executor 启动注入
+- W1 包资产合并——考卷与 SUT 接入内嵌场景包（arch/16 §2.1）
+- **evaluator**: secrets 命令与本机密钥区文件源（W2，arch/16 §2.2）
+- **web**: LlmModel 角色列 + /api/public/llm-config 执行面拉取，移除 export-yaml（LLM③）
+- **evaluator**: LLM 消费点全量切换角色注册表，llm_config.yaml 链路一次性移除（LLM②）
+- **evaluator**: agent-eval models 交互式配置与 llm.json 角色解析（LLM①，纯新增）
+- **evaluator**: chat 场景内置包与专属评估器（对话型 SUT，arch/14）
+- **evaluator**: 执行链对话型任务支撑——SUT 回答物化 answer.md 与 expected 进评估上下文
+- **evaluator**: 语义工具面 tool_guard 护栏（通道异常不炸图）
+- **evaluator**: Agent Protocol commands 形态通道（arch/03 §4.0.6-i v4.6.3）
+- **evaluator**: ExecutionAgent 支持追加工具注册表并接通 CLI run（arch/03 Phase B）
+- **evaluator**: AgentProtocolChannel 与语义工具面（arch/03 §4.0.6）
+- **evaluator**: SUT 鉴权架构与 sut_config v2 多系统注册表（arch/03 §4.0）
+- **evaluator**: ExecutionAgent 基于 DeepAgents 底座端到端装配（Phase A）
+- **evaluator**: SessionLogger 结构化日志、LangGraph 回调与 WorkspaceCheckpointer
+- **evaluator**: SUTToolServer 演进为工具注册表并实现七个 SUT 工具
+- **evaluator**: AgentConfig v4.6 模型无关化与 llm_config 双协议桥接
+- **web**: eval_jobs.rule_set_id 列默认与 MCP 描述对齐 coursework-vision
+- **executor**: HTTP 缺省 rule_set_id 默认取包清单 default_rule_set（coursework-vision）
+- **evaluator**: 新增 format.content_completeness 内容完整性硬门控
+- **jobs**: add REST endpoint POST /api/v1/jobs/request-upload for large file presigned PUT
+- **llm**: PromptStore 抽象 + FilePromptStore，JudgeOrchestrator 切换（Phase 1）
+- **web**: overview 聚合 module_results（第三方速览看模块归因）
+- **eval**: max_modules 保护（模块超限合并，防 LLM 调用爆炸）
+- **eval**: 大单元按模块评估 + module_results 归因 + content_diversity 媒体 bug 修复
+- **web**: Webhook 配置面板 + 投递历史 + 详情 Dialog
+- **backend**: Webhook 回调机制 + 投递历史 + 项目级配置
+- **mcp**: 新增 list_packages 工具并补全 submit 字段描述
+- **web**: 场景包导入通用化 + 多场景 UI 适配
+- **evaluator**: 新增 code-generation 场景（correctness + style LLM Judge）
+- **web**: 场景化指标 dict 适配 + catalog 暴露 packages + packageRef 显式化
+- **web**: S3-2 前端 defaults 编辑器接入 VersionTimeline（与其他资产一致）
+- **web**: S3-2 场景级 defaults 版本化（不可变版本 + 草稿隔离）
+- **evaluator**: HTTP 包拉取客户端 + 运行快照记录真实版本
+- **executor**: 按 package_ref 解析规则集，历史任务拒绝，删除 _BUILTIN
+- **web**: eval_jobs 携带 package_ref 并经 SCF 透传
+- **web**: 配置中心权限控制 + 文档引用归并
+- **web**: RunDetail 展示 LLM 摘要报告
+- **backend**: 摄取并透出 summary_report 与 overview 速览
+- **evaluator**: 评估完成后用 LLM 生成摘要报告
+- **web**: LLM 配置管理页与配置资产 AI 生成接线
+- **web**: 后台 LLM 模型配置与配置资产 AI 生成后端
+- **web**: 配置完整度面板移入右侧时间线侧边栏并统一 sticky 滚动
+- **web**: 统一场景包编辑器，收敛双编辑器并统一草稿/导航/新建语义
+- **web**: 规则字段对齐持久化 schema 并补齐区块卡片内容区
+- **evaluator**: 规则层引入 method 声明式评估方式与条件化绑定
+- **web**: 场景包/资产编辑器画布与本地草稿管理
+- **web**: 配置资产表单引导式重构（规则卡/提示词/数据集）
+- **web**: 配置编辑器通用组件与输入控件视觉统一
+- **design**: 编辑器原型表单引导式重构与字段说明优化
+- **web**: 接入新表单组件并统一输入控件视觉层级
+- **web**: 场景包编辑器表单重构与字段层级优化
+- **backend**: 支持编辑场景默认指标定义与聚合策略
+- **web**: 场景包创建向导实现（AI 占位 + 8 步向导）
+- **web**: 场景包编辑器 — 统一树导航 + 编辑面板 + 版本时间线
+- **web**: 配置中心表格行增加显式「编辑」按钮入口
+- **web**: Phase 4 专用配置编辑器（RuleSet/Prompt/Dataset 表单 + 版本 diff）
+- **web**: 评测规则浏览器 — 完整查看规则集/提示词/参考数据/聚合策略/指标定义
+- 恢复指标 ? explain 提示（动态化、定义驱动，可选）
+- **web**: Phase 5 Admin/Dashboard 指标从 metrics 读取（P5-5 推进）
+- **evaluator**: eval 接入 --package 场景包解析 + upload 走 build_run_event
+- **web**: Phase 5 ProjectDetail/DebugPage 指标动态化（P5-5 推进）
+- **web**: Phase 5 项目级默认指标定义（COURSEWARE_DEFAULT_METRIC_DEFS）
+- **web**: Phase 5 可观测指标动态化地基 + RunDetail 快照（P5-4/5/6/7）
+- **web**: Phase 5 后端存储/服务 RunConfigSnapshot（P5-2/3）
+- **evaluator**: Phase 5 运行期生成 RunConfigSnapshot（P5-1）
+- **web**: Phase 4 资产编辑器 + 版本时间线（前端）
+- **web**: Phase 4 asset 级发布端点 + 版本/标签晋升
+- **web**: Phase 4 配置中心前端 — 场景 catalog 可视化 + 包发布
+- **web**: Phase 3 第三方对接联动 rule_set_id→package_id 动态化
+- **web**: Phase 3 课程场景包资产导入脚本（文件→DB）
+- **web**: Phase 3 场景包发布 API（POST /scenarios/:id/packages，platform admin）
+- **web**: Phase 3 一次性历史指标迁移脚本（无 fallback）
+- **web**: Phase 3 动态 catalog API（/api/v1/scenarios/:id/catalog）
+- **web**: Phase 3 配置数据层 — 场景包模型 + metrics JSONB + 摄取动态化
+- **evaluator**: Phase 2 本地场景包结构与 package CLI
+- **evaluator**: Phase 1 场景化聚合与指标数据化（等价复刻）
+- **evaluator**: Phase 0 模型扩展与资产标记 scenario_id/package_id
+- **web**: 速览 failures 加文件定位 + chip 体验打磨（docs/arch/15 P3）
+- **evaluator**: logical/chronological 升级对象 schema 补全 C 档文件定位（docs/arch/15）
+- **evaluator**: soft/pref LLM involved_files 标注定位文件（docs/arch/15 P2）
+- **web**: 样本详情扣分项文件 chip 联动预览（docs/arch/15 P0）
+- **evaluator**: 评估器产出 source_files 文件定位（docs/arch/15 P1）
+- **web**: 文档页 TOC 支持三级标题 + 正文区加宽
+- **web**: MCP 配置说明页 + .zip 文件类型校验
+- **web**: MCP 接入（6 工具，同 Key 同功能，doc 12 §3.7 v4.0）
+- **web**: 质量/速览展示逐维度扣分（DimensionBreakdown + top_issues）
+- **eval**: 质量 LLM 判官逐维度扣分透传（dim_details）
+- **web**: 限额错误码——POST /jobs 接入限流 + 429 规范体
+- **web**: 评测速览端点 + 公开项目免登录/iframe 嵌入
+- **executor**: 拆分评测执行为 SCF 事件函数镜像，gateway 合并至 web
+- **web**: 调试台规则集下拉改为动态拉取 gateway 目录，展示派生能力徽标
+- **gateway**: 规则集一等资源 + 提交时能力守卫与执行透明度（docs/arch/13）
+- **evaluator**: 能力派生 CapabilityResolver，规则集自描述所需基础设施能力（docs/arch/13）
+- **gateway**: 接入多模态视觉评估（opt-in EVALGATEWAY_ENABLE_VISION）
+- **web**: 调试台归属改为由 API Key 决定，移除 project_id 入参
+- **gateway**: 提交响应回传 project_id/org_id（由 API Key tenant 解析）
+- **web/frontend**: 调试台移除 Demo 项目预置默认值
+- **web**: 鉴权简化为单一长效 access token，移除 refresh 机制
+- **web/backend**: 调试台移除 owner 守卫并改为必填 api_key
+- **web/frontend**: 调试台对所有登录用户开放并预置 Demo 项目参数
+- **web/frontend**: 落地页增加样本详情预览并同步五维指标
+- **web/frontend**: 调试台日志补全请求结构明细
+- **web**: 调试台展示 gateway 请求/响应明细
+- **web**: 调试台支持指定 API Key 提交 gateway
+- **gateway**: 评估结果按提交者 API Key 归属回传
+- **web/frontend**: 新增产品落地页与第三方接入 API 文档页
+- **web/frontend**: 新增 CRT 扫描线背景纹理
+- **web/frontend**: 超管后台补齐删除/编辑与防抖过滤
+- **web/frontend**: DataTable 行选择、Checkbox 半选态与 useDebounce hook
+- **web/backend**: 超管跨租户删除用户/项目/运行/产出物与姓名编辑
+- **web/frontend**: 侧边栏展示 Logo 与应用版本号
+- **eval**: LLM 配置统一 KIMI_API_KEY，llm_config.yaml 入库供 CI 构建
+- **web**: 平台超级管理员后台（前端）
+- **web**: 平台超级管理员后台（后端）
+- **web**: 调试台透传 task_id/task_title 至 gateway
+- **gateway**: 任务字段透传 task_id/title/subject
+- **web**: 新增 /debug 调试台经 gateway 代理提交评估
+- **gateway**: 新增 eval-gateway 第三方对接服务
+- **evaluator**: InfoAccuracy reason 列出经 LLM 确认的具体错误描述
+- Reward 归一化到 [0,1] + avg_soft/avg_pref 独立指标（全栈）
+- **web**: 样本级走势（项目样本清单 + 单样本跨 run 指标时序）
+- 样本内容指纹（content_hash）+ 运行规则集版本溯源（全栈）
+- **web/frontend**: Dashboard 创建者展示、指标文案优化、样本问题结构化展示
+- **web**: 项目/运行永久删除（DB 级联 + 对象存储回收 + owner 审计）
+- **evaluator**: pack 覆盖语义 + 孤儿文件检测，防评估数据污染
+- **evaluator**: InfoAccuracy 规则误报经 LLM 二次确认（fact_verdict），降低正则误报
+- **web/frontend**: 新增 Dropdown 通用组件
+- **web**: 团队中心模型 — 注册不再自动建 Org，新增团队创建/加入申请/审批全链路
+- **web**: 登录/注册页拆分 + SSO Tab + SquadSight 视觉复刻
+- **auth**: 接入 SAML SSO 登录（光华 IdP）
+- **web**: Logo 展示版本号，Jenkins 构建号注入（a.b.c.<BUILD>）
+- **web**: 前端移除「组织」概念，简化为注册→建项目→评测流程
+- **cicd**: 新增 Web 流水线（Jenkinsfile.web + Node.js/Docker 构建脚本）
+- **knowledge**: 新增 misconception pattern 质量审计工具（audit CLI + 行级删除）
+- **evaluation**: PR-3 后续 — 重试/熔断/llm_skipped 统计
+- **evaluation**: LLM 异常分级与 SKIP 处理
+- **cli**: eval 增加 --require-llm 与 LLM 可用性预检
+- **knowledge**: morality 知识点补充（misconceptions +920，domain_facts +23）
+- **knowledge**: history misconceptions 补充（cmmlu +1367）
+- **knowledge**: geography misconceptions 补充（cmmlu high_school_geography +334）
+- **knowledge**: chinese 知识点补充（misconceptions +1503，domain_facts +28+14）
+- **knowledge**: math 单位换算补充（constants +22）
+- **knowledge**: math 公式与常数补充（math_formulas +17，constants +3）
+- **knowledge**: biology 知识点补充（misconceptions +397，domain_facts +25）
+- **knowledge**: physics 知识点补充（constants +16，domain_facts +26）
+- **knowledge**: physics misconceptions 全量增强（arc 59 + cmmlu 691 → 766 条）
+- **knowledge**: chemistry 全量知识点增强（constants 119 + misconceptions 378 + domain_facts 30 元素）
+- **knowledge**: chemistry constants 扩充至 119 条（周期表 116 条合并）
+- **cli**: 新增 knowledge 子命令组（convert/extract/merge/list）
+- **knowledge-pipeline**: 知识点完善管道系统（ABC+注册+CLI）
+- **knowledge**: cmmlu adapter + constants 提取通用化 + constants prompt
+- **knowledge**: 知识点提取试点（arc 解析 + LLM misconceptions 提取）
+- **datasets**: 索引补充 openbookqa + knowledge_mapping 字段（供知识点提取）
+- **datasets**: 新增数据集索引与 `agent-eval dataset list` 子命令
+- **datasets**: 新增评测数据集下载能力（HuggingFace/ModelScope）
+- **observability**: 对象存储 presigned URL 支持对外端点
+- **web**: 样本详情页支持源文件在线预览与约束详情展开
+- **observability**: 上传源文件并新增制品预览端点
+- **web**: rebuild React frontend for observability platform (Sprint 7f frontend)
+- **web**: add Query API with runs list, trends, dashboard and artifact download (Sprint 7f backend)
+- **observability**: add Python ResultSink for evaluation result upload (Sprint 7e)
+- **web**: add Ingest API for evaluation result ingestion (Sprint 7d)
+- **web**: restructure backend to TypeScript layered architecture with Prisma ORM
+- **web**: React frontend for Web Portal
+- **web**: Express backend API for Web Portal
+- **reporting**: parse formula/arithmetic error items into structured markdown
+- **web**: Python Web Portal integration with workspace indexer and CLI commands
+- **evaluators+sdk**: 插件评估器自动发现机制与 Python SDK 公共接口
+- **knowledge**: 知识库管理器 — KnowledgeBaseManager 与事实验证评估器重构
+- **execution**: 任务集构建器 — TaskSetBuilder 模板批量生成
+- **rules**: 规则集版本管理与 CLI 命令 — RuleSetManager + agent-eval rule 子命令
+- **rules**: 规则模板系统 — RuleTemplate 模型、TemplateResolver、语义校验器
+- **judge,evaluators**: JudgeOrchestrator 与评估器透传运行 trace_id
+- **orchestrator**: eval_only 创建运行级 Langfuse trace
+- **tracing**: create_trace 使用 UUID，新增 create_span 支持子 trace
+- **vision**: VisionEvaluator 改为逐文档评分，JudgeOrchestrator 支持 judge_id_suffix
+- **vision**: VisionEvaluator 改为逐文档评分，JudgeOrchestrator 支持 judge_id_suffix
+- **evaluation**: Sprint 6 多模态视觉评估（VisionEvaluator + 截图渲染）
+- **llm**: 正名 OpenAI 兼容客户端，新增 Anthropic Provider
+- **engine**: PipelineEngine 支持 RuleSet 参数覆盖评估器默认配置
+- **cli**: 新增 pack 命令，替代 scripts/eval_sample.py 脚本
+- **llm**: LLM Judge 可解释性增强（维度详情、评价总结、报告渲染）
+- **evaluators**: 逻辑一致性重构为具名变量检查，新增公式规范化器
+- **reporting**: 报告渲染新增 details 展开块与 reason 截断放宽
+- **evaluators**: 知识准确性三层检查架构与学科知识库
+- **llm**: 集成 Langfuse LLM 调用追踪与可观测性
+- **prompts**: Prompt 模板新增 JSON 格式约束指令，提升结构化输出稳定性
+- **config**: 集成 python-dotenv 自动加载 .env 环境变量
+- **config**: 新增评估配置模板与验收脚本
+- Sprint 5 编排调度与报告（eval-only 模式端到端贯通）
+- Sprint 4 评估引擎 LLM Judge 实现（17 项评估器全部就绪）
+- Sprint 3 LLM 模块实现（Provider 抽象层 + LLM Judge 基础设施）
+- Sprint 2 评估引擎 Rule-based 实现（10 项评估器 + 聚合 + 测试）
+- 完成首批代码实现（Agent/Storage/CLI/Config/Tests）
+- **data**: 数据模型层（执行/评估/规则）
+- **core**: 项目脚手架与核心模块
+
+### Fix
+
+- **cli**: 补录提示被进度转轮刷掉——挂点移至命令层进度启动前
+- **cli**: auth 粘贴空回车不再 traceback——空输入即取消 + 非 2xx 统一归类
+- **cli**: 执行凭证预检 fail fast + runs 失败诊断 + workspace 测试隔离
+- **cli**: PackageAgent 验收反馈修复——流式观感 + 参照通道 + YAML 资产门禁
+- **cli**: scenario show tree 对齐 F-C-SCN-VIEW-01——按目录分组树形 + 行数统计
+- **cli**: 向导直调执行动作泄漏 OptionInfo 致「配置加载失败」——命令体下沉纯函数动作
+- **executor**: 解密失败日志补 error_type，空串异常可定位
+- **executor**: worker 循环改真并发——Semaphore 形同虚设致队头阻塞
+- **evaluator**: EvalResult 补声明 sut_name/sut_version——修 eval-only 路径 flush AttributeError
+- **web**: 调试台 api_key 验签失败改 403 API_KEY_INVALID——不再误触前端登出
+- **evaluator**: trace/metrics 改 merge 语义——过程指标在 LLM 写包路径取到真实值
+- **web**: 速览跳过约束不计入问题 + ingest 运行模式枚举补 agent（mode 语义端到端收尾）
+- **web**: 样本摘要条补齐 skippedCount 展示——修复前端 ESLint no-unused-vars
+- **executor**: 清理 runner.py 未使用 import（F401），消除 CI UNSTABLE
+- **web**: DB 依赖测试改名 .integration.test.ts——修复 CI test:unit 误跑致构建失败
+- **executor**: 任务提示词增加确定性转发指令段——修复 agent_run input 格式不一致
+- **web**: 样本详情 SKIP 状态灰色化——不再误显示为失败
+- **artifacts**: object_key 加 sample 维度——多样本同名制品不再冲突
+- **artifacts**: 制品按样本归属 + kind 分类，前端多样本适配与渲染增强
+- **db**: SutConfigAsset 与方案对齐——正名并修正文档歧义
+- **llm**: anthropic SDK 1.0 兼容——Messages.create 移除采样参数时不再传 temperature
+- **evaluator**: trace.json 回填 SUT 最终回答（response.sut，arch/03 v4.6.4）
+- **evaluator**: run.start 输入契约修正——消息置于 params.input.messages 且为 LangGraph type 格式（arch/03 v4.6.4）
+- **evaluator**: 执行链 v4.6.3 修复——workspace 目的地服务端持有/摘除 checkpointer/回调挂真基类/CLI 通道同 loop 关闭
+- **evaluator**: 打破 config.loader 与 execution.models 的循环导入
+- **evaluator**: InfoAccuracy reason 不暴露 LLM 内部维度分数细节
+- **evaluator**: reward计算仅计入实际参与阶段 + 预填表达式变量
+- **evaluator**: reward计算时仅计入实际参与的阶段
+- scenario score aggregator only counts stages that actually participated
+- **db**: 将 importAssetsToDb.ts 延迟到全部迁移完成后执行
+- **logging**: 强制 stdout/stderr 为 UTF-8 规避中文日志编码错误
+- **web**: deleteRun 加租户隔离（orgId 过滤，修 AI 审查 Critical）
+- **web**: deleteRun 支持 externalRunId（修删除运行 500）
+- **debug**: 文件选择器始终允许上传 zip
+- **collector**: 收紧降层条件，避免单顶层套文件误降层
+- **collector**: 顶层单目录时降一层切分模块
+- **web**: 删除 useEditorStore unused import SPECIAL_SELECTIONS
+- **web**: S3-3 RunDetail 用 run.scenarioId 替换硬编码 courseware
+- **web**: defaults 发布同版本冲突对齐提示词（同 version 一律 409）
+- **web**: 版本不可变 + 统一 semver + 标签互斥 + 包内容读端点
+- **web**: RunDetail 指标改用最新场景默认（旧 run 不再显示旧指标名）
+- **web**: DynamicMetricGrid 卡片自适应（少撑满/多换行/末行不留空）
+- **cicd**: setup-nodejs.sh 加 Node 版本校验（根治 #113 起连续失败）
+- **cicd**: CI Node 升至 22.15.0（vitest 4 的 std-env ESM 需 Node 22.12+）
+- **cicd**: setup-nodejs.sh 加 npm 健康检查 + 清理重装
+- **cicd**: 降 vite 到 6 修复 web CI（不升 Node，保留单测）
+- **cicd**: 修复 web CI 因 Jenkins agent Node 版本漂移导致 vitest 崩溃
+- **backend**: overview 速览从 metrics JSONB 读取指标（非已删除的遗留列）
+- **backend**: 修复 LLM 配置错误处理并提取公共工具
+- **web**: 修复前端 lint 错误与类型收紧
+- **web**: 提示词表单防御式渲染，修复字段缺失白屏崩溃
+- **web**: 3 项场景包编辑器深度优化
+- **web**: 4 项场景包编辑器优化
+- **design**: package-wizard 改为选择→进入两阶段流程（非 Tab 并存）
+- **web**: DatasetForm 默认 role=reference（content 无 role 字段）
+- **test**: 需要 DB 的测试重命名为 .integration.test.ts
+- 分离 .env / .env.local 解决 executor presigned URL 网络隔离
+- **web**: 参考数据用 max-h-[50vh] 视口自适应限高（常量+误区均可见）
+- **web**: 参考数据区去掉固定高度限制，内容自适应全展示
+- **web**: 参考数据滚动区加 bg-muted/20 背景与其他模块一致
+- **web**: RuleExplorer 滚动条深色模式优化（8px 宽 + track 背景 + 高对比）
+- **evaluator**: upload 回填命令增加 artifact 上传（截图/judge记录/原始文件）
+- defaults.py YAML 路径改为 paths 动态解析（不硬编码版本号）
+- **web**: RunDetail useScenarioDefaults 移到 early return 前（修复 React #310）
+- **web**: Prisma schema 迁回 web/backend 修复 CI 构建失败
+- **web**: /debug 结果区 UI 优化 + /jobs/:id 响应对齐 snake_case 契约
+- **vision**: 截图渲染容器硬化，降低 SCF 超时风险
+- **web**: vitest 默认 MinIO 端点改为 9100
+- **web**: debug/jobs 响应字段改下划线对齐前端，GET 直接返回 job
+- **web**: 修复 rule-sets.json 未打包导致 /api/v1/rule-sets 500
+- **cicd**: gateway 镜像改用预烘焙 Chromium 基础镜像，修复 Jenkins 构建下载失败
+- **evaluator**: InfoAccuracyEvaluator 改 MATH_VERIFY，避免误派生 KNOWLEDGE_BASE 能力
+- **evaluator**: observability 可重试错误补全上游响应体日志
+- **web/backend**: ensureBucket 跳过 cos/s3，仅本地 MinIO 懒建桶
+- **gateway**: per-job token 回传时重算 enabled 并补充日志
+- **web/frontend**: 调试台错误提示兼容后端 error 字段
+- **web/frontend**: 登录注册表单补充 autocomplete 属性
+- **web/backend**: presigned PUT 改用对外端点签名
+- **eval-gateway**: 修正 zip 解压中文文件名乱码（CP437→UTF-8/GBK）
+- **gateway**: Jenkinsfile 单测去掉 --cov（gateway 未装 pytest-cov）
+- **gateway**: 打通 eval-gateway 与 web 平台端到端对接
+- **evaluator**: 恢复误删的 README.md，修复 python-check CI 构建失败
+- **samples**: 修正样本课件多余 </div> 闭合标签
+- **evaluator**: fact_verdict 分批调用避免大候选集失败；HTML 校验错误补文件名
+- **evaluator**: InfoAccuracy LLM 解耦，不注入规则可疑条目，避免误报污染评分
+- **evaluator**: HTML 有效性校验改用解析器标签栈，修复文本引号误报
+- **auth**: SSO-only 用户禁止密码登录，补充 SSO 路由/服务单测
+- **artifacts**: 预览强制 inline，规避 COS 默认 attachment 触发下载
+- **evaluation**: misconception 误报优化—降 warning 不参与 pass/fail
+- 渲染截图—非多模态隐藏 tab + 多模态截图上传修复
+- **web**: 渲染截图 tab 区分多模态/非多模态评估
+- **evaluation**: 评估缓存纳入 LLM 指纹 + --no-cache 选项
+- **knowledge-pipeline**: pipeline kwargs 分离（source/extractor 参数不再串扰）
+- **ci**: 补提 dataset_index.yaml（被全局 gitignore 忽略致 registry 加载失败）
+- **ci**: 修正 agent_eval/datasets 被全局 gitignore 忽略致 CI import 失败
+- **evaluator**: 修复 ruff 既有错误（F821 undefined name 与 import 排序）
+- **design**: 指标说明 popover 改用 fixed 定位规避祖先裁切
+- **storage**: 打包排除隐藏/系统文件，统一 workspace 路径
+- **engine**: HARD_SCORE 阶段失败不再阻塞后续阶段，优化级联短路策略
+- **evaluators**: 时序正确性评估器排除持续时间模式误提取，补充 12 个测试
+
+### Refactor
+
+- **cli**: auth 身份迁密钥区 platform.json——env 直供优先，.env 手工管理仅提示
+- **exec**: 凭证链路 KV 化——字段集由配置声明非代码枚举
+- **cli**: main.py 模块化拆分——889 行收敛为 88 行引导层
+- **chat**: answer_exact 两阶段——LLM 提取 + 规则比对（去 hardcode）
+- **web**: /api/v1/ai 四端点提示词抽离为 YAML 资产
+- **evaluator**: 执行 Agent 提示词抽离为 YAML 资产（arch/03 v4.6.5）
+- **evaluator**: 抽取 ToolExporterMixin 工具导出基座与共享点分路径工具
+- Phase 5 收尾——drop samples s_* 遗留列 + 删 legacy aggregator/metrics
+- **web**: 清理陈旧 courseware 类型/注释
+- 去 courseware 硬编码（默认值/兼容桥/快照/上传 数据驱动化）
+- **executor**: 文件收集类型按规则集 format 门控推导（去 courseware 硬编码）
+- **evaluator**: 样本/报告指标 dict 化（场景化，去 s_*/dr/cpr 硬编码标量）
+- **evaluator**: 删 conditional_reward + events metrics 键多场景化（S2-E）
+- **courseware**: 指标定义通俗化 + 指标说明编辑入口
+- **web**: RunDetail 页面布局优化 + DebugPage 指标映射
+- **web**: 提取 AI/YAML Hooks 并统一错误处理
+- **web**: 规则资产引用校验按 method 收敛并调整策略树顺序
+- **web**: 指标硬编码全面场景化并删除 lib/eval
+- **web**: ExplainContent 类型收敛至 ExplainTooltip，新增指标动态助手
+- **web**: 拆分非组件导出以消除 react-refresh 警告
+- #60 收敛指标定义到包内 metrics/policy.yaml（跨语言单一源）
+- #65 跨场景参数化 — Dashboard/AdminRuns/adminStats 零 courseware 硬编码
+- P5-8 阶段C 删除 Run 遗留指标列（dr/cpr/avgReward 等 7 列）
+- **web**: RunDetail 报告/叙述改为 metrics 驱动（移除 THRESHOLDS）
+- **web**: 趋势图 + 运行列表表动态化（defaultDefs 驱动，零 hardcode）
+- 指标定义收归后端单一源，前端零 hardcode（方案 A）
+- **web**: P5-8 阶段1 — 移除 RunDetail/ProjectDetail 硬编码指标卡
+- **eval**: 质量判官提示词结构化重构 + 分档标准细化
+- **eval**: _coerce_score 改严格解析，去掉向后兼容兜底
+- **eval**: 质量判官提示词细化评分标准 + 结构化输出
+- **web**: Ingestion 端点与文档中 HMAC 改为 Bearer API Key
+- **evaluator**: 可观测模块注释中 HMAC 改为 Bearer API Key
+- **executor**: 注释与规则描述中 gateway 术语改为 executor
+- **web**: gateway 术语统一改为 Web 后端 / executor
+- **web**: SCF 环境变量统一加 TENCENT_ 前缀规避云函数保留字
+- **gateway**: 清理 docs/arch/13 过渡文档引用
+- **evaluator**: 移除未使用的 penalty_on_fail 并清理 docs/arch/13 引用
+- **web**: 调试台默认规则集对齐 coursework-quality，下拉展示规则集文件 id
+- **gateway**: 规则集默认与注册表对齐新的 gate/quality/vision 三档
+- **evaluator**: 课件规则集按能力递进拆为 gate/quality/vision 三档
+- **evaluator**: 规则集成为管线评估器集合的单一事实源（docs/arch/13）
+- **gateway**: 移除冗余 EVALGATEWAY_ENABLE_VISION，视觉能力统一由规则集派生
+- **web/frontend**: 设计令牌与页面容器对齐原型 theme.css
+- **evaluator**: 摄取客户端改用单一 Bearer API Key
+- **gateway**: 鉴权由 HMAC 签名改为单一 Bearer token
+- **web**: API Key 鉴权由双 Key HMAC 改为单一 Bearer token
+- **web/frontend**: ProjectDetail 适配 MetricCard recentRunTime 属性
+- **web/frontend**: 登录页与项目详情页适配 MetricCard/ExplainTooltip
+- **web/frontend**: 补充迁移 ExplainTooltip 与 MetricCard 共享组件
+- **web/frontend**: 页面与路由入口适配 shadcn/ui 设计系统
+- **web/frontend**: UI 组件层迁移至 shadcn/ui
+- **db**: 统一数据库建库/迁移到 db/ 目录
+- **web**: 统一指标文案到 METRIC_LABEL 常量
+- **evaluator**: 常识评估器瘦身、ChronologicalOrder 改 LLM-as-judge、RuleSet enabled 过滤
+- **docker**: 废弃 schema.sql 自动建表，改为 make db-init 手动应用 prisma migrations
+- **artifacts**: 预览改为同源 raw 代理 + 专用短期 token
+- **scripts**: seed_demo 精简为仅注册默认演示账户
+- **docker**: DB 初始化改用 postgres initdb 自动建表，容器不再跑 migrate deploy
+- **docker**: 统一 web 容器命名（platform→web）与默认端口（3000→9000）
+- **web/backend**: 移除腾讯云 SCF serverless 入口，统一容器化部署
+- **knowledge**: 删除无有效锚定 misconception pattern 治理误报
+- **evaluation**: LLM 降级统一为 SKIP 不计入得分
+- **evaluation**: 移除 format.structure_compliance 结构规范性评估器
+- **evaluation**: 移除 format.document_count 文档数量检查评估器
+- **cli**: CLI 拆分为子包并移除 serve 命令
+- **rules**: 移除规则集版本管理，改由 git 承担
+- 删除废弃的 agent_eval/web/（Sprint 7a 旧 MVP 索引，已被 09 平台取代）
+- **knowledge**: 合并 knowledge_pipeline 到 knowledge（统一目录结构）
+- **knowledge-pipeline**: 删除已迁移的旧脚本 + 清理 pycache
+- **web**: 前端设计系统重构，移除 AntD/echarts 改用自研组件层
+- **evaluator**: 将 assets 移入包内并适配 pip-installable 路径设计
+- **web**: remove Sprint 7a MVP frontend and legacy backend routes/services
+- **evaluators**: 将 LLM Judge 内容截断长度统一接入 EVALUATOR_DEFAULTS
+- **config**: 将 LLM 配置与评估默认值统一迁移到 agent_eval.config
+- **llm**: 集中管理 LLM 模块默认参数，消除 hardcode
+- **evaluation**: 新增 text_utils 干净提取 HTML 文本，消除评估器重复代码
+- **storage,evaluators**: 存储层格式统一，常识评估器表达式简化
+- **docs**: 移除 3 项评估器，评估器体系从 17 项精简为 14 项
+- **evaluators**: 移除 Rule-based 软约束评估器，质量阶段精简为纯 LLM Judge
+- **evaluators**: 移除 format.directory_structure 评估器（17→16 项）
+- **config**: 新增 ProjectPaths 路径集中管理，消除散落的路径拼接

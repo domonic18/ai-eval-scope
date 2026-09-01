@@ -16,7 +16,7 @@
 | G2 场景包 Agent 化 | PackageAgent 复用 DeepAgents 底座 + 独立沙盒工具面 + 校验门禁（§六） |
 | G3 零门槛交互 | 向导原语库（选择/确认/输入）+ preflight 引导链 + 等价命令显示（§三） |
 | G4 脚本/CI 友好 | 非 TTY 降级、`--no-input`、`--output-format json`、退出码集中映射（§4.3） |
-| G5 单一事实源不变 | 配置仍落 llm.json / sut_credentials.json / .env；包结构仍走 13 规范 |
+| G5 单一事实源不变 | 配置仍落 llm.json / sut_credentials.json / platform.json（密钥区三文件）+ .env（开关与直供）；包结构仍走 13 规范 |
 | G6 命名语义清晰 | `models set/clear`、`scenario *`、`auth *`、顶层 `doctor`；一次性切换无兼容层（§4.2） |
 
 ### 1.2 范围
@@ -60,14 +60,15 @@ CLI 目录按「**装配单点 / 命令薄壳 / 表现层基础设施 / 向导�
 
 ```
 agent_eval/cli/
-├── __init__.py        # Typer app 装配：注册全部命令组（唯一 add_typer 点）
-├── main.py            # 顶层命令薄壳：eval/run/pipeline/pack/upload/version/start/open/doctor
+├── __init__.py        # 唯一装配点：顶层命令 app.command()() + 子命令组 add_typer
+├── main.py            # 引导（dotenv/评估器注册/app/全局 callback）+ 轻量命令
+│                      #   version/start/open/doctor（~90 行，无业务体）
 ├── _stages.py         # 编排阶段（既有：解析/执行/评估/收尾；零交互，向导复用）
-├── _common.py         # 既有公共工具（env/日志）
+├── _common.py         # 跨组共享工具：LLM Judge 初始化 / 摘要 / 推送 / 凭证保障
 │
 ├── console/           # 表现层基础设施（无业务语义，命令层与向导层双向复用）
-│   ├── prompts.py     # 向导原语：select/confirm/input/progress（questionary 封装 + 非 TTY 降级）
-│   ├── render.py      # rich 渲染：表格 / 指标卡 / diff 着色 / 进度视图
+│   ├── prompts.py     # 向导原语：select/confirm/ask/resolve_bypass + --no-input 旁路
+│   ├── render.py      # rich 渲染：stage_progress（阶段级进度，stderr 绑定）/ 任务状态表
 │   ├── output.py      # --output-format json 与 stderr 分流 + map_exit_code() 退出码集中映射
 │   └── equiv.py       # 等价命令 argv 构造（单点映射表）
 │
@@ -76,13 +77,17 @@ agent_eval/cli/
 │   └── domains/       # 四域动作（调用 cmds 暴露的纯函数，不经过 typer）
 │       ├── scn.py / exec.py / runs.py / account.py
 │
-└── cmds/              # 子命令组（一组一模块：typer 绑定 + 组内纯函数动作）
-    ├── scenario.py    # 原 package.py 改名迁入：new/edit/show/validate/list/pull
+└── cmds/              # 命令模块（顶层与子命令组同构：typer 绑定 + 纯函数动作）
+    ├── pack.py        # 顶层 pack 绑定 + execute_pack + 内容指纹
+    ├── evaluate.py    # 顶层 eval 绑定 + execute_eval + _detect_run_mode
+    ├── execute.py     # 顶层 run/pipeline 绑定 + execute_run / execute_pipeline
+    ├── upload.py      # 顶层 upload 绑定 + upload_run（回填动作）
+    ├── scenario.py    # 原 package.py 改名迁入：new/show/validate/list/pull
     ├── models.py      # set/list/test/clear（原 login/logout 改名）
-    ├── auth.py        # login/status/logout/register
-    ├── runs.py        # list/show
+    ├── runs.py        # list/show（无参交互选择）
     ├── open_url.py    # open <target>（平台 URL 构造 + webbrowser 单出口）
     ├── doctor.py      # doctor（检查项编排）
+    ├── auth.py        # login/status/logout/register（Sprint 11）
     └── secrets.py / suite.py / dataset.py / knowledge.py / rule_set.py   # 既有迁入
 
 agent_eval/agent/
@@ -93,7 +98,7 @@ agent_eval/agent/
 
 **组织约定**（可维护性与扩展性的落点）：
 
-1. **装配单点**：`__init__.py` 是唯一 `add_typer` 注册处——新增命令组 = `cmds/` 新模块 + 一行注册，`main.py` 与其他组零改动。
+1. **装配单点**：`__init__.py` 是唯一注册处（子命令组 `add_typer` + 顶层命令 `app.command()()`）——新增命令 = `cmds/` 新模块（绑定 + 纯函数动作）+ 一行注册，`main.py` 与其他模块零改动。
 2. **命令薄壳**：typer 回调（`main.py` 与 `cmds/*`）只做参数绑定与结果输出；业务逻辑一律下沉为 `_stages` 阶段函数或组内导出的**纯函数动作**（无 typer 依赖）。
 3. **双前端同构**：workbench 域动作与命令行调用**同一个纯函数动作**（D-CLI-1 的落地形态）；等价命令显示由 `console/equiv.py` 从同一参数对象组装，天然不漂移。
 4. **依赖方向单向**：`cmds → (_stages / console / _common / 内核)`；`workbench → (console + cmds 纯函数)`；`console` 不依赖任何业务模块；**禁止命令组之间横向 import**（跨组复用上提到 `_common`/`console`/`_stages`）。
@@ -105,9 +110,9 @@ agent_eval/agent/
 | # | 决策 | 理由 |
 |---|------|------|
 | D-CLI-1 | **双前端同内核**：向导动作最终组装与命令行相同的参数对象，直接调 `_stages` 阶段函数；向导内不出现第二份业务逻辑 | P1 原则；等价命令显示天然成立（argv 即真相） |
-| D-CLI-2 | **交互组件选 questionary + rich**：select/confirm/path 内建、键盘导航、与既有 rich 渲染共存；全部原语收口在 `console/prompts.py` 可注入 mock | 成熟度与测试性；备选（rich Live 自研）仅在 questionary 无法满足分页/搜索时局部替换 |
+| D-CLI-2 | **交互原语收口 `console/prompts.py`：P0 以编号选择落地（gcloud 同款，零新依赖）；questionary + rich 为 P1 可选升级**（分页/搜索需求出现时） | 零依赖先行 + 升级路径保留；原语签名不变，替换不动调用方 |
 | D-CLI-3 | **PackageAgent 独立工具面**（`package_tools.py`），不复用 SUTToolServer | 两域工具语义无关（文件编辑 vs SUT 交互）；沙盒约束不同（包根 vs workspace） |
-| D-CLI-4 | **平台身份落 `.env`**（`AGENT_EVAL_HOST/API_KEY/PROJECT`，0600），不新增凭证文件 | 06 §4.7：环境接入归 `.env`；`auth` 与 `secrets`（SUT 凭证，`~/.agent_eval/`）分域 |
+| D-CLI-4 | **平台身份落密钥区 `~/.agent_eval/platform.json`**（host/api_key/project，0600），CLI 启动注入 env **仅补缺**——env 直供（CI/云函数/executor/`.env`）优先；`.env` 归用户手工管理，残留旧值检测提示不代删 | 三域三文件与 `models`（llm.json）/`secrets`（sut_credentials.json）对齐（06 §4.7）；「登录 A 实际上报 B」的静默错乱由 env 优先 + 提示兜底 |
 | D-CLI-5 | **浏览器打开统一走 `cmds/open_url.py`**：`webbrowser.open`（`$BROWSER` 可指定浏览器）+ 无浏览器环境（SSH/未设 `$BROWSER`）降级打印 URL | gh `pkg/browser` 同款行为；单一出口便于 mock 测试（NF-C-05） |
 | D-CLI-6 | **重命名一次性直接切换**，无别名层 | 用户基数小（需求 v1.2 决策）；收尾要求 = 全仓引用同版本清理 |
 | D-CLI-7 | **退出码集中映射**：`console/output.py::map_exit_code(exc)` 单点适配异常体系 → 0/1/2/3/130 | 契约可测试；新增异常不改命令层 |
@@ -117,8 +122,9 @@ agent_eval/agent/
 
 | 工作台能力 | 复用既有实现 |
 |-----------|-------------|
+| 平台账号 | `auth login/status/logout/register`（`cmds/auth.py` 纯函数动作 + `auth_wizard` 子向导：登录/状态/退出/注册；身份探测 `GET /api/public/whoami`；写密钥区 platform.json（0600，`apply_platform_env` 启动注入 env 仅补缺）；登录后 `session._refresh()` 刷新平台态） |
 | 模型配置向导 | `models set`（原 login 逻辑，改触发词与文案） |
-| SUT 凭证 | `secrets set`（向导仅做缺失检测与跳转） |
+| SUT 凭证 | `secrets set`（工作台「账号与配置 → SUT 凭证」为交互子向导 `secrets_wizard`：查看表 / 录入-更新（ref 从已录键与场景包 sut_configs 的 credential_ref 数据发现、字段名自由输入、值隐藏输入）/ 删除；与命令行同读写 `~/.agent_eval/sut_credentials.json`；执行前缺失由 `ensure_sut_credentials` 自动引导补录，见 §7.2） |
 | 执行 | `run/pipeline/eval` + `_stages.py` 五阶段 |
 | 包校验 | `package validate` 既有 Schema + 语义校验（改名后为 `scenario validate`） |
 | 包发现/解析 | `PackageManager`（内置/项目/本地仓库三源） |
@@ -153,10 +159,11 @@ class WorkbenchSession:
 
 | 原语 | TTY 行为 | 非 TTY 行为 |
 |------|---------|------------|
-| `select(options)` | ↑↓ + 回车；支持 `--domain` 直达 | 缺省值不存在 → `InputError`（exit 2）；存在 → 直接采用 |
+| `select(options)` | 编号列表 + 回车（P0；P1 可升级 ↑↓ 键盘导航） | `--no-input` 下 env/default 旁路，缺失 → exit 2；管道输入正常提示 |
 | `confirm(q)` | y/n | 读 `--yes`/env，缺省即错 |
 | `input(hide=)` | 文本（可隐藏回显） | 读参数/env，缺省即错 |
-| `progress(tasks)` | 单行重绘进度条 + 状态表 | 逐任务一行摘要到 stderr |
+| `stage_progress` | 阶段级 spinner（stderr 绑定，transient）| 单行阶段提示到 stderr；--json 下禁用 |
+| `print_task_table` | 完成态逐任务状态表（进度视图回落摘要） | 正常输出（rprint） |
 
 全部原语收口 `console/prompts.py`，签名统一带 `default`/`env_key` 旁路参数（P2 原则），测试经依赖注入 mock。
 
@@ -239,12 +246,14 @@ CLI                                          平台
  │   input(hide=True) ←──────────────────── 用户粘贴新 Key
  │
  │ ② Key 有效性探测：既有 Bearer 端点轻量调用（如 GET /api/v1/jobs?limit=1）
- │ ③ 解析身份（团队/项目）→ 写 .env（0600）：AGENT_EVAL_HOST/API_KEY/PROJECT
+ │ ③ 解析身份（团队/项目）→ 写密钥区 platform.json（0600，env 直供优先）
  │ ④ 回执：用户@团队 · 项目 · Key 掩码
 ```
 
 - 通道 A/B 共用 ②③④；差异只在 Key 的获取方式。`auth login --token <key>`（或 env）为 CI 无浏览器形态。
 - `auth status`：读 `.env` → 平台 ping → 身份回显；`auth logout`：清除 `.env` 三项（`--revoke` 吊销为 P2，需平台删除 Key 端点授权）。
+
+> **Sprint 11 落地形态（2026-09-01）**：身份探测端点已实现——`GET /api/public/whoami`（Bearer API Key，返回 `{kind, key:{name,scopes}, project:{id,name,slug}, org:{id,name,slug}}`）；前端暂无独立 Keys 页与 `/cli-auth` 授权页：通道 A 打开 `{host}/login` 并引导至项目「设置 & API Key」页创建 Key，通道 B 待平台侧落地（P2）。CLI 对 404（旧平台无 whoami）回退 `GET /api/public/secrets` 轻探测——Key 有效但身份未知，回执降级不阻断登录。身份持久化于 `~/.agent_eval/platform.json`（0600，`AGENT_EVAL_PLATFORM_CONFIG` 可覆盖），CLI 启动 `apply_platform_env` 注入进程 env **仅补缺**（CI/云函数/executor env 直供与 `.env` 显式配置优先）；`.env` 归用户手工管理，登录/登出检测到残留平台配置即提示（env 优先将覆盖密钥区），不代为删改。
 
 ### 5.2 设备码流接口约定（P2，平台侧落地）
 
@@ -297,6 +306,7 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | `read_manifest` / `update_manifest` | manifest 读写同样走暂存 |
 | `validate_package` | 对暂存后的包快照执行 Schema + 语义校验，返回结构化 errors |
 | `search_reference` | 检索内置包（courseware/chat/code）+ [14 指南](./14场景扩展指南.md)要点 |
+| `read_reference` | 只读内置包文件内容（ref + 包内 path）——Agent 参照真实格式的**合法通道**（`read_file` 限本包，曾实测 Agent 试图借它读包外路径被拒后反复试探） |
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff |
 
 **沙盒规则**：路径 `resolve()` 后必须 `is_relative_to(pkg_root.resolve())`（防 `..` 与 symlink 逃逸）；写操作扩展名白名单 `.yaml/.yml/.json/.md`；无 shell、无网络、无包外路径。
@@ -320,6 +330,25 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 - `scenario edit --instruction ... --yes --trust-agent`：非交互模式必须双重显式旗标；默认关闭。
 - 会话日志 `workspace/agent_logs/package_agent_<ts>.jsonl`：消息、工具调用与参数（凭证字段脱敏）、token、耗时。
 
+### 6.5 落地注记（2026-08-31，feat/package-agent）
+
+- 实现：`agent/package_tools.py`（§6.2 工具面十工具，staging 暂存 dict）+ `agent/package_agent.py`（`turn()` 会话 / 门禁回改 / jsonl 日志）+ 提示词资产 `assets/configs/package_agent_prompts.yaml`（字面 replace 渲染——模板内大括号均为字面内容，非 format 占位）。
+- **流式直播**（用户实测反馈补齐）：`_invoke` 改走 `astream(messages/updates/values)` 三模，事件流（`thinking` / `token` / `tool_start` / `tool_end` / `phase` / `tool_args`）实时回调，CLI 按 claude code 式渲染（✻ 思考 dim、🤖 正文直出、🔧 工具行带关键参数）；输入后立即显示 ⏳ 工作中提示。兼容两形态：KIMI/Claude 系增量 chunk 的 `type` 为 `AIMessageChunk`（非 `"ai"`）且 content 为 blocks（thinking/text 段分列）——真机实测两坑。
+- **流式观感两修**（第二轮实测反馈）：① 模型 text/thinking 段常以 `\n\n` 开头，直接拼接会出现「🤖 后空行」——段首空白吞掉，段内换行保留；② 大文件内容在 tool_call args 里增量生成（不走 text 流），数十秒无输出形同「卡住」——`tool_args` 事件以 `\r` 单行进度实时显示「⏳ write_file 生成参数中 · N 字」（仅 TTY；非 TTY 静默）。
+- **中断语义**：Ctrl+C 中断当前轮——暂存清空 + 历史截断（磁盘从未见过本轮内容），会话不退出可继续输入；协内以 `CancelledError` 呈现（测试勿直抛 `KeyboardInterrupt`，Runner 的 SIGINT 机制会死循环）。
+- 偏差：预算暂以 `recursion_limit = max_turns × 2` 约束，BudgetGuard 会话级预算待逐任务预算需求出现接入；确认粒度为「全部应用/放弃」整轮确认，逐文件确认（§6.3）未做。
+- **首轮错误遏制**：REPL 首轮（`--instruction`）与后续轮同走 `_attempt()` 防护——瞬时错误（LLM 网关断流等）打印失败原因 + 回滚提示后会话不退出，可直接重发上一条需求（真机曾因首轮回溯击穿整会话）。
+- **YAML 资产门禁**：Agent 曾把提示词写成 README 式 `.md`（加载器只认 `.yaml`，静默失效 `prompts=0`）——`validate_package` 与 `scenario validate` 双端要求 `rules/` 与 `prompts/` 各含 ≥1 个 `.yaml`，错误交 Agent 会话内自修复；真机复测 `rules=1, prompts=1` 通过。
+- **生成即发现**（第三轮实测反馈「执行评测选择器只见预置包」）：`PackageStore` 增第三来源 **project**——项目根（默认 cwd，`AGENT_EVAL_PROJECT_DIR` 覆盖）与 `workspace/scenario-packages/` 双根一级子目录扫描（含 `agent_eval.yaml` 即项目包，source=`project`；仅扫一层防内置包经 `assets/packages/` 重复发现；Agent 生成包默认落 scenario-packages——**该默认已于 2026-09-01 修订为 cwd 直出，见下**）。`PackageManager.list/find` 单点打通：工作台执行域与 `scenario show/edit` 选择器、`eval/run/pipeline` 的 `--package` 解析全部直达刚生成的包；单测 conftest 钉 env 隔离开发者 cwd 实包。
+- CLI：`scenario new --mode agent`（REF 可省——用户实测反馈「先问包名不友好」：省略时 Agent 按需求拟定引用并在计划首行给出，会话中自然语言可改，会话结束按**最终清单 id** 归位 `workspace/scenario-packages/<id>-package/`——**该落点已于 2026-09-01 修订，见下**）；给了 REF 则钉入模板不得自拟、默认同上）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`；交互选择器过滤内置包并给路径输入入口）；workbench 场景域两项入口（生成新包不再前置询问包名）；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
+- **落盘位置改 cwd 直出**（2026-09-01，PyPI 直装用户实测反馈「包写到了 /tmp、最终位置与预期不符」——形态 B）：场景包是**源资产**（考卷/规则/SUT 配置，用户要编辑、可团队共享），与 `workspace/`（运行产物区，gitignore）归属不同；行业脚手架惯例（cargo/npm/create-vite）一律 cwd 直出。落地：
+  - Agent 会话在 `workspace/.staging/agent-eval-pkg-<rand>/` 草稿区进行（同卷 `shutil.move` 原子归位），结束后按最终清单 id 归位 **`cwd/<id>-package/`**——与 skeleton 模式 `./<id>/` 方向一致；给了 REF 直接定址 `cwd/<id>-package/`
+  - **中断 ≠ 放弃**：异常退出不清理草稿（原逻辑清单未落盘即 rmtree），提示 `scenario new --mode agent --output <草稿路径>` 续作；`--output` 显式指定时非空目录放行（续作场景），默认路径仍要求空目录
+  - **归位冲突报错保留草稿**（原逻辑静默留在生成位置）：目标已存在 → Exit(1) + 交用户处置（换名/手动 mv）；清单未落盘同理保留草稿不再删除
+  - **git 视野**：仓库 `.gitignore` 加 `/*-package/` 与 `evaluator/*-package/`（实验态默认忽略；转正式资产 `git add -f` 或迁 `assets/packages/` 随包发布）；工具不改用户 .gitignore，仅在收尾提示建议行
+  - `scenario_packages_root()` 降级为兼容扫描根（旧包不搬家仍可见），`list_project` 双根发现不变
+- 验证：单测 mock `_invoke` 回放状态机 + `_FakeGraph` 流式事件（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘/中断回滚/blocks 解析）；真机 KIMI 端到端冒烟（一句话生成合法包、一句话改字段，思考/正文/工具全程直播）。
+
 ---
 
 ## 七、查看与结果浏览
@@ -330,8 +359,10 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 
 ### 7.2 `runs list / show`
 
-- `list`：读 `workspace/index/runs_index.json`（06 §3.8；缺失时提示 `agent-eval index` 重建）→ 表格（时间/包/任务数/Reward/DR/CPR/上传态）。
-- `show <run_id>`：直读 run 目录（`run_manifest.json` + `reports/summary.json` + `results/*/rule_results.json`）→ 指标卡按 `RunConfigSnapshot.metricDefinitions` 动态渲染（不硬编码）；失败 breakdown TopN；任务下钻约束级 `reason` 与 `source_files`。
+- `list`：直接扫描 `workspace/runs/` 目录（manifest + summary 即读）→ 表格（run_id/模式/**状态**/包/任务数/Reward）。状态推导：`已评估`（有 summary）→ `已执行⚠/已执行`（有清单，⚠=日志含错误）→ `执行失败`（无清单但 agent_logs 有 error 事件）→ `中断`（无产物）。
+- `show <run_id>`：直读 run 目录 → 指标卡按 `metric_definitions` 动态渲染（不硬编码）；失败 breakdown TopN。**无报告时不再是干巴巴一句「无 summary.json」**：展示状态 + 从 `agent_logs/*.jsonl` 提取最后一条 error 的失败原因；凭证类错误附 `secrets set <ref>.<field>` 录入指引；已执行未评估给出补评估命令。
+- 配套（2026-08-31 实测反馈修复）：执行前**凭证预检**（`preflight_sut_credentials`，按 `auth.type` 逐字段 require）——缺凭证立即失败并给出录入命令，不再进 Agent 循环换通道试探烧完 `max_turns` 才以「超过轮次限制」收场；`run`/`suite` 的 workspace 根统一走 `paths.default_workspace`（`WORKSPACE_DIR` 生效），消除与 `runs list`/`pipeline` 各读各的漂移（此前还把 pytest 执行段漏进真实 workspace）。
+- **缺失自动补录**（req/04 §3.5，S11）：`ensure_sut_credentials`（落 `_common.py`，跨组共享）挂在 **run/pipeline/suite 命令层、进度视图启动前**（`execute_stage` 保留纯 `preflight_sut_credentials` fail fast 兜底）——探测走非抛错的 `missing_credential_fields`（与预检同源 `required_credential_fields`，数据驱动），缺失时交互终端列出缺失项 → 确认 → 逐字段隐藏输入 → **一次落盘**（空输入整体取消，不留半截状态）→ 复检通过即继续执行；取消/`--no-input`（CI）退回原 fail fast（SUTAuthError 带 `secrets set` 引导），云端 executor 不经此路径（env 注入，`orchestrator.eval_packages` 独立编排）。**挂点必须在 stage_progress 之外**（实测反馈）：进度转轮单行重绘会把输入提示行刷掉——补录提示被「执行 N 个任务」掩盖，用户不知该输入；同时补录前置于 run_id 生成，取消时不留半截运行目录。
 
 ---
 
@@ -387,3 +418,10 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.0 | 2026-08-31 | 初稿：对齐 requirement/04 v1.2——双前端同内核分层、workbench 向导框架（session/原语/降级/preflight/等价命令）、命令重命名一次性切换落地清单、退出码集中映射、auth 双通道登录与设备码流 P2 接口约定、open/--web URL 规则、PackageAgent（暂存区状态机 + 沙盒六工具 + 校验门禁 + 安全红线）、runs/scenario show 数据来源 |
 | v1.1 | 2026-08-31 | **CLI 目录组织 Review 优化**（§2.2）：子命令组收拢 `cmds/`、表现层基础设施收拢 `console/`（prompts/render/output/equiv）；确立六条组织约定（装配单点 / 命令薄壳与纯函数动作分离 / 双前端同构 / 依赖单向禁横向 import / 交互与业务分离 / 粒度守恒）；全文路径引用同步 |
 | v1.2 | 2026-08-31 | **行业实践对照校准**：新增 §九「行业实践对照」表（gh project-layout / oclif topics / RFC 8628 / kubectl printers）；P2 设备码流契约对齐 RFC 8628 语义（user_code / verification_uri / interval / slow_down / expired_token）；`open_url` 补 `$BROWSER` 覆盖；标注两项刻意不采纳（显式 Factory 依赖束、命令插件化）及理由 |
+| v1.3 | 2026-08-31 | **Sprint 10 P0 实现同步**：目录重组落地（cmds/console/workbench）；交互原语 P0 采用编号选择（gcloud 同款，零新依赖），questionary 为 P1 可选升级；P1 配对码粘贴通道与 doctor/secrets 就绪态留待 Sprint 11 |
+| v1.4 | 2026-08-31 | **main.py 模块化拆分**（889 → 88 行）：pack/evaluate/execute/upload 四命令模块迁入 `cmds/`（顶层与子命令组同构：绑定 + 纯函数动作）；装配点扩展 `app.command()()` 注册顶层命令；`_write_run_manifest` 无引用转发壳删除；引用随迁（workbench exec 域 + 3 个测试文件） |
+| v1.5 | 2026-08-31 | **Sprint 10 收尾同步**：console/render.py 落地（阶段级 stage_progress——stderr 绑定 + transient + 非 TTY 降级，逐任务实时态待 ExecutionAgent 回调；print_task_table 完成态摘要）；--json 覆盖 run/pipeline/eval（emit_json 机器可读 payload；rich console 动态分流——json 模式 stderr 代理、text 模式 None 动态解析，不钉死流对象） |
+| v1.6 | 2026-09-01 | **Sprint 11 auth 组落地**：`cmds/auth.py`（login/status/logout/register 四命令 + `auth_wizard` 子向导，纯函数动作双前端复用）；身份探测 `GET /api/public/whoami`（平台侧已实现，404 回退 `/api/public/secrets` 轻探测）；`.env` 写入走 `_env_file.py`（保序保注释 + 0600）；账号域新增「平台账号」入口（登录后 `_refresh` 平台态）、`start --domain auth` 别名、preflight 平台未连接提示 auth login；§5.1 补落地形态注记 |
+| v1.7 | 2026-09-01 | **D-CLI-4 修订：平台身份迁密钥区 `~/.agent_eval/platform.json`**（用户评估反馈——与 llm.json / sut_credentials.json 三域三文件统一）；`config/platform_file.py`（0600 + `apply_platform_env` 启动注入仅补缺，env 直供优先）；`.env` 归用户手工管理：`_env_file.py` 收缩为只读残留检测，登录/登出提示不代删；conftest 钉 `AGENT_EVAL_PLATFORM_CONFIG` 隔离真实密钥区 |
+| v1.8 | 2026-09-01 | **S11 secrets 执行前缺失自动补录**：`ensure_sut_credentials` 挂 `execute_stage`（run/pipeline/suite 同一挂点）——非抛错探测 `missing_credential_fields`（与预检同源数据驱动）→ 列缺失项确认 → 逐字段隐藏输入一次落盘 → 复检继续；取消/`--no-input` 退回原 fail fast；conftest 增 `AGENT_EVAL_SUT_CREDENTIALS` autouse 隔离（§7.2、复用清单同步） |
+| v1.9 | 2026-09-01 | **补录挂点实测反馈修复**：`ensure_sut_credentials` 由 `execute_stage` 内移至 run/pipeline/suite 命令层**进度视图启动前**——stage_progress 转轮单行重绘会刷掉输入提示行（提示被「执行 N 个任务」掩盖，用户不知所措）；`execute_stage` 恢复纯 preflight fail fast（组织约定 5「_stages 零交互」+ 依赖方向修正）；动作上提 `cli/_common.py`（跨组共享，消除 cmds 横向 import）；补录前置于 run_id 生成，取消不留半截运行目录 |

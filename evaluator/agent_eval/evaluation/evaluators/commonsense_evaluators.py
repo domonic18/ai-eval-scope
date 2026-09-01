@@ -85,7 +85,8 @@ def _get_knowledge_manager() -> Any:
 
 def _load_fact_db(subjects: list[str] | None = None) -> dict:
     """加载事实知识库（兼容旧接口，委托给 KnowledgeBaseManager）。"""
-    return _get_knowledge_manager().load(subjects)
+    fact_db: dict = _get_knowledge_manager().load(subjects)
+    return fact_db
 
 
 def _reset_fact_db_cache() -> None:
@@ -339,19 +340,19 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 except ValueError:
                     continue
 
-                expected = _eval_simple_expr(lhs_expr)
-                if expected is None:
+                expected_val = _eval_simple_expr(lhs_expr)
+                if expected_val is None:
                     continue
 
                 checks += 1
-                if abs(expected - result_val) > EVALUATOR_DEFAULTS.arith_tolerance:
+                if abs(expected_val - result_val) > EVALUATOR_DEFAULTS.arith_tolerance:
                     findings.append(
                         {
                             "file": filename,
                             "check_type": "arithmetic",
                             "severity": "error",
                             "message": (
-                                f"算术错误: {lhs_expr.strip()} = {result_s}（应为 {expected:g}）"
+                                f"算术错误: {lhs_expr.strip()} = {result_s}（应为 {expected_val:g}）"
                             ),
                         }
                     )

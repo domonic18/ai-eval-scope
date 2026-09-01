@@ -274,7 +274,7 @@ class JudgeOrchestrator:
         timestamp = datetime.now(tz=UTC).isoformat()
         last_parsed = stable_result.all_samples[-1] if stable_result.all_samples else {}
         summary_text = str(last_parsed.get("summary", ""))
-        dim_details = last_parsed.get("_dim_details", {})
+        dim_details: dict[str, Any] = last_parsed.get("_dim_details", {})
         judge_id = (
             f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime(JUDGE_ID_DATETIME_FORMAT)}"
         )

@@ -27,7 +27,7 @@ git fetch upstream
 ```bash
 # Python 评估器（uv 管理）
 cd evaluator
-uv sync --extra dev          # 基础 + 开发依赖
+uv sync --group dev          # 基础 + 开发依赖
 uv sync --extra llm          # LLM Judge 依赖（可选）
 uv sync --extra vision       # 视觉评估依赖（可选）
 cd ..
@@ -117,6 +117,34 @@ git checkout -b feat/your-feature origin/develop
 ```
 
 > `develop` 是受保护分支，禁止直接 push，必须走 PR。
+
+---
+
+## 版本发布（维护者，PyPI）
+
+评估器以 **`ai-eval-scope`** 包名发布到 PyPI（import 名 `agent_eval`、CLI 名 `agent-eval` 不变），经 Jenkins 发布流水线 `sasan-evalscope-pypi` 走完质量门禁 → 构建 → 校验 → 发布：
+
+```bash
+# ① 起版：版本单源由 commitizen 维护（一次改 pyproject + __init__.py + CHANGELOG + 打 tag）
+cd evaluator
+uv run cz bump --dry-run --increment PATCH --yes   # 先核对将变成什么版本
+uv run cz bump --increment PATCH --yes             # 实跑
+git push origin <发布分支> --tags
+```
+
+```text
+② Jenkins sasan-evalscope-pypi → Build with Parameters
+   TAG=vX.Y.Z + TEST_PYPI=true   → 演练发布到 test.pypi.org（首发前必演练）
+   验收：uv run --isolated --no-project \
+           --index-url https://test.pypi.org/simple/ \
+           --extra-index-url https://pypi.org/simple/ \
+           --with ai-eval-scope agent-eval --version
+   TAG=vX.Y.Z + TEST_PYPI=false  → 正式发布 pypi.org
+```
+
+**纪律**：PyPI 同版本号**不可重传**，发布失败修复后必须 bump 新版本；tag 必须等于包 `__version__`（流水线有硬断言）；凭证走 Jenkins 双 credential（`test-pypi-upload-token` / `pypi-upload-token`，按 `TEST_PYPI` 自动选择）。
+
+详见 [`cicd/README.md`](./cicd/README.md)（流水线阶段/凭证/本地验证序列与发布纪律）。
 
 ---
 

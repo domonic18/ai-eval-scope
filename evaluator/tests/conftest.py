@@ -26,6 +26,27 @@ from agent_eval.evaluation.models import (  # noqa: E402
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def _isolate_project_packages(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """项目包发现根指向空目录：PackageStore 现会扫描 cwd 一级子目录，
+    开发者在 evaluator/ 下真实生成的包（如 ``weekly-report-package/``）不得漏进单测。"""
+    monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "no-project-packages"))
+
+
+@pytest.fixture(autouse=True)
+def _isolate_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """workspace 根指向测试临时目录：走到真实执行段的 CLI 测试（如 run --sut-name）
+    曾把 pytest 运行写进 evaluator/workspace/runs/，污染用户的「查看结果」列表。"""
+    monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "workspace"))
+
+
+@pytest.fixture(autouse=True)
+def _isolate_sut_credentials(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """凭证密钥区指向空文件：preflight / missing_credential_fields 走无注入点的
+    CredentialStore()，开发者本机已录入的真实凭证不得影响单测的缺失判定。"""
+    monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(tmp_path / "no-sut-credentials.json"))
+
+
 # ─── SampleResult fixtures ───
 
 
@@ -200,3 +221,10 @@ def llm_config() -> LLMConfig:
             ),
         },
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_platform_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """平台身份密钥区指向空路径：main.py 启动会 apply_platform_env 注入
+    os.environ，开发者真实 ~/.agent_eval/platform.json（若登录过）不得漏进单测。"""
+    monkeypatch.setenv("AGENT_EVAL_PLATFORM_CONFIG", str(tmp_path / "no-platform.json"))

@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
 from agent_eval.config.paths import paths
 from agent_eval.knowledge.merger import KnowledgeMerger
-from agent_eval.knowledge.models import ExtractedBatch, KnowledgePatch
+from agent_eval.knowledge.models import ExtractedBatch, KnowledgePatch, Question
 from agent_eval.knowledge.registry import (
     discover_builtin,
     get_converter,
@@ -53,7 +53,7 @@ class KnowledgePipeline:
         json_path: str | None = None,
         subjects: list[str] | None = None,
         provider: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Path:
         """端到端：read → extract/convert → 输出 → （可选）merge。
 
@@ -91,14 +91,14 @@ class KnowledgePipeline:
         raw = source.read(limit=limit)
         print(f"📖 {source_name}.read() → {len(raw)} 条原始数据", file=sys.stderr)
 
-        # 2. 按 kind 分支
+        # 2. 按 kind 分支（read() 返回联合类型，按 kind 窄化 cast 到对应分支）
         batch: ExtractedBatch
         if source.kind == "questions":
             extractor = get_extractor(field, **extractor_kwargs)
-            batch = extractor.extract(raw)
+            batch = extractor.extract(cast(list[Question], raw))
         elif source.kind == "raw_items":
             converter = get_converter(source_name)
-            batch = converter.convert(raw)
+            batch = converter.convert(cast(list[dict[str, Any]], raw))
         else:
             raise ValueError(f"未知 source.kind: {source.kind}")
 

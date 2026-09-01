@@ -5,6 +5,7 @@ from __future__ import annotations
 import statistics
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 from agent_eval.config import STABILITY_DEFAULTS
 from agent_eval.llm.judge.template_manager import JudgeDimension
@@ -16,7 +17,7 @@ class StableResult:
 
     scores: dict[str, float]  # dim_id -> 中位数得分
     confidence: dict[str, str]  # dim_id -> "high" | "low"
-    all_samples: list[dict[str, float]] = field(default_factory=list)
+    all_samples: list[dict[str, Any]] = field(default_factory=list)
     num_samples: int = 0
 
 
@@ -62,7 +63,7 @@ class StabilityController:
             StableResult 包含最终得分和置信度。
         """
         n = self.num_samples if num_samples is None else num_samples
-        all_samples: list[dict[str, float]] = []
+        all_samples: list[dict[str, Any]] = []
         for i in range(n):
             scores = judge_fn(i)
             all_samples.append(scores)

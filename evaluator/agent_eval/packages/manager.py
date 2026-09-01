@@ -35,11 +35,13 @@ class PackageManager:
         self.store = store or PackageStore()
 
     def list(self, *, source: str | None = None) -> list[ResolvedPackage]:
-        """列出全部包；``source`` 可选 builtin/local 过滤。"""
+        """列出全部包；``source`` 可选 builtin/local/project 过滤。"""
         if source == "builtin":
             return self.store.list_builtin()
         if source == "local":
             return self.store.list_local()
+        if source == "project":
+            return self.store.list_project()
         return self.store.list_all()
 
     def resolve(

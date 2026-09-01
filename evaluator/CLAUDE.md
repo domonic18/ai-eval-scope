@@ -5,13 +5,13 @@
 ## 环境
 
 - Python 3.11+，依赖用 `uv` 管理（`uv.lock`）。
-- 安装：`uv sync --extra dev`（开发）；`uv sync --extra llm`（LLM Judge 依赖，可选）；`uv sync --extra agent`（ExecutionAgent DeepAgents 底座，可选，见 arch/03 v4.6）。
+- 安装：`uv sync --group dev`（开发，PEP 735 依赖组——dev 工具链不入发布元数据）；`uv sync --extra llm`（LLM Judge 依赖，可选）；`uv sync --extra agent`（ExecutionAgent DeepAgents 底座，可选，见 arch/03 v4.6）。
 - CLI：`uv run agent-eval --help`。所有 `uv run` / `agent-eval` 命令从 `evaluator/` 执行，或用根 `make` 目标自动切换。
 
 ## 配置
 
 - 环境变量从仓库根 `.env` 读取（`load_dotenv()` 自动向上查找）。
-- LLM 配置走双形态（arch/06 §4.6）：`agent-eval models login` 交互配置 → `~/.agent_eval/llm.json`（0600）；云端经 `AGENT_EVAL_HOST/API_KEY` 拉 `/api/public/llm-config`。固定三角色 text/vision/agent（`config/llm_resolution.py` 解析）。
+- LLM 配置走双形态（arch/06 §4.6）：`agent-eval models set` 交互配置 → `~/.agent_eval/llm.json`（0600）；云端经 `AGENT_EVAL_HOST/API_KEY` 拉 `/api/public/llm-config`。固定三角色 text/vision/agent（`config/llm_resolution.py` 解析）。
 
 ## 代码风格（强制）
 
@@ -36,6 +36,7 @@
 - 断言用 `assert` / `pytest.raises(XxxError)`；测试命名 `test_<行为>[_<条件>]`。
 - CLI 测试用 `typer.testing.CliRunner` + `monkeypatch` mock 内部函数。
 - 可选依赖在 `tests/conftest.py` 顶部 `sys.modules.setdefault(...)` mock（仿 langfuse 范式）。
+- **删符号同步清测试**：删除/重命名公共符号（含 `__init__` 重导出）时，同步 `grep -rn "<符号>" tests/` 清理**全目录**引用——`make check` 只收集 `tests/unit`，`tests/config`、`tests/evaluation` 等其余目录仅全量收集（曾因漏删 `resolve_api_key` 测试 import 导致发布流水线红，2026-09）。
 
 ## 质量检查（提交前）
 
@@ -44,5 +45,14 @@ uv run ruff check agent_eval tests
 uv run ruff format --check agent_eval tests
 uv run pytest tests/unit -q
 ```
+
+> 上述为快门禁（仅 `tests/unit`）。功能分支**合入前 / 发布前**跑全量 `make test`（`pytest tests/`，与 Jenkins 质量门禁同口径，含 e2e/golden 慢测试）。
+
+## 版本发布（PyPI，distribution 名 ai-eval-scope）
+
+- **版本单源**：`uv run cz bump --dry-run --increment PATCH --yes` 先核对，去掉 `--dry-run` 实跑——一次改 `pyproject.toml` + `agent_eval/__init__.py::__version__` + CHANGELOG 并打 annotated tag。**禁止手改版本号**。
+- **发布**：`git push --tags` 后 Jenkins Job `sasan-evalscope-pypi` → Build with Parameters（`TAG=vX.Y.Z`；`TEST_PYPI=true` 先演练 test.pypi.org，验收通过后 `false` 转正式）。流水线自带质量门禁、tag==`__version__` 断言、wheel/sdist 隔离冒烟。
+- **纪律**：PyPI 同版本号**不可重传**——发布失败修复后必须 bump 新版本；正式发布前必先 TestPyPI 演练。
+- 详见 [`cicd/README.md`](../cicd/README.md)（阶段表/凭证/本地验证与发布纪律）。
 
 详见根 [`CLAUDE.md`](../CLAUDE.md) 与 [规范索引](../docs/standard/README.md)。

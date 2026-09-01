@@ -187,6 +187,9 @@ class AnthropicCompatClient(LLMClient):
 
         duration_ms = (time.monotonic() - start) * 1000
 
+        # 重试循环要么 break（response 已赋值）要么在 except 内抛出——此处恒非 None
+        assert response is not None
+
         # 提取文本（content 是 block 列表，取第一个 text 块）
         content_text = ""
         if response.content:

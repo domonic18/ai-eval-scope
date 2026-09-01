@@ -48,7 +48,7 @@ class PeriodicTableSource(DataSource):
                 f"请先下载: curl -sL {_PERIODIC_TABLE_URL} -o {self.json_path}"
             )
         data = json.loads(self.json_path.read_text(encoding="utf-8"))
-        elements = data.get("elements", [])
+        elements: list[dict[str, Any]] = data.get("elements", [])
         if limit:
             elements = elements[:limit]
         return elements

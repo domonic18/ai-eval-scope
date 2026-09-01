@@ -210,7 +210,7 @@ class SessionLogger:
         duration_ms: float | None = None,
     ) -> None:
         """记录 tool_result 事件（含耗时与状态）。"""
-        pending = self._pending.pop(call_id, None)
+        pending = self._pending.pop(call_id, None) if call_id is not None else None
         if duration_ms is None and pending is not None:
             duration_ms = (time.perf_counter() - pending.started) * 1000
         self._emit(

@@ -255,7 +255,8 @@ class Orchestrator:
             # trace 兼容两种形态：Agent 骨架（response.turns/tool_calls）与
             # LLM write_package 直写的 SUT-run 形态（顶层 turns_used）。
             _trace = pkg.trace if isinstance(pkg.trace, dict) else {}
-            _resp = _trace.get("response") if isinstance(_trace.get("response"), dict) else {}
+            _resp_raw = _trace.get("response")
+            _resp = _resp_raw if isinstance(_resp_raw, dict) else {}
             sample_result.agent_turns = int(
                 _resp.get("turns") or _trace.get("turns_used") or _resp.get("messages") or 0
             )

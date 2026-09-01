@@ -113,7 +113,7 @@ class TestResolve:
         assert config.providers["agent"].model == "p-1"
 
     def test_unavailable_raises_with_guidance(self, _isolated_env: Path) -> None:
-        with pytest.raises(ConfigError, match="models login"):
+        with pytest.raises(ConfigError, match="models set"):
             resolve_llm_config(platform=_StubPlatform(None))
 
     def test_signature_excludes_api_key(self) -> None:
@@ -145,12 +145,12 @@ class TestModelsCommand:
     def test_login_writes_0600_file_and_list_masks_key(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner
 
-        from agent_eval.cli.models import models_app
+        from agent_eval.cli.cmds.models import models_app
 
         runner = CliRunner()
         # 提供商（默认1 anthropic）→ base_url（默认）→ api-key → text（默认y）→ 模型（默认）
         # → vision（n）→ agent（n）
-        result = runner.invoke(models_app, ["login"], input="\n\nsk-test-1234567890\n\n\nn\nn\n")
+        result = runner.invoke(models_app, ["set"], input="\n\nsk-test-1234567890\n\n\nn\nn\n")
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
         assert cfg is not None
@@ -167,18 +167,18 @@ class TestModelsCommand:
     def test_list_without_config_exits_1(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner
 
-        from agent_eval.cli.models import models_app
+        from agent_eval.cli.cmds.models import models_app
 
         result = CliRunner().invoke(models_app, ["list"])
         assert result.exit_code == 1
-        assert "models login" in result.output
+        assert "models set" in result.output
 
     def test_logout_removes_file(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner
 
-        from agent_eval.cli.models import models_app
+        from agent_eval.cli.cmds.models import models_app
 
         save_llm_file(LLMFileConfig(roles={"text": _role()}))
-        result = CliRunner().invoke(models_app, ["logout"], input="y\n")
+        result = CliRunner().invoke(models_app, ["clear"], input="y\n")
         assert result.exit_code == 0, result.output
         assert not _isolated_env.exists()

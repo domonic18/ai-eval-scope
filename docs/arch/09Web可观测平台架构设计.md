@@ -114,6 +114,7 @@ web/backend/
 │   │   │   ├── artifacts.ts          # 制品 presigned 上传/下载
 │   │   │   ├── llmConfig.ts          # GET /api/public/llm-config 按角色下发 LLM 配置（解密 key）
 │   │   │   ├── secrets.ts            # GET /api/public/secrets 下发 org 级平台 Secrets（executor 启动注入）
+│   │   │   ├── whoami.ts             # GET /api/public/whoami Key 有效性探测 + 身份回执（CLI auth）
 │   │   │   └── health.js
 │   │   ├── eval/                     # 评测任务（Bearer API Key）
 │   │   │   ├── jobs.ts               # POST /api/v1/jobs、GET /api/v1/jobs/:id
@@ -624,6 +625,7 @@ Authorization: Bearer eval-xxxxx
 | `POST /api/public/ingest` + `GET /api/public/artifacts/url` | 事件摄取与制品直传 | 评估器 ResultSink |
 | `GET /api/public/llm-config` | 按角色下发 LLM 配置（text/vision/agent，含解密 key） | 本地 CLI（未配 llm.json 时拉取）、executor |
 | `GET /api/public/secrets` | 下发 org 级平台 Secrets（KV，解密） | executor 启动注入环境变量（W3/W4） |
+| `GET /api/public/whoami` | Key 有效性探测 + 身份回执（`{kind, key, project, org}`） | CLI `auth login/status`（arch/15 §5.1） |
 
 ### 6.4 隔离实现
 
