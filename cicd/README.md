@@ -104,11 +104,11 @@ cicd/
 
 | 阶段 | 工具 | 阻塞策略 | 说明 |
 |------|------|----------|------|
-| 环境准备 | setup-python.sh | — | 安装 Python3 + uv |
+| 环境准备 | setup-python.sh | — | 安装 Python3 + uv；带 tag 时先 `git fetch + checkout` 切到 tag 指向的提交（构建物 == tag 内容） |
 | 质量门禁 | ruff + mypy + pytest | ruff/mypy 非阻塞；pytest **阻塞** | 与 eval 流水线同款命令（`dir('evaluator')` 内执行） |
 | 构建 | uv build | **阻塞** | 产出 `dist/` 下 sdist + wheel 双产物 |
-| 校验 | 版本断言 + 隔离冒烟 | **阻塞** | tag == 包 `__version__`（防错发兜底）；wheel 与 sdist 各自 `uv run --isolated --no-project --with dist/*` 装包执行 `agent-eval --version` |
-| 发布 | uv publish | **阻塞** | 仅 `RELEASE_TAG` 匹配 `v*` 时执行；`TEST_PYPI=true` 参数走 `--publish-url https://test.pypi.org/legacy/` 演练通道 |
+| 校验 | 版本断言 + 隔离冒烟 | **阻塞** | tag == 包 `__version__`（防错发兜底）；wheel 与 sdist 各自 `uv run --isolated --no-project --refresh --with dist/*` 装包执行 `agent-eval --version` |
+| 发布 | uv publish | **阻塞** | 仅 `RELEASE_TAG` 匹配 `v*` 时执行；`TEST_PYPI=true` 走 TestPyPI 凭证 + `--publish-url https://test.pypi.org/legacy/`，`false` 走 PyPI 凭证直传——**双凭证隔离**，杜绝拿错 token |
 
 发布纪律：
 
@@ -148,7 +148,8 @@ Web 与 Executor 镜像共用同一套 CCR 约定（由 `scripts/docker-build.gr
 |---------|------|------|
 | `git-code-tencent-credentials` | Username with password | 腾讯工蜂 Git 凭据（拉代码） |
 | `tencent-registry-credentials` | Username with password | 腾讯云 CCR 账号（`docker.withRegistry` 推送镜像，被 `scripts/docker-build.groovy` 使用） |
-| `pypi-upload-token` | Secret text | PyPI **project-scoped** API token（`pypi-` 开头，只显示一次，即入即存）；注入 `UV_PUBLISH_TOKEN` 供 `uv publish`。TestPyPI 演练期另建 `test-pypi-upload-token` 替换使用 |
+| `pypi-upload-token` | Secret text | PyPI（pypi.org）**project-scoped** API token（`pypi-` 开头，只显示一次，即入即存）；`TEST_PYPI=false` 时注入 `UV_PUBLISH_TOKEN` 供 `uv publish` |
+| `test-pypi-upload-token` | Secret text | TestPyPI（test.pypi.org）API token（与主站账号不通用，单独注册）；`TEST_PYPI=true` 演练时使用 |
 
 > `tencent-registry-credentials` 需在 Jenkins 凭据库新建（用户名/密码 = 腾讯云 CCR 登录账号）；CCR 控制台需确保 `sasan/agent-eval-web`、`sasan/agent-eval-executor` 仓库存在或开启自动创建。
 

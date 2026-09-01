@@ -8,8 +8,10 @@
  *   - eval 流水线守 PR/分支质量（每次提交）
  *   - 本流水线守制品（tag 触发：质量门禁 → 构建 → 版本断言 + 冒烟 → 发布）
  *
- * 凭证: Jenkins Credentials `pypi-upload-token`（Secret text，PyPI project-scoped
- *        API token，见 arch/17 §8 P2）→ 注入 UV_PUBLISH_TOKEN。
+ * 凭证: Jenkins Credentials 两条 Secret text，TEST_PYPI 参数自动选择（见 arch/17 §8）：
+ *          - `test-pypi-upload-token`：TestPyPI（test.pypi.org）API token，演练用
+ *          - `pypi-upload-token`     ：PyPI（pypi.org）project-scoped token，正式发布用
+ *        注入 UV_PUBLISH_TOKEN。
  *        PyPI Trusted Publishing（OIDC）仅 GitHub Actions 可用，Jenkins 走 API token
  *        是行业标准做法。
  *
@@ -67,6 +69,18 @@ Build:       ${env.BUILD_NUMBER}
 ========================================"""
 
                 sh 'bash cicd/scripts/setup-python.sh'
+
+                // tag 构建：检出 tag 指向的提交（保证构建物 == tag 内容；
+                // 手动带 TAG 参数时 Job 默认检出的是分支 tip，必须显式切到 tag）
+                script {
+                    if (env.RELEASE_TAG?.trim()) {
+                        sh '''
+                            git fetch origin tag ${RELEASE_TAG} --no-tags
+                            git checkout -f ${RELEASE_TAG}
+                            git log -1 --oneline
+                        '''
+                    }
+                }
             }
         }
 
@@ -164,11 +178,14 @@ Build:       ${env.BUILD_NUMBER}
                 expression { env.RELEASE_TAG ==~ /v\d.*/ }
             }
             steps {
-                dir('evaluator') {
-                    withCredentials([string(credentialsId: 'pypi-upload-token', variable: 'UV_PUBLISH_TOKEN')]) {
-                        script {
+                script {
+                    // 双凭证隔离：TestPyPI 与 PyPI token 各自独立 credential，
+                    // TEST_PYPI 参数自动选择——杜绝演练期拿 TestPyPI token 打正式源（必 403）
+                    def credId = params.TEST_PYPI ? 'test-pypi-upload-token' : 'pypi-upload-token'
+                    withCredentials([string(credentialsId: credId, variable: 'UV_PUBLISH_TOKEN')]) {
+                        dir('evaluator') {
                             if (params.TEST_PYPI) {
-                                echo '演练模式：发布到 TestPyPI'
+                                echo "演练模式：${env.RELEASE_TAG} → TestPyPI"
                                 sh 'uv publish --publish-url https://test.pypi.org/legacy/'
                             } else {
                                 echo "正式发布：${env.RELEASE_TAG} → PyPI"

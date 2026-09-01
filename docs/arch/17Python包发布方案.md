@@ -69,7 +69,7 @@
 |----|----|
 | Jenkinsfile | `cicd/Jenkinsfile.pypi.groovy`（新增） |
 | Job 形态 | Pipeline Job，tag 触发（工蜂 tag webhook 或参数 `TAG`）；`disableConcurrentBuilds` |
-| 凭证 | 新增 `pypi-upload-token`（Secret text，**project-scoped API token**，见 §8 准备清单）——注入 `UV_PUBLISH_TOKEN` |
+| 凭证 | **双凭证隔离**（落地实现）：`test-pypi-upload-token`（TestPyPI token，演练）+ `pypi-upload-token`（PyPI project-scoped token，正式）——`TEST_PYPI` 参数自动选择注入 `UV_PUBLISH_TOKEN`，杜绝拿错 token |
 
 ### 5.2 阶段草案
 
@@ -126,7 +126,7 @@ pipeline {
 
 草案已落地为 [`cicd/Jenkinsfile.pypi.groovy`](../../cicd/Jenkinsfile.pypi.groovy)（以入库文件为准：`RELEASE_TAG` 兼容 tag 触发/`TAG` 参数、`TEST_PYPI` 演练开关、冒烟加 `--refresh`）。演练序列：
 
-1. **TestPyPI 侧**（§8-P3）：注册 + 2FA + 生成 token → Jenkins 新建 credential `pypi-upload-token`（演练期先存 TestPyPI token）+ Pipeline Job（Script Path `cicd/Jenkinsfile.pypi.groovy`）。
+1. **TestPyPI 侧**（§8-P3）：注册 + 2FA + 生成 token → Jenkins 新建 credential `test-pypi-upload-token` + Pipeline Job（Script Path `cicd/Jenkinsfile.pypi.groovy`）。
 2. **本地起版**：`cd evaluator && uv run cz bump --dry-run --increment PATCH --yes` 核对 → 去掉 `--dry-run` 实跑（改 pyproject + `__init__` + CHANGELOG + 打 tag）→ `git push origin <branch> --tags`。
 3. **触发**：Jenkins Job 带 `TAG=v0.1.0`、`TEST_PYPI=true` 构建 → 观察「校验」段版本断言与双产物冒烟 →「发布」段上传 TestPyPI。
 4. **验收安装**：`uv run --isolated --no-project --with ai-eval-scope --index-url https://test.pypi.org/simple/ agent-eval --version`（注意 TestPyPI 依赖不全时需 `--index-strategy unsafe-best-match` 或混合官方源）。
