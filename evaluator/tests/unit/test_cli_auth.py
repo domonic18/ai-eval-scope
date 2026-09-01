@@ -216,3 +216,79 @@ def test_cli_login_token_flag(env_file: Path, monkeypatch: pytest.MonkeyPatch) -
     )
     assert result.exit_code == 0
     assert "AGENT_EVAL_API_KEY=eval-abcdefgh1234" in env_file.read_text(encoding="utf-8")
+
+
+# ── 空输入与非 2xx 归类（实测反馈：空粘贴 → 畸形 Bearer 头 → 400 traceback）──
+
+
+def test_probe_empty_key_raises_invalid() -> None:
+    from agent_eval.cli.cmds.auth import ProbeError
+
+    with pytest.raises(ProbeError) as ei:
+        probe_identity("http://p", "")
+    assert ei.value.kind == "invalid"
+    assert "Key 为空" in str(ei.value)
+
+
+@pytest.mark.parametrize("status", [400, 403, 429, 500])
+def test_probe_non_2xx_classified_no_traceback(status: int) -> None:
+    """任何非 2xx（含空 Key 触发的 400）都必须归类为 ProbeError，不裸抛 httpx。"""
+    from agent_eval.cli.cmds.auth import ProbeError
+
+    with pytest.raises(ProbeError) as ei:
+        probe_identity("http://p", "eval-x", transport=_transport(status))
+    assert ei.value.kind == "server"
+    assert str(status) in str(ei.value)
+
+
+def test_probe_fallback_bad_status_not_misreported_unreachable() -> None:
+    """旧平台回退分支的 4xx/5xx 归类为 server，不再误报「平台不可达」。"""
+    from agent_eval.cli.cmds.auth import ProbeError
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("whoami"):
+            return httpx.Response(404, json={})
+        return httpx.Response(400, json={})  # 网关拒绝（如畸形头/限流）
+
+    with pytest.raises(ProbeError) as ei:
+        probe_identity("http://p", "eval-x", transport=httpx.MockTransport(handler))
+    assert ei.value.kind == "server"
+
+
+def test_login_empty_paste_cancels_without_probe(
+    env_file: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """浏览器通道粘贴处直接回车 = 取消：不探测、不写 .env、不抛异常。"""
+    from agent_eval.cli.console import prompts
+
+    probed: list[str] = []
+    monkeypatch.setattr("agent_eval.cli.cmds.auth.probe_identity", lambda *a: probed.append("x"))
+    monkeypatch.setattr(
+        prompts, "select", lambda label, options, **kw: "打开平台页面创建（浏览器）"
+    )
+    monkeypatch.setattr(prompts, "ask", lambda label, **kw: "")
+    monkeypatch.setattr("agent_eval.cli.cmds.open_url.open_url", lambda url: None)
+
+    assert login_flow(host="http://p") is None
+    assert probed == []
+    assert not env_file.exists()
+    assert "已取消" in capsys.readouterr().out
+
+
+def test_login_retry_empty_paste_cancels(
+    env_file: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """无效 Key 重试粘贴处直接回车 = 取消（不再发起第三次探测）。"""
+    from agent_eval.cli.console import prompts
+
+    asks = iter(["eval-bad", ""])  # 首次粘贴 → 401 后重试回车取消
+    monkeypatch.setattr(prompts, "select", lambda label, options, **kw: "直接粘贴已有 Key")
+    monkeypatch.setattr(prompts, "ask", lambda label, **kw: next(asks))
+    monkeypatch.setattr(
+        "agent_eval.cli.cmds.auth.probe_identity",
+        lambda host, key, **_: probe_identity(host, key, transport=_transport(401)),
+    )
+
+    assert login_flow(host="http://p") is None
+    assert not env_file.exists()
+    assert "已取消" in capsys.readouterr().out

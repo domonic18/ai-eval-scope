@@ -37,7 +37,7 @@ class PlatformIdentity:
 
 
 class ProbeError(Exception):
-    """Key 探测失败：invalid=Key 无效；unreachable=平台不可达。"""
+    """Key 探测失败：invalid=Key 无效/未提供；unreachable=平台不可达；server=平台异常响应。"""
 
     def __init__(self, kind: str, message: str) -> None:
         super().__init__(message)
@@ -49,29 +49,41 @@ def mask_key(key: str) -> str:
     return key if len(key) <= 12 else f"{key[:8]}…{key[-4:]}"
 
 
+def _raise_for_probe(resp: httpx.Response) -> None:
+    """把非 2xx 探测响应归类为 ProbeError——**任何状态都不裸抛 HTTPStatusError**。
+
+    实测教训：空 Key 拼出畸形 ``Authorization: Bearer `` 头，网关回 400；
+    此前 raise_for_status() 在 except 之外，400 直接 traceback。
+    """
+    if resp.status_code < 400:
+        return
+    if resp.status_code == 401:
+        raise ProbeError("invalid", "Key 无效（不存在 / 已吊销 / 已过期）")
+    raise ProbeError("server", f"平台返回 HTTP {resp.status_code}（检查平台地址 / 平台版本）")
+
+
 def probe_identity(
     host: str, api_key: str, *, transport: httpx.BaseTransport | None = None
 ) -> PlatformIdentity | None:
     """GET /api/public/whoami 探测 Key 并解析身份。
 
-    401 → ProbeError(invalid)；404（旧平台无 whoami）→ 回退 GET /api/public/secrets
-    仅验有效性、返回 None 身份；连接失败 → ProbeError(unreachable)。
+    空 Key → ProbeError(invalid)；401 → invalid；404（旧平台无 whoami）→ 回退
+    GET /api/public/secrets 仅验有效性、返回 None 身份；连接失败 → unreachable；
+    其余非 2xx → server。**不抛 httpx 异常**（调用方只处理 ProbeError）。
     """
+    if not api_key or not api_key.strip():
+        raise ProbeError("invalid", "Key 为空（未粘贴 / 未提供）")
     with httpx.Client(timeout=10, transport=transport) as client:
         headers = {"Authorization": f"Bearer {api_key}"}
         try:
             resp = client.get(f"{host}/api/public/whoami", headers=headers)
             if resp.status_code == 404:  # 旧平台：轻探测（仅验证 Key）
                 fallback = client.get(f"{host}/api/public/secrets", headers=headers)
-                if fallback.status_code == 401:
-                    raise ProbeError("invalid", "Key 无效（不存在 / 已吊销 / 已过期）")
-                fallback.raise_for_status()
+                _raise_for_probe(fallback)
                 return None
-        except httpx.HTTPError as e:
+        except httpx.HTTPError as e:  # 仅网络层（连接 / 超时）；ProbeError 穿透
             raise ProbeError("unreachable", f"平台不可达: {e}") from e
-        if resp.status_code == 401:
-            raise ProbeError("invalid", "Key 无效（不存在 / 已吊销 / 已过期）")
-        resp.raise_for_status()
+        _raise_for_probe(resp)
         data = resp.json()
     return PlatformIdentity(
         org_name=str(data["org"]["name"]),
@@ -109,7 +121,10 @@ def login_flow(token: str | None = None, host: str | None = None) -> PlatformIde
                 "[dim]引导：登录平台 → 打开项目 →「设置 & API Key」→ 创建 API Key"
                 "（scope 含 ingest）→ 回到这里粘贴。[/dim]"
             )
-        token = ask("粘贴 API Key（eval- 开头，隐藏输入）", hide=True)
+        token = ask("粘贴 API Key（eval- 开头，隐藏输入，直接回车取消）", hide=True)
+        if not token:
+            rprint("[yellow]未输入 Key，已取消。[/yellow]")
+            return None
 
     identity: PlatformIdentity | None
     for attempt in range(3):
@@ -122,7 +137,10 @@ def login_flow(token: str | None = None, host: str | None = None) -> PlatformIde
                 rprint(f"[dim]检查平台地址 {host} 与 Key；或 agent-eval auth login 重试[/dim]")
                 raise typer.Exit(code=1) from e
             rprint(f"[red]❌ {e}[/red]")
-            token = ask("重新粘贴 API Key", hide=True)
+            token = ask("重新粘贴 API Key（直接回车取消）", hide=True)
+            if not token:
+                rprint("[yellow]未输入 Key，已取消。[/yellow]")
+                return None
     else:  # pragma: no cover — for/else 兜底（break 前必 return/raise）
         return None
 
@@ -160,6 +178,8 @@ def status_action() -> None:
     except ProbeError as e:
         if e.kind == "invalid":
             rprint(f"[red]❌ {e}[/red]\n[dim]→ agent-eval auth login 重新登录[/dim]")
+        elif e.kind == "server":
+            rprint(f"[red]❌ {e}[/red]")  # 平台可达但异常响应，非本地网络问题
         else:
             rprint(f"[yellow]⚠ {e}[/yellow]\n[dim]本地身份如上；检查平台地址 / 网络。[/dim]")
         raise typer.Exit(code=1) from e

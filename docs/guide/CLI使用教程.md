@@ -81,7 +81,7 @@ uv run agent-eval auth logout    # 清除本地平台凭证（.env 三项）
 uv run agent-eval auth register  # 打开平台注册页，完成后引导 auth login
 ```
 
-- **登录流程**（F-C-AUTH-01）：选「打开平台页面创建（浏览器）」会打开 `{host}/login` 并引导到项目「设置 & API Key」页创建 Key（scope 含 ingest）——无浏览器环境（SSH/容器）自动降级打印 URL；也可选「直接粘贴已有 Key」。Key 经 `GET /api/public/whoami` 探测有效后写入 `.env`（`AGENT_EVAL_HOST/API_KEY/PROJECT`，权限 0600），回显 身份回执（团队 · 项目 · Key 掩码，完整 Key 不回显）。
+- **登录流程**（F-C-AUTH-01）：选「打开平台页面创建（浏览器）」会打开 `{host}/login` 并引导到项目「设置 & API Key」页创建 Key（scope 含 ingest）——无浏览器环境（SSH/容器）自动降级打印 URL；也可选「直接粘贴已有 Key」。Key 经 `GET /api/public/whoami` 探测有效后写入 `.env`（`AGENT_EVAL_HOST/API_KEY/PROJECT`，权限 0600），回显 身份回执（团队 · 项目 · Key 掩码，完整 Key 不回显）。粘贴处**直接回车 = 取消**（未输入不发起探测）；无效 Key 可重试（最多 3 次）。
 - **CI 非交互形态**（F-C-AUTH-07）：`auth login --token <api_key> --host <平台地址>`；`--no-input` 下缺 `--token` 直接 exit 2 不挂起。
 - **status 语义**：Key 无效 → 提示重新登录（exit 1）；平台不可达 → 显示本地身份并提示检查网络（exit 1）。
 - **logout**：只清本地（`--revoke` 吊销平台侧 Key 为 P2，当前提示到平台「设置 & API Key」手动吊销）。
