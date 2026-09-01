@@ -185,7 +185,7 @@ uvx --from "ai-eval-scope[agent]" agent-eval --help   # 免安装试用
 | # | 风险 | 缓解 |
 |---|------|------|
 | R1 | **内部信息随 wheel 公开**：内置 chat 包 sut_configs 曾含内部 staging 域名（`agent-server.staging.bj33smarter.com`、`sasan-server.staging.bj33smarter.com`）与内部 modelId/userId 注释 | ✅ **已缓解（落地）**：sut_config 新增 `${VAR}` / `${VAR:-默认值}` env 展开（`registry.expand_env_refs`，未配回退 `*.example.com` 占位 + 报错优于硬编码），sasan-agent.yaml 三处占位化并有测试锁死（`test_builtin_chat_package_has_no_internal_domain`）；真实端点走 `.env`（`.env.example` 有模板）。数据集版权仍待复核 |
-| R2 | **git 历史泄漏**：开源 = 全历史公开 | gitleaks/trufflehog 全史扫描；若历史不干净，开源仓库从干净基线重新初始化（发布 wheel 本身不受影响，仓库门面受影响） |
+| R2 | **git 历史泄漏**：开源 = 全历史公开 | ✅ **已扫描（gitleaks 8.30.1，598 提交全史 + 工作区）**：现役零真实泄漏——`.env`/`.claude` 被 .gitignore 正确拦截，测试命中均为 dummy key（`eval-abcdefgh1234`/`sk-test-…`），设计稿 stripe 串为编造展示值（开源前可换明显占位）。**历史 1 条真实格式平台 API Key**（`4469eb2f` DebugPage.tsx 曾硬编码 `eval-…` 完整 Key，后已删）→ **处置：平台侧吊销该 Key 即可废掉历史风险**（无需重写历史）；另 arch/12 历史版本含内部域名与截断 JWT 示例 → 开源门面仓库按本表原预案走干净基线初始化即可规避（发布 wheel 不受影响） |
 | R3 | CLI 命令 `agent-eval` 与 allenai 包同名（两者都提供同名 entry point，共存安装冲突） | 文档注明；冲突真实发生时再评估改命令名（改动面大：全部 docs/scripts） |
 | R4 | Jenkins 出口网络不通 | §8-P5 提前申请；兜底方案本地 `uv publish`（token 在本机环境变量） |
 | R5 | executor 改名联动遗漏（path 依赖） | §7-1 同一提交内改齐 + executor CI 验证 |
