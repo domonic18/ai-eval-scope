@@ -1,21 +1,26 @@
-# SasanAgent staging 被测系统（Agent Protocol commands 形态）
+# SasanAgent 被测系统示例配置（Agent Protocol commands 形态）
+# 地址与模型参数经 env 注入（${VAR:-默认值} 展开，见 registry.expand_env_refs）；
+# 真实端点在本地 .env 配置（不入库），未配置时回退占位域名（仅作结构演示）：
+#   SASAN_AGENT_URL=https://agent-server.staging.example.com   # API 端点
+#   SASAN_LOGIN_URL=https://sasan-server.staging.example.com/users/login  # 登录域独立于 API 域
+#   SASAN_AGENT_MODEL_ID="19"                                  # 平台 userModelConfig 行 ID
 # 凭证经环境变量注入（不入库，值存放于本地 .env / 平台凭证库）：
 #   AGENT_EVAL_SUT__SASAN__USERNAME / AGENT_EVAL_SUT__SASAN__PASSWORD
 sut:
   name: sasan-agent
   channel: agent_protocol
-  base_url: https://agent-server.staging.bj33smarter.com
+  base_url: ${SASAN_AGENT_URL:-https://agent-server.example.com}
   protocol_flavor: commands # /threads/{id}/commands + GET state 轮询（官方 Streaming 端点形态）
   exec_mode: wait
   timeout: 300
   configurable:
-    modelId: "19" # 平台 userModelConfig 行 ID（KIMI / kimi-k3，userId 81）
+    modelId: ${SASAN_AGENT_MODEL_ID:-1} # 被测平台模型配置 ID（按环境注入；展开结果为字符串）
   auth:
     type: api_login
     credential_ref: SASAN
     login:
       method: POST
-      path: https://sasan-server.staging.bj33smarter.com/users/login # 登录域独立于 API 域
+      path: ${SASAN_LOGIN_URL:-https://sasan-server.example.com/users/login} # 登录域独立于 API 域
       body_template: '{"phone": "{{ username }}", "captcha": "{{ password }}", "platform": "fs"}'
     extract:
       token_path: token # 响应顶层 {"token": ...}

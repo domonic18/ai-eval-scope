@@ -3,10 +3,16 @@
 一份 sut_config.yaml 描述一个被测系统（顶层键 `sut:`），多系统即多份文件；
 按 sut.name 索引聚合。注意与 arch/13 的 SUTConfig（benchmark 被测模型配置，
 §5.3 Inferencer 路径）是两个不同概念——本模块为被测**系统**配置。
+
+地址类字段支持 ``${VAR}`` / ``${VAR:-默认值}`` 环境变量展开（arch/17 开源
+红线：内置包不得硬编码内部域名，真实端点由用户 env 提供，缺省回退占位域名）。
+凭证值不走此通道——仍由 ``credential_ref`` 引用密钥区（06 §4.7）。
 """
 
 from __future__ import annotations
 
+import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +28,35 @@ STREAM_MODES = ("values", "messages", "updates", "custom")
 AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
 # Agent Protocol 两种部署形态：runs（/runs/wait 族）| commands（/threads/{id}/commands + state）
 PROTOCOL_FLAVORS = ("runs", "commands")
+
+# ${VAR} / ${VAR:-默认值}（不支持嵌套占位；默认值内不含 '}'）
+_ENV_REF = re.compile(r"\$\{([A-Z_][A-Z0-9_]*)(?::-(.*?))?\}")
+
+
+def expand_env_refs(value: Any) -> Any:
+    """递归展开 dict/list 中的 ``${VAR}`` / ``${VAR:-默认值}`` 占位（仅字符串字段）。
+
+    env 已设 → 取 env 值；未设但有默认值 → 默认值；两者皆无 → SUTChannelError
+    （报错优于保留原文——带着 ``${...}`` 去请求端点只会得到难懂的连接错误）。
+    """
+    if isinstance(value, dict):
+        return {k: expand_env_refs(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [expand_env_refs(v) for v in value]
+
+    def _repl(m: re.Match[str]) -> str:
+        name, default = m.group(1), m.group(2)
+        env = os.environ.get(name)
+        if env:
+            return env
+        if default is not None:
+            return default
+        raise SUTChannelError(
+            f"sut_config 引用了未定义的 env 变量 ${{{name}}}"
+            f"（设置该变量，或改写为 ${{{name}:-默认值}}）"
+        )
+
+    return _ENV_REF.sub(_repl, value) if isinstance(value, str) else value
 
 
 class AuthLoginConfig(BaseModel):
@@ -153,14 +188,14 @@ class SUTRegistry:
 
     @classmethod
     def load(cls, path: Path | str) -> SUTRegistry:
-        """加载单份 sut_config.yaml（顶层键 sut:）。"""
+        """加载单份 sut_config.yaml（顶层键 sut:；字符串字段先做 ${VAR} 展开）。"""
         data = ConfigLoader.load_yaml(path)
         sut_data = data.get("sut")
         if not isinstance(sut_data, dict):
             raise SUTChannelError(
                 f"sut_config 缺少顶层 'sut:' 段: {path}", details={"path": str(path)}
             )
-        config = SUTSystemConfig.model_validate(sut_data)
+        config = SUTSystemConfig.model_validate(expand_env_refs(sut_data))
         return cls({config.name: config})
 
     @classmethod
@@ -207,4 +242,5 @@ __all__ = [
     "OutputPathsConfig",
     "SUTRegistry",
     "SUTSystemConfig",
+    "expand_env_refs",
 ]

@@ -90,3 +90,65 @@ def test_auth_type_validator() -> None:
                 "auth": {"type": "oauth2"},
             }
         )
+
+
+# ── ${VAR} / ${VAR:-默认值} 环境变量展开（arch/17 开源红线：内置包不硬编码内部域名）──
+
+PLACEHOLDER_YAML = """
+sut:
+  name: sasan-agent
+  channel: agent_protocol
+  base_url: ${SASAN_AGENT_URL:-https://agent-server.example.com}
+  timeout: 300
+  auth:
+    type: api_login
+    credential_ref: SASAN
+    login:
+      method: POST
+      path: ${SASAN_LOGIN_URL:-https://sasan-server.example.com/users/login}
+      body_template: '{"phone": "{{ username }}"}'
+"""
+
+
+def test_env_ref_expands_from_environment(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("SASAN_AGENT_URL", "https://real.internal.example.com")
+    monkeypatch.setenv("SASAN_LOGIN_URL", "https://login.internal.example.com/api")
+    registry = SUTRegistry.load(_write(tmp_path, "sut.yaml", PLACEHOLDER_YAML))
+    sut = registry.default
+    assert sut.base_url == "https://real.internal.example.com"
+    assert sut.auth.login.path == "https://login.internal.example.com/api"
+
+
+def test_env_ref_falls_back_to_default_when_unset(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("SASAN_AGENT_URL", raising=False)
+    monkeypatch.delenv("SASAN_LOGIN_URL", raising=False)
+    sut = SUTRegistry.load(_write(tmp_path, "sut.yaml", PLACEHOLDER_YAML)).default
+    assert sut.base_url == "https://agent-server.example.com"
+    # 无占位的字段不展开：Jinja2 模板变量 {{ }} 原样保留；非字符串字段不动
+    assert sut.timeout == 300
+    assert sut.auth.login.body_template == '{"phone": "{{ username }}"}'
+
+
+def test_env_ref_undefined_without_default_raises(tmp_path, monkeypatch) -> None:
+    # 裸 ${VAR}（无默认值）：未定义即报错，优于保留原文去请求占位端点
+    monkeypatch.delenv("SASAN_AGENT_URL", raising=False)
+    bare = PLACEHOLDER_YAML.replace(
+        "${SASAN_AGENT_URL:-https://agent-server.example.com}", "${SASAN_AGENT_URL}"
+    )
+    with pytest.raises(SUTChannelError, match="SASAN_AGENT_URL"):
+        SUTRegistry.load(_write(tmp_path, "sut.yaml", bare))
+
+
+def test_builtin_chat_package_has_no_internal_domain(monkeypatch) -> None:
+    """开源红线：内置包 sasan-agent 未配 env 时回退占位域名（内部 staging 域名不入包）。"""
+    from agent_eval.packages.manager import PackageManager
+
+    monkeypatch.delenv("SASAN_AGENT_URL", raising=False)
+    monkeypatch.delenv("SASAN_LOGIN_URL", raising=False)
+    monkeypatch.delenv("SASAN_AGENT_MODEL_ID", raising=False)
+    pkg = PackageManager().resolve_ref("chat")
+    registry = SUTRegistry.load_dir(pkg.root / "sut_configs")
+    sut = registry.get("sasan-agent")
+    assert sut.base_url == "https://agent-server.example.com"
+    assert "bj33smarter" not in str(sut.model_dump())
+    assert sut.configurable["modelId"] == "1"  # 展开结果为字符串
