@@ -11,7 +11,7 @@ resolution-markers = [
 
 [[package]]
 name = "ai-eval-scope"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
