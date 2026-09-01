@@ -1,3 +1,9 @@
+## v0.1.5 (2026-09-01)
+
+### Fix
+
+- **lint**: manager.py import 排序（I001）+ test_eval_flow 格式收编——Jenkins #7 UNSTABLE 根因
+
 ## v0.1.4 (2026-09-01)
 
 ### Fix
