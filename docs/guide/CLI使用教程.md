@@ -304,6 +304,17 @@ uv run agent-eval secrets set SASAN.username
 uv run agent-eval secrets set SASAN.password
 ```
 
+3. 配置被测系统端点（可选，但真实评测必配）。内置包不硬编码任何内部域名——
+   `sut_config` 中的地址以 `${VAR:-默认值}` 形式声明（见 `registry.expand_env_refs`），
+   未配置时回退 `*.example.com` 占位域名（仅作结构演示，不可达）。在仓库根 `.env`
+   （或 shell env）写入真实端点即可，`.env.example` 已有模板：
+
+```bash
+SASAN_AGENT_URL=https://<被测 API 端点>
+SASAN_LOGIN_URL=https://<登录接口完整 URL>
+SASAN_AGENT_MODEL_ID=19
+```
+
 ### 分步执行：run → eval
 
 ```bash

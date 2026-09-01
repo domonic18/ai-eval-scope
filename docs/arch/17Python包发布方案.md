@@ -50,7 +50,7 @@
 |---|------|------|
 | D-PKG-1 | **distribution 改名 `ai-eval-scope`**；import 名 `agent_eval` 与 CLI 名 `agent-eval` **不变** | 旧名被占用；命令名与包名解耦是行业惯例（pip 之于 pip-tools）；用户代码与全部文档零改动 |
 | D-PKG-2 | **公开 PyPI 为主**：tag `v*` 触发 Jenkins 发布；TestPyPI 先行演练 | 符合「CLI 为开源门面」定位；Jenkins 在内网但发布仅需出网到 `upload.pypi.org:443` |
-| D-PKG-3 | **版本单源 = commitizen**：已配 `version_provider = "scm"` + `tag_format = "v$version"`，补 `version_files` 覆盖 `agent_eval/__init__.py`，`cz bump` 一次改两处并打 annotated tag | 顺承现状零新依赖；构建时版本在源码里（确定性构建）。备选 hatch-vcs 动态版本**不采用**：构建依赖 git 元数据（clone 缺 tag 即失败），且与 commitizen 职责重复 |
+| D-PKG-3 | **版本单源 = commitizen**：`version_provider = "pep621"` + `tag_format = "v$version"` + `version_files = ["agent_eval/__init__.py:__version__"]`，`cz bump` 一次改两处并打 annotated tag | 顺承现状零新依赖；构建时版本在源码里（确定性构建）。~~原配 `scm` provider~~ **落地时纠正为 pep621**：scm provider 只读（git describe 派生、不写任何文件），且本仓历史无 tag 基线——wheel 版本将恒停 0.1.0。备选 hatch-vcs 动态版本**不采用**：构建依赖 git 元数据（clone 缺 tag 即失败），且与 commitizen 职责重复 |
 | D-PKG-4 | **独立发布流水线** `cicd/Jenkinsfile.pypi.groovy`，不扩展 eval 流水线 | 职责分离：PR 流水线守质量（每次 push）、发布流水线守制品（仅 tag）；对齐「单仓多流水线，每交付物一条」既有架构 |
 | D-PKG-5 | **dev 依赖迁出发布元数据**：`[project.optional-dependencies].dev` → `[dependency-groups].dev`（PEP 735）；全仓 `uv sync --extra dev` → `--group dev` | 发布的包元数据只含用户可用的 extras（llm/agent/vision/datasets）；dev 组 uv 原生支持且不入 wheel |
 | D-PKG-6 | **license 合规**：LICENSE 复制入 evaluator/ + `license = "MIT"`（SPDX 字符串，PEP 639）+ `license-files` | PyPI 现行政策；hatchling 原生支持 SPDX 表达式 |
@@ -122,6 +122,16 @@ pipeline {
 - **分支构建只验不发**：`when buildingTag` 保证非 tag 触发时流水线退化为「构建演练」。
 - **Jenkins vs GHA 分工**：Jenkins（内网）为主发布通道（用户要求，凭证集中管理）；GHA 保留公网质量门禁，未来若要免 token 可切 PyPI **Trusted Publishing**（OIDC，仅 GHA 支持）——Jenkins 不适用，走 API token 是行业标准做法。
 
+### 5.3 TestPyPI 演练步骤（首发前必做，落到操作序列）
+
+草案已落地为 [`cicd/Jenkinsfile.pypi.groovy`](../../cicd/Jenkinsfile.pypi.groovy)（以入库文件为准：`RELEASE_TAG` 兼容 tag 触发/`TAG` 参数、`TEST_PYPI` 演练开关、冒烟加 `--refresh`）。演练序列：
+
+1. **TestPyPI 侧**（§8-P3）：注册 + 2FA + 生成 token → Jenkins 新建 credential `pypi-upload-token`（演练期先存 TestPyPI token）+ Pipeline Job（Script Path `cicd/Jenkinsfile.pypi.groovy`）。
+2. **本地起版**：`cd evaluator && uv run cz bump --dry-run --increment PATCH --yes` 核对 → 去掉 `--dry-run` 实跑（改 pyproject + `__init__` + CHANGELOG + 打 tag）→ `git push origin <branch> --tags`。
+3. **触发**：Jenkins Job 带 `TAG=v0.1.0`、`TEST_PYPI=true` 构建 → 观察「校验」段版本断言与双产物冒烟 →「发布」段上传 TestPyPI。
+4. **验收安装**：`uv run --isolated --no-project --with ai-eval-scope --index-url https://test.pypi.org/simple/ agent-eval --version`（注意 TestPyPI 依赖不全时需 `--index-strategy unsafe-best-match` 或混合官方源）。
+5. **转正**：Jenkins credential 换 PyPI project-scoped token（§8-P2），`TEST_PYPI=false` 重跑即正式发布。
+
 ## 六、用户安装体验（目标态）
 
 ```bash
@@ -148,16 +158,16 @@ uvx --from "ai-eval-scope[agent]" agent-eval --help   # 免安装试用
 
 ## 七、发布前置改造清单（落地拆解）
 
-| # | 改造 | 影响文件 | 量级 |
-|---|------|----------|------|
-| 1 | 改名 `ai-eval-scope`：pyproject `name`、extras 自引用 `agent-eval[llm]` → `ai-eval-scope[llm]`、executor 的 dependencies + `[tool.uv.sources]` 键、重锁 `uv.lock` | evaluator/pyproject.toml、executor/pyproject.toml、uv.lock ×2 | 小 |
-| 2 | 版本单源：commitizen 增 `version_files = ["agent_eval/__init__.py"]`；演练 `cz bump --dry-run` | evaluator/pyproject.toml | 小 |
-| 3 | dev extras 收敛（D-PKG-5）：合并两组 dev 依赖至 `[dependency-groups]`；全仓 `uv sync --extra dev` → `--group dev` | pyproject、Makefile、cicd/Jenkinsfile.eval.groovy、cicd/Jenkinsfile.executor.groovy、CLAUDE.md ×2、evaluator/README.md | 中（5 处引用） |
-| 4 | license 合规（D-PKG-6）：LICENSE 入 evaluator/、SPDX 字符串 + license-files | evaluator/LICENSE、pyproject | 小 |
-| 5 | README 补安装章节（§6 内容）+ PyPI 徽章 | evaluator/README.md | 小 |
-| 6 | Jenkins：新增 credential `pypi-upload-token` + 发布 Job（tag 触发） | Jenkins 控制台（非仓库） | 运维 |
-| 7 | TestPyPI 全流程演练 → 正式发 `v0.2.0` | — | 半天 |
-| 8 | **开源内容审查**（见 §9 风险 R1/R2）：内部域名、数据集版权、git 历史密钥扫描 | assets/packages/chat、git 历史 | **必须** |
+| # | 改造 | 影响文件 | 量级 | 状态 |
+|---|------|----------|------|------|
+| 1 | 改名 `ai-eval-scope`：pyproject `name`、extras 自引用 `agent-eval[llm]` → `ai-eval-scope[llm]`、executor 的 dependencies + `[tool.uv.sources]` 键、重锁 `uv.lock` | evaluator/pyproject.toml、executor/pyproject.toml、uv.lock ×2 | 小 | ✅ 已落地（双端重锁，make check 全绿） |
+| 2 | 版本单源：commitizen `version_provider = "pep621"` + `version_files` 覆盖 `__init__.py::__version__`；演练 `cz bump --dry-run`（0.1.0 → 0.1.1 + tag v0.1.1 ✓） | evaluator/pyproject.toml | 小 | ✅ 已落地 |
+| 3 | dev extras 收敛（D-PKG-5）：合并两组 dev 依赖至 `[dependency-groups]`（组内自引用 `[llm]`/`[vision]` 拉起测试依赖）；全仓 `uv sync --extra dev` → `--group dev`（Makefile / Jenkinsfile.eval / GHA ci / CONTRIBUTING / CLAUDE.md / README；executor 的 dev extras 属其自身，不动） | pyproject、Makefile、cicd/Jenkinsfile.eval.groovy、CLAUDE.md ×2、evaluator/README.md、CONTRIBUTING.md、.github/workflows/ci.yml | 中 | ✅ 已落地 |
+| 4 | license 合规（D-PKG-6）：LICENSE 入 evaluator/、SPDX 字符串 + license-files（PKG-INFO 实测 `License-Expression: MIT` + `License-File`，Metadata 2.5） | evaluator/LICENSE、pyproject | 小 | ✅ 已落地 |
+| 5 | README 补安装章节（§6 内容）+ PyPI 徽章；另补 CLI `--version` 旗标（eager，发布冒烟口令，此前仅有 `version` 子命令） | evaluator/README.md、cli/main.py | 小 | ✅ 已落地 |
+| 6 | Jenkins：`cicd/Jenkinsfile.pypi.groovy` 入库（含 TEST_PYPI 演练参数 + 冒烟 `--refresh` 防缓存假通过）；控制台侧 credential `pypi-upload-token` + 发布 Job 待建 | cicd/Jenkinsfile.pypi.groovy、cicd/README.md | 运维 | ◐ 文件已入库，控制台操作待用户 |
+| 7 | TestPyPI 全流程演练 → 正式发 `v0.1.0`（首个版本即占名，§8-P6） | — | 半天 | ⬜ 待用户执行（§5 末演练步骤） |
+| 8 | **开源内容审查**（见 §9 风险 R1/R2）：内部域名、数据集版权、git 历史密钥扫描 | assets/packages/chat、git 历史 | **必须** | ◐ R1 域名占位化已落地（§9 行内更新）；R2 gitleaks 全史扫描已跑；数据集版权待复核 |
 
 ## 八、发布前准备清单（账号与凭证）
 
@@ -174,12 +184,12 @@ uvx --from "ai-eval-scope[agent]" agent-eval --help   # 免安装试用
 
 | # | 风险 | 缓解 |
 |---|------|------|
-| R1 | **内部信息随 wheel 公开**：内置 chat 包 sut_configs 含内部 staging 域名（`agent-server.staging.bj33smarter.com`、`sasan-server.staging.bj33smarter.com`）；courseware 数据集版权未复核 | §7-8 开源审查：域名示例化（占位 + env 覆盖）或文档声明为演示端点；数据集版权确认（`llm_config.yaml` 已核仅 `${VAR}` 引用 ✅） |
+| R1 | **内部信息随 wheel 公开**：内置 chat 包 sut_configs 曾含内部 staging 域名（`agent-server.staging.bj33smarter.com`、`sasan-server.staging.bj33smarter.com`）与内部 modelId/userId 注释 | ✅ **已缓解（落地）**：sut_config 新增 `${VAR}` / `${VAR:-默认值}` env 展开（`registry.expand_env_refs`，未配回退 `*.example.com` 占位 + 报错优于硬编码），sasan-agent.yaml 三处占位化并有测试锁死（`test_builtin_chat_package_has_no_internal_domain`）；真实端点走 `.env`（`.env.example` 有模板）。数据集版权仍待复核 |
 | R2 | **git 历史泄漏**：开源 = 全历史公开 | gitleaks/trufflehog 全史扫描；若历史不干净，开源仓库从干净基线重新初始化（发布 wheel 本身不受影响，仓库门面受影响） |
 | R3 | CLI 命令 `agent-eval` 与 allenai 包同名（两者都提供同名 entry point，共存安装冲突） | 文档注明；冲突真实发生时再评估改命令名（改动面大：全部 docs/scripts） |
 | R4 | Jenkins 出口网络不通 | §8-P5 提前申请；兜底方案本地 `uv publish`（token 在本机环境变量） |
 | R5 | executor 改名联动遗漏（path 依赖） | §7-1 同一提交内改齐 + executor CI 验证 |
-| R6 | wheel 体积 1.7M+（内置三场景包） | 可接受（纯文本资产）；未来膨胀再评估拆分 `ai-eval-scope-packages` |
+| R6 | wheel 体积（内置三场景包；实测 sdist 1.0MB / wheel 804KB） | 可接受（纯文本资产）；未来膨胀再评估拆分 `ai-eval-scope-packages` |
 | O1 | 开放：私有源需求是否会出现（内网用户装不了公网包） | 预留：`uv publish --publish-url` 双通道，或 CCR 制品库 pypi 能力 |
 | O2 | 开放：CHANGELOG 是否对外发布 | `cz bump` 已生成，随仓库发布即可 |
 
@@ -202,3 +212,4 @@ uvx --from "ai-eval-scope[agent]" agent-eval --help   # 免安装试用
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
 | v1.0 | 2026-09-01 | 初稿：现状盘点（agent-eval 名称占用实查）、决策 D-PKG-1..6、Jenkins 发布流水线草案（`Jenkinsfile.pypi.groovy`）、安装体验与 extras 矩阵、前置改造清单、账号/凭证准备清单、风险与开放问题 |
+| v1.1 | 2026-09-01 | §7 八项落地：改名/重锁、版本单源（**D-PKG-3 纠正 scm→pep621**，scm 只读且无 tag 基线）、dev 迁 PEP 735 组、LICENSE PEP 639（Metadata 2.5 实测）、README 安装章 + `--version` 旗标、`Jenkinsfile.pypi.groovy` 入库（+§5.3 TestPyPI 演练步骤）、R1 域名占位化（env 展开机制）；本地构建 + 隔离冒烟 + make check（683+56）全绿 |
