@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 # distribution 名 ai-eval-scope（agent-eval 在 PyPI 已被占用，arch/17 D-PKG-1）；
 # import 名 agent_eval 与 CLI 命令名 agent-eval 不变
 name = "ai-eval-scope"
-version = "0.1.2"
+version = "0.1.3"
 description = "Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架"
 readme = "README.md"
 requires-python = ">=3.11"
