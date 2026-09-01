@@ -144,7 +144,7 @@ git push origin <发布分支> --tags
 
 **纪律**：PyPI 同版本号**不可重传**，发布失败修复后必须 bump 新版本；tag 必须等于包 `__version__`（流水线有硬断言）；凭证走 Jenkins 双 credential（`test-pypi-upload-token` / `pypi-upload-token`，按 `TEST_PYPI` 自动选择）。
 
-详见 [`cicd/README.md`](./cicd/README.md)（流水线阶段/凭证/本地验证序列）与 [docs/arch/17Python包发布方案.md](./docs/arch/17Python包发布方案.md)（方案与决策记录）。
+详见 [`cicd/README.md`](./cicd/README.md)（流水线阶段/凭证/本地验证序列与发布纪律）。
 
 ---
 

@@ -100,7 +100,7 @@ cicd/
 
 ## PyPI 发布流水线详情（`Jenkinsfile.pypi.groovy`）
 
-评估器 `evaluator/` 以 **ai-eval-scope** 包名发布到 PyPI（方案全貌见 [docs/arch/17](../docs/arch/17Python包发布方案.md)）。与 eval 流水线的分工：**eval 守每次提交的质量，本流水线守 tag 制品**——前者 PR/push 触发，后者仅 tag（`v*`）触发发布。
+评估器 `evaluator/` 以 **ai-eval-scope** 包名发布到 PyPI。与 eval 流水线的分工：**eval 守每次提交的质量，本流水线守 tag 制品**——前者 PR/push 触发，后者仅 tag（`v*`）触发发布。
 
 | 阶段 | 工具 | 阻塞策略 | 说明 |
 |------|------|----------|------|

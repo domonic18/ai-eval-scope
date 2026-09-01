@@ -53,6 +53,6 @@ uv run pytest tests/unit -q
 - **版本单源**：`uv run cz bump --dry-run --increment PATCH --yes` 先核对，去掉 `--dry-run` 实跑——一次改 `pyproject.toml` + `agent_eval/__init__.py::__version__` + CHANGELOG 并打 annotated tag。**禁止手改版本号**。
 - **发布**：`git push --tags` 后 Jenkins Job `sasan-evalscope-pypi` → Build with Parameters（`TAG=vX.Y.Z`；`TEST_PYPI=true` 先演练 test.pypi.org，验收通过后 `false` 转正式）。流水线自带质量门禁、tag==`__version__` 断言、wheel/sdist 隔离冒烟。
 - **纪律**：PyPI 同版本号**不可重传**——发布失败修复后必须 bump 新版本；正式发布前必先 TestPyPI 演练。
-- 详见 [`cicd/README.md`](../cicd/README.md)（阶段表/凭证/本地验证）与 [arch/17](../docs/arch/17Python包发布方案.md)（方案与决策）。
+- 详见 [`cicd/README.md`](../cicd/README.md)（阶段表/凭证/本地验证与发布纪律）。
 
 详见根 [`CLAUDE.md`](../CLAUDE.md) 与 [规范索引](../docs/standard/README.md)。
