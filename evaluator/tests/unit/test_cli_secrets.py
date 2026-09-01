@@ -1,7 +1,8 @@
 """ensure_sut_credentials 单测 — 执行前缺失自动补录（req/04 §3.5；06 §4.7 通用 KV）。
 
-补录交互经 monkeypatch 替换 prompts 原语（隐藏输入 TTY 路径无法管道验证，
-同 test_cli_auth 范式）；密钥区路径由 conftest autouse 钉到 tmp。
+动作落 ``cli/_common.py``（跨组共享：execute/suite 复用）；补录交互经
+monkeypatch 替换 prompts 原语（隐藏输入 TTY 路径无法管道验证，同
+test_cli_auth 范式）；密钥区路径由 conftest autouse 钉到 tmp。
 """
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from agent_eval.cli.cmds.secrets import ensure_sut_credentials
+from agent_eval.cli._common import ensure_sut_credentials
 from agent_eval.core.exceptions import SUTAuthError
 from agent_eval.execution.auth.secrets_store import load_secrets_file, save_secrets_file
 from agent_eval.execution.registry import AuthConfig, AuthLoginConfig, SUTSystemConfig

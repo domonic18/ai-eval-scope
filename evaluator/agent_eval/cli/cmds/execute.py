@@ -6,7 +6,7 @@ from pathlib import Path
 
 import typer
 
-from agent_eval.cli._common import rprint
+from agent_eval.cli._common import ensure_sut_credentials, rprint
 
 
 def run(
@@ -122,6 +122,14 @@ def execute_run(
         )
     except AgentEvalError as e:
         rprint(f"[red]配置加载失败:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+    # 凭证保障在进度视图启动前：缺失当场引导补录（stage_progress 转轮会刷掉
+    # 输入提示行，实测提示被「执行 N 个任务」掩盖）；取消/--no-input 则 fail fast
+    try:
+        ensure_sut_credentials(inputs.sut)
+    except AgentEvalError as e:
+        rprint(f"[red]凭证缺失:[/red] {e}")
         raise typer.Exit(code=1) from e
 
     run_id = generate_run_id()
@@ -293,6 +301,13 @@ def execute_pipeline(
         rule_set_path = resolve_eval_inputs(package, rule_set)
     except Exception as e:
         rprint(f"[red]配置加载失败:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+    # 凭证保障在进度视图启动前（同 execute_run：转轮会刷掉补录输入提示行）
+    try:
+        ensure_sut_credentials(inputs.sut)
+    except AgentEvalError as e:
+        rprint(f"[red]凭证缺失:[/red] {e}")
         raise typer.Exit(code=1) from e
 
     from agent_eval.config.paths import paths
