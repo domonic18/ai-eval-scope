@@ -71,14 +71,24 @@ Build:       ${env.BUILD_NUMBER}
                 sh 'bash cicd/scripts/setup-python.sh'
 
                 // tag 构建：检出 tag 指向的提交（保证构建物 == tag 内容；
-                // 手动带 TAG 参数时 Job 默认检出的是分支 tip，必须显式切到 tag）
+                // 手动带 TAG 参数时 Job 默认检出的是分支 tip，必须显式切到 tag）。
+                // Git 插件初始检出已带 --tags（tag 通常已在本地）；万一不在，
+                // 裸 git fetch 无凭证会 128（HTTPS 私仓无 TTY 可提示输入）——
+                // 经 gitUsernamePassword 注入与 SCM 同款 git 凭证兜底
                 script {
                     if (env.RELEASE_TAG?.trim()) {
-                        sh '''
-                            git fetch origin tag ${RELEASE_TAG} --no-tags
-                            git checkout -f ${RELEASE_TAG}
-                            git log -1 --oneline
-                        '''
+                        withCredentials([gitUsernamePassword(
+                            credentialsId: 'git-code-tencent-credentials',
+                            gitCredentialsName: 'origin'
+                        )]) {
+                            sh '''
+                                if ! git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+                                    git fetch origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+                                fi
+                                git checkout -f ${RELEASE_TAG}
+                                git log -1 --oneline
+                            '''
+                        }
                     }
                 }
             }
