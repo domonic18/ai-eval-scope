@@ -63,7 +63,7 @@ def scenario_new(
         None,
         "--output",
         "-o",
-        help="输出目录（skeleton 默认 ./<id>/；agent 默认 workspace/scenario-packages/<id>-package/）",
+        help="输出目录（默认 cwd 直出：skeleton ./<id>/、agent ./<id>-package/；显式指定可续作草稿）",
     ),
     template: str = typer.Option(
         "courseware", "--template", "-t", help="脚手架模板（skeleton 模式）"

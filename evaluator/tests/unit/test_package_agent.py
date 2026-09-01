@@ -503,8 +503,8 @@ class TestCliEntries:
     def test_new_agent_derives_ref_and_moves(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # ref 省略：不问包名，Agent 拟定清单 id，会话结束后归位 workspace/packages/
-        # （conftest 已把 WORKSPACE_DIR 钉到 tmp_path/workspace）
+        # ref 省略：草稿落 workspace/.staging（conftest 钉 WORKSPACE_DIR 到
+        # tmp_path/workspace），会话结束后按清单 id 归位 cwd 直出 <id>-package/
         from agent_eval.cli.cmds import scenario_agent as sa
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
@@ -522,11 +522,12 @@ class TestCliEntries:
         root = sa.agent_new_package(
             ref=None, output=None, instruction="研学计划质检", yes=True, trust_agent=True
         )
-        assert root == tmp_path / "workspace" / "scenario-packages" / "study-trip-package"
+        assert root == tmp_path / "study-trip-package"  # cwd 直出（形态 B）
         assert (root / "agent_eval.yaml").is_file()
+        # 草稿已迁走：.staging 下不留 agent-eval-pkg-* 残留
         assert not any(p.name.startswith("agent-eval-pkg-") for p in tmp_path.rglob("*"))
 
-    def test_new_agent_derived_nothing_committed_cleans_up(
+    def test_new_agent_interrupted_keeps_draft(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         from agent_eval.cli.cmds import scenario_agent as sa
@@ -541,23 +542,49 @@ class TestCliEntries:
             sa.agent_new_package(
                 ref=None, output=None, instruction="需求", yes=True, trust_agent=True
             )
-        assert list(tmp_path.iterdir()) == []  # 未落盘不留暂存垃圾
+        # 中断 ≠ 放弃：草稿保留在 workspace/.staging，可 --output 指回续作
+        drafts = list((tmp_path / "workspace" / ".staging").glob("agent-eval-pkg-*"))
+        assert len(drafts) == 1 and drafts[0].is_dir()
 
-    def test_finalize_keeps_when_target_exists(
+    def test_finalize_conflict_keeps_draft(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         from agent_eval.cli.cmds.scenario_agent import _finalize_new_package
 
-        # 归位目标在 workspace/packages/（conftest 已把 WORKSPACE_DIR 钉到 tmp_path/workspace）
-        root = tmp_path / "gen"
+        monkeypatch.chdir(tmp_path)
+        root = tmp_path / "gen"  # 草稿位
         root.mkdir()
         (root / "agent_eval.yaml").write_text(
             "package:\n  id: dup\n  scenario: s\n", encoding="utf-8"
         )
-        target = tmp_path / "workspace" / "scenario-packages" / "dup-package"
-        target.mkdir(parents=True)  # 目标已占位
-        assert _finalize_new_package(root, movable=True) == root
-        assert root.is_dir()
+        (tmp_path / "dup-package").mkdir()  # cwd 直出目标已占位
+        with pytest.raises(typer.Exit) as exc:
+            _finalize_new_package(root, movable=True)
+        assert exc.value.exit_code == 1
+        assert root.is_dir()  # 草稿保留，交用户处置（换名/手动 mv）
+
+    def test_new_output_nonempty_allowed_for_continuation(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--output 指向非空目录放行（续作草稿），默认路径仍要求空。"""
+        from agent_eval.cli.cmds import scenario_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        monkeypatch.setattr(
+            "agent_eval.agent.package_agent.run_turn",
+            lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
+                reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
+            ),
+        )
+        draft = tmp_path / "draft"  # 预置非空草稿（模拟中断遗留）
+        draft.mkdir()
+        (draft / "agent_eval.yaml").write_text(
+            "package:\n  id: wip\n  scenario: s\n", encoding="utf-8"
+        )
+        root = sa.agent_new_package(
+            ref=None, output=draft, instruction="继续", yes=True, trust_agent=True
+        )
+        assert root == draft  # --output 原地生成，不归位
 
     def test_finalize_not_movable_noop(self, tmp_path: Path) -> None:
         from agent_eval.cli.cmds.scenario_agent import _finalize_new_package

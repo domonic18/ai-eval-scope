@@ -40,6 +40,11 @@ coverage.xml
 workspace/
 /packages/
 
+# 场景包（scenario new 默认 cwd 直出 ./<id>-package/）：实验态默认不进库；
+# 转正式资产时 git add -f <包目录>，或迁入 evaluator/agent_eval/assets/packages/ 随包发布
+/*-package/
+evaluator/*-package/
+
 # OS
 .DS_Store
 Thumbs.db

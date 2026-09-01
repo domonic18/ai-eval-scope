@@ -41,10 +41,10 @@ def default_project_root() -> Path:
 
 
 def scenario_packages_root() -> Path:
-    """workspace 内场景包默认落盘根（``scenario new --mode agent`` 归位处）。
+    """workspace 内场景包**历史**落盘根（兼容旧包发现，不再是新包默认位置）。
 
-    生成的包是运行产物而非源码，落 workspace（随 ``WORKSPACE_DIR``）不再散落仓库目录；
-    ``list_project`` 会对该目录做一级发现（与项目根双根并存，旧位置不搬家仍可见）。
+    2026-09 起场景包按源资产对待，``scenario new`` 默认 cwd 直出 ``./<id>-package/``；
+    本目录仅为 ``list_project`` 的兼容扫描根——旧位置已生成的包不搬家仍可见。
     注意与 ``workspace/packages/``（``pack`` 的 ExecutionPackage 产出物，manifest.json）
     是两个概念，勿混用。
     """

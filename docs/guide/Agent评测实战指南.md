@@ -99,7 +99,9 @@ my-agent-eval/
 
 考卷目录 `task_sets/`、被测系统目录 `sut_configs/` 按需自建（下两步）。
 
-> **不想手写 YAML？** 用自然语言生成：`agent-eval scenario new my-agent-eval -m agent`，描述"我要评测一个客服 Agent，覆盖退款政策问答和情绪安抚"，Agent 会在沙盒中生成考卷与规则，确认后落盘。已有包也可用 `agent-eval scenario edit <包>` 增删改查。
+> **不想手写 YAML？** 用自然语言生成：`agent-eval scenario new -m agent`，描述"我要评测一个客服 Agent，覆盖退款政策问答和情绪安抚"，Agent 会生成考卷与规则，每轮确认后落盘，最终保存到当前目录 `./<包名>-package/`（包名以 Agent 拟定的清单 id 为准）。会话中断不丢草稿——续作用 `scenario new -m agent --output <草稿路径>` 指回。已有包也可用 `agent-eval scenario edit <包>` 增删改查。
+>
+> 实验包默认不进 git（仓库 `.gitignore` 已忽略 `*-package/` 目录）；要入库沉淀为正式资产时 `git add -f <包目录>`。
 >
 > 📷 **截图占位**：`scenario new -m agent` 自然语言生成会话（待补）
 

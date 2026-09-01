@@ -339,8 +339,14 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 - 偏差：预算暂以 `recursion_limit = max_turns × 2` 约束，BudgetGuard 会话级预算待逐任务预算需求出现接入；确认粒度为「全部应用/放弃」整轮确认，逐文件确认（§6.3）未做。
 - **首轮错误遏制**：REPL 首轮（`--instruction`）与后续轮同走 `_attempt()` 防护——瞬时错误（LLM 网关断流等）打印失败原因 + 回滚提示后会话不退出，可直接重发上一条需求（真机曾因首轮回溯击穿整会话）。
 - **YAML 资产门禁**：Agent 曾把提示词写成 README 式 `.md`（加载器只认 `.yaml`，静默失效 `prompts=0`）——`validate_package` 与 `scenario validate` 双端要求 `rules/` 与 `prompts/` 各含 ≥1 个 `.yaml`，错误交 Agent 会话内自修复；真机复测 `rules=1, prompts=1` 通过。
-- **生成即发现**（第三轮实测反馈「执行评测选择器只见预置包」）：`PackageStore` 增第三来源 **project**——项目根（默认 cwd，`AGENT_EVAL_PROJECT_DIR` 覆盖）与 `workspace/scenario-packages/` 双根一级子目录扫描（含 `agent_eval.yaml` 即项目包，source=`project`；仅扫一层防内置包经 `assets/packages/` 重复发现；Agent 生成包默认落 scenario-packages，不再散落仓库目录）。`PackageManager.list/find` 单点打通：工作台执行域与 `scenario show/edit` 选择器、`eval/run/pipeline` 的 `--package` 解析全部直达刚生成的包；单测 conftest 钉 env 隔离开发者 cwd 实包。
-- CLI：`scenario new --mode agent`（REF 可省——用户实测反馈「先问包名不友好」：省略时 Agent 按需求拟定引用并在计划首行给出，会话中自然语言可改，会话结束按**最终清单 id** 归位 `workspace/scenario-packages/<id>-package/`（暂存目录生成 + `shutil.move`，随 `WORKSPACE_DIR`；未落盘则清理不留垃圾）；给了 REF 则钉入模板不得自拟、默认同落 scenario-packages）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`；交互选择器过滤内置包并给路径输入入口）；workbench 场景域两项入口（生成新包不再前置询问包名）；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
+- **生成即发现**（第三轮实测反馈「执行评测选择器只见预置包」）：`PackageStore` 增第三来源 **project**——项目根（默认 cwd，`AGENT_EVAL_PROJECT_DIR` 覆盖）与 `workspace/scenario-packages/` 双根一级子目录扫描（含 `agent_eval.yaml` 即项目包，source=`project`；仅扫一层防内置包经 `assets/packages/` 重复发现；Agent 生成包默认落 scenario-packages——**该默认已于 2026-09-01 修订为 cwd 直出，见下**）。`PackageManager.list/find` 单点打通：工作台执行域与 `scenario show/edit` 选择器、`eval/run/pipeline` 的 `--package` 解析全部直达刚生成的包；单测 conftest 钉 env 隔离开发者 cwd 实包。
+- CLI：`scenario new --mode agent`（REF 可省——用户实测反馈「先问包名不友好」：省略时 Agent 按需求拟定引用并在计划首行给出，会话中自然语言可改，会话结束按**最终清单 id** 归位 `workspace/scenario-packages/<id>-package/`——**该落点已于 2026-09-01 修订，见下**）；给了 REF 则钉入模板不得自拟、默认同上）与 `scenario edit`（内置包只读拒绝，指引 `new --instruction "参照 <ref> 定制…"`；交互选择器过滤内置包并给路径输入入口）；workbench 场景域两项入口（生成新包不再前置询问包名）；REPL 缺省 + `--instruction --yes --trust-agent` 非交互双开关。
+- **落盘位置改 cwd 直出**（2026-09-01，PyPI 直装用户实测反馈「包写到了 /tmp、最终位置与预期不符」——形态 B）：场景包是**源资产**（考卷/规则/SUT 配置，用户要编辑、可团队共享），与 `workspace/`（运行产物区，gitignore）归属不同；行业脚手架惯例（cargo/npm/create-vite）一律 cwd 直出。落地：
+  - Agent 会话在 `workspace/.staging/agent-eval-pkg-<rand>/` 草稿区进行（同卷 `shutil.move` 原子归位），结束后按最终清单 id 归位 **`cwd/<id>-package/`**——与 skeleton 模式 `./<id>/` 方向一致；给了 REF 直接定址 `cwd/<id>-package/`
+  - **中断 ≠ 放弃**：异常退出不清理草稿（原逻辑清单未落盘即 rmtree），提示 `scenario new --mode agent --output <草稿路径>` 续作；`--output` 显式指定时非空目录放行（续作场景），默认路径仍要求空目录
+  - **归位冲突报错保留草稿**（原逻辑静默留在生成位置）：目标已存在 → Exit(1) + 交用户处置（换名/手动 mv）；清单未落盘同理保留草稿不再删除
+  - **git 视野**：仓库 `.gitignore` 加 `/*-package/` 与 `evaluator/*-package/`（实验态默认忽略；转正式资产 `git add -f` 或迁 `assets/packages/` 随包发布）；工具不改用户 .gitignore，仅在收尾提示建议行
+  - `scenario_packages_root()` 降级为兼容扫描根（旧包不搬家仍可见），`list_project` 双根发现不变
 - 验证：单测 mock `_invoke` 回放状态机 + `_FakeGraph` 流式事件（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘/中断回滚/blocks 解析）；真机 KIMI 端到端冒烟（一句话生成合法包、一句话改字段，思考/正文/工具全程直播）。
 
 ---

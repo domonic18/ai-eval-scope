@@ -283,16 +283,33 @@ def _require_empty_dir(root: Path) -> None:
 
 
 def _default_packages_root() -> Path:
-    """Agent 生成包的默认落盘根：``workspace/scenario-packages/``（不散落仓库目录）。"""
-    from agent_eval.packages.store import scenario_packages_root
+    """Agent 生成包的默认落盘根：**cwd 直出**（形态 B，2026-09 起取代 workspace 深埋）。
 
-    return scenario_packages_root()
+    场景包是源资产（考卷/规则/SUT 配置，用户要编辑、可团队共享），
+    住进 ``workspace/``（运行产物区，gitignore）会造成资产进忽略区；
+    行业脚手架惯例（cargo/npm/create-vite）一律 cwd 直出 ``<id>-package/``。
+    不想进库的实验包由仓库 .gitignore 一行 ``/*-package/`` 表态。
+    """
+    return Path.cwd()
+
+
+def _new_draft_root() -> Path:
+    """新建草稿目录：``workspace/.staging/agent-eval-pkg-<rand>/``。
+
+    会话中 Agent 在草稿里生成，结束后按清单 id 归位 cwd（同卷 move 原子）；
+    草稿落在 workspace（gitignore 区），中断不清理——续作用 ``--output`` 指回。
+    """
+    import uuid
+
+    from agent_eval.config.paths import paths
+
+    return paths.default_workspace / ".staging" / f"agent-eval-pkg-{uuid.uuid4().hex[:8]}"
 
 
 def _finalize_new_package(root: Path, movable: bool) -> Path:
     """Agent 拟定引用且未指定 --output：会话结束后按**最终清单 id** 归位。
 
-    归位到 ``workspace/scenario-packages/<id>-package/``（随 ``WORKSPACE_DIR``）；会话中
+    归位到 ``cwd/<id>-package/``（与 skeleton 模式 ``./<id>/`` 方向一致）；会话中
     自然语言改过包名也生效（迁移读的是最后一次落盘的清单）。
     """
     import re
@@ -303,20 +320,30 @@ def _finalize_new_package(root: Path, movable: bool) -> Path:
     if not movable:
         return root
     if not (root / MANIFEST_FILENAME).is_file():
-        shutil.rmtree(root, ignore_errors=True)  # 全程未落盘——不留暂存垃圾
         rprint("[red]❌ 未能生成场景包（清单未落盘）[/red]")
+        rprint(f"[yellow]草稿已保留（可续作）: {root}[/yellow]")
         raise typer.Exit(code=1)
     slug = re.sub(r"[^A-Za-z0-9._-]+", "-", load_manifest(root).id).strip("-.") or "scenario"
-    final = _default_packages_root() / f"{slug}-package"
+    final = Path.cwd() / f"{slug}-package"
     if final == root:
-        return root
+        _print_landed(final)
+        return final
     if final.exists():
-        rprint(f"[yellow]⚠ 目标目录已存在，保留在生成位置: {root}[/yellow]")
-        return root
+        rprint(f"[red]❌ 归位目标已存在: {final}[/red]")
+        rprint(f"[yellow]包已生成、保留在草稿位: {root}[/yellow]")
+        rprint(f"[dim]处理：换名重试，或手动 mv {root} {final}[/dim]")
+        raise typer.Exit(code=1)
     final.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(root), str(final))
-    rprint(f"[dim]已按清单 id 归位: {root} → {final}[/dim]")
+    _print_landed(final)
     return final
+
+
+def _print_landed(final: Path) -> None:
+    """归位成功提示：位置醒目 + gitignore 建议 + 后续命令。"""
+    rprint(f"[green]✅ 场景包已保存 → {final}[/green]")
+    rprint("[dim]后续: agent-eval scenario list / pipeline --package " + str(final) + "[/dim]")
+    rprint("[dim]不想让实验包进 git？仓库 .gitignore 加一行: /*-package/[/dim]")
 
 
 def agent_new_package(
@@ -329,18 +356,16 @@ def agent_new_package(
 ) -> Path:
     """``scenario new --mode agent``：自然语言生成完整场景包（REPL 会话）。
 
-    ref 缺省时不问包名——Agent 按需求拟定引用写进清单（会话中自然语言可改），
-    会话结束后按最终清单 id 归位 ``workspace/scenario-packages/<id>-package/``；
-    给了 ref 同样默认落 workspace/scenario-packages/，给了 --output 则原地生成。
+    ref 缺省时不问包名——Agent 在 workspace/.staging 草稿区生成，会话结束后按
+    最终清单 id 归位 ``cwd/<id>-package/``（会话中自然语言改包名也生效）；
+    给了 ref 默认落 ``cwd/<id>-package/``，给了 --output 则原地生成（支持指回
+    草稿续作，非空目录放行）。
     """
-    import shutil
-    import tempfile
-
     from agent_eval.agent.package_agent import PackageAgent
-    from agent_eval.packages import MANIFEST_FILENAME, parse_ref
+    from agent_eval.packages import parse_ref
 
     _guard_llm_ready()
-    movable = ref is None and output is None  # 目录名后定 → 会话后迁移
+    movable = ref is None and output is None  # 目录名后定 → 会话后归位
     if ref:
         scenario, package_id, _ = parse_ref(ref)
         package_id = package_id or scenario
@@ -348,9 +373,17 @@ def agent_new_package(
         root = Path(output) if output else _default_packages_root() / f"{package_id}-package"
     else:
         pin = None
-        root = Path(output) if output else Path(tempfile.mkdtemp(prefix="agent-eval-pkg-"))
-    _require_empty_dir(root)
+        root = (
+            Path(output)
+            if output
+            else _new_draft_root()  # 草稿区（workspace/.staging），会话后归位 cwd
+        )
+    if output is None:
+        # 默认路径要求空目录（不覆盖既有包）；--output 显式指定视为定址/续作，放行非空
+        _require_empty_dir(root)
     root.mkdir(parents=True, exist_ok=True)
+    if movable:
+        rprint("[dim]包完成后将归位到 ./<包名>-package/（包名以 Agent 拟定的清单 id 为准）[/dim]")
 
     if not instruction:
         if yes and trust_agent:
@@ -366,8 +399,10 @@ def agent_new_package(
         else:
             _session(agent, first_text)
     except BaseException:
-        if movable and not (root / MANIFEST_FILENAME).is_file():
-            shutil.rmtree(root, ignore_errors=True)
+        # 中断 ≠ 放弃：草稿保留在 workspace/.staging（无论是否已落清单），续作用 --output 指回
+        if movable:
+            rprint(f"[yellow]⚠ 会话中断，草稿已保留: {root}[/yellow]")
+            rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {root}[/dim]")
         raise
     return _finalize_new_package(root, movable)
 

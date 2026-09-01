@@ -181,14 +181,14 @@ uv run agent-eval secrets delete SASAN.password
 
 ```bash
 uv run agent-eval scenario list                        # 列出全部来源的包
-uv run agent-eval scenario list --source project       # 只看项目包（workspace/scenario-packages/ 与当前目录）
+uv run agent-eval scenario list --source project       # 只看项目包（当前目录与 workspace/scenario-packages/）
 uv run agent-eval scenario validate ./my-package       # 校验包结构
 uv run agent-eval scenario new travel-itinerary/quality --mode skeleton   # 生成包骨架（--template 默认 courseware）
 uv run agent-eval scenario show chat --section rules   # 查看包内容（tree/manifest/rules/tasks/sut）
 uv run agent-eval scenario pull chat/default --remote https://<平台地址>   # 从平台拉取包到本地缓存
 ```
 
-包有三个来源：**builtin**（随工具发布，`chat/code/courseware`）、**local**（`~/.agent_eval/packages/` 缓存，`pull` 产物）、**project**（项目包——`workspace/scenario-packages/` 与当前目录下 `*/agent_eval.yaml` 双根发现；Agent 生成的包默认落 `workspace/scenario-packages/`）。**生成即发现**：刚创建的包无需任何注册，工作台「执行评测」、`scenario show/edit` 的选择器和 `--package` 参数都能直接引用。
+包有三个来源：**builtin**（随工具发布，`chat/code/courseware`）、**local**（`~/.agent_eval/packages/` 缓存，`pull` 产物）、**project**（项目包——当前目录与 `workspace/scenario-packages/` 下 `*/agent_eval.yaml` 双根发现；`scenario new` 默认在当前目录直出 `./<id>/` 或 `./<id>-package/`，scenario-packages 仅兼容旧位置）。**生成即发现**：刚创建的包无需任何注册，工作台「执行评测」、`scenario show/edit` 的选择器和 `--package` 参数都能直接引用。
 
 ### Agent 生成与改包（Sprint 11）
 
@@ -203,7 +203,9 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
   --instruction "生成客服对话质检包：礼貌性与准确性 LLM Judge 各 1 条" --yes --trust-agent
 ```
 
-- **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话结束后按最终清单 id 归位到 `workspace/scenario-packages/<id>-package/`——**归位即入选择器**，工作台「执行评测」与 `--package` 直接可用，无需注册
+- **包名可后置**：不带 REF 时 Agent 按需求拟定 `scenario/id` 写进清单，会话中自然语言即可改（如「把包名改成 xxx」）；会话在 `workspace/.staging/` 草稿区进行，结束后按最终清单 id 归位到当前目录 `./<id>-package/`（与 skeleton 模式 `./<id>/` 方向一致）——**归位即入选择器**，工作台「执行评测」与 `--package` 直接可用，无需注册
+- **中断不丢草稿**：Ctrl+C 或异常退出时草稿保留在 `workspace/.staging/agent-eval-pkg-*/`，续作用 `scenario new --mode agent --output <草稿路径>` 指回；`--output` 显式指定时非空目录放行（即续作场景），默认路径仍要求空目录
+- **不进 git**：实验包默认被仓库 `.gitignore` 的 `/*-package/` 规则忽略；要转成正式资产入库时 `git add -f <包目录>`，或迁入 `evaluator/agent_eval/assets/packages/` 随包发布
 
 - 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
 - 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；写大文件时显示 `⏳ write_file 生成参数中 · N 字` 单行进度（参数在生成、并非卡住）；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
@@ -407,7 +409,8 @@ uv run agent-eval suite run  --file suite.yaml --dry-run     # 只打印将执�
 
 ```
 workspace/
-├── scenario-packages/            # Agent 生成的场景包（scenario new --mode agent 默认落盘）
+├── .staging/                     # Agent 生成会话的草稿区（会话结束即迁出；中断遗留可 --output 续作）
+├── scenario-packages/            # 旧版 Agent 生成包落点（兼容发现，新包已改 cwd 直出）
 ├── runs/{run_id}/                # run_id = UTC 时间戳 %Y%m%d_%H%M%S
 │   ├── run_manifest.json         # 运行绑定：mode(run|pipeline)/package_ref/task_set/sut/内容指纹…
 │   ├── packages/{task_id}/       # 各任务执行包（manifest/task/output//trace/metrics/metadata）
