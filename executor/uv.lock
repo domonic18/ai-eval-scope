@@ -7,7 +7,7 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "agent-eval"
+name = "ai-eval-scope"
 version = "0.1.0"
 source = { editable = "../evaluator" }
 dependencies = [
@@ -35,12 +35,9 @@ llm = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-eval", extras = ["llm"], marker = "extra == 'dev'" },
-    { name = "agent-eval", extras = ["llm"], marker = "extra == 'vision'" },
-    { name = "agent-eval", extras = ["vision"], marker = "extra == 'dev'" },
+    { name = "ai-eval-scope", extras = ["llm"], marker = "extra == 'vision'" },
     { name = "anthropic", marker = "extra == 'llm'", specifier = ">=0.30" },
     { name = "beautifulsoup4", specifier = ">=4.12" },
-    { name = "commitizen", marker = "extra == 'dev'", specifier = ">=3.29" },
     { name = "deepagents", marker = "extra == 'agent'", specifier = ">=0.2" },
     { name = "diskcache", specifier = ">=5.6" },
     { name = "html5lib", specifier = ">=1.1" },
@@ -54,26 +51,31 @@ requires-dist = [
     { name = "langgraph", marker = "extra == 'agent'", specifier = ">=0.4" },
     { name = "markdown", specifier = ">=3.5" },
     { name = "modelscope", marker = "extra == 'datasets'", specifier = ">=1.18" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
     { name = "openai", marker = "extra == 'llm'", specifier = ">=1.30" },
     { name = "playwright", marker = "extra == 'vision'", specifier = "==1.60.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7" },
     { name = "pyarrow", marker = "extra == 'datasets'", specifier = ">=24.0.0" },
     { name = "pydantic", specifier = ">=2.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
     { name = "structlog", specifier = ">=24.0" },
     { name = "typer", specifier = ">=0.12.0" },
 ]
-provides-extras = ["dev", "llm", "agent", "vision", "datasets"]
+provides-extras = ["llm", "agent", "vision", "datasets"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "types-pyyaml", specifier = ">=6.0.12.20260815" }]
+dev = [
+    { name = "ai-eval-scope", extras = ["llm"] },
+    { name = "ai-eval-scope", extras = ["vision"] },
+    { name = "commitizen", specifier = ">=3.29" },
+    { name = "mypy", specifier = ">=1.10" },
+    { name = "pre-commit", specifier = ">=3.7" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23" },
+    { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "ruff", specifier = ">=0.4" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20260815" },
+]
 
 [[package]]
 name = "annotated-doc"
@@ -528,7 +530,7 @@ name = "eval-executor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "agent-eval", extra = ["llm"] },
+    { name = "ai-eval-scope", extra = ["llm"] },
     { name = "asyncpg" },
     { name = "cryptography" },
     { name = "httpx" },
@@ -549,7 +551,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-eval", extras = ["llm"], editable = "../evaluator" },
+    { name = "ai-eval-scope", extras = ["llm"], editable = "../evaluator" },
     { name = "asyncpg", specifier = ">=0.29" },
     { name = "cryptography", specifier = ">=42" },
     { name = "httpx", specifier = ">=0.27" },

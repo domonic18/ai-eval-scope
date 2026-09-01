@@ -3,12 +3,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agent-eval"
+# distribution 名 ai-eval-scope（agent-eval 在 PyPI 已被占用，arch/17 D-PKG-1）；
+# import 名 agent_eval 与 CLI 命令名 agent-eval 不变
+name = "ai-eval-scope"
 version = "0.1.0"
 description = "Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     {name = "Agent Eval Team"},
 ]
@@ -16,7 +19,6 @@ keywords = ["agent", "evaluation", "llm", "benchmark", "courseware", "code-gener
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -40,18 +42,9 @@ dependencies = [
     "python-dotenv>=1.2.2",
 ]
 
+# extras 只含用户可安装的功能组合（arch/17 D-PKG-5）——开发工具链在
+# [dependency-groups].dev（PEP 735），uv sync --group dev 安装、不入发布元数据
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov>=5.0",
-    "pytest-asyncio>=0.23",
-    "ruff>=0.4",
-    "mypy>=1.10",
-    "pre-commit>=3.7",
-    "commitizen>=3.29",
-    "agent-eval[llm]",
-    "agent-eval[vision]",
-]
 llm = [
     "openai>=1.30",
     "anthropic>=0.30",
@@ -66,7 +59,7 @@ agent = [
     "langchain-anthropic>=0.3",
 ]
 vision = [
-    "agent-eval[llm]",
+    "ai-eval-scope[llm]",
     # 精确锁定：与 docker/playwright-base 基础镜像内预装的 chromium 版本严格对齐，
     # 保证 executor 镜像构建时命中已烘焙的 chromium（无需联网下载）。升级时需同步重建基础镜像。
     "playwright==1.60.0",
@@ -116,15 +109,30 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 
-# commitizen：Conventional Commits 校验（commit-msg hook）+ cz bump 版本/CHANGELOG 自动化
+# commitizen：Conventional Commits 校验（commit-msg hook）+ cz bump 版本/CHANGELOG 自动化。
+# 版本单源（arch/17 D-PKG-3）：pep621 provider 维护 pyproject [project].version，
+# version_files 同步 __init__（scm provider 只读不落盘，且本仓历史无 tag 基线，弃用）
 [tool.commitizen]
 name = "cz_conventional_commits"
 tag_format = "v$version"
 version_scheme = "pep440"
-version_provider = "scm"
+version_provider = "pep621"
+version_files = [
+    "agent_eval/__init__.py:__version__",
+]
 annotated_tag = true
 
 [dependency-groups]
 dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "commitizen>=3.29",
     "types-pyyaml>=6.0.12.20260815",
+    # 自引用 extras：拉起测试所需的运行时依赖（uv 支持 root 自引用）
+    "ai-eval-scope[llm]",
+    "ai-eval-scope[vision]",
 ]
