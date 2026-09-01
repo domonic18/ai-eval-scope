@@ -121,6 +121,8 @@ version_files = [
     "agent_eval/__init__.py:__version__",
 ]
 annotated_tag = true
+# bump 时同步更新 CHANGELOG.md（默认 false——首版 0.1.1 因此漏了 changelog，回填后开启）
+update_changelog_on_bump = true
 
 [dependency-groups]
 dev = [
