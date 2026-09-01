@@ -25,7 +25,8 @@ def _workspace_root() -> Path:
 
 def _load_json(path: Path) -> dict[str, Any]:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        data: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+        return data
     except (OSError, ValueError):
         return {}
 

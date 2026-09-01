@@ -6,6 +6,9 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Any
+
 import yaml
 from rich import print as rprint
 
@@ -13,7 +16,7 @@ from agent_eval.cli.console.equiv import pipeline_argv, render, run_argv
 from agent_eval.cli.console.prompts import confirm, select
 
 
-def _count_tasks(path) -> int:  # noqa: ANN001
+def _count_tasks(path: Path) -> int:
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         return len(data.get("tasks", []))
@@ -21,7 +24,7 @@ def _count_tasks(path) -> int:  # noqa: ANN001
         return 0
 
 
-def main(session) -> None:  # noqa: ANN001
+def main(session: Any) -> None:
     from agent_eval.packages import PackageManager
 
     pkgs = PackageManager().list()

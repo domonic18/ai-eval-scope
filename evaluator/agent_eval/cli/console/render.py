@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from rich.progress import Progress
 
+from rich.progress import TaskID
+
 from agent_eval.cli._common import Table, rprint
 
 __all__ = ["print_task_table", "stage_progress"]
@@ -27,7 +29,7 @@ class stage_progress:  # noqa: N801 — 用作上下文管理器
     def __init__(self, *, enabled: bool = True) -> None:
         self._enabled = enabled
         self._progress: Progress | None = None
-        self._task_id: object | None = None
+        self._task_id: TaskID | None = None
         self._fallback_label = ""
 
     def __enter__(self) -> stage_progress:

@@ -11,6 +11,10 @@ from pathlib import Path
 from agent_eval.llm.judge.prompt_store import PromptStore, PromptTemplateSummary
 from agent_eval.llm.judge.template_manager import JudgeTemplate, TemplateManager
 
+# 模块级别名：类内 `list` 方法遮蔽内建 list，类内注解经别名回到内建语义
+_SummaryList = list[PromptTemplateSummary]
+_StrList = list[str]
+
 
 class FilePromptStore(PromptStore):
     """从本地场景包 prompts/ 目录加载 Prompt 模板。"""
@@ -41,7 +45,7 @@ class FilePromptStore(PromptStore):
         # version/label 对 File 无意义（文件未版本化），忽略
         return template
 
-    def list(self, scenario_id: str | None = None) -> list[PromptTemplateSummary]:
+    def list(self, scenario_id: str | None = None) -> _SummaryList:
         result: list[PromptTemplateSummary] = []
         for tid in self._tm.template_ids:
             t = self._tm.get(tid)
@@ -61,6 +65,6 @@ class FilePromptStore(PromptStore):
         return result
 
     @property
-    def template_ids(self) -> list[str]:
+    def template_ids(self) -> _StrList:
         """已加载的模板 ID 列表（兼容旧调用 orchestrator.templates.get/直访点）。"""
         return self._tm.template_ids

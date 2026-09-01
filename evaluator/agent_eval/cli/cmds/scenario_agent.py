@@ -104,7 +104,7 @@ def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[
       以 ``\\r`` 单行进度显示，避免数十秒无输出的「卡住」观感；仅 TTY。
     """
     tty = sys.stdout.isatty()
-    state = {
+    state: dict[str, Any] = {
         "mid_line": False,  # 流式文本行未收尾（需先换行才能打工具行）
         "mode": "",  # "" | text | thinking
         "pend": "",  # 参数生成中的工具名
@@ -214,7 +214,7 @@ def _cli_confirm(reply: str, diff: str) -> bool:
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 
-def _session(agent, first_text: str | None) -> None:  # noqa: ANN001 — PackageAgent
+def _session(agent: Any, first_text: str | None) -> None:
     """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。"""
 
     def _attempt(text: str) -> None:

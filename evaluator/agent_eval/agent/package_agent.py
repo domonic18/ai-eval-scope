@@ -231,7 +231,10 @@ class PackageAgent:
             self._graph = self._build_graph()
         config = {"recursion_limit": self.max_turns * 2}
         if on_event is None:
-            return await self._graph.ainvoke({"messages": messages}, config=config)
+            result: dict[str, Any] = await self._graph.ainvoke(
+                {"messages": messages}, config=config
+            )
+            return result
         final: dict[str, Any] = {}
         async for mode, payload in self._graph.astream(
             {"messages": messages},

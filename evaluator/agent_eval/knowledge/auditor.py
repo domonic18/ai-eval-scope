@@ -224,7 +224,8 @@ def _read_block(lines: list[str], start: int, indent: str) -> tuple[list[str], i
         ln = lines[i]
         if ln.strip() == "":
             break  # 空行结束（保留空行由主循环处理）
-        lead = len(re.match(r"[ \t]*", ln).group())
+        lead_match = re.match(r"[ \t]*", ln)
+        lead = len(lead_match.group()) if lead_match else 0
         if lead <= indent_len:
             break  # 同级新 item 或更外层 section
         block.append(ln)

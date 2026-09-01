@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from agent_eval.cli.console.prompts import select
 
 
-def main(session) -> None:  # noqa: ANN001
+def main(session: Any) -> None:
     action = select(
         "账号与配置",
         [

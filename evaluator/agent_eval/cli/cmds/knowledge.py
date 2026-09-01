@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import typer
 
@@ -26,7 +27,7 @@ def knowledge_convert(
     from agent_eval.knowledge.pipeline import KnowledgePipeline
 
     try:
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if json_path:
             kwargs["json_path"] = json_path
         pipe = KnowledgePipeline()
@@ -61,7 +62,7 @@ def knowledge_extract(
     from agent_eval.knowledge.pipeline import KnowledgePipeline
 
     try:
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if data_dir:
             kwargs["data_dir"] = data_dir
         if subjects:

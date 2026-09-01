@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+from typing import NoReturn
 
 import typer
 from rich import print as rprint
@@ -21,7 +22,7 @@ def _no_input() -> bool:
     return bool(os.environ.get("AGENT_EVAL_NO_INPUT"))
 
 
-def _fail_missing_input(label: str, hint: str = "") -> None:
+def _fail_missing_input(label: str, hint: str = "") -> NoReturn:
     rprint(f"[red]❌ --no-input 下缺少必需输入: {label}[/red]")
     if hint:
         rprint(f"[dim]{hint}[/dim]")

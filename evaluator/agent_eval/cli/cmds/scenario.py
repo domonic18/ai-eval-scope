@@ -7,10 +7,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import typer
 
 from agent_eval.cli._common import Table, rprint
+from agent_eval.packages.manifest import PackageManifest
 
 scenario_app = typer.Typer(name="scenario", help="场景包管理：new / show / validate / list / pull")
 
@@ -128,7 +130,7 @@ def scenario_edit(
     agent_edit_package(ref=ref, instruction=instruction, yes=yes, trust_agent=trust_agent)
 
 
-def _resolve_root(ref: str) -> tuple[Path, object]:
+def _resolve_root(ref: str) -> tuple[Path, PackageManifest]:
     """按路径或包引用解析包根（路径含 agent_eval.yaml 优先）。"""
     from agent_eval.packages import MANIFEST_FILENAME, PackageManager, load_manifest
 
@@ -199,7 +201,7 @@ def show_scenario(ref: str, section: str = "tree") -> None:
             rprint("[yellow]包内无 rules/ 规则集[/yellow]")
             return
         for rf in rule_files:
-            data = yaml.safe_load(rf.read_text(encoding="utf-8")) or {}
+            data: dict[str, Any] = yaml.safe_load(rf.read_text(encoding="utf-8")) or {}
             rules = data.get("rules", [])
             mark = " [dim](default)[/dim]" if m.default_rule_set == rf.stem else ""
             rprint(f"[bold]📋 {rf.stem}[/bold]{mark} — {len(rules)} 条规则")
@@ -248,9 +250,9 @@ def show_scenario(ref: str, section: str = "tree") -> None:
         table.add_column("鉴权")
         table.add_column("credential_ref")
         for sf in sorted(sut_dir.glob("*.yaml")):
-            data = yaml.safe_load(sf.read_text(encoding="utf-8")) or {}
-            sut = data.get("sut", data)
-            auth = sut.get("auth") or {}
+            sdata: Any = yaml.safe_load(sf.read_text(encoding="utf-8")) or {}
+            sut: dict[str, Any] = sdata.get("sut", sdata)
+            auth: dict[str, Any] = sut.get("auth") or {}
             table.add_row(
                 sf.stem,
                 str(sut.get("channel", sut.get("driver", "—"))),

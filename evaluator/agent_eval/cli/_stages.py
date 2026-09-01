@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from rich import print as rprint
 
@@ -145,8 +145,10 @@ def resolve_eval_inputs(package: str | None, rule_set: str | None) -> str:
             )
     path = rules_dir / f"{name}.yaml"
     if not path.exists():
-        avail = ", ".join(sorted(p.stem for p in rules_dir.glob("*.yaml"))) or "（无）"
-        raise typer.BadParameter(f"包 {pkg.manifest.ref} 内未找到规则集 '{name}'；可用: {avail}")
+        avail_text = ", ".join(sorted(p.stem for p in rules_dir.glob("*.yaml"))) or "（无）"
+        raise typer.BadParameter(
+            f"包 {pkg.manifest.ref} 内未找到规则集 '{name}'；可用: {avail_text}"
+        )
     return str(path)
 
 
@@ -217,6 +219,7 @@ def execute_stage(
     from agent_eval.agent.execution_agent import ExecutionAgent
     from agent_eval.agent.protocol_tools import AgentProtocolToolServer
     from agent_eval.execution.auth.credentials import preflight_sut_credentials
+    from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
     from agent_eval.execution.channels.base import create_channel
     from agent_eval.execution.models import AgentConfig
 
@@ -227,7 +230,9 @@ def execute_stage(
     preflight_sut_credentials(sut)
     channel = create_channel(sut)
     protocol_tools = AgentProtocolToolServer(
-        channel, default_metadata={"eval_run_id": run_id, "sut_name": sut.name}
+        # create_channel 静态返回基类；本路径由 agent_protocol 模式进入，恒为该子类
+        cast(AgentProtocolChannel, channel),
+        default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
     )
     agent = ExecutionAgent(
         AgentConfig(

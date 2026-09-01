@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from rich import print as rprint
 
 from agent_eval.cli.console.prompts import ask, select
 
 
-def main(session) -> None:  # noqa: ANN001 — WorkbenchSession（避免循环导入用 duck type）
+def main(session: Any) -> None:  # WorkbenchSession（避免循环导入用 duck type）
     action = select(
         "场景包动作",
         ["查看包内容", "Agent 会话改包", "Agent 生成新包", "列出全部包", "校验项目包", "返回"],

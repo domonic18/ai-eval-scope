@@ -242,6 +242,8 @@ class PackageToolServer(ToolExporterMixin):
             if not view:
                 return {"ok": False, "errors": ["包视图为空（无文件）"]}
             for rel, content in view.items():
+                if content is None:  # 空内容/删除标记：不落盘
+                    continue
                 dest = tmp_root / rel
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_text(content, encoding="utf-8")
@@ -354,6 +356,8 @@ def materialize_view(pkg_root: Path, server: PackageToolServer, dest: Path) -> P
     view = server._view()  # 宿主侧辅助（同包内）
     shutil.rmtree(dest, ignore_errors=True)
     for rel, content in view.items():
+        if content is None:  # 空内容/删除标记：不落盘（rmtree 后即删除语义）
+            continue
         target = dest / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")

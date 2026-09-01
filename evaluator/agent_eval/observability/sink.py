@@ -203,7 +203,8 @@ class ResultSink:
             )
             self.client.upload_file(local_path, presigned, content_type)
             report.artifacts_uploaded += 1
-            return presigned["object_key"]
+            object_key: str | None = presigned["object_key"]
+            return object_key
         except Exception as exc:  # noqa: BLE001
             report.artifacts_failed += 1
             self.log.warning("sink.artifact.upload_failed", path=str(local_path), error=str(exc))

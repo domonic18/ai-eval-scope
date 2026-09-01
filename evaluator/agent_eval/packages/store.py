@@ -149,8 +149,10 @@ class PackageStore:
         for rel, content in files.items():
             dest = root / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
-            mode = "wb" if isinstance(content, bytes) else "w"
-            dest.write_text(content, encoding="utf-8") if mode == "w" else dest.write_bytes(content)
+            if isinstance(content, bytes):
+                dest.write_bytes(content)
+            else:
+                dest.write_text(content, encoding="utf-8")
         # 清单最后写，确保目录已就绪
         (root / MANIFEST_FILENAME).write_text(_dump_manifest(manifest), encoding="utf-8")
         return root

@@ -54,7 +54,8 @@ def set_output_format(fmt: str) -> None:
     _json_mode = fmt == "json"
     import rich
 
-    rich.get_console().file = _StderrProxy() if _json_mode else None
+    # rich 将 Console.file 钉为 IO[str]；此处刻意置代理/None（getter 回落 sys.stdout）
+    rich.get_console().file = _StderrProxy() if _json_mode else None  # type: ignore[assignment]
 
 
 def is_json() -> bool:

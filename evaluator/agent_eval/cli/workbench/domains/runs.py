@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from rich import print as rprint
 
 from agent_eval.cli.console.prompts import confirm, select
 
 
-def main(session) -> None:  # noqa: ANN001
+def main(session: Any) -> None:
     from agent_eval.cli.cmds.open_url import open_target
     from agent_eval.cli.cmds.runs import scan_runs, show_run
 

@@ -34,7 +34,7 @@ class ConstraintResult:
 
     def to_dict(self) -> dict[str, Any]:
         """序列化为字典。"""
-        d = {
+        d: dict[str, Any] = {
             "constraint_id": self.constraint_id,
             "name": self.name,
             "tier": self.tier.value,

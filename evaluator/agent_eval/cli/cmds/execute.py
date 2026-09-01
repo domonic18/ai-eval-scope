@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import typer
 
 from agent_eval.cli._common import ensure_sut_credentials, rprint
+from agent_eval.cli._stages import RunInputs
 
 
 def run(
@@ -58,8 +60,8 @@ def _run_json_payload(
     *,
     run_id: str,
     mode: str,
-    inputs: object,
-    packages: list,
+    inputs: RunInputs,
+    packages: list[Any],
     run_dir: Path,
     metrics: dict | None = None,
     total_samples: int | None = None,

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from agent_eval.core.exceptions import EvaluatorNotFoundError
@@ -30,7 +31,7 @@ class EvaluatorRegistry:
     def __init__(self) -> None:
         self._registry: dict[str, type[BaseEvaluator]] = {}
 
-    def register(self, evaluator_id: str):
+    def register(self, evaluator_id: str) -> Callable[[type[BaseEvaluator]], type[BaseEvaluator]]:
         """装饰器：注册评估器类。
 
         Args:

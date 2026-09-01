@@ -119,6 +119,8 @@ def execute_pack(
                 content_hash=content_hash,
             )
         else:
+            if not files:
+                raise typer.BadParameter("文件打包模式需至少提供一个 --file")
             rprint("[blue]模式:[/blue] 文件打包")
             rprint(f"[blue]文件数:[/blue] {len(files)}")
             builder.build_inline(
