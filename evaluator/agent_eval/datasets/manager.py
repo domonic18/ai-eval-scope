@@ -14,9 +14,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from agent_eval.config.paths import paths
-from agent_eval.datasets.registry import DatasetEntry
 from agent_eval.core.exceptions import DatasetError, DatasetNotFoundError
 from agent_eval.core.logging import get_logger
+from agent_eval.datasets.registry import DatasetEntry
 
 logger = get_logger(__name__)
 

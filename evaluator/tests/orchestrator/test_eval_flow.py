@@ -22,9 +22,7 @@ def _stub_llm_judge(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
 
-    def _fake_judge(
-        self: JudgeOrchestrator, **kwargs: object
-    ) -> tuple[dict[str, float], None]:
+    def _fake_judge(self: JudgeOrchestrator, **kwargs: object) -> tuple[dict[str, float], None]:
         return {}, None
 
     monkeypatch.setattr(JudgeOrchestrator, "judge", _fake_judge)
