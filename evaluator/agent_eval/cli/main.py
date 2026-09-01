@@ -33,6 +33,15 @@ app = typer.Typer(
 )
 
 
+def _version_flag(value: bool) -> None:
+    """--version：立即打印版本退出（eager，先于其余参数解析；CI/冒烟约定口令）。"""
+    if value:
+        from agent_eval import __version__
+
+        rprint(f"agent-eval v{__version__}")
+        raise typer.Exit()
+
+
 @app.callback()
 def _global(
     output_format: str = typer.Option(
@@ -40,6 +49,13 @@ def _global(
     ),
     no_input: bool = typer.Option(
         False, "--no-input", help="禁一切交互（缺失必需输入即 exit 2，CI 用）"
+    ),
+    version_flag: bool = typer.Option(
+        False,
+        "--version",
+        help="显示版本并退出",
+        is_eager=True,
+        callback=_version_flag,
     ),
 ) -> None:
     """全局参数：输出形态与交互开关（F-C-INTEG-01/02）。"""

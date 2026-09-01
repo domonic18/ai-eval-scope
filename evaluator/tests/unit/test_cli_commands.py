@@ -24,6 +24,12 @@ class TestVersion:
         assert result.exit_code == 0, result.output
         assert "agent-eval v" in result.output
 
+    def test_version_flag_exits_cleanly(self) -> None:
+        # --version 旗标（arch/17 发布流水线隔离冒烟口令，须先于其余参数生效）
+        result = runner.invoke(app, ["--version"])
+        assert result.exit_code == 0, result.output
+        assert "agent-eval v" in result.output
+
 
 # ── pack ───────────────────────────────────────────────────────────────
 
