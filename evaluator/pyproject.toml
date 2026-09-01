@@ -143,4 +143,6 @@ dev = [
     # 自引用 extras：拉起测试所需的运行时依赖（uv 支持 root 自引用）
     "ai-eval-scope[llm]",
     "ai-eval-scope[vision]",
+    "types-jsonschema>=4.26.0.20260518",
+    "types-markdown>=3.10.2.20260712",
 ]
