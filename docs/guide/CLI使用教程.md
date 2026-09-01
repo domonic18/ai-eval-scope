@@ -158,6 +158,7 @@ uv run agent-eval secrets delete SASAN.password
 ```
 
 - 存储于 `~/.agent_eval/sut_credentials.json`（0600），路径可用 `AGENT_EVAL_SUT_CREDENTIALS` 覆盖。
+- **执行前缺失自动补录**：`run / pipeline / suite run` 启动时若所选 SUT 的凭证字段缺失，交互终端会直接列出缺失项并询问是否现在录入（隐藏输入，一次落盘后继续执行，无需中断重来）；任一项留空或选择不录入则按原样报错退出（含 `secrets set` 引导）。`--no-input`（CI / 管道）不交互，行为与原先完全一致。
 - 也可在工作台交互式管理：`agent-eval start` → 账号与配置 → SUT 凭证——查看已录清单 / 录入更新（ref 从已录键与场景包 `sut_configs` 的 `credential_ref` 中选择或新增；**字段名自由输入**——sut_config 的 `body_template` 引用什么就录什么，值隐藏输入）/ 删除，与命令行读写同一文件。
 - 也可走环境变量通道（优先级更高）：`AGENT_EVAL_SUT__<REF大写>__<FIELD大写>`（字段名同上由模板声明），如 `AGENT_EVAL_SUT__SASAN__PASSWORD`。
 - 云端 executor 启动时会从平台 Secrets（org 级 KV）拉取并注入环境变量——本机 `secrets` 与平台 Secrets 两条通道等效。平台侧凭证体系详见 [06 数据管理与配置规范 §4.7](../arch/06数据管理与配置规范.md)。
@@ -296,7 +297,7 @@ uv sync --extra llm --extra agent
 uv run agent-eval models set     # 至少配 text 角色（agent 角色回退 text）
 ```
 
-2. 录入被测系统凭证（对应内置 `sasan-agent` SUT 的 `credential_ref: SASAN`）：
+2. 录入被测系统凭证（对应内置 `sasan-agent` SUT 的 `credential_ref: SASAN`；也可跳过本步——`run` 执行前检测到缺失会当场引导补录，见第五节）：
 
 ```bash
 uv run agent-eval secrets set SASAN.username

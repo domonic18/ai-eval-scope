@@ -13,7 +13,7 @@ from agent_eval.cli._stages import (
     execute_stage,
     resolve_run_inputs,
 )
-from agent_eval.core.exceptions import AgentEvalError
+from agent_eval.core.exceptions import AgentEvalError, SUTAuthError
 
 TASK_SET_YAML = """
 id: ts_stages
@@ -109,6 +109,51 @@ class TestExecuteStage:
         assert manifest["mode"] == "run"
         assert manifest["sut"]["name"] == "cw-agent"
         assert len(manifest["packages"]) == 1
+
+    SUT_AUTH_YAML = (
+        SUT_YAML
+        + """
+  auth:
+    type: static_token
+    credential_ref: NEEDS_KEY
+"""
+    )
+
+    def _prepare_auth_run(self, tmp_path: Path) -> tuple[Path, Path]:
+        task_set = tmp_path / "task_set.yaml"
+        sut_cfg = tmp_path / "sut.yaml"
+        task_set.write_text(TASK_SET_YAML, encoding="utf-8")
+        sut_cfg.write_text(self.SUT_AUTH_YAML, encoding="utf-8")
+        return task_set, sut_cfg
+
+    def test_missing_credentials_interactive_fill_then_continues(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from agent_eval.execution.auth.secrets_store import load_secrets_file
+
+        task_set, sut_cfg = self._prepare_auth_run(tmp_path)
+        inputs = resolve_run_inputs(None, task_set=str(task_set), sut_config=str(sut_cfg))
+        import agent_eval.agent.execution_agent as execution_agent_mod
+        import agent_eval.execution.channels.base as channels_base
+
+        monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)
+        monkeypatch.setattr(channels_base, "create_channel", lambda sut: FakeChannel())
+        monkeypatch.setattr("agent_eval.cli.console.prompts.confirm", lambda *a, **k: True)
+        monkeypatch.setattr("agent_eval.cli.console.prompts.ask", lambda *a, **k: "tk-1")
+
+        packages = execute_stage(
+            inputs, run_id="r_fill", workspace_root=tmp_path / "ws", mode="run"
+        )
+
+        assert len(packages) == 1  # 缺失凭证补录后继续执行，不 fail fast
+        assert load_secrets_file()["NEEDS_KEY"] == {"token": "tk-1"}
+
+    def test_missing_credentials_no_input_fails_fast(self, tmp_path, monkeypatch) -> None:
+        task_set, sut_cfg = self._prepare_auth_run(tmp_path)
+        inputs = resolve_run_inputs(None, task_set=str(task_set), sut_config=str(sut_cfg))
+        monkeypatch.setenv("AGENT_EVAL_NO_INPUT", "1")
+        with pytest.raises(SUTAuthError, match="secrets set NEEDS_KEY.token"):
+            execute_stage(inputs, run_id="r_fast", workspace_root=tmp_path / "ws", mode="run")
 
 
 class TestEvaluateStage:

@@ -91,6 +91,22 @@ def required_credential_fields(sut: Any) -> list[str]:
     return []
 
 
+def missing_credential_fields(sut: Any) -> list[str]:
+    """sut 声明且当前未配置的凭证字段（小写；无凭证要求 / ref 缺失返回 []）。
+
+    非抛错探测：执行前交互补录（``cli.cmds.secrets.ensure_sut_credentials``）
+    与 fail fast 预检共用。``credential_ref`` 缺失属 sut_config 配置错误，
+    交互补录无法修复——留给 :func:`preflight_sut_credentials` 报告。
+    """
+    auth = getattr(sut, "auth", None)
+    ref = getattr(auth, "credential_ref", None)
+    fields = required_credential_fields(sut)
+    if not fields or not ref:
+        return []
+    store = CredentialStore()
+    return [f.lower() for f in fields if not store.get(ref, f)]
+
+
 def preflight_sut_credentials(sut: Any) -> None:
     """执行前凭证预检：缺凭证立即失败（fail fast），不进 Agent 循环烧轮次。
 
@@ -110,5 +126,5 @@ def preflight_sut_credentials(sut: Any) -> None:
             f"auth.type={auth_type!r} 需要 credential_ref（sut_config {sut.name} 的 auth 段）"
         )
     store = CredentialStore()
-    for field in fields:  # require 缺失即抛（含录入引导）
+    for field in missing_credential_fields(sut):  # require 缺失即抛（含录入引导）
         store.require(ref, field)

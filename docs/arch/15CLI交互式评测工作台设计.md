@@ -124,7 +124,7 @@ agent_eval/agent/
 |-----------|-------------|
 | 平台账号 | `auth login/status/logout/register`（`cmds/auth.py` 纯函数动作 + `auth_wizard` 子向导：登录/状态/退出/注册；身份探测 `GET /api/public/whoami`；写密钥区 platform.json（0600，`apply_platform_env` 启动注入 env 仅补缺）；登录后 `session._refresh()` 刷新平台态） |
 | 模型配置向导 | `models set`（原 login 逻辑，改触发词与文案） |
-| SUT 凭证 | `secrets set`（工作台「账号与配置 → SUT 凭证」为交互子向导 `secrets_wizard`：查看表 / 录入-更新（ref 从已录键与场景包 sut_configs 的 credential_ref 数据发现、字段名自由输入、值隐藏输入）/ 删除；与命令行同读写 `~/.agent_eval/sut_credentials.json`） |
+| SUT 凭证 | `secrets set`（工作台「账号与配置 → SUT 凭证」为交互子向导 `secrets_wizard`：查看表 / 录入-更新（ref 从已录键与场景包 sut_configs 的 credential_ref 数据发现、字段名自由输入、值隐藏输入）/ 删除；与命令行同读写 `~/.agent_eval/sut_credentials.json`；执行前缺失由 `ensure_sut_credentials` 自动引导补录，见 §7.2） |
 | 执行 | `run/pipeline/eval` + `_stages.py` 五阶段 |
 | 包校验 | `package validate` 既有 Schema + 语义校验（改名后为 `scenario validate`） |
 | 包发现/解析 | `PackageManager`（内置/项目/本地仓库三源） |
@@ -356,6 +356,7 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 - `list`：直接扫描 `workspace/runs/` 目录（manifest + summary 即读）→ 表格（run_id/模式/**状态**/包/任务数/Reward）。状态推导：`已评估`（有 summary）→ `已执行⚠/已执行`（有清单，⚠=日志含错误）→ `执行失败`（无清单但 agent_logs 有 error 事件）→ `中断`（无产物）。
 - `show <run_id>`：直读 run 目录 → 指标卡按 `metric_definitions` 动态渲染（不硬编码）；失败 breakdown TopN。**无报告时不再是干巴巴一句「无 summary.json」**：展示状态 + 从 `agent_logs/*.jsonl` 提取最后一条 error 的失败原因；凭证类错误附 `secrets set <ref>.<field>` 录入指引；已执行未评估给出补评估命令。
 - 配套（2026-08-31 实测反馈修复）：执行前**凭证预检**（`preflight_sut_credentials`，按 `auth.type` 逐字段 require）——缺凭证立即失败并给出录入命令，不再进 Agent 循环换通道试探烧完 `max_turns` 才以「超过轮次限制」收场；`run`/`suite` 的 workspace 根统一走 `paths.default_workspace`（`WORKSPACE_DIR` 生效），消除与 `runs list`/`pipeline` 各读各的漂移（此前还把 pytest 执行段漏进真实 workspace）。
+- **缺失自动补录**（req/04 §3.5，S11）：预检升级为 `ensure_sut_credentials` 挂在 `execute_stage`——探测走非抛错的 `missing_credential_fields`（与预检同源 `required_credential_fields`，数据驱动），缺失时交互终端列出缺失项 → 确认 → 逐字段隐藏输入 → **一次落盘**（空输入整体取消，不留半截状态）→ 复检通过即继续执行；取消/`--no-input`（CI）退回原 fail fast（SUTAuthError 带 `secrets set` 引导），云端 executor 不经此路径（env 注入，`orchestrator.eval_packages` 独立编排）。
 
 ---
 
@@ -416,3 +417,4 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.5 | 2026-08-31 | **Sprint 10 收尾同步**：console/render.py 落地（阶段级 stage_progress——stderr 绑定 + transient + 非 TTY 降级，逐任务实时态待 ExecutionAgent 回调；print_task_table 完成态摘要）；--json 覆盖 run/pipeline/eval（emit_json 机器可读 payload；rich console 动态分流——json 模式 stderr 代理、text 模式 None 动态解析，不钉死流对象） |
 | v1.6 | 2026-09-01 | **Sprint 11 auth 组落地**：`cmds/auth.py`（login/status/logout/register 四命令 + `auth_wizard` 子向导，纯函数动作双前端复用）；身份探测 `GET /api/public/whoami`（平台侧已实现，404 回退 `/api/public/secrets` 轻探测）；`.env` 写入走 `_env_file.py`（保序保注释 + 0600）；账号域新增「平台账号」入口（登录后 `_refresh` 平台态）、`start --domain auth` 别名、preflight 平台未连接提示 auth login；§5.1 补落地形态注记 |
 | v1.7 | 2026-09-01 | **D-CLI-4 修订：平台身份迁密钥区 `~/.agent_eval/platform.json`**（用户评估反馈——与 llm.json / sut_credentials.json 三域三文件统一）；`config/platform_file.py`（0600 + `apply_platform_env` 启动注入仅补缺，env 直供优先）；`.env` 归用户手工管理：`_env_file.py` 收缩为只读残留检测，登录/登出提示不代删；conftest 钉 `AGENT_EVAL_PLATFORM_CONFIG` 隔离真实密钥区 |
+| v1.8 | 2026-09-01 | **S11 secrets 执行前缺失自动补录**：`ensure_sut_credentials` 挂 `execute_stage`（run/pipeline/suite 同一挂点）——非抛错探测 `missing_credential_fields`（与预检同源数据驱动）→ 列缺失项确认 → 逐字段隐藏输入一次落盘 → 复检继续；取消/`--no-input` 退回原 fail fast；conftest 增 `AGENT_EVAL_SUT_CREDENTIALS` autouse 隔离（§7.2、复用清单同步） |

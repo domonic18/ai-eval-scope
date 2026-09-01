@@ -6,6 +6,9 @@
 
 from __future__ import annotations
 
+import os
+from typing import Any
+
 import typer
 from rich import print as rprint
 from rich.table import Table
@@ -166,6 +169,51 @@ def secrets_wizard() -> None:
             secrets.pop(ref)
         save_secrets_file(secrets)
         rprint(f"[green]✅ 已删除[/green] {key}")
+
+
+# ── 执行前凭证保障（req/04 §3.5：按所选 SUT 的 credential_ref 引导补齐缺失字段）──
+
+
+def ensure_sut_credentials(sut: Any) -> None:
+    """执行前凭证保障（execute_stage 调用）：缺失时交互补录，复检仍缺则 fail fast。
+
+    交互终端：列出缺失字段 → 确认后逐项隐藏输入 → **一次落盘**（不留半截
+    状态）→ 复检通过即继续执行；用户取消 / 空输入则退回预检原样抛
+    SUTAuthError（带 ``secrets set`` 引导）。``--no-input``（CI / 管道）不
+    交互，行为与原先完全一致。字段集由 sut_config 数据推导（06 §4.7 通用 KV）。
+    """
+    from agent_eval.execution.auth.credentials import (
+        missing_credential_fields,
+        preflight_sut_credentials,
+    )
+
+    missing = missing_credential_fields(sut)
+    if missing and not os.environ.get("AGENT_EVAL_NO_INPUT"):
+        _fill_missing_credentials(sut, missing)  # 取消/失败不在此抛，交由复检
+    preflight_sut_credentials(sut)  # 复检：仍缺（含 ref 缺失等配置错误）即原样 fail fast
+
+
+def _fill_missing_credentials(sut: Any, missing: list[str]) -> None:
+    """交互补录 sut 缺失凭证字段（隐藏输入，一次落盘；任一空输入整体取消）。"""
+    from agent_eval.cli.console.prompts import ask, confirm
+    from agent_eval.execution.auth.secrets_store import load_secrets_file, save_secrets_file
+
+    ref = str(getattr(getattr(sut, "auth", None), "credential_ref", ""))
+    keys = ", ".join(f"{ref}.{field}" for field in missing)
+    rprint(f"[yellow]⚠ SUT {sut.name} 缺少凭证: {keys}（sut_config 声明）[/yellow]")
+    if not confirm("现在录入？（隐藏输入，保存到本机密钥区 0600）", default=True):
+        return
+    values: dict[str, str] = {}
+    for field in missing:
+        value = ask(f"{ref}.{field}", hide=True)
+        if not value:
+            rprint(f"[yellow]未输入 {ref}.{field}，已取消补录。[/yellow]")
+            return
+        values[field] = value
+    secrets = load_secrets_file()
+    secrets.setdefault(ref, {}).update(values)
+    path = save_secrets_file(secrets)
+    rprint(f"[green]✅ 已保存[/green] {keys} → {path}（0600）")
 
 
 @secrets_app.command("delete")

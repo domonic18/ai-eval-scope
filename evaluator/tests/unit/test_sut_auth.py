@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import time
+from pathlib import Path
 
 import httpx
 import pytest
 
 from agent_eval.core.exceptions import SUTAuthError, SUTChannelError
-from agent_eval.execution.auth.credentials import CredentialStore, preflight_sut_credentials
+from agent_eval.execution.auth.credentials import (
+    CredentialStore,
+    missing_credential_fields,
+    preflight_sut_credentials,
+)
 from agent_eval.execution.auth.provider import AuthProvider
+from agent_eval.execution.auth.secrets_store import save_secrets_file
 from agent_eval.execution.auth.session import SessionStore, SUTSession
 from agent_eval.execution.registry import (
     AuthConfig,
@@ -258,6 +264,36 @@ _LOGIN = AuthLoginConfig(
     path="/api/login",
     body_template='{"u": "{{ username }}", "p": "{{ password }}"}',
 )
+
+
+# ── 缺失字段探测（非抛错，交互补录与预检共用）─────────────────────────────
+
+
+def test_missing_fields_reports_only_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=_LOGIN))
+    monkeypatch.setenv("AGENT_EVAL_SUT__AGENT_SERVER__USERNAME", "u")
+    assert missing_credential_fields(sut) == ["password"]  # 只报缺的（env 已设不算）
+
+
+def test_missing_fields_from_secrets_file_and_none_when_complete(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    sut = _sut(AuthConfig(type="api_login", credential_ref="AGENT_SERVER", login=_LOGIN))
+    monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(tmp_path / "secrets.json"))
+    (tmp_path / "secrets.json").write_text('{"AGENT_SERVER": {"username": "u"}}', encoding="utf-8")
+    assert missing_credential_fields(sut) == ["password"]  # 密钥区已录不算缺
+    save_secrets_file(
+        {"agent_server": {"username": "u", "password": "p"}}, tmp_path / "secrets.json"
+    )
+    assert missing_credential_fields(sut) == []  # ref 大小写不敏感；全齐 → []
+
+
+def test_missing_fields_empty_for_no_auth_or_missing_ref() -> None:
+    assert missing_credential_fields(_sut(AuthConfig(type="none"))) == []
+    # ref 缺失属配置错误，探测不报（留给 preflight fail fast）
+    assert (
+        missing_credential_fields(_sut(AuthConfig(type="static_token", credential_ref=None))) == []
+    )
 
 
 def test_preflight_passes_when_credentials_present(monkeypatch: pytest.MonkeyPatch) -> None:

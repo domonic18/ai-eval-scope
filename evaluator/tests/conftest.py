@@ -40,6 +40,13 @@ def _isolate_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "workspace"))
 
 
+@pytest.fixture(autouse=True)
+def _isolate_sut_credentials(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """凭证密钥区指向空文件：preflight / missing_credential_fields 走无注入点的
+    CredentialStore()，开发者本机已录入的真实凭证不得影响单测的缺失判定。"""
+    monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(tmp_path / "no-sut-credentials.json"))
+
+
 # ─── SampleResult fixtures ───
 
 
