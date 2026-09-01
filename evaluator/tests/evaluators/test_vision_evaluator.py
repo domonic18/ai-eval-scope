@@ -31,7 +31,7 @@ class TestVisionQualityEvaluator:
     def test_metadata(self) -> None:
         """评估器元信息正确。"""
         ev = VisionQualityEvaluator()
-        ev.setup({"llm_provider": "kimi_vision"})
+        ev.setup({"llm_role": "kimi_vision"})
         assert ev.evaluator_id == "vision.quality"
         assert ev.tier.value == "soft"
         assert ev.method == EvalMethod.VISION
@@ -97,7 +97,7 @@ class TestVisionQualityEvaluator:
         orchestrator.judge.return_value = (scores, _make_record())
 
         ev = VisionQualityEvaluator()
-        ev.setup({"llm_provider": "kimi_vision"})
+        ev.setup({"llm_role": "kimi_vision"})
 
         result = ev.evaluate(
             pkg,
@@ -176,7 +176,7 @@ class TestVisionQualityEvaluator:
         ]
 
         ev = VisionQualityEvaluator()
-        ev.setup({"llm_provider": "kimi_vision"})
+        ev.setup({"llm_role": "kimi_vision"})
         result = ev.evaluate(
             pkg,
             context={

@@ -133,7 +133,7 @@ class TestCascadeVisionIntegration:
                     evaluators=[
                         EvaluatorConfig(
                             "vision.quality",
-                            {"template_id": "visual_quality", "llm_provider": "kimi_vision"},
+                            {"template_id": "visual_quality", "llm_role": "kimi_vision"},
                         ),
                         EvaluatorConfig(
                             "soft.teaching_logic", {"template_id": "pedagogical_logic"}

@@ -67,8 +67,13 @@ class TestAnthropicCompatClient:
         assert all(m["role"] != "system" for m in call_kwargs["messages"])
 
     @patch("anthropic.Anthropic")
-    def test_seed_dropped(self, mock_anth_cls: MagicMock) -> None:
+    def test_seed_dropped(self, mock_anth_cls: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
         """Anthropic 不支持 seed，必须从 kwargs 丢弃。"""
+        # SDK 1.0+ 移除采样参数后 temperature 仅在签名探测通过时才传——
+        # 探测钉死为支持，隔离本机安装的 SDK 版本（与 unit 侧同款手法）
+        monkeypatch.setattr(
+            "agent_eval.llm.providers.anthropic._supports_temperature", lambda: True
+        )
         mock_anth_cls.return_value.messages.create.return_value = _make_mock_response()
         config = ProviderConfig(provider="anthropic", model="m", api_key="k")
         from agent_eval.llm.providers.anthropic import AnthropicCompatClient
