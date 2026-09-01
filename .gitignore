@@ -72,8 +72,9 @@ web/backend/public/
 # evaluator 包内默认配置：仅 ${VAR} 引用、无明文 key，入库供 CI 构建使用（参考 .example.yaml）
 !evaluator/agent_eval/assets/configs/llm_config.yaml
 # 部分协作者 ~/.gitignore_global 含宽泛 `datasets`（数据科学习惯），会误伤包源码
-# 目录 evaluator/agent_eval/datasets/（仓库规则优先级高于全局 excludesFile，重新包含）
+# 目录 evaluator/agent_eval/datasets/（仓库规则优先级高于全局 excludesFile）。
+# 只反包含 *.py 源码——勿用 **（会把 __pycache__/.DS_Store 一并重新包含）
 !evaluator/agent_eval/datasets/
-!evaluator/agent_eval/datasets/**
+!evaluator/agent_eval/datasets/*.py
 *.env.local
 
