@@ -122,6 +122,7 @@ agent_eval/agent/
 
 | 工作台能力 | 复用既有实现 |
 |-----------|-------------|
+| 平台账号 | `auth login/status/logout/register`（`cmds/auth.py` 纯函数动作 + `auth_wizard` 子向导：登录/状态/退出/注册；身份探测 `GET /api/public/whoami`；写 `.env` 走 `_env_file.py` 保序保注释 + 0600；登录后 `session._refresh()` 刷新平台态） |
 | 模型配置向导 | `models set`（原 login 逻辑，改触发词与文案） |
 | SUT 凭证 | `secrets set`（工作台「账号与配置 → SUT 凭证」为交互子向导 `secrets_wizard`：查看表 / 录入-更新（ref 从已录键与场景包 sut_configs 的 credential_ref 数据发现、字段名自由输入、值隐藏输入）/ 删除；与命令行同读写 `~/.agent_eval/sut_credentials.json`） |
 | 执行 | `run/pipeline/eval` + `_stages.py` 五阶段 |
@@ -251,6 +252,8 @@ CLI                                          平台
 
 - 通道 A/B 共用 ②③④；差异只在 Key 的获取方式。`auth login --token <key>`（或 env）为 CI 无浏览器形态。
 - `auth status`：读 `.env` → 平台 ping → 身份回显；`auth logout`：清除 `.env` 三项（`--revoke` 吊销为 P2，需平台删除 Key 端点授权）。
+
+> **Sprint 11 落地形态（2026-09-01）**：身份探测端点已实现——`GET /api/public/whoami`（Bearer API Key，返回 `{kind, key:{name,scopes}, project:{id,name,slug}, org:{id,name,slug}}`）；前端暂无独立 Keys 页与 `/cli-auth` 授权页：通道 A 打开 `{host}/login` 并引导至项目「设置 & API Key」页创建 Key，通道 B 待平台侧落地（P2）。CLI 对 404（旧平台无 whoami）回退 `GET /api/public/secrets` 轻探测——Key 有效但身份未知，回执降级不阻断登录。
 
 ### 5.2 设备码流接口约定（P2，平台侧落地）
 
@@ -411,3 +414,4 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.3 | 2026-08-31 | **Sprint 10 P0 实现同步**：目录重组落地（cmds/console/workbench）；交互原语 P0 采用编号选择（gcloud 同款，零新依赖），questionary 为 P1 可选升级；P1 配对码粘贴通道与 doctor/secrets 就绪态留待 Sprint 11 |
 | v1.4 | 2026-08-31 | **main.py 模块化拆分**（889 → 88 行）：pack/evaluate/execute/upload 四命令模块迁入 `cmds/`（顶层与子命令组同构：绑定 + 纯函数动作）；装配点扩展 `app.command()()` 注册顶层命令；`_write_run_manifest` 无引用转发壳删除；引用随迁（workbench exec 域 + 3 个测试文件） |
 | v1.5 | 2026-08-31 | **Sprint 10 收尾同步**：console/render.py 落地（阶段级 stage_progress——stderr 绑定 + transient + 非 TTY 降级，逐任务实时态待 ExecutionAgent 回调；print_task_table 完成态摘要）；--json 覆盖 run/pipeline/eval（emit_json 机器可读 payload；rich console 动态分流——json 模式 stderr 代理、text 模式 None 动态解析，不钉死流对象） |
+| v1.6 | 2026-09-01 | **Sprint 11 auth 组落地**：`cmds/auth.py`（login/status/logout/register 四命令 + `auth_wizard` 子向导，纯函数动作双前端复用）；身份探测 `GET /api/public/whoami`（平台侧已实现，404 回退 `/api/public/secrets` 轻探测）；`.env` 写入走 `_env_file.py`（保序保注释 + 0600）；账号域新增「平台账号」入口（登录后 `_refresh` 平台态）、`start --domain auth` 别名、preflight 平台未连接提示 auth login；§5.1 补落地形态注记 |

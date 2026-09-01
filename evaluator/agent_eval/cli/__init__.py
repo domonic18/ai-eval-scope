@@ -4,6 +4,7 @@
 入口：``agent-eval = "agent_eval.cli:app"``
 """
 
+from agent_eval.cli.cmds.auth import auth_app
 from agent_eval.cli.cmds.dataset import dataset_app
 from agent_eval.cli.cmds.evaluate import eval as eval_cmd
 from agent_eval.cli.cmds.execute import pipeline, run
@@ -26,6 +27,7 @@ app.command()(pipeline)
 app.command()(upload)
 
 # ── 子命令组 ──
+app.add_typer(auth_app, name="auth")  # Sprint 11：平台账号（login/status/logout/register）
 app.add_typer(scenario_app)  # Sprint 10 重命名：原 package 组
 app.add_typer(runs_app)
 app.add_typer(models_app, name="models")

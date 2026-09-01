@@ -511,8 +511,8 @@ stage('评测回归') {
 | 命令 | 关键参数 | 说明 |
 |------|---------|------|
 | `start` | `--domain <scn\|exec\|runs\|auth>` | 直接进入指定工作域 |
-| `auth login` | `--browser\|--token <key>` `--host` | 浏览器配对 / 直供 Key（CI）；写 `.env` |
-| `auth status` / `auth logout` | `--revoke`（P2） | 身份体检 / 清除本地凭证 |
+| `auth login` | `--token <key>` `--host <url>` | 交互选通道（浏览器创建 / 粘贴 Key）/ `--token` 直供（CI）；写 `.env`（0600） |
+| `auth status` / `auth logout` / `auth register` | `--revoke`（P2）/ `--host` | 身份体检 / 清除本地凭证 / 打开注册页 |
 | `models set` | `--role <text\|vision\|agent>` | 交互向导（替代 `models login`） |
 | `scenario new` | `--scenario` `--mode template\|agent\|skeleton` `--instruction` `--dir` | 创建项目包 |
 | `scenario edit` | `--dir` `--instruction` `--yes` `--trust-agent` | Agent 会话 / 非交互单指令 |
@@ -565,3 +565,4 @@ stage('评测回归') {
 | v1.0 | 2026-08-31 | 初稿：向导式工作台（`start` 四工作域）、PackageAgent（DeepAgents 底座 + 沙盒工具面 + diff/校验门禁）、项目包落盘（当前目录，内置包只读）、向导式执行与结果查看、非交互/JSON/退出码集成规范、交互原型与 P0-P2 分期 |
 | v1.1 | 2026-08-31 | **命令体系整体 Review 与重规划**：`models login/logout`→`models set/clear`（login 语义留给账号）；`package *`→`scenario *`（消除与 `pack` 名词冲突）；新增 `auth` 域（浏览器配对登录/status/logout/register，无浏览器降级打印 URL）；新增 `open` 与查看类命令 `--web` 浏览器直达；`doctor` 提升为顶层命令；`results`→`runs`；行业参照补充 gh auth login / gcloud / stripe / flutter doctor 范式；需求条目重编为 F-C-NAV/AUTH/CONFIG/SCN/EXEC/RUNS/OPEN/INTEG |
 | v1.2 | 2026-08-31 | **取消向下兼容**（用户基数小，决策）：重命名一次性直接切换，移除别名层、弃用警告与 `--strict-deprecation` 机制；旧命令名随版本清除，教程/示例脚本/CI 片段与全仓引用同步更新（§3.3、F-C-CONFIG-04、P6、P0 验收同步修订） |
+| v1.3 | 2026-09-01 | **F-C-AUTH 落地同步（Sprint 11）**：`auth login/status/logout/register` 四命令 + 工作台账号域「平台账号」子向导；身份探测走平台新增 `GET /api/public/whoami`（旧平台 404 回退 `/api/public/secrets` 轻探测）；浏览器通道降级打开 `/login` 引导（前端暂无独立 Keys 页与 `/cli-auth`，B 通道与设备码流仍为 P2）；参数表按实际形态修订 |

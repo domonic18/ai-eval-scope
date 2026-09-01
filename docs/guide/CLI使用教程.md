@@ -8,16 +8,17 @@
 
 1. [快速开始](#一快速开始)
 2. [命令总览](#二命令总览)
-3. [配置 LLM API Key（models）](#三配置-llm-api-keymodels)
-4. [配置被测系统凭证（secrets）](#四配置被测系统凭证secrets)
-5. [场景包管理（scenario）](#五场景包管理package)
-6. [实战一：课件评测（courseware）](#六实战一课件评测courseware)
-7. [实战二：Agent 评测（chat）](#七实战二agent-评测chat)
-8. [任务选择 --task 详解](#八任务选择---task-详解)
-9. [声明式评测矩阵（suite）](#九声明式评测矩阵suite)
-10. [结果查看与平台上报（upload）](#十结果查看与平台上报upload)
-11. [环境变量参考](#十一环境变量参考)
-12. [常见问题（FAQ)](#十二常见问题faq)
+3. [连接可观测平台（auth）](#三连接可观测平台auth)
+4. [配置 LLM API Key（models）](#四配置-llm-api-keymodels)
+5. [配置被测系统凭证（secrets）](#五配置被测系统凭证secrets)
+6. [场景包管理（scenario）](#六场景包管理package)
+7. [实战一：课件评测（courseware）](#七实战一课件评测courseware)
+8. [实战二：Agent 评测（chat）](#八实战二agent-评测chat)
+9. [任务选择 --task 详解](#九任务选择---task-详解)
+10. [声明式评测矩阵（suite）](#十声明式评测矩阵suite)
+11. [结果查看与平台上报（upload）](#十一结果查看与平台上报upload)
+12. [环境变量参考](#十二环境变量参考)
+13. [常见问题（FAQ)](#十三常见问题faq)
 
 ---
 
@@ -54,6 +55,7 @@ uv sync                      # 基础安装（pack/eval 即可用）
 | `run` | 执行被测 Agent（ExecutionAgent 驱动），生成执行包 | 在线评测：只执行不评估 |
 | `pipeline` | 一体化流水线：执行 → 评估 → 报告/上传（单 run_id 贯通） | 在线评测一步到位 |
 | `upload` | 把历史运行的评估结果回填可观测平台 | 补报历史运行 |
+| `auth login/status/logout/register` | 平台账号管理（Sprint 11） | 连接可观测平台 / 身份体检 / 清除本地凭证 / 打开注册页 |
 | `models set/list/test/clear` | LLM 模型配置管理 | 配置 API Key 与各角色模型（Sprint 10 起 login/logout 更名 set/clear） |
 | `secrets set/list/delete` | SUT 凭证管理 | 录入被测系统账号密码 |
 | `scenario new/edit/show/validate/list/pull` | 场景包管理 | 创建（skeleton/agent）/Agent 改包/查看/校验/发现场景包（Sprint 10 起 package 组更名 scenario；`init` 并入 `new --mode skeleton`） |
@@ -68,7 +70,27 @@ uv sync                      # 基础安装（pack/eval 即可用）
 
 ---
 
-## 三、配置 LLM API Key（models）
+## 三、连接可观测平台（auth）
+
+`auth` 管**平台身份**（谁在上报、以哪个团队/项目）——只在需要把结果上报平台（`--upload` / `pipeline --upload`）或从平台拉取云端 LLM 配置时才需要；`secrets` 管被测系统凭证，两域不混用。
+
+```bash
+uv run agent-eval auth login     # 交互登录：浏览器打开平台创建 Key → 粘贴（隐藏输入）
+uv run agent-eval auth status    # 身份体检：本地凭证 + Key 有效性 + 团队/项目归属
+uv run agent-eval auth logout    # 清除本地平台凭证（.env 三项）
+uv run agent-eval auth register  # 打开平台注册页，完成后引导 auth login
+```
+
+- **登录流程**（F-C-AUTH-01）：选「打开平台页面创建（浏览器）」会打开 `{host}/login` 并引导到项目「设置 & API Key」页创建 Key（scope 含 ingest）——无浏览器环境（SSH/容器）自动降级打印 URL；也可选「直接粘贴已有 Key」。Key 经 `GET /api/public/whoami` 探测有效后写入 `.env`（`AGENT_EVAL_HOST/API_KEY/PROJECT`，权限 0600），回显 身份回执（团队 · 项目 · Key 掩码，完整 Key 不回显）。
+- **CI 非交互形态**（F-C-AUTH-07）：`auth login --token <api_key> --host <平台地址>`；`--no-input` 下缺 `--token` 直接 exit 2 不挂起。
+- **status 语义**：Key 无效 → 提示重新登录（exit 1）；平台不可达 → 显示本地身份并提示检查网络（exit 1）。
+- **logout**：只清本地（`--revoke` 吊销平台侧 Key 为 P2，当前提示到平台「设置 & API Key」手动吊销）。
+- 工作台等价入口：`agent-eval start` → 账号与配置 → 平台账号（或 `agent-eval start --domain auth` 直达）。
+- 平台未部署本地全栈？`make docker-up` 起本地栈（见根 README），地址默认 `http://localhost:9000`。
+
+---
+
+## 四、配置 LLM API Key（models）
 
 ### 交互式向导（推荐）
 
@@ -120,7 +142,7 @@ uv run agent-eval models clear  # 删除配置（含 key）
 
 ---
 
-## 四、配置被测系统凭证（secrets）
+## 五、配置被测系统凭证（secrets）
 
 被测系统（SUT）如使用登录鉴权，其用户名/密码/token 通过本机密钥区管理，**严禁写入 sut_config 明文**：
 
@@ -141,7 +163,7 @@ uv run agent-eval secrets delete SASAN.password
 
 ---
 
-## 五、场景包管理（scenario）
+## 六、场景包管理（scenario）
 
 评测的全部要素（规则集、提示词、指标策略、考卷任务集、SUT 接入配置）以**场景包**为单位组织，见 [13 配置管理设计](../arch/13配置管理设计.md)。
 
@@ -213,7 +235,7 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
 
 ---
 
-## 六、实战一：课件评测（courseware）
+## 七、实战一：课件评测（courseware）
 
 以项目自带样例 `samples/大单元学习总导/`（HTML 课件目录）为例：
 
@@ -256,11 +278,11 @@ uv run agent-eval eval --package-dir ... --package courseware --on-missing-capab
 
 > **规则集三档怎么选**：`coursework-gate` 仅规则检查（零 token）；`coursework-quality` 增加 LLM Judge；`coursework-vision` 再增加截图视觉评估（需 `--extra vision` 与已配置的 `vision` 角色）。缺省取包清单的 `default_rule_set`（当前为 `coursework-vision`）。
 >
-> `eval` 还有两个高频参数：`--no-cache` 强制忽略评估缓存重评；`--upload/--no-upload` 评估完成后推送到可观测平台（见第十节）。
+> `eval` 还有两个高频参数：`--no-cache` 强制忽略评估缓存重评；`--upload/--no-upload` 评估完成后推送到可观测平台（见第十一节）。
 
 ---
 
-## 七、实战二：Agent 评测（chat）
+## 八、实战二：Agent 评测（chat）
 
 在线评测模式下，ExecutionAgent 按 [Agent Protocol](https://langchain-ai.github.io/agent-protocol/api.html) 标准接口驱动被测 Agent 完成任务，采集执行轨迹后评估。
 
@@ -286,7 +308,7 @@ uv run agent-eval secrets set SASAN.password
 # ① 执行：驱动被测 Agent 完成任务集（默认全部 12+ 任务）
 uv run agent-eval run --package chat
 
-# 只跑安全类任务、排除某一条（语法详见第八节）
+# 只跑安全类任务、排除某一条（语法详见第九节）
 uv run agent-eval run --package chat --task "safety_*,!safety_porn_009"
 
 # ② 评估：对本次运行的执行包评估（run 结束会打印实际 run_id 路径）
@@ -316,7 +338,7 @@ uv run agent-eval pipeline --package chat --upload
 
 ---
 
-## 八、任务选择 --task 详解
+## 九、任务选择 --task 详解
 
 `run` / `pipeline` 支持 pytest 风格的任务选择表达式，逗号分隔按序合并：
 
@@ -340,7 +362,7 @@ uv run agent-eval pipeline --package chat --upload
 
 ---
 
-## 九、声明式评测矩阵（suite）
+## 十、声明式评测矩阵（suite）
 
 需要**批量对照**（多个场景包 × 不同任务集/SUT 子集）时，写一份 `suite.yaml`：
 
@@ -364,7 +386,7 @@ uv run agent-eval suite run  --file suite.yaml --dry-run     # 只打印将执�
 
 ---
 
-## 十、结果查看与平台上报（upload）
+## 十一、结果查看与平台上报（upload）
 
 ### workspace 输出布局
 
@@ -403,7 +425,7 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 
 ---
 
-## 十一、环境变量参考
+## 十二、环境变量参考
 
 | 变量 | 用途 | 缺省 |
 |------|------|------|
@@ -422,11 +444,11 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 | `AGENT_EVAL_DATASET_SOURCE` | 数据集下载源（hf/ms） | hf |
 | `LANGFUSE_PUBLIC_KEY/SECRET_KEY/HOST` | LLM 调用追踪（可选） | 未设不追踪 |
 
-仓库根 `.env` 会被 CLI 自动加载（向上查找），敏感凭证仍建议放 `models set` / `secrets` 管理的密钥区而非 `.env`。
+仓库根 `.env` 会被 CLI 自动加载（向上查找）。`AGENT_EVAL_HOST/API_KEY/PROJECT` 三项由 `auth login` 托管写入（0600，见第三节）；LLM Key 与 SUT 凭证仍走 `models set` / `secrets` 的密钥区而非 `.env`。
 
 ---
 
-## 十二、常见问题（FAQ)
+## 十三、常见问题（FAQ)
 
 **Q1：没配 LLM 能跑吗？**
 能。Rule-based 评估器正常出分；LLM Judge 降级 `score=0.7`、视觉评估跳过，报告会标注缺失能力。要严格拦截改为 `--on-missing-capability strict`。

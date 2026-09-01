@@ -140,6 +140,40 @@ class TestRuns:
         assert payload["summary"]["metrics"]["chat:reward"] == 0.78
 
 
+# ── 账号域：平台账号 (auth) 入口 ────────────────────────────────────────
+
+
+class TestAccountDomain:
+    def test_account_opens_auth_wizard(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import agent_eval.cli.cmds.auth as auth_mod
+        import agent_eval.cli.workbench.domains.account as account_mod
+
+        called: list[bool] = []
+        refreshed: list[int] = []
+
+        class _Session:
+            def _refresh(self) -> None:
+                refreshed.append(1)
+
+        picks = iter(["平台账号 (auth)"])
+        monkeypatch.setattr(account_mod, "select", lambda label, options, **kw: next(picks, "返回"))
+        monkeypatch.setattr(auth_mod, "auth_wizard", lambda: called.append(True))
+
+        account_mod.main(_Session())
+        assert called == [True]
+        assert refreshed == [1]  # 登录动作后刷新平台态（banner ✅）
+
+    def test_start_domain_auth_alias(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import agent_eval.cli.workbench.domains.account as account_mod
+        from agent_eval.cli.main import app
+
+        hit: list[str] = []
+        monkeypatch.setattr(account_mod, "main", lambda s: hit.append("auth"))
+        result = runner.invoke(app, ["start", "--domain", "auth"])
+        assert result.exit_code == 0
+        assert hit == ["auth"]  # --domain auth 别名直达账号域（arch/15 §13）
+
+
 # ── doctor ─────────────────────────────────────────────────────────────
 
 

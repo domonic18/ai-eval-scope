@@ -1,4 +1,4 @@
-"""账号与配置域 — doctor / models set / secrets 向导（auth 登录在 Sprint 11）。"""
+"""账号与配置域 — auth / models / secrets / doctor（arch/15 §3.3）。"""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ def main(session) -> None:  # noqa: ANN001
     action = select(
         "账号与配置",
         [
+            "平台账号 (auth)",
             "自检 (doctor)",
             "配置模型 (models set)",
             "查看模型配置 (models list)",
@@ -16,7 +17,12 @@ def main(session) -> None:  # noqa: ANN001
             "返回",
         ],
     )
-    if action.startswith("自检"):
+    if action.startswith("平台账号"):
+        from agent_eval.cli.cmds.auth import auth_wizard
+
+        auth_wizard()
+        session._refresh()
+    elif action.startswith("自检"):
         from agent_eval.cli.cmds.doctor import doctor_action
 
         doctor_action()

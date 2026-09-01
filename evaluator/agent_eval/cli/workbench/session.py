@@ -67,7 +67,10 @@ class WorkbenchSession:
                 "可在「账号与配置」域执行 models set[/yellow]"
             )
         if not self.ctx.platform_ok:
-            rprint("[yellow]⚠ 平台未连接 —— 结果上报不可用（本地评估不受影响）[/yellow]")
+            rprint(
+                "[yellow]⚠ 平台未连接 —— 结果上报不可用（本地评估不受影响）；"
+                "可在「账号与配置」域执行 auth login[/yellow]"
+            )
 
     def run(self, domain: str | None = None) -> None:
         from agent_eval.cli.workbench.domains import (
@@ -88,10 +91,12 @@ class WorkbenchSession:
             "account": account.main,
         }
         if domain:
-            if domain not in handlers:
-                rprint(f"[red]未知 --domain: {domain}（{'/'.join(handlers)}）[/red]")
+            # arch/15 §13：--domain auth 为账号域别名（域键 account）
+            resolved = "account" if domain == "auth" else domain
+            if resolved not in handlers:
+                rprint(f"[red]未知 --domain: {domain}（{'/'.join(handlers)}/auth）[/red]")
                 raise typer.Exit(code=2)
-            handlers[domain](self)
+            handlers[resolved](self)
             return
 
         rprint(self.ctx.banner())
