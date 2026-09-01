@@ -40,6 +40,8 @@
 
 ## 2. 安装与环境准备
 
+> 包发布在正式 PyPI（pypi.org，包名 `ai-eval-scope`），内网直接安装即可，无需额外索引配置。
+
 ```bash
 # 方式一：uv（推荐）
 uv tool install "ai-eval-scope[agent]"      # [agent] = 执行引擎（驱动被测 Agent 所需）
