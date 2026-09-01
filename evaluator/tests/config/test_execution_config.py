@@ -39,22 +39,19 @@ class TestAgentDefaults:
         assert AGENT_DEFAULTS.max_retries == 3
 
     def test_default_model(self) -> None:
-        """默认使用模型。"""
-        assert AGENT_DEFAULTS.model == "claude-sonnet-4-20250514"
+        """默认不锁定模型（None=用 provider 默认，v4.6 模型无关）。"""
+        assert AGENT_DEFAULTS.model is None
+
+    def test_llm_role(self) -> None:
+        """默认 LLM 角色为 agent（经 build_chat_model 桥接双协议）。"""
+        assert AGENT_DEFAULTS.llm_role == "agent"
 
     def test_workspace_dir(self) -> None:
         """默认工作空间目录。"""
         assert AGENT_DEFAULTS.workspace_dir == Path("./workspace")
 
-    def test_permission_mode(self) -> None:
-        """默认权限模式。"""
-        assert AGENT_DEFAULTS.permission_mode == "accept_edits"
-
-    def test_allowed_tools(self) -> None:
-        """默认允许使用的工具列表。"""
-        assert "invoke_http_sut" in AGENT_DEFAULTS.allowed_tools
-        assert "invoke_cli_sut" in AGENT_DEFAULTS.allowed_tools
-        assert "scan_directory" in AGENT_DEFAULTS.allowed_tools
+    # v4.6 模型无关化移除 permission_mode / allowed_tools（工具与权限归
+    # DeepAgents 底座管理，arch/03 §六）——对应测试同步清理
 
 
 class TestTaskDefaults:
