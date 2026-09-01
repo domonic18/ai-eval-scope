@@ -8,7 +8,7 @@ install:
 	cd evaluator && uv sync
 
 dev:
-	cd evaluator && uv sync --extra dev
+	cd evaluator && uv sync --group dev
 
 test:
 	cd evaluator && uv run pytest tests/ -v --tb=short

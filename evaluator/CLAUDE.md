@@ -5,7 +5,7 @@
 ## 环境
 
 - Python 3.11+，依赖用 `uv` 管理（`uv.lock`）。
-- 安装：`uv sync --extra dev`（开发）；`uv sync --extra llm`（LLM Judge 依赖，可选）；`uv sync --extra agent`（ExecutionAgent DeepAgents 底座，可选，见 arch/03 v4.6）。
+- 安装：`uv sync --group dev`（开发，PEP 735 依赖组——dev 工具链不入发布元数据）；`uv sync --extra llm`（LLM Judge 依赖，可选）；`uv sync --extra agent`（ExecutionAgent DeepAgents 底座，可选，见 arch/03 v4.6）。
 - CLI：`uv run agent-eval --help`。所有 `uv run` / `agent-eval` 命令从 `evaluator/` 执行，或用根 `make` 目标自动切换。
 
 ## 配置

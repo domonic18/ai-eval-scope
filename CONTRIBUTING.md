@@ -27,7 +27,7 @@ git fetch upstream
 ```bash
 # Python 评估器（uv 管理）
 cd evaluator
-uv sync --extra dev          # 基础 + 开发依赖
+uv sync --group dev          # 基础 + 开发依赖
 uv sync --extra llm          # LLM Judge 依赖（可选）
 uv sync --extra vision       # 视觉评估依赖（可选）
 cd ..
