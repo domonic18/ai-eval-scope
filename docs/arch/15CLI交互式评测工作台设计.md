@@ -16,7 +16,7 @@
 | G2 场景包 Agent 化 | PackageAgent 复用 DeepAgents 底座 + 独立沙盒工具面 + 校验门禁（§六） |
 | G3 零门槛交互 | 向导原语库（选择/确认/输入）+ preflight 引导链 + 等价命令显示（§三） |
 | G4 脚本/CI 友好 | 非 TTY 降级、`--no-input`、`--output-format json`、退出码集中映射（§4.3） |
-| G5 单一事实源不变 | 配置仍落 llm.json / sut_credentials.json / .env；包结构仍走 13 规范 |
+| G5 单一事实源不变 | 配置仍落 llm.json / sut_credentials.json / platform.json（密钥区三文件）+ .env（开关与直供）；包结构仍走 13 规范 |
 | G6 命名语义清晰 | `models set/clear`、`scenario *`、`auth *`、顶层 `doctor`；一次性切换无兼容层（§4.2） |
 
 ### 1.2 范围
@@ -112,7 +112,7 @@ agent_eval/agent/
 | D-CLI-1 | **双前端同内核**：向导动作最终组装与命令行相同的参数对象，直接调 `_stages` 阶段函数；向导内不出现第二份业务逻辑 | P1 原则；等价命令显示天然成立（argv 即真相） |
 | D-CLI-2 | **交互原语收口 `console/prompts.py`：P0 以编号选择落地（gcloud 同款，零新依赖）；questionary + rich 为 P1 可选升级**（分页/搜索需求出现时） | 零依赖先行 + 升级路径保留；原语签名不变，替换不动调用方 |
 | D-CLI-3 | **PackageAgent 独立工具面**（`package_tools.py`），不复用 SUTToolServer | 两域工具语义无关（文件编辑 vs SUT 交互）；沙盒约束不同（包根 vs workspace） |
-| D-CLI-4 | **平台身份落 `.env`**（`AGENT_EVAL_HOST/API_KEY/PROJECT`，0600），不新增凭证文件 | 06 §4.7：环境接入归 `.env`；`auth` 与 `secrets`（SUT 凭证，`~/.agent_eval/`）分域 |
+| D-CLI-4 | **平台身份落密钥区 `~/.agent_eval/platform.json`**（host/api_key/project，0600），CLI 启动注入 env **仅补缺**——env 直供（CI/云函数/executor/`.env`）优先；`.env` 归用户手工管理，残留旧值检测提示不代删 | 三域三文件与 `models`（llm.json）/`secrets`（sut_credentials.json）对齐（06 §4.7）；「登录 A 实际上报 B」的静默错乱由 env 优先 + 提示兜底 |
 | D-CLI-5 | **浏览器打开统一走 `cmds/open_url.py`**：`webbrowser.open`（`$BROWSER` 可指定浏览器）+ 无浏览器环境（SSH/未设 `$BROWSER`）降级打印 URL | gh `pkg/browser` 同款行为；单一出口便于 mock 测试（NF-C-05） |
 | D-CLI-6 | **重命名一次性直接切换**，无别名层 | 用户基数小（需求 v1.2 决策）；收尾要求 = 全仓引用同版本清理 |
 | D-CLI-7 | **退出码集中映射**：`console/output.py::map_exit_code(exc)` 单点适配异常体系 → 0/1/2/3/130 | 契约可测试；新增异常不改命令层 |
@@ -122,7 +122,7 @@ agent_eval/agent/
 
 | 工作台能力 | 复用既有实现 |
 |-----------|-------------|
-| 平台账号 | `auth login/status/logout/register`（`cmds/auth.py` 纯函数动作 + `auth_wizard` 子向导：登录/状态/退出/注册；身份探测 `GET /api/public/whoami`；写 `.env` 走 `_env_file.py` 保序保注释 + 0600；登录后 `session._refresh()` 刷新平台态） |
+| 平台账号 | `auth login/status/logout/register`（`cmds/auth.py` 纯函数动作 + `auth_wizard` 子向导：登录/状态/退出/注册；身份探测 `GET /api/public/whoami`；写密钥区 platform.json（0600，`apply_platform_env` 启动注入 env 仅补缺）；登录后 `session._refresh()` 刷新平台态） |
 | 模型配置向导 | `models set`（原 login 逻辑，改触发词与文案） |
 | SUT 凭证 | `secrets set`（工作台「账号与配置 → SUT 凭证」为交互子向导 `secrets_wizard`：查看表 / 录入-更新（ref 从已录键与场景包 sut_configs 的 credential_ref 数据发现、字段名自由输入、值隐藏输入）/ 删除；与命令行同读写 `~/.agent_eval/sut_credentials.json`） |
 | 执行 | `run/pipeline/eval` + `_stages.py` 五阶段 |
@@ -246,14 +246,14 @@ CLI                                          平台
  │   input(hide=True) ←──────────────────── 用户粘贴新 Key
  │
  │ ② Key 有效性探测：既有 Bearer 端点轻量调用（如 GET /api/v1/jobs?limit=1）
- │ ③ 解析身份（团队/项目）→ 写 .env（0600）：AGENT_EVAL_HOST/API_KEY/PROJECT
+ │ ③ 解析身份（团队/项目）→ 写密钥区 platform.json（0600，env 直供优先）
  │ ④ 回执：用户@团队 · 项目 · Key 掩码
 ```
 
 - 通道 A/B 共用 ②③④；差异只在 Key 的获取方式。`auth login --token <key>`（或 env）为 CI 无浏览器形态。
 - `auth status`：读 `.env` → 平台 ping → 身份回显；`auth logout`：清除 `.env` 三项（`--revoke` 吊销为 P2，需平台删除 Key 端点授权）。
 
-> **Sprint 11 落地形态（2026-09-01）**：身份探测端点已实现——`GET /api/public/whoami`（Bearer API Key，返回 `{kind, key:{name,scopes}, project:{id,name,slug}, org:{id,name,slug}}`）；前端暂无独立 Keys 页与 `/cli-auth` 授权页：通道 A 打开 `{host}/login` 并引导至项目「设置 & API Key」页创建 Key，通道 B 待平台侧落地（P2）。CLI 对 404（旧平台无 whoami）回退 `GET /api/public/secrets` 轻探测——Key 有效但身份未知，回执降级不阻断登录。
+> **Sprint 11 落地形态（2026-09-01）**：身份探测端点已实现——`GET /api/public/whoami`（Bearer API Key，返回 `{kind, key:{name,scopes}, project:{id,name,slug}, org:{id,name,slug}}`）；前端暂无独立 Keys 页与 `/cli-auth` 授权页：通道 A 打开 `{host}/login` 并引导至项目「设置 & API Key」页创建 Key，通道 B 待平台侧落地（P2）。CLI 对 404（旧平台无 whoami）回退 `GET /api/public/secrets` 轻探测——Key 有效但身份未知，回执降级不阻断登录。身份持久化于 `~/.agent_eval/platform.json`（0600，`AGENT_EVAL_PLATFORM_CONFIG` 可覆盖），CLI 启动 `apply_platform_env` 注入进程 env **仅补缺**（CI/云函数/executor env 直供与 `.env` 显式配置优先）；`.env` 归用户手工管理，登录/登出检测到残留平台配置即提示（env 优先将覆盖密钥区），不代为删改。
 
 ### 5.2 设备码流接口约定（P2，平台侧落地）
 
@@ -415,3 +415,4 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.4 | 2026-08-31 | **main.py 模块化拆分**（889 → 88 行）：pack/evaluate/execute/upload 四命令模块迁入 `cmds/`（顶层与子命令组同构：绑定 + 纯函数动作）；装配点扩展 `app.command()()` 注册顶层命令；`_write_run_manifest` 无引用转发壳删除；引用随迁（workbench exec 域 + 3 个测试文件） |
 | v1.5 | 2026-08-31 | **Sprint 10 收尾同步**：console/render.py 落地（阶段级 stage_progress——stderr 绑定 + transient + 非 TTY 降级，逐任务实时态待 ExecutionAgent 回调；print_task_table 完成态摘要）；--json 覆盖 run/pipeline/eval（emit_json 机器可读 payload；rich console 动态分流——json 模式 stderr 代理、text 模式 None 动态解析，不钉死流对象） |
 | v1.6 | 2026-09-01 | **Sprint 11 auth 组落地**：`cmds/auth.py`（login/status/logout/register 四命令 + `auth_wizard` 子向导，纯函数动作双前端复用）；身份探测 `GET /api/public/whoami`（平台侧已实现，404 回退 `/api/public/secrets` 轻探测）；`.env` 写入走 `_env_file.py`（保序保注释 + 0600）；账号域新增「平台账号」入口（登录后 `_refresh` 平台态）、`start --domain auth` 别名、preflight 平台未连接提示 auth login；§5.1 补落地形态注记 |
+| v1.7 | 2026-09-01 | **D-CLI-4 修订：平台身份迁密钥区 `~/.agent_eval/platform.json`**（用户评估反馈——与 llm.json / sut_credentials.json 三域三文件统一）；`config/platform_file.py`（0600 + `apply_platform_env` 启动注入仅补缺，env 直供优先）；`.env` 归用户手工管理：`_env_file.py` 收缩为只读残留检测，登录/登出提示不代删；conftest 钉 `AGENT_EVAL_PLATFORM_CONFIG` 隔离真实密钥区 |

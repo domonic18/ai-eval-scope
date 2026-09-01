@@ -16,6 +16,12 @@ from agent_eval.cli._common import rprint
 # 在任何配置解析之前加载 .env
 load_dotenv()
 
+# 平台身份密钥区（auth login 写入 ~/.agent_eval/platform.json）注入进程 env；
+# 仅补缺——.env / shell / CI 显式 env 优先（对齐 arch/06 §4.7 双通道）
+from agent_eval.config.platform_file import apply_platform_env  # noqa: E402
+
+apply_platform_env()
+
 # 触发所有内置评估器注册（plugins/ 下的插件也会在此自动发现）
 # 需要先 load_dotenv() 再导入，故 suppress E402
 import agent_eval.evaluation.evaluators  # noqa: E402, F401

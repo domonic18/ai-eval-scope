@@ -1,20 +1,20 @@
-"""`.env` 文件更新助手（arch/15 D-CLI-4：平台身份落 .env，0600）。
+"""`.env` 平台配置残留检测（只读）——auth 登录/登出的防错乱提示用。
 
-auth login/logout 专用：保序保注释的键值更新与删除；不引入 python-dotenv 的
-写回能力（其不保留注释顺序），按行解析足够 KISS。
+平台身份的正存储是密钥区 ``~/.agent_eval/platform.json``（arch/06 §4.7）；
+``.env`` 归用户手工管理（CI / 云函数 / docker executor 直供通道），auth
+**不代为读写**——但 env 优先于密钥区，残留旧值会静默覆盖本次登录
+（回执 B、实际上报 A），故登录/登出时检测到即提示，由用户自行删改。
 """
 
 from __future__ import annotations
 
-import os
-import stat
 from pathlib import Path
 
 _ENV_KEYS = ("AGENT_EVAL_HOST", "AGENT_EVAL_API_KEY", "AGENT_EVAL_PROJECT")
 
 
 def find_env_path() -> Path:
-    """定位 `.env`：从 cwd 向上找已有文件 → git 根 → cwd（不存在则新建于此）。"""
+    """定位 `.env`：从 cwd 向上找已有文件 → git 根 → cwd（不存在即新建于此的路径）。"""
     cwd = Path.cwd()
     for cur in (cwd, *cwd.parents):
         if (cur / ".env").is_file():
@@ -25,45 +25,16 @@ def find_env_path() -> Path:
     return cwd / ".env"
 
 
-def upsert_env(path: Path, updates: dict[str, str]) -> None:
-    """按键更新/追加 `.env`（保序保注释），文件权限收紧 0600（D-CLI-4）。"""
-    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
-    seen: set[str] = set()
-    out: list[str] = []
-    for line in lines:
-        key = (
-            line.split("=", 1)[0].strip()
-            if "=" in line and not line.lstrip().startswith("#")
-            else ""
-        )
-        if key in updates:
-            out.append(f"{key}={updates[key]}")
-            seen.add(key)
-        else:
-            out.append(line)
-    for key, value in updates.items():
-        if key not in seen:
-            out.append(f"{key}={value}")
-    path.write_text("\n".join(out) + "\n", encoding="utf-8")
-    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)  # 0600：含 API Key，仅属主可读写
-
-
-def remove_env_keys(path: Path, keys: tuple[str, ...] = _ENV_KEYS) -> int:
-    """从 `.env` 删除指定键（含其行），返回删除条数；文件不存在返回 0。"""
+def platform_keys_in_env(path: Path, keys: tuple[str, ...] = _ENV_KEYS) -> list[str]:
+    """`.env` 中存在（非注释、有赋值）的平台配置键名；文件不存在返回空。"""
     if not path.is_file():
-        return 0
-    out: list[str] = []
-    removed = 0
+        return []
+    present: list[str] = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = (
-            line.split("=", 1)[0].strip()
-            if "=" in line and not line.lstrip().startswith("#")
-            else ""
-        )
-        if stripped in keys:
-            removed += 1
+        stripped = line.strip()
+        if stripped.startswith("#") or "=" not in stripped:
             continue
-        out.append(line)
-    if removed:
-        path.write_text("\n".join(out) + "\n", encoding="utf-8")
-    return removed
+        key = stripped.split("=", 1)[0].strip()
+        if key in keys and key not in present:
+            present.append(key)
+    return present

@@ -1,7 +1,8 @@
 """agent-eval auth — 平台账号（requirement/04 F-C-AUTH；arch/15 §5.1）。
 
 auth 管平台身份（谁在上报、以哪个团队/项目）；secrets 管被测系统凭证——两域不混用。
-身份落 `.env`（AGENT_EVAL_HOST/API_KEY/PROJECT，0600，D-CLI-4），不新增凭证文件。
+身份落密钥区 ``~/.agent_eval/platform.json``（0600，与 llm.json / sut_credentials.json 三域
+三文件），启动注入 env 仅补缺（env 直供优先——CI/云函数/executor 不受影响）。
 登录双通道：打开平台页面创建 Key 后粘贴（浏览器，无浏览器环境自动降级打印 URL）/
 直接粘贴已有 Key；`--token/--host` 为 CI 非交互形态（F-C-AUTH-07）。
 `/cli-auth` 授权页与设备码流为 P2（平台侧落地后接入，arch/15 §5.2）。
@@ -52,8 +53,7 @@ def mask_key(key: str) -> str:
 def _raise_for_probe(resp: httpx.Response) -> None:
     """把非 2xx 探测响应归类为 ProbeError——**任何状态都不裸抛 HTTPStatusError**。
 
-    实测教训：空 Key 拼出畸形 ``Authorization: Bearer `` 头，网关回 400；
-    此前 raise_for_status() 在 except 之外，400 直接 traceback。
+    实测教训：空 Key 拼出畸形 ``Bearer `` 头，网关回 400 曾直接 traceback。
     """
     if resp.status_code < 400:
         return
@@ -95,9 +95,19 @@ def probe_identity(
     )
 
 
+def _warn_stale_env() -> None:
+    """.env 残留平台配置提示——env 优先于密钥区（登录 A 实际上报 B），归用户手工删改。"""
+    from agent_eval.cli._env_file import find_env_path, platform_keys_in_env
+
+    if stale := platform_keys_in_env(find_env_path()):
+        rprint(
+            f"[yellow]⚠ .env 中仍有 {len(stale)} 项平台配置（{', '.join(stale)}）——"
+            "env 优先于密钥区，将以 .env 为准；如需改用密钥区请删除对应行。[/yellow]"
+        )
+
+
 def login_flow(token: str | None = None, host: str | None = None) -> PlatformIdentity | None:
     """``auth login`` 动作（纯函数，命令层与 workbench 复用）。"""
-    from agent_eval.cli._env_file import find_env_path, upsert_env
     from agent_eval.cli.console.prompts import ask, select
 
     host = (host or os.environ.get("AGENT_EVAL_HOST", "")).rstrip("/") or None
@@ -147,9 +157,13 @@ def login_flow(token: str | None = None, host: str | None = None) -> PlatformIde
     updates = {"AGENT_EVAL_HOST": host, "AGENT_EVAL_API_KEY": token}
     if identity is not None:
         updates["AGENT_EVAL_PROJECT"] = identity.project_slug
-    path = find_env_path()
-    upsert_env(path, updates)
+    from agent_eval.config.platform_file import PlatformFileConfig, save_platform_file
+
+    path = save_platform_file(
+        PlatformFileConfig(host=host, api_key=token, project=updates.get("AGENT_EVAL_PROJECT"))
+    )
     os.environ.update(updates)
+    _warn_stale_env()
 
     if identity is None:
         rprint("[green]✅ Key 有效[/green]（平台未提供身份接口，团队/项目未知）")
@@ -164,13 +178,17 @@ def login_flow(token: str | None = None, host: str | None = None) -> PlatformIde
 
 def status_action() -> None:
     """``auth status`` 动作：本地身份 + 平台 ping（Key 有效性 / 团队 / 项目）。"""
+    from agent_eval.config.platform_file import apply_platform_env, platform_file_path
+
+    apply_platform_env()  # 非 main 入口直调（workbench/测试）也读得到密钥区
     host = os.environ.get("AGENT_EVAL_HOST", "").rstrip("/")
     key = os.environ.get("AGENT_EVAL_API_KEY", "")
     if not (host and key):
-        rprint("[yellow]未登录平台（.env 未配置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY）[/yellow]")
+        rprint("[yellow]未登录平台（无 platform.json，亦无 AGENT_EVAL_HOST/API_KEY env）[/yellow]")
         rprint("[dim]→ agent-eval auth login（或工作台「账号与配置」域）[/dim]")
         raise typer.Exit(code=1)
-    rprint(f"平台: {host}\nKey: {mask_key(key)}")
+    source = platform_file_path() if platform_file_path().exists() else ".env / env 直供"
+    rprint(f"平台: {host}\nKey: {mask_key(key)}\n存储: {source}")
     if project := os.environ.get("AGENT_EVAL_PROJECT", ""):
         rprint(f"项目: {project}")
     try:
@@ -192,10 +210,17 @@ def status_action() -> None:
 
 
 def logout_action(revoke: bool = False) -> None:
-    """``auth logout`` 动作：清除 .env 三项与进程环境（--revoke 为 P2）。"""
-    from agent_eval.cli._env_file import find_env_path, remove_env_keys
+    """``auth logout`` 动作：删除密钥区 platform.json 与进程环境（--revoke 为 P2）。
 
-    removed = remove_env_keys(find_env_path(), _ENV_KEYS)
+    ``.env`` 归用户手工管理：其中有平台配置时仅提示残留（env 优先仍会生效），
+    不代为删改。
+    """
+    from agent_eval.config.platform_file import platform_file_path
+
+    path = platform_file_path()
+    removed = path.exists()
+    if removed:
+        path.unlink()
     for key in _ENV_KEYS:
         os.environ.pop(key, None)
     if revoke:
@@ -203,9 +228,10 @@ def logout_action(revoke: bool = False) -> None:
             "[yellow]--revoke 为 P2（需平台吊销端点授权）——请到平台「设置 & API Key」手动吊销。[/yellow]"
         )
     if removed:
-        rprint(f"[green]✅ 已清除本地平台凭证[/green]（{removed} 项）")
+        rprint(f"[green]✅ 已清除本地平台凭证[/green] {path}")
     else:
-        rprint("[yellow]本地未配置平台凭证（.env 无相关项）[/yellow]")
+        rprint("[yellow]本地未配置平台凭证（无 platform.json）[/yellow]")
+    _warn_stale_env()  # 无残留时静默
 
 
 def register_action(host: str | None = None) -> None:
@@ -246,7 +272,7 @@ def login(
     token: str | None = typer.Option(None, "--token", help="直供 API Key（CI 无浏览器形态）"),
     host: str | None = typer.Option(None, "--host", help="平台地址（缺省 .env 或本地 9000）"),
 ) -> None:
-    """登录平台：浏览器创建 / 粘贴 API Key → 有效性探测 → 写 .env（0600）。"""
+    """登录平台：浏览器创建 / 粘贴 API Key → 有效性探测 → 写密钥区（0600）。"""
     login_flow(token=token, host=host)
 
 
@@ -260,7 +286,7 @@ def status() -> None:
 def logout(
     revoke: bool = typer.Option(False, "--revoke", help="同时吊销平台侧 Key（P2，暂仅提示）"),
 ) -> None:
-    """清除本地平台凭证（.env 三项）。"""
+    """清除本地平台凭证（密钥区 + 进程 env）。"""
     logout_action(revoke=revoke)
 
 

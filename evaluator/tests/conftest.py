@@ -214,3 +214,10 @@ def llm_config() -> LLMConfig:
             ),
         },
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_platform_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """平台身份密钥区指向空路径：main.py 启动会 apply_platform_env 注入
+    os.environ，开发者真实 ~/.agent_eval/platform.json（若登录过）不得漏进单测。"""
+    monkeypatch.setenv("AGENT_EVAL_PLATFORM_CONFIG", str(tmp_path / "no-platform.json"))

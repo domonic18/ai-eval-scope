@@ -31,19 +31,20 @@ def _transport(status: int, payload: dict | None = None) -> httpx.MockTransport:
 
 
 @pytest.fixture
-def env_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """把 .env 定位钉到 tmp_path（隔离真实仓库 .env）。
+def platform_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """密钥区 platform.json 与 .env 残留检测均钉到 tmp_path（隔离真实文件）。
 
     预置空串而非删除：login_flow 会 ``os.environ.update`` 写入进程环境，
     预置才能让 monkeypatch 在 teardown 还原（空串在各读取点均按未配置处理）。
     """
     import agent_eval.cli._env_file as env_file_mod
 
-    path = tmp_path / ".env"
-    monkeypatch.setattr(env_file_mod, "find_env_path", lambda: path)
+    platform = tmp_path / "platform.json"
+    monkeypatch.setenv("AGENT_EVAL_PLATFORM_CONFIG", str(platform))
+    monkeypatch.setattr(env_file_mod, "find_env_path", lambda: tmp_path / ".env")
     for key in ("AGENT_EVAL_HOST", "AGENT_EVAL_API_KEY", "AGENT_EVAL_PROJECT"):
         monkeypatch.setenv(key, "")
-    return path
+    return platform
 
 
 # ── probe_identity ─────────────────────────────────────────────────────
@@ -84,8 +85,8 @@ def test_probe_404_falls_back_legacy_and_returns_none() -> None:
 # ── login_flow ─────────────────────────────────────────────────────────
 
 
-def test_login_with_token_writes_env_and_receipt(
-    env_file: Path, monkeypatch: pytest.MonkeyPatch
+def test_login_with_token_writes_platform_file(
+    platform_env: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
         "agent_eval.cli.cmds.auth.probe_identity",
@@ -93,15 +94,36 @@ def test_login_with_token_writes_env_and_receipt(
     )
     identity = login_flow(token="eval-abcdefgh1234", host="http://p")
     assert identity is not None and identity.project_slug == "demo"
-    text = env_file.read_text(encoding="utf-8")
-    assert "AGENT_EVAL_HOST=http://p" in text
-    assert "AGENT_EVAL_API_KEY=eval-abcdefgh1234" in text
-    assert "AGENT_EVAL_PROJECT=demo" in text
+    from agent_eval.config.platform_file import load_platform_file
+
+    cfg = load_platform_file(platform_env)
+    assert cfg is not None
+    assert (cfg.host, cfg.api_key, cfg.project) == ("http://p", "eval-abcdefgh1234", "demo")
     assert os.environ["AGENT_EVAL_API_KEY"] == "eval-abcdefgh1234"  # 进程内即时生效
 
 
+def test_login_warns_stale_env_entries(
+    platform_env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """.env 残留平台配置：仅提示（env 优先将覆盖本次登录），不代为删改。"""
+    (tmp_path / ".env").write_text("AGENT_EVAL_API_KEY=eval-old\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "agent_eval.cli.cmds.auth.probe_identity",
+        lambda host, key, **_: probe_identity(host, key, transport=_transport(200, _WHOAMI)),
+    )
+    login_flow(token="eval-abcdefgh1234", host="http://p")
+    out = capsys.readouterr().out
+    assert ".env 中仍有 1 项平台配置" in out and "AGENT_EVAL_API_KEY" in out
+    assert (tmp_path / ".env").read_text(
+        encoding="utf-8"
+    ) == "AGENT_EVAL_API_KEY=eval-old\n"  # 未被改动
+
+
 def test_login_invalid_token_from_param_exits_1(
-    env_file: Path, monkeypatch: pytest.MonkeyPatch
+    platform_env: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
         "agent_eval.cli.cmds.auth.probe_identity",
@@ -110,11 +132,11 @@ def test_login_invalid_token_from_param_exits_1(
     with pytest.raises(typer.Exit) as ei:
         login_flow(token="eval-bad", host="http://p")
     assert ei.value.exit_code == 1
-    assert not env_file.exists()  # 失败不落盘
+    assert not platform_env.exists()  # 失败不落盘
 
 
 def test_login_no_input_without_token_exits_2(
-    env_file: Path, monkeypatch: pytest.MonkeyPatch
+    platform_env: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("AGENT_EVAL_NO_INPUT", "1")
     with pytest.raises(typer.Exit) as ei:
@@ -122,7 +144,7 @@ def test_login_no_input_without_token_exits_2(
     assert ei.value.exit_code == 2
 
 
-def test_login_unreachable_exits_1(env_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_login_unreachable_exits_1(platform_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     def boom(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("no route")
 
@@ -139,7 +161,7 @@ def test_login_unreachable_exits_1(env_file: Path, monkeypatch: pytest.MonkeyPat
 
 
 def test_status_not_logged_in_exits_1(
-    env_file: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+    platform_env: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
     from agent_eval.cli.cmds.auth import status_action
 
@@ -149,25 +171,32 @@ def test_status_not_logged_in_exits_1(
     assert "auth login" in capsys.readouterr().out
 
 
-def test_status_ok_renders_identity(
-    env_file: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+def test_status_ok_renders_identity_and_storage(
+    platform_env: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
     from agent_eval.cli.cmds.auth import status_action
+    from agent_eval.config.platform_file import (
+        PlatformFileConfig,
+        save_platform_file,
+    )
 
-    monkeypatch.setenv("AGENT_EVAL_HOST", "http://p")
-    monkeypatch.setenv("AGENT_EVAL_API_KEY", "eval-abcdefgh1234")
+    save_platform_file(
+        PlatformFileConfig(host="http://p", api_key="eval-abcdefgh1234", project="demo"),
+        path=platform_env,
+    )
     monkeypatch.setattr(
         "agent_eval.cli.cmds.auth.probe_identity",
         lambda host, key, **_: probe_identity(host, key, transport=_transport(200, _WHOAMI)),
     )
-    status_action()
+    status_action()  # 内部 apply_platform_env 从密钥区注入（env 空串补位）
     out = capsys.readouterr().out
     assert "示例团队" in out and "示例项目" in out
+    assert "存储" in out and "platform.json" in out  # 来源 = 密钥区文件（rich 折行，断文件名）
     assert "eval-abc…1234" in out  # Key 掩码（前 8 + 后 4）
     assert "eval-abcdefgh1234" not in out  # 完整 Key 不回显
 
 
-def test_status_invalid_key_exits_1(env_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_status_invalid_key_exits_1(platform_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from agent_eval.cli.cmds.auth import status_action
 
     monkeypatch.setenv("AGENT_EVAL_HOST", "http://p")
@@ -181,14 +210,28 @@ def test_status_invalid_key_exits_1(env_file: Path, monkeypatch: pytest.MonkeyPa
     assert ei.value.exit_code == 1
 
 
-def test_logout_clears_keys_preserving_others(env_file: Path) -> None:
-    env_file.write_text(
-        "AGENT_EVAL_HOST=http://p\nAGENT_EVAL_API_KEY=eval-x\nKEEP=1\n", encoding="utf-8"
+def test_logout_removes_platform_file_and_env(
+    platform_env: Path, tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    from agent_eval.config.platform_file import PlatformFileConfig, save_platform_file
+
+    save_platform_file(
+        PlatformFileConfig(host="http://p", api_key="eval-x", project="demo"), path=platform_env
     )
+    (tmp_path / ".env").write_text("AGENT_EVAL_API_KEY=eval-x\nKEEP=1\n", encoding="utf-8")
     os.environ["AGENT_EVAL_API_KEY"] = "eval-x"
     logout_action()
-    assert env_file.read_text(encoding="utf-8") == "KEEP=1\n"
+    assert not platform_env.exists()  # 密钥区文件已删
     assert "AGENT_EVAL_API_KEY" not in os.environ
+    out = capsys.readouterr().out
+    assert "已清除" in out
+    assert ".env 中仍有 1 项" in out  # .env 不代删，仅提示残留
+    assert (tmp_path / ".env").read_text(encoding="utf-8") == "AGENT_EVAL_API_KEY=eval-x\nKEEP=1\n"
+
+
+def test_logout_without_file_hints(platform_env: Path, capsys: pytest.CaptureFixture) -> None:
+    logout_action()
+    assert "未配置平台凭证" in capsys.readouterr().out
 
 
 def test_register_opens_platform_page(
@@ -206,7 +249,7 @@ def test_register_opens_platform_page(
 # ── 命令绑定 ───────────────────────────────────────────────────────────
 
 
-def test_cli_login_token_flag(env_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cli_login_token_flag(platform_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "agent_eval.cli.cmds.auth.probe_identity",
         lambda host, key, **_: probe_identity(host, key, transport=_transport(200, _WHOAMI)),
@@ -215,7 +258,10 @@ def test_cli_login_token_flag(env_file: Path, monkeypatch: pytest.MonkeyPatch) -
         auth_app, ["login", "--token", "eval-abcdefgh1234", "--host", "http://p"]
     )
     assert result.exit_code == 0
-    assert "AGENT_EVAL_API_KEY=eval-abcdefgh1234" in env_file.read_text(encoding="utf-8")
+    from agent_eval.config.platform_file import load_platform_file
+
+    cfg = load_platform_file(platform_env)
+    assert cfg is not None and cfg.api_key == "eval-abcdefgh1234"
 
 
 # ── 空输入与非 2xx 归类（实测反馈：空粘贴 → 畸形 Bearer 头 → 400 traceback）──
@@ -256,7 +302,7 @@ def test_probe_fallback_bad_status_not_misreported_unreachable() -> None:
 
 
 def test_login_empty_paste_cancels_without_probe(
-    env_file: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+    platform_env: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
     """浏览器通道粘贴处直接回车 = 取消：不探测、不写 .env、不抛异常。"""
     from agent_eval.cli.console import prompts
@@ -271,12 +317,12 @@ def test_login_empty_paste_cancels_without_probe(
 
     assert login_flow(host="http://p") is None
     assert probed == []
-    assert not env_file.exists()
+    assert not platform_env.exists()
     assert "已取消" in capsys.readouterr().out
 
 
 def test_login_retry_empty_paste_cancels(
-    env_file: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+    platform_env: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
     """无效 Key 重试粘贴处直接回车 = 取消（不再发起第三次探测）。"""
     from agent_eval.cli.console import prompts
@@ -290,5 +336,5 @@ def test_login_retry_empty_paste_cancels(
     )
 
     assert login_flow(host="http://p") is None
-    assert not env_file.exists()
+    assert not platform_env.exists()
     assert "已取消" in capsys.readouterr().out

@@ -81,7 +81,8 @@ uv run agent-eval auth logout    # 清除本地平台凭证（.env 三项）
 uv run agent-eval auth register  # 打开平台注册页，完成后引导 auth login
 ```
 
-- **登录流程**（F-C-AUTH-01）：选「打开平台页面创建（浏览器）」会打开 `{host}/login` 并引导到项目「设置 & API Key」页创建 Key（scope 含 ingest）——无浏览器环境（SSH/容器）自动降级打印 URL；也可选「直接粘贴已有 Key」。Key 经 `GET /api/public/whoami` 探测有效后写入 `.env`（`AGENT_EVAL_HOST/API_KEY/PROJECT`，权限 0600），回显 身份回执（团队 · 项目 · Key 掩码，完整 Key 不回显）。粘贴处**直接回车 = 取消**（未输入不发起探测）；无效 Key 可重试（最多 3 次）。
+- **登录流程**（F-C-AUTH-01）：选「打开平台页面创建（浏览器）」会打开 `{host}/login` 并引导到项目「设置 & API Key」页创建 Key（scope 含 ingest）——无浏览器环境（SSH/容器）自动降级打印 URL；也可选「直接粘贴已有 Key」。Key 经 `GET /api/public/whoami` 探测有效后写入**密钥区 `~/.agent_eval/platform.json`**（0600，与 llm.json / sut_credentials.json 三域三文件），回显 身份回执（团队 · 项目 · Key 掩码，完整 Key 不回显）。粘贴处**直接回车 = 取消**（未输入不发起探测）；无效 Key 可重试（最多 3 次）。
+- **生效方式（env 优先）**：CLI 启动时把 platform.json 注入进程 env（仅补缺）——`.env` / shell / CI 显式设置的 `AGENT_EVAL_HOST/API_KEY/PROJECT` 优先。`.env` 归你手工管理（auth 不代为读写），登录/登出时若检测到 `.env` 残留旧值会**提示**（env 优先将以 .env 为准，请自行删改）。`AGENT_EVAL_PLATFORM_CONFIG` 可覆盖密钥区路径。
 - **CI 非交互形态**（F-C-AUTH-07）：`auth login --token <api_key> --host <平台地址>`；`--no-input` 下缺 `--token` 直接 exit 2 不挂起。
 - **status 语义**：Key 无效 → 提示重新登录（exit 1）；平台不可达 → 显示本地身份并提示检查网络（exit 1）。
 - **logout**：只清本地（`--revoke` 吊销平台侧 Key 为 P2，当前提示到平台「设置 & API Key」手动吊销）。
@@ -430,9 +431,10 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 | 变量 | 用途 | 缺省 |
 |------|------|------|
 | `WORKSPACE_DIR`（或 `AGENT_EVAL_WORKSPACE`） | workspace 根目录 | `./workspace` |
-| `AGENT_EVAL_HOST` | 可观测平台地址 | `http://localhost:9000` |
-| `AGENT_EVAL_API_KEY` | 平台摄取 Bearer Key（`eval-…`） | 无（不上报） |
+| `AGENT_EVAL_HOST` | 可观测平台地址（本地由 auth login 密钥区补位；显式 env 优先） | `http://localhost:9000` |
+| `AGENT_EVAL_API_KEY` | 平台摄取 Bearer Key（`eval-…`；同上密钥区补位） | 无（不上报） |
 | `AGENT_EVAL_PROJECT` | 上报目标项目 ID | 无 |
+| `AGENT_EVAL_PLATFORM_CONFIG` | 平台身份密钥区路径覆盖（`auth login` 写入） | `~/.agent_eval/platform.json` |
 | `AGENT_EVAL_UPLOAD` | 是否启用上报（true/1），CLI `--upload/--no-upload` 可覆盖 | false |
 | `AGENT_EVAL_QUEUE_DIR` | 离线队列目录 | `<workspace>/.ingest_queue` |
 | `AGENT_EVAL_LLM_CONFIG` | llm.json 路径覆盖 | `~/.agent_eval/llm.json` |
@@ -444,7 +446,7 @@ uv run agent-eval upload --run {run_id} [--project <项目ID>]
 | `AGENT_EVAL_DATASET_SOURCE` | 数据集下载源（hf/ms） | hf |
 | `LANGFUSE_PUBLIC_KEY/SECRET_KEY/HOST` | LLM 调用追踪（可选） | 未设不追踪 |
 
-仓库根 `.env` 会被 CLI 自动加载（向上查找）。`AGENT_EVAL_HOST/API_KEY/PROJECT` 三项由 `auth login` 托管写入（0600，见第三节）；LLM Key 与 SUT 凭证仍走 `models set` / `secrets` 的密钥区而非 `.env`。
+仓库根 `.env` 会被 CLI 自动加载（向上查找）。LLM Key、SUT 凭证、平台身份分别走 `models set` / `secrets` / `auth login` 的密钥区（`~/.agent_eval/` 三文件，见第三~五节）——`.env` 只留行为开关（如 `AGENT_EVAL_UPLOAD`）与 CI / 云函数 / executor 的直供覆盖。
 
 ---
 
