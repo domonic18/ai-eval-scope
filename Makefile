@@ -11,7 +11,7 @@ dev:
 	cd evaluator && uv sync --group dev
 
 test:
-	cd evaluator && uv run pytest tests/ -v --tb=short
+	cd evaluator && uv run pytest tests/ -v --tb=short -n auto
 
 test-cov:
 	cd evaluator && uv run pytest tests/ -v --cov=agent_eval --cov-report=term-missing --cov-report=html

@@ -6,11 +6,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
 from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.evaluators import *  # trigger registration
-from agent_eval.evaluation.evaluators.commonsense_evaluators import _reset_fact_db_cache
 from agent_eval.evaluation.registry import registry
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
@@ -151,14 +148,12 @@ class TestHtmlValidityEvaluator:
 
 
 class TestInfoAccuracyEvaluator:
-    """知识准确性评估器测试 — 三层检查架构。"""
+    """知识准确性评估器测试 — 三层检查架构。
 
-    @pytest.fixture(autouse=True)
-    def _reset_cache(self):
-        """每个测试前重置事实知识库缓存。"""
-        _reset_fact_db_cache()
-        yield
-        _reset_fact_db_cache()
+    知识库缓存全程共享（不再每测重置）：本文件不改写知识资产，
+    逐测 invalidate 只会让 ~0.9s 的全学科 YAML 解析重复 ~20 次。
+    需要缓存隔离的测试自行调用 _reset_fact_db_cache()。
+    """
 
     # ─── 向后兼容：原有 3 个测试 ───
 
