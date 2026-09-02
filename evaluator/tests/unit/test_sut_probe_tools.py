@@ -131,15 +131,52 @@ class TestDiscoverLogin:
         assert form["path"] == "/do-login"
         assert "username" in form["fields"] and "password" in form["fields"]
 
-    def test_common_paths_probe_runs_without_form(self) -> None:
-        # MockTransport 统一回 200 → 全部清单命中；校验清单上限内返回
-        server = _make(http_client_factory=_ok_transport("no form here"))
-        result = _run(server.discover_login("https://sut.example.com/"))
-        assert 0 < len(result["candidates"]) <= 8
-        assert all(c["source"] == "common_path" for c in result["candidates"])
+    def test_all_forms_returned_without_semantic_filter(self) -> None:
+        """语义过滤不进解析层：搜索框（无密码字段）与短信登录表单一并返回，判读交 Agent。"""
+        html = (
+            "<html><form action='/search'><input name='keyword'></form>"
+            "<form action='/sms-login'><input name='phone'><input name='sms_code'></form></html>"
+        )
+        server = _make(http_client_factory=_ok_transport(html))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        forms = [c for c in result["candidates"] if c["source"] == "form"]
+        assert {f["path"] for f in forms} == {"/search", "/sms-login"}  # 无密码形态不被漏掉
+
+    def test_supplied_paths_probed_directly(self) -> None:
+        """paths 由 Agent 自拟（工具不内置路径清单）：非 404 记为存在。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/api/auth/login":
+                return httpx.Response(405, text="method not allowed", request=request)
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(
+            server.discover_login("https://sut.example.com/login", paths="/api/auth/login|/nope")
+        )
+        cand = next(c for c in result["candidates"] if c["source"] == "probed_path")
+        assert cand["path"] == "/api/auth/login"  # 405 ≠ 404：路径存在
+
+    def test_page_and_scripts_cached_for_search(self) -> None:
+        """页面与同域脚本入缓存——前端包分析的存储侧（search_content 消费）。"""
+        page = '<html><body><script src="/app.js"></script></body></html>'
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/login":
+                return httpx.Response(200, text=page, request=request)
+            if request.url.path == "/app.js":
+                return httpx.Response(200, text="window.cfg=1", request=request)
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        assert "/app.js" in result["scripts"]
+        assert "https://sut.example.com/app.js" in result["cached"]
+        found = _run(server.search_content("cfg"))
+        assert any("window.cfg=1" in m["excerpt"] for m in found["matches"])
 
     def test_openapi_doc_yields_endpoint_candidate(self) -> None:
-        """阶梯②.5：OpenAPI 文档命中 → 精确端点 + 字段 schema 直接成为候选。"""
+        """阶梯③：OpenAPI 文档命中 → POST 端点原样列出（无 login 关键字过滤）+ 文档入缓存。"""
         spec = {
             "paths": {
                 "/health": {"get": {}},
@@ -167,12 +204,13 @@ class TestDiscoverLogin:
         candidate = next(c for c in result["candidates"] if c["source"] == "openapi")
         assert candidate["path"] == "/auth/login"
         assert candidate["fields"] == ["password", "username"]  # 排序后字段 schema
+        assert "https://sut.example.com/openapi.json" in result["cached"]  # 原文可检索
 
     def test_no_candidate_guidance_never_asks_field_names(self) -> None:
         """全阶梯落空：兜底指引只向用户要接口地址，字段名由 Agent 拟定。"""
 
         def handler(request: httpx.Request) -> httpx.Response:
-            if request.url.path == "/web/login":  # 页面路径不在常见登录路径清单内
+            if request.url.path == "/web/login":  # 无脚本无文档无 paths 的页面
                 return httpx.Response(200, text="<html>空页面</html>", request=request)
             return httpx.Response(404, request=request)
 
@@ -181,29 +219,6 @@ class TestDiscoverLogin:
         assert result["candidates"] == []
         assert "登录接口地址" in result["next_step"]
         assert "字段名不要问用户" in result["next_step"]
-
-    def test_absolute_url_in_js_found_cross_domain(self) -> None:
-        """阶梯②扩展：JS 里的绝对登录 URL（登录页域 ≠ 接口域）直接成为候选。"""
-        html = (
-            "<html><script>"
-            'var API_BASE="https://sasan-server.example.com/users/login";'
-            "</script></html>"
-        )
-        server = _make(http_client_factory=_ok_transport(html))
-        result = _run(server.discover_login("https://sut.example.com/login/teacher/sign-in"))
-        candidate = next(c for c in result["candidates"] if c["source"] == "js_url")
-        assert candidate["path"] == "https://sasan-server.example.com/users/login"
-
-    def test_js_field_hints_extracted(self) -> None:
-        """前端包里的真实字段键名 → field_hints（SPA 表单 JS 渲染时的字段来源）。"""
-        html = (
-            "<html><script>"
-            "var body={account: form.u, password: md5(form.p), captcha: code};"
-            "</script></html>"
-        )
-        server = _make(http_client_factory=_ok_transport(html))
-        result = _run(server.discover_login("https://sut.example.com/login"))
-        assert {"account", "password", "captcha"} <= set(result["field_hints"])
 
     def test_api_endpoint_input_notes_direct_probe_login(self) -> None:
         """传入接口地址（响应非 HTML）→ next_step 覆盖为直通 probe_login（单一权威指引）。"""
@@ -221,6 +236,100 @@ class TestDiscoverLogin:
         html_server = _make(http_client_factory=_ok_transport("<html><body>登录页</body></html>"))
         page_result = _run(html_server.discover_login("https://sut.example.com/login"))
         assert "权威输入" not in page_result["next_step"]  # 页面场景保留兜底指引
+
+
+# ── search_content：前端包分析原语 ───────────────────────────────────
+
+
+class TestSearchContent:
+    def test_requires_cached_content(self) -> None:
+        server = _make()
+        assert "缓存为空" in _run(server.search_content("login"))["error"]
+
+    def test_finds_case_insensitive_with_context(self) -> None:
+        server = _make()
+        server._cache_content(  # noqa: SLF001 — 单测直填缓存
+            "https://sut.example.com/app.js", "axios.post('/U/Login',{a:1});" + "x" * 50
+        )
+        result = _run(server.search_content("u/login"))
+        assert len(result["matches"]) == 1
+        assert "/U/Login" in result["matches"][0]["excerpt"]
+
+    def test_match_cap_and_pattern_validation(self) -> None:
+        server = _make()
+        server._cache_content("https://sut.example.com/x.js", "ab " * 60)  # noqa: SLF001
+        capped = _run(server.search_content("ab"))
+        assert 0 < len(capped["matches"]) <= 12
+        assert "pattern 不能为空" in _run(server.search_content("  "))["error"]
+        assert "过长" in _run(server.search_content("x" * 120))["error"]
+
+    def test_no_match_guides_next_step(self) -> None:
+        server = _make()
+        server._cache_content("https://sut.example.com/x.js", "nothing here")  # noqa: SLF001
+        result = _run(server.search_content("missing"))
+        assert result["matches"] == []
+        assert "next_step" in result  # 换词重试的指引，而非终结
+
+    def test_new_turn_clears_cache(self) -> None:
+        server = _make()
+        server._cache_content("https://sut.example.com/x.js", "abc")  # noqa: SLF001
+        server.new_turn()
+        assert "缓存为空" in _run(server.search_content("abc"))["error"]
+
+
+# ── 前端包分析：泛化原语组合（真实 SPA 形态模拟） ────────────────────
+
+
+class TestFrontendAnalysis:
+    """抓取入缓存 + Agent 自拟模式检索——工具面不内置任何登录/分包知识。
+
+    模拟真实 SPA：页面单脚本 → 主包只有分块映射与接口基址 → 登录契约在页面分块。
+    以下检索词全部由「Agent」侧拟定，工具只做机械的抓取/检索/摘录。
+    """
+
+    PAGE = '<html><body><script src="/umi.js"></script></body></html>'
+    MAIN = (
+        '.u=function(A){return ""+({9258:"login__teacher__index"}[A]||A)+'
+        '"."+({9258:"826c0f38"}[A]+".async.js")};'
+        'a.interceptors.request.use(function(s){s.baseURL="https://api.sut.example.com";return s})'
+    )
+    CHUNK = 'le.Z.post("/users/login",{phone:B,captcha:R,platform:FS})'
+
+    def _server(self) -> SUTProbeToolServer:
+        js_headers = {"content-type": "application/javascript"}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            routes = {
+                "/login": (self.PAGE, {}),
+                "/umi.js": (self.MAIN, js_headers),
+                "/login__teacher__index.826c0f38.async.js": (self.CHUNK, js_headers),
+            }
+            hit = routes.get(request.url.path)
+            if hit is None:
+                return httpx.Response(404, request=request)
+            return httpx.Response(200, text=hit[0], headers=hit[1], request=request)
+
+        return _make(http_client_factory=_transport(handler))
+
+    def test_bundle_cached_and_chunk_map_readable(self) -> None:
+        server = self._server()
+        result = _run(server.probe_url("https://sut.example.com/umi.js"))
+        assert result["cached_bytes"] > 0 and "search_hint" in result
+        found = _run(server.search_content("async.js"))
+        excerpt = found["matches"][0]["excerpt"]
+        # 分块映射（名字 + hash + 后缀）可从摘录中读出——推算 chunk URL 由 Agent 完成
+        assert "9258" in excerpt and "login__teacher__index" in excerpt
+
+    def test_login_contract_found_via_agent_chosen_patterns(self) -> None:
+        server = self._server()
+        _run(server.probe_url("https://sut.example.com/login"))
+        _run(server.probe_url("https://sut.example.com/umi.js"))
+        assert _run(server.search_content("post("))["matches"] == []  # 主包无登录请求字面量
+        _run(server.probe_url("https://sut.example.com/login__teacher__index.826c0f38.async.js"))
+        hit = _run(server.search_content("post("))["matches"][0]["excerpt"]
+        assert "/users/login" in hit and "captcha" in hit  # 契约在页面分块里
+        base = _run(server.search_content("baseURL"))["matches"][0]["excerpt"]
+        assert "https://api.sut.example.com" in base  # 接口域可检索、与路径组合交 Agent
 
 
 # ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────
@@ -266,11 +375,40 @@ class TestProbeLogin:
         """ask_user 录入 → probe_login 立即可读（会话内闭环，实测曾误引向终端命令）。"""
         seq = iter(["u-name", "p-word", "取消"])
         server = _make(ask_fn=_ask(lambda q, **kw: next(seq)), credential_store=CredentialStore())
-        _run(server.ask_user("录入用户名", kind="credential", ref="SUT", field="username"))
-        _run(server.ask_user("录入密码", kind="credential", ref="SUT", field="password"))
+        _run(
+            server.ask_user(
+                "录入用户名", kind="credential", ref="SUT", field="username", desc="登录账号"
+            )
+        )
+        _run(
+            server.ask_user(
+                "录入密码", kind="credential", ref="SUT", field="password", desc="登录密码"
+            )
+        )
         result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
         assert "missing_fields" not in result  # 会话内录入的凭证立即可读
         assert result["aborted"] is True  # 已走到脱敏预览确认（桩选取消）
+
+    def test_preview_shows_full_url_for_user_verification(self) -> None:
+        """预览必须显示完整 URL——路径抄错只有在这里用户才看得见（只显 host 等于没校对）。"""
+        seen: dict[str, Any] = {}
+
+        def spy(question: str, *, options=None, secret=False):
+            seen["q"] = question
+            return "取消"
+
+        server, sent = self._server(lambda r: httpx.Response(200, json={}), ask=_ask(spy))
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert "https://sut.example.com/api/login" in seen["q"]
+        assert "POST" in seen["q"]
+        assert result["aborted"] is True and sent == []
+
+    def test_result_carries_verified_url(self) -> None:
+        server, _ = self._server(
+            lambda r: httpx.Response(200, json={"token": "T"}), ask=_ask(lambda q, **kw: "发送")
+        )
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert result["url"] == "https://sut.example.com/api/login"
 
     def test_non_interactive_never_sends(self) -> None:
         server, sent = self._server(lambda r: httpx.Response(200, json={"token": "T"}), ask=None)
@@ -339,7 +477,11 @@ class TestProbeLogin:
         server, _ = self._server(handler, ask=_ask(lambda q, **kw: next(seq)))
         assert _run(server.probe_login(_LOGIN_CFG, "SUT"))["ok"] is False
         assert "防锁" in _run(server.probe_login(_LOGIN_CFG, "SUT"))["error"]
-        _run(server.ask_user("更正密码", kind="credential", ref="SUT", field="password"))
+        _run(
+            server.ask_user(
+                "更正密码", kind="credential", ref="SUT", field="password", desc="登录密码"
+            )
+        )
         third = _run(server.probe_login(_LOGIN_CFG, "SUT"))
         assert "error" not in third and calls["n"] == 2  # 解锁放行而非拒绝
 
@@ -410,7 +552,11 @@ class TestAskUser:
         from agent_eval.execution.auth import secrets_store
 
         server = _make(ask_fn=_ask(lambda q, **kw: "s3cret"), credential_store=CredentialStore())
-        result = _run(server.ask_user("录入密码", kind="credential", ref="SUT", field="password"))
+        result = _run(
+            server.ask_user(
+                "录入密码", kind="credential", ref="SUT", field="password", desc="登录密码"
+            )
+        )
         assert result["saved"] is True
         assert "s3cret" not in json.dumps(result)  # 值不回流
         on_disk = secrets_store.load_secrets_file(secrets_store.secrets_file_path())
@@ -420,6 +566,36 @@ class TestAskUser:
         server = _make(ask_fn=_ask(lambda q, **kw: "x"))
         result = _run(server.ask_user("?", kind="credential"))
         assert "ref" in result["error"] and "field" in result["error"]
+
+    def test_credential_requires_desc_explaining_field(self) -> None:
+        """desc 必带：字段实际含义由 Agent 说明（逐站点知识不进代码），否则用户无从输入。"""
+        server = _make(ask_fn=_ask(lambda q, **kw: "x"))
+        result = _run(server.ask_user("?", kind="credential", ref="SUT", field="captcha"))
+        assert "desc" in result["error"]
+
+    def test_credential_prompt_carries_field_meaning(self) -> None:
+        """录入提示直达字段语义——实测反馈：只显示「请输入 ref.field」用户不知道在输入什么。"""
+        seen: dict[str, Any] = {}
+
+        def spy(question: str, *, options=None, secret=False):
+            seen["q"] = question
+            return "s3cret"
+
+        server = _make(ask_fn=_ask(spy), credential_store=CredentialStore())
+        result = _run(
+            server.ask_user(
+                "录入",
+                kind="credential",
+                ref="BJ33",
+                field="captcha",
+                desc="captcha 字段实际提交的是登录密码（从登录分块代码得出）",
+            )
+        )
+        assert result["saved"] is True
+        q = seen["q"]
+        assert "BJ33" in q and "captcha" in q
+        assert "登录密码" in q  # Agent 传入的字段语义直达用户
+        assert "不会回显" in q  # 机械事实：隐藏输入
 
     def test_credential_field_must_be_single(self) -> None:
         """一次只录一个字段：多字段打包拒绝（实测 Agent 曾传 field="username,password"）。"""
@@ -468,6 +644,13 @@ class TestBudget:
         server.new_turn()  # PackageAgent.turn() 每轮调用
         assert _run(server.probe_url("https://sut.example.com/x"))["reachable"] is True
 
+    def test_search_budget_independent_pool(self) -> None:
+        server = _make()
+        server._cache_content("https://sut.example.com/x.js", "abc")  # noqa: SLF001
+        for _ in range(TOOL_BUDGETS["search_content"]):
+            assert "matches" in _run(server.search_content("a"))
+        assert "上限" in _run(server.search_content("a"))["error"]
+
 
 # ── PackageAgent 集成（工具注册与预算挂点） ─────────────────────────
 
@@ -478,7 +661,14 @@ class TestPackageAgentIntegration:
 
         agent = PackageAgent(tmp_path)
         described = agent._describe_tools()  # noqa: SLF001 — 单测内省
-        for name in ("probe_url", "discover_login", "probe_protocol", "probe_login", "ask_user"):
+        for name in (
+            "probe_url",
+            "discover_login",
+            "search_content",
+            "probe_protocol",
+            "probe_login",
+            "ask_user",
+        ):
             assert name in described
         assert agent.probe.credentials is not None
         assert agent.probe.log_path == agent._log_path  # noqa: SLF001 — 证据随会话日志

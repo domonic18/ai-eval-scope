@@ -442,13 +442,41 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 - 集成：`PackageAgent` 双 server 组装（文件沙盒 + 探测面），`_describe_tools` 汇总；CLI
   `scenario_agent._make_ask_fn()` 桥接 `ask()/select()/hide` 交互原语（`--yes` CI 形态不装配）；
   prompts 增「SUT 接入调试」阶段（纯包内语境，无 docs/ 引用——prompts 随包发布）
-- 测试：`tests/unit/test_sut_probe_tools.py` 27 项全 mock（httpx MockTransport，禁止联网红线）——host
-  边界/授权拉黑、注入包裹与截断、form 发现、OpenAPI 阶梯命中、无候选兜底指引不问字段名、凭证缺失不发送、
-  非交互硬门禁、确认发送且 token 不回流、防锁一次即停 + 改模板可重试、协议矩阵含清理、预算重置、
-  ask_user 凭证直写不回流
+- 测试：`tests/unit/test_sut_probe_tools.py` 41 项全 mock（httpx MockTransport，禁止联网红线）——host
+  边界/授权拉黑、注入包裹与截断、form 发现（无语义过滤）、自拟路径定向检查、OpenAPI 阶梯命中、
+  缓存检索、前端包分析原语组合（真实 SPA 形态：主包分块映射→页面分块→登录契约）、无候选兜底指引
+  不问字段名、凭证缺失不发送、非交互硬门禁、确认发送且 token 不回流、防锁一次即停 + 改模板可重试、
+  协议矩阵含清理、预算分池重置、ask_user 凭证直写不回流
 
 风险与对策：SPA 登录静态发现成功率低 → 阶梯第④级引导为预期路径，话术顺滑；登录实测副作用 → 单次尝试 +
 直播 + 证据留存；探测轮次烧 token → 调用上限 + 流式直播可随时 Ctrl+C（草稿续作已具备）。
+
+#### 泛化重构：前端包分析原语（2026-09-02，实测迭代六/七后定稿）
+
+> 迭代七的用户判词：「不是 hardcode 正则/关键字，而是让 CLI 具备泛化的分析能力，应对未来各种登录场景」。
+> 排查依据是对真实站点的完整人工分析：1.7MB 前端主包 `users/login` 字面量为 0，登录契约
+> `POST /users/login {phone, captcha, platform}` 位于路由级异步分块（35KB），分块 URL 由主包内
+> webpack 映射（名字表 + hash 表 + 后缀）拼出；接口域以 axios interceptor `baseURL` 形态出现、
+> 与页面域分离——逐站点写死的正则/路径清单/分块解析器对下一个站点必然失效。
+
+**能力分层**（什么进代码、什么进 LLM 的边界）：
+
+| 层 | 内容 | 归属 |
+|---|---|---|
+| 机械原语 | 抓取入缓存（probe_url/discover_login，完整响应体存服务端不进 LLM 上下文，单文件 3MB/总量 8 个、轮内有效）、子串检索（search_content：Agent 自拟模式、大小写不敏感、带上下文摘录 ≤12 条、数据区声明）、HTML 结构解析（stdlib html.parser：全部 form + 脚本清单，**无语义过滤**）、OpenAPI/规范文档挂载点探测（工具规范约定，POST 端点原样列出）、定向路径检查（≤10 条，**路径由 Agent 经 `paths` 参数自拟**） | 代码 |
+| 分析知识 | 搜什么（业务词/请求构造痕迹/分包机制痕迹）、分块命名规则解读与 URL 推算、接口基址与相对路径组合、form 判读（哪个是登录表单——按密码字段过滤会漏短信验证码登录）、登录路径候选拟定 | Agent 推理 + prompts 方法论 |
+| 字段语义 | 凭证字段实际要输入什么（如 captcha 实际承载密码） | Agent 经 `ask_user(desc=…)` 传入 |
+
+- 新工具 **`search_content(pattern, context)`**：已缓存内容检索原语，非正则（防 ReDoS）、摘录
+  带数据非指令声明；预算独立分池 15。`probe_url` 增缓存旁注（cached_bytes/search_hint）；
+  `new_turn()` 同步清缓存。
+- 删除的硬编码：XHR/绝对 URL/登录字段名三类关键字正则、`pass|captcha` 登录表单判定、
+  常见登录路径清单（`_COMMON_LOGIN_PATHS` → Agent 自拟 `paths`）、OpenAPI 端点 login 关键字过滤、
+  外链脚本 ≤5 自动 JS 阶梯。
+- prompts 增**前端包分析法**方法论（发现→检索→读摘录→分块跟随→基址组合→实测验证，
+  假设-验证循环）；ask_user credential 增 `desc` 必带（录入提示直达字段语义，实测反馈「只显示
+  `请输入 ref.field` 用户不知道在输入什么」）；probe_login 预览从 host 改**完整 URL**（路径抄错
+  只有在预览里用户才看得见）并在结果中携带 url。
 
 ---
 
@@ -536,3 +564,4 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 | v2.7 | 2026-09-02 | **§6.6 P0 实测迭代三（凭证录入断链与字段分析）**：真机会话暴露——①Agent 把两个字段打包进一次 credential 调用（`field="username,password"` 整串存成一个键名），probe_login 逐字段查不到报 missing_fields，Agent 又按 hint 里「或提示用户 secrets set」的岔路让用户**另开终端跑命令**录入（用户反馈：应会话内直接帮用户录入）；②Agent 未用真实表单字段而用常见约定（SPA 表单 JS 渲染，静态 HTML 无 form 可解析）。修复：①ask_user(credential) 硬门禁一次只录一个字段（多字段打包拒绝）；②missing_fields hint 改单通道指引（会话内逐字段 ask_user 直接收集，删「secrets set」岔路——那是非交互/CI 备用通道）；③discover_login 增 **field_hints**——从前端包 JS 提取真实登录字段键名（account/password/captcha 等，按首次出现 ≤10），字段拟定优先级改为 fields/field_hints（真实提取）> 常见约定（兜底）；④prompts 三处同步（credential 规约/④步/hint 优先级）；测试 29 → 32 项（含 ask_user 录入 → probe_login 立即可读的会话内闭环回归） |
 | v2.8 | 2026-09-02 | **§6.6 P0 实测迭代四（POST-only 接口被 GET 探测误杀）**：用户直接提供登录 API 地址 `…/users/login`，probe_url（GET）得 404（POST-only 接口 GET 即 404，Express 系未匹配方法回 404 而非 405），next_step 指引只覆盖「路径未匹配→要页面地址」分支——Agent 怀疑用户地址，逐路径重猜 + 对接口地址空跑 discover_login。修复：①probe_url ≥400 next_step 补语义（POST-only 接口 GET 404 属正常；用户给的登录 API 直接 probe_login POST 实测）；②discover_login 识别传入地址疑似接口（响应非 HTML）→ 返回 note 指引直接构建 login_cfg 走 probe_login、无需页面发现；③prompts 增「用户提供的登录 API 地址是权威输入」红线 + ②步跳过发现分支；测试 32 → 34 项 |
 | v2.9 | 2026-09-02 | **§6.6 P0 实测迭代五（指引并存致滑回 + probe_login 存在性探测）**：复测发现 discover_login 已正确提示「疑似接口→直接 probe_login」、Agent 也复述认可——但仍退回 probe_url 逐路径猜，始终未发起 probe_login。根因：①返回里 note 与 next_step **并存且方向相反**（note=直接实测，next_step=无候选→问用户），Agent 权衡后滑回旧习惯；②probe_login 无低门槛入口（没字段没凭证时构建模板+收凭证门槛高，probe_url 便宜）。修复：①接口场景**直接覆盖 next_step**（单一权威指引，删并存 note）；②probe_login 增**存在性探测**语义——最小 login_cfg（body_template `'{}'`）POST 空体：404=路径不存在、400/401/422=接口存在（路由已匹配校验/鉴权未过），next_step 按状态分支给动作（404 交用户核对 / 4xx 收集更正凭证重测 / 成功落配置）；③新凭证录入解锁该 ref 防锁（一次录入换一次实测，循环被录入交互天然限流）；④prompts 同步（勿再用 probe_url 试路径 / 权威输入即时实测 / 两条解锁重试通道）；测试 34 → 37 项 |
+| v2.10 | 2026-09-02 | **§6.6 泛化重构：前端包分析原语（迭代六/七定稿）**：实测暴露两类问题——①交互断链：凭证录入提示只有「请输入 ref.field」（用户不知道在输入什么）、probe_login 预览只显示 host（Agent 抄错路径 `/us/login` 用户在预览里看不见）；②能力硬编码：Agent 对「登录契约藏在路由级异步分块、接口域以 axios baseURL 形态分离」的真实 SPA 无能为力，而既有 JS 阶梯全是逐站点失效的关键字正则。修复按用户判词「不要 hardcode，要泛化分析能力」执行：代码收缩为机械原语（抓取入缓存 + search_content 检索 + stdlib HTML 结构解析无语义过滤 + paths 由 Agent 自拟），分析知识上移 LLM + prompts 方法论（前端包分析法：检索→读摘录→分块跟随→基址组合→实测）；ask_user credential 增 desc 必带、probe_login 预览改完整 URL；详见 §6.6 泛化重构节；测试 37 → 41 项（全套 735 绿） |
