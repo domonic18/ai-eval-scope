@@ -16,7 +16,7 @@ from typing import Any
 import httpx
 
 from agent_eval.agent.sut_probe_tools import (
-    MAX_PROBES_PER_TURN,
+    TOOL_BUDGETS,
     SUTProbeToolServer,
 )
 from agent_eval.execution.auth.credentials import CredentialStore
@@ -100,6 +100,20 @@ class TestEvidenceWrap:
         assert result["reachable"] is False
         assert "refused" in result["error"]
 
+    def test_404_guides_to_discover_login(self) -> None:
+        """404 ≠ 不可达：指引 discover_login 分析页面，禁止逐路径猜接口。"""
+
+        def not_found(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(404, text="Cannot GET /", request=request)
+
+        server = _make(http_client_factory=_transport(not_found))
+        result = _run(server.probe_url("https://sut.example.com/"))
+        assert result["reachable"] is True
+        assert "discover_login" in result["next_step"]
+        assert "逐路径" in result["next_step"]
+        ok_server = _make()  # 200 正常响应不带 next_step 指引
+        assert "next_step" not in _run(ok_server.probe_url("https://sut.example.com/ok"))
+
 
 # ── discover_login 阶梯 ──────────────────────────────────────────────
 
@@ -166,6 +180,18 @@ class TestDiscoverLogin:
         assert result["candidates"] == []
         assert "登录接口地址" in result["next_step"]
         assert "字段名不要问用户" in result["next_step"]
+
+    def test_absolute_url_in_js_found_cross_domain(self) -> None:
+        """阶梯②扩展：JS 里的绝对登录 URL（登录页域 ≠ 接口域）直接成为候选。"""
+        html = (
+            "<html><script>"
+            'var API_BASE="https://sasan-server.example.com/users/login";'
+            "</script></html>"
+        )
+        server = _make(http_client_factory=_ok_transport(html))
+        result = _run(server.discover_login("https://sut.example.com/login/teacher/sign-in"))
+        candidate = next(c for c in result["candidates"] if c["source"] == "js_url")
+        assert candidate["path"] == "https://sasan-server.example.com/users/login"
 
 
 # ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────
@@ -347,12 +373,16 @@ class TestAskUser:
 
 
 class TestBudget:
-    def test_budget_exhausted_then_reset(self) -> None:
+    def test_budget_per_tool_and_reset(self) -> None:
+        """预算按工具分池：probe_url 打满不牵连 discover_login（预算饿死发现链的实测教训）。"""
         server = _make()
-        for _ in range(MAX_PROBES_PER_TURN):
+        for _ in range(TOOL_BUDGETS["probe_url"]):
             result = _run(server.probe_url("https://sut.example.com/x"))
             assert result["reachable"] is True
-        assert "上限" in _run(server.probe_url("https://sut.example.com/x"))["error"]
+        error = _run(server.probe_url("https://sut.example.com/x"))["error"]
+        assert "上限" in error and "未经验证" in error  # 拒绝时指引继续验证而非收尾
+        page = _run(server.discover_login("https://sut.example.com/web/login"))
+        assert "error" not in page  # 独立预算池——发现工具不受 probe_url 牵连
         server.new_turn()  # PackageAgent.turn() 每轮调用
         assert _run(server.probe_url("https://sut.example.com/x"))["reachable"] is True
 
@@ -375,6 +405,6 @@ class TestPackageAgentIntegration:
         from agent_eval.agent.package_agent import PackageAgent
 
         agent = PackageAgent(tmp_path)
-        agent.probe._turn_calls = MAX_PROBES_PER_TURN  # noqa: SLF001
+        agent.probe._turn_calls["probe_url"] = TOOL_BUDGETS["probe_url"]  # noqa: SLF001
         agent.probe.new_turn()
-        assert agent.probe._turn_calls == 0  # noqa: SLF001
+        assert agent.probe._turn_calls.get("probe_url", 0) == 0  # noqa: SLF001

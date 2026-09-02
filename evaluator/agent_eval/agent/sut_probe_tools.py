@@ -11,7 +11,7 @@ Agent 主动探测被测系统（地址可达性 / agent-protocol 符合性 / �
   声明，最终防线是 staging→diff→用户确认；
 - **登录防锁**：同一（ref, host, body_template）组合只实测一次，失败即停交用户
   （用户纠正接口/字段后模板变化视为新组合，允许再试一次）；
-- **总量约束**：单探测 10s 超时、单轮探测调用上限、发现阶梯路径清单 ≤10。
+- **总量约束**：单探测 10s 超时、轮内预算按工具分池、发现阶梯路径清单 ≤10。
 
 ask_user 桥接 CLI 交互原语（文本/单选/凭证隐藏输入直写 secrets，值不回流 LLM
 上下文）；非交互（``--yes`` CI）形态 ask_fn 为空 → 返回「需交互」错误。
@@ -30,7 +30,14 @@ from urllib.parse import urlparse
 from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
 
 PROBE_TIMEOUT_S = 10.0
-MAX_PROBES_PER_TURN = 12
+# 轮内预算按工具分池：单工具的暴力试探不得饿死发现链（真机实测 probe_url 逐路径
+# 猜接口烧光共享预算后，discover_login 被拒、页面分析整段跳过）
+TOOL_BUDGETS: dict[str, int] = {
+    "probe_url": 8,  # 可达性抽检；逐路径猜接口是反模式，发现交 discover_login
+    "discover_login": 3,  # 页面发现内含多条子请求，独立小池
+    "probe_protocol": 2,
+    "probe_login": 4,  # 预览确认后实测；用户纠正字段后的重试也计于此
+}
 MAX_DISCOVER_PATHS = 10
 _MAX_EVIDENCE = 600
 _MAX_QUESTION_CHARS = 200  # ask_user 单问上限：多问打包会让用户不知从何答起
@@ -55,6 +62,7 @@ _XHR_URL_RE = re.compile(
     r"""(?:fetch|axios(?:\.\w+)?|\$\.ajax|XMLHttpRequest\.open)\s*\(\s*[`'"]([^`'"]+)""",
     re.I,
 )
+_ABS_URL_RE = re.compile(r"""https?://[^\s"'`<>\\)]+""", re.I)
 
 
 def _host_of(url: str) -> str:
@@ -133,7 +141,7 @@ class SUTProbeToolServer(ToolExporterMixin):
         self.credentials = credential_store
         self.log_path = log_path
         self._http_factory = http_client_factory
-        self._turn_calls = 0
+        self._turn_calls: dict[str, int] = {}
         # 防锁：同 (ref, host, body_template) 只实测一次——配置未变不重试；
         # 用户纠正字段/接口后模板变化视为新组合，允许再次实测
         self._login_tried: set[tuple[str, str, str]] = set()
@@ -141,8 +149,8 @@ class SUTProbeToolServer(ToolExporterMixin):
     # ── 会话挂点与内部设施 ────────────────────────────────────────
 
     def new_turn(self) -> None:
-        """每轮 REPL 开始时由 PackageAgent 调用：重置轮内探测预算。"""
-        self._turn_calls = 0
+        """每轮 REPL 开始时由 PackageAgent 调用：重置各工具轮内预算。"""
+        self._turn_calls.clear()
 
     def _log(self, tool: str, **payload: Any) -> None:
         if self.log_path is None:
@@ -153,10 +161,20 @@ class SUTProbeToolServer(ToolExporterMixin):
             f.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
 
     def _budget(self, tool: str) -> dict[str, str] | None:
-        self._turn_calls += 1
-        if self._turn_calls > MAX_PROBES_PER_TURN:
+        limit = TOOL_BUDGETS.get(tool)
+        if limit is None:
+            return None
+        self._turn_calls[tool] = self._turn_calls.get(tool, 0) + 1
+        if self._turn_calls[tool] > limit:
             self._log(tool, event="budget_exceeded")
-            return {"error": f"本轮探测调用已达上限（{MAX_PROBES_PER_TURN}），请汇总现有证据收尾"}
+            # 达上限 ≠ 收尾信号：指引继续验证而非把未验证猜测写进配置
+            return {
+                "error": (
+                    f"本轮 {tool} 调用已达上限（{limit}）。请把已有证据如实呈现给用户并询问"
+                    f"下一步——可请用户回复任意消息开启新一轮（探测预算按轮重置）后继续验证；"
+                    f"未经验证的接口/字段不得当作结论写入 sut_configs"
+                )
+            }
         return None
 
     def _host_gate(self, url: str) -> str | None:
@@ -221,6 +239,12 @@ class SUTProbeToolServer(ToolExporterMixin):
             "redirect_chain": "→".join(chain) if chain else "",
             "evidence": _wrap_evidence(f"GET {url}", response.text),
         }
+        if response.status_code >= 400:
+            result["next_step"] = (
+                f"HTTP {response.status_code} 多为「路径未匹配」而非服务不可达（API 服务根路径"
+                "常见）。不要用 probe_url 逐路径猜测登录接口——向用户要登录页面地址后，"
+                "用 discover_login 分析页面一步发现"
+            )
         self._log("probe_url", url=url, status=response.status_code)
         return result
 
@@ -272,6 +296,11 @@ class SUTProbeToolServer(ToolExporterMixin):
             ):
                 seen.add(hit)
                 candidates.append({"source": "js", "path": hit, "fields": [], "method": "?"})
+        # 绝对 URL 直查：跨域 API 域（登录页域 ≠ 接口域）的端点常以完整 URL 硬编码在包里
+        for hit in _ABS_URL_RE.findall(js_text):
+            if any(k in hit.lower() for k in ("login", "auth", "token")) and (hit not in seen):
+                seen.add(hit)
+                candidates.append({"source": "js_url", "path": hit, "fields": [], "method": "?"})
 
         # 阶梯②.5：OpenAPI 文档探测（命中即得精确登录端点与字段 schema）
         if not candidates:
@@ -340,7 +369,8 @@ class SUTProbeToolServer(ToolExporterMixin):
             "candidates": candidates[:8],
             "page_evidence": _wrap_evidence(f"页面 {page_url}", page),
             "next_step": (
-                "有候选→用 probe_login 实测验证；无候选→只向用户问登录接口地址一项"
+                "有候选→用 probe_login 实测验证（js 相对路径候选以登录页域为缺省 base_url，"
+                "404 可换入口域再试——不同域即新组合）；无候选→只向用户问登录接口地址一项"
                 "（用户答不知道则从 common_path 候选里挑最像登录的一项）；"
                 "字段名不要问用户——按 candidates 已给出的 fields 或常见约定"
                 "（username/password）拟定，probe_login 发送前的脱敏预览会让用户"

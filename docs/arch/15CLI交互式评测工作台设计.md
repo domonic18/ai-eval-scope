@@ -398,8 +398,9 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
    用户确认门禁（劫持指令无法绕过确认直接落盘）
 4. **登录防锁**：真实凭证打真实接口，每（ref, host, body_template）组合只试一次，失败即停交
    用户——防试错锁死账号；用户纠正接口/字段后模板变化视为新组合，允许再试一次
-5. **总量约束**：单探测 10s 超时、单轮探测调用数上限；阶梯③路径清单固定 ≤10 条（对用户自报 host
-   的定向检查，非扫描行为）
+5. **总量约束**：单探测 10s 超时、轮内预算**按工具分池**（probe_url 8 / discover_login 3 /
+   probe_protocol 2 / probe_login 4——单工具暴力试探不得饿死发现链，达上限指引继续验证而非收尾）；
+   阶梯③路径清单固定 ≤10 条（对用户自报 host 的定向检查，非扫描行为）
 6. **探测副作用言明**：probe_protocol 建临时线程属对被测系统的写操作，探测前经 `ask_user` 言明
    （可与 probe_login 预览确认合并为一次交互）
 
@@ -435,8 +436,8 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 - 红线实现：host 边界（`_ensure_host` 未授权 host 经 ask_user 征得同意，拒绝即拉黑）；凭证外发硬门禁
   （无 ask_fn 一律不发送）；防锁（(ref, host, body_template) 组合一次即停，用户纠正
   字段后模板变化视为新组合可再试）；轮内预算 `new_turn()` 挂 `PackageAgent.turn`
-  （上限 12）；注入防护（`_wrap_evidence` data 区块声明 + 截断）；探测证据随会话日志落
-  `workspace/agent_logs/`
+  （按工具分池：probe_url 8 / discover_login 3 / probe_protocol 2 / probe_login 4）；注入防护
+  （`_wrap_evidence` data 区块声明 + 截断）；探测证据随会话日志落 `workspace/agent_logs/`
 - 集成：`PackageAgent` 双 server 组装（文件沙盒 + 探测面），`_describe_tools` 汇总；CLI
   `scenario_agent._make_ask_fn()` 桥接 `ask()/select()/hide` 交互原语（`--yes` CI 形态不装配）；
   prompts 增「SUT 接入调试」阶段（纯包内语境，无 docs/ 引用——prompts 随包发布）
@@ -529,3 +530,4 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 | v2.2 | 2026-09-02 | **§6.6 待决问题全部落定**：决策 3 = A（probe_protocol 入 P0，四件全量）；决策 4 = P1（`sut probe` 独立命令与 doctor 集成后置）。P0 范围冻结：SUTProbeToolServer 五工具 + ask_user 桥 + 四条安全红线 + prompts 调试阶段 + 全 mock 测试 |
 | v2.3 | 2026-09-02 | **§6.6 P0 落地**（feat/agent-sut-debug）：`agent/sut_probe_tools.py` 五工具 + 四条红线实现（host 授权/凭证外发门禁/防锁/轮内预算 12 + 注入防护）+ PackageAgent 双 server 组装 + CLI ask 桥 + prompts「SUT 接入调试」阶段（无 docs/ 引用，prompts 随包发布）+ 23 项全 mock 单测；详见 §6.6 P0 落地注记 |
 | v2.4 | 2026-09-02 | **§6.6 P0 实测迭代（用户不知道字段名场景）**：①discover_login 新增 OpenAPI 文档探测阶梯（`/openapi.json` 等固定清单，命中即得精确端点与字段 schema）、兜底指引改为**只问登录接口地址一项**（字段名不问用户——用户普遍不知道，由 Agent 按候选 fields 或常见约定拟定，probe_login 脱敏预览即用户确认/纠正环节）；②登录防锁键从 (ref, host) 扩为 **(ref, host, body_template)**——配置未变不重试，用户纠正字段后模板变化视为新组合可再试一次；③prompts 补「用户回答不知道」行为链（Agent 自行拟定 → 实测 → 证据交用户核对）；测试 23 → 27 项 |
+| v2.5 | 2026-09-02 | **§6.6 P0 实测迭代二（预算饿死与未验证落盘）**：真机会话暴露——probe_url 逐路径猜接口烧光共享预算 12 → 用户提供登录页地址后 discover_login 被预算拒绝，页面分析整段跳过，Agent 又按预算报错「汇总现有证据收尾」的指引把猜测接口直接写进 sut_configs。修复：①预算从共享池改**按工具分池**（8/3/2/4）；②预算报错文案重写——呈现证据 + 请用户开新轮重置预算 + 未验证结论不得写入；③probe_url ≥400 返回 next_step 指向 discover_login、禁止逐路径猜；④discover_login 阶梯②扩展 JS **绝对 URL 扫描**（登录页域 ≠ 接口域的跨域端点）；⑤prompts 三红线（404 处置 / 预算达上限行为 / 用户给的接口也要实测、不推 DevTools）；测试 27 → 29 项 |
