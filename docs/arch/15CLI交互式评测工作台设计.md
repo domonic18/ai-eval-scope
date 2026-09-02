@@ -667,6 +667,103 @@ prompt 段 + 档位登记，**不改会话机**。
   条对话」提示；`--json` 与非 TTY（`--yes --instruction` CI 形态）静默跳过横幅。
 - §3.5 主菜单一级入口与域内快捷方式共用同一横幅（档位不同 → `{domains}`/示例文案不同）。
 
+### 6.11 代码质量与开源规范优化（v3.2 方案稿）
+
+> 开源前置 review（2026-09-02，用户两点要求：①场景包结构知识不 hardcode 在提示词，
+> 改为「Agent 读规范文档 + 看内置样例」；②常量归集与命名/分层符合行业规范）。
+> 本节为方案稿，随 §6.7/§6.8 会话机切换一并实施；**PACKAGE_ROOT 修正与 ToolSpec 描述
+> 修正无依赖，可独立先行**。
+
+#### 6.11.1 结构知识外置：随包 Markdown 规范 + read_guide 工具
+
+**现状问题**——包结构知识四源并存，Agent 只读得到 hardcode 那份：
+
+| 来源 | 内容 | 随 pip 包发布 | Agent 可达 |
+|---|---|---|---|
+| `docs/arch/13 §四` | 包结构设计规范（人读） | ❌ 仓库文档 | ❌（运行时禁引 docs/） |
+| `assets/schemas/*.json` | task_set / rule_set JSON Schema | ✅ | ❌（工具面未暴露） |
+| 内置包 chat / code / courseware | 权威样例 | ✅ | ✅ read_reference / search_reference |
+| `package_agent_prompts.yaml`「内容规范」段 + `generate_new_package` 模板 | 上述的蒸馏硬编码副本 | ✅ | ✅ **唯一实际生效** |
+
+硬编码副本与真相源之间漂移无门禁；结构字段描述混在行为规约里，system_prompt 约 133 行。
+
+**设计**：
+
+1. **新资产 `assets/guides/scenario-package-format.md`**——面向 LLM 阅读的运行时速查，
+   大纲对齐 arch/13 §四：目录结构总览 / 清单 `agent_eval.yaml` 字段表 / rules 规则集 /
+   prompts 判官提示词 / task_sets 考卷 / datasets / metrics policy / sut_configs（仅
+   credential_ref 引用，红线重申）。每小节：字段表 + 最小内联示例 + **「权威样例」指引**
+   （如 `read_reference("chat", "rules/chat-quality.yaml")`——规范与真实样例串接）+
+   关联 JSON Schema 文件名。随包发布（prompts 同款红线：**运行时资料禁止引用仓库
+   docs/ 路径**——pip 安装用户没有 docs/）。
+2. **`workbench_tools.py` 增 `read_guide(topic)` 工具**：按二级标题切节返回（截断），
+   ToolSpec 列出 topic 清单，无 topic 返回目录；放包域工具面（结构知识属包域）。
+3. **prompts 瘦身**：「内容规范」段退役 → 一行「包结构规范用 read_guide 阅读，格式以
+   规范文档 + 内置包为准，不要凭记忆自创」；`generate_new_package` 模板的目录清单同步
+   删除；参照使用指引三处重复（prompts 工作流程第 3 步 / tool description /
+   available_files hint）收敛到工具返回值。行为规约（工作流程 / SUT 调试方法论 /
+   ask_user 规约 / 输出规范）全部保留。
+4. **真相源分层（关键不变式）**：`validate_package` 门禁（代码）= **硬真相**——Agent
+   照 guide 写错仍会被打回自修复，漂移的最坏后果是多一轮回改，**不产生坏包**；guide
+   页首注明「与 arch/13 §四同步，变更 arch/13 须同步本文件」（资料源纪律，非机器门禁）。
+5. **顺带修正（review 发现）**：`search_reference` ToolSpec 描述声称返回「场景扩展
+   方法论要点」，实现只返回文件树——改描述对齐行为（方法论已由 prompts 前端包分析法
+   承载）；`_load_prompts` 资产结构校验随 `intro`（§6.10）/ guide 段扩充。
+
+#### 6.11.2 常量归集与命名规范
+
+**分层原则**（行业实践：**按可变性分层，而非物理集中成全局 constants.py**——大杂烩
+常量文件掩盖影响面，改一处全仓重审）：
+
+| 层 | 判据 | 归宿 |
+|---|---|---|
+| 可调参数（tunables） | 随场景 / 用户 / CLI 变 | frozen dataclass 配置对象，构造器注入，默认值单点——与 §6.7 P2 CLI 旗标（`--max-turns/--max-segments/--budget-usd`）**同一载体合流** |
+| 固定阈值（invariants） | 行为不变式（安全红线、截断上限、超时） | 就近具名模块常量，统一 `_MAX_*` 私有风格 + 注释写明依据；跨模块复用才上提共享模块 |
+
+**`WorkbenchAgentConfig` 草案**（§6.8 迁移后的载体，取代散装构造参数与模块常量）：
+
+```python
+@dataclass(frozen=True, slots=True)
+class WorkbenchAgentConfig:
+    # 会话机（§6.7 P2 CLI 旗标直通）
+    max_turns: int = 40              # 单段安全阀基数（recursion_limit = max_turns × 2）
+    max_fix_rounds: int = 3          # 校验门禁回改轮上限
+    max_segments: int = 3            # 自动分段续跑上限（P1）
+    budget_usd: float | None = None  # 会话预算（P2；None = 不启用）
+    # 对话持久化
+    max_dialogue_entries: int = 40
+    resume_max_entries: int = 24
+    resume_max_chars: int = 400
+    # 探测域档位默认（域档位可覆盖——D-WB-2 域 = 工具面 + 提示词段 + 门禁策略）
+    probe_budgets: dict[str, int] = field(default_factory=lambda: dict(TOOL_BUDGETS))
+    probe_timeout_s: float = 10.0
+```
+
+**常量盘点（现状 → 目标）**：
+
+| 现状位置 | 常量 | 目标 |
+|---|---|---|
+| `package_agent.py` 构造参数 | max_turns=40 / max_fix_rounds=3 | config（上表） |
+| `package_agent.py` 模块常量 | `_MAX_DIALOGUE_ENTRIES` / `_RESUME_MAX_ENTRIES` / `_RESUME_MAX_CHARS` | config（上表） |
+| `package_agent.py:40` | `_PROMPTS_PATH` **手拼 `parent.parent/assets`** | **修违规**：改用 `config/paths.PACKAGE_ROOT`（evaluator/CLAUDE.md 自家约定；execution_agent / summary 均已用，唯此文件手拼） |
+| `sut_probe_tools.py` | `TOOL_BUDGETS` / `PROBE_TIMEOUT_S` / `MAX_DISCOVER_PATHS`（公开）与 `_MAX_EVIDENCE` 等 8 项（私有）命名风格混用 | 预算 / 超时入 config；文件级阈值统一 `_MAX_*` 私有具名 |
+| `package_tools.py` | `read_file(8000)` / `read_reference(6000)` 签名 magic number | 提 `_DEFAULT_READ_CHARS` 等具名常量（工具签名默认值仍可被 LLM 传参覆盖，语义不变） |
+| `scenario_agent.py` | `_render_diff(max_lines=80)`、question 60 字等 | 具名常量；随文件拆分（下）归位 |
+
+**命名与文件组织**（开源可读性；§6.8 迁移表的细化）：
+
+- `cli/cmds/scenario_agent.py`（514 行）超仓库「粒度守恒 ~300 行」约定（组织约定 6），
+  四类职责混居：流式渲染（`_make_stream_emitter`）→ **`console/agent_stream.py`**
+  （表现层基础设施，与 prompts/render 同层）；REPL 循环、ask 桥、落盘归位留 cmds
+  （随 §6.8 改名 `workbench_agent.py`）。
+- `agent/sut_probe_tools.py`（883 行）**P1** 拆分：抓取缓存与证据包裹原语 / 登录发现 /
+  登录实测（防锁）/ 协议探测各自成模块，`SUTProbeToolServer` 保持组装壳——「一域一
+  server」形态不变（D-WB-7），拆的是实现不是边界。
+- `PackageAgent.__init__` 内非可选依赖的惰性 import（`config.paths` /
+  `CredentialStore`）上提模块顶层；`deepagents` 保持惰性（`[agent]` extra 红线）。
+- **ToolSpec 描述即对外契约**（开源用户与 LLM 同读）：描述与行为一致性纳入 review
+  检查项（本案：`search_reference` 描述漂移，§6.11.1-5）。
+
 ---
 
 ## 七、查看与结果浏览
@@ -725,6 +822,7 @@ prompt 段 + 档位登记，**不改会话机**。
 | `cli/cmds/`（scenario/models/auth/runs/open_url/doctor + 既有五组迁入） | 重组+新增 | 子命令组（typer 绑定 + 纯函数动作） |
 | `agent/package_agent.py` / `agent/package_tools.py` | 新增 | PackageAgent 组装与沙盒工具面（v3.0 目标态迁移为 `workbench_agent.py` / `workbench_tools.py`，§6.8） |
 | `agent_eval/assets/configs/package_agent_prompts.yaml` | 新增 | Agent 提示词资产（v3.0 目标态更名 `workbench_agent_prompts.yaml`）；v3.1 增 `intro` 自我介绍段（§6.10） |
+| `agent_eval/assets/guides/scenario-package-format.md` | 新增（v3.2） | 随包发布的包结构规范——Agent 经 `read_guide` 阅读（§6.11.1），与 arch/13 §四同步 |
 | 平台侧 `/cli-auth` 页（P1 增强）与 pair 端点（P2） | 09 侧 | 见 §5.1/§5.2 接口约定 |
 
 ---
@@ -759,3 +857,4 @@ prompt 段 + 档位登记，**不改会话机**。
 | v2.13 | 2026-09-02 | **§6.6 实测迭代十（协议配置未验证即落盘，执行评测 404）**：创建会话把全部预算花在登录攻克（登录实测 200+token ✅）后，**probe_protocol 调用 0 次**就把入口页面域写进 `base_url`、`protocol_flavor: commands` 从 chat 参照包继承——执行时 commands 端点 404（该域只有网页）。修复：**红线从提示升级为落盘门禁**——`PackageAgent._gate_and_commit` 增 `_sut_protocol_gate`，sut_configs 声明 `channel: agent_protocol` 而 base_url 主机未经本会话 `probe_protocol` 实测（`SUTProbeToolServer.protocol_hosts` 记录）→ validation error 注入回改轮，未过不落盘；prompts ③ 步同步门禁存在与「接口域 ≠ 页面域」。配套执行侧修复见 arch/03 v4.6.7（本地模拟标注 / 导出层兜底 / host 边界 / 停止即兴引导） |
 | **v3.0** | 2026-09-02 | **§六 定位升维：PackageAgent → WorkbenchAgent（工作台 Agent），方案稿**（用户判词：「CLI 的 agent 不只是场景包创建/修改，还有数据修改、开源数据下载处理等复杂任务——应升维为与 Claude Code 类似的 agent，方案与代码组织方式一并优化」）。①定位分层：对标 Claude Code = **通用会话机 + 按域装配工具面（profile）+ 统一红线策略**，§六更名「工作台 Agent」、§6.1–6.6 保留为场景包域落地记录；②新增 **§6.7 会话机方案**（实测复盘：80 步撞线回滚致全失忆——语义转变 **D-WB-4「唯一的失败是用户放弃」**，上限=暂停；P0 salvage（MemorySaver 检查点 + 孤儿 tool_call 修复，成功路径架构不变）/ P1 自动分段续跑（单段阀 + 分段上限 + checkpoint 事件）/ P2 BudgetGuard 预算缰绳 + `--max-turns/--max-segments/--budget-usd` 配置化 / P3 进度外置（验证结论即写暂存草稿））；③新增 **§6.8 组织方式**（package_agent→workbench_agent 等一次性迁移表 + 域装配档位 + staging/网络红线泛化为工作台级策略）；④新增 **§6.9 域路线图**（数据集复用 arch/10 DatasetManager / 包内数据修改 / 运行域；需求侧同步待办标注）。本版仅方案，代码迁移随会话机实施 |
 | **v3.1** | 2026-09-02 | **工作台 Agent 入口与首屏 UX 方案**（用户诉求：start 菜单项随 Agent 定位调整 + 启动后给自我介绍）：①新增 **§3.5 主菜单一级入口「工作台 Agent」**——Agent 从域内动作升为工作台首选工作方式；域内两项入口降格为「档位快捷方式」（预载选中包上下文，对标 cwd 启动 claude）；`--domain agent` 直达；Agent 入口 preflight 阻断未配模型（区别于查看类「只提示不阻断」）；②新增 **§6.10 启动横幅与自我介绍**——五要素（身份/任务对象与能力域/使用示例/红线与确认/控制方式）+ 场景包域成稿文案；文案资产化（prompts 资产 `intro` 段按档位字面 replace 渲染，CLI 只渲染不写死，新域上线改资产不改代码）；rich Panel 渲染、`--json`/非 TTY 静默。随 §6.8 会话机切换一并实施 |
+| **v3.2** | 2026-09-02 | **§6.11 代码质量与开源规范优化，方案稿**（开源前置 review：①结构知识 hardcode ②常量散落）。**§6.11.1 结构知识外置**：新资产 `assets/guides/scenario-package-format.md`（随包发布、与 arch/13 §四同步）+ `read_guide(topic)` 工具 + prompts 瘦身（「内容规范」段退役、参照指引收敛到工具返回、结构字段表全部移出）+ 真相源分层（validate 门禁=硬真相，guide 漂移最坏多一轮回改不产生坏包）；**§6.11.2 常量归集与命名**：按可变性分层（tunables → `WorkbenchAgentConfig` frozen dataclass，与 §6.7 P2 CLI 旗标同载体合流；固定阈值就近具名统一 `_MAX_*`）+ 常量盘点表 + `PACKAGE_ROOT` 违规修正 + `scenario_agent.py` 拆分（流式渲染迁 `console/agent_stream.py`）+ `sut_probe_tools.py` 拆分（P1）+ ToolSpec 描述漂移修正。随 §6.7/§6.8 切换实施；PACKAGE_ROOT / 描述修正可独立先行 |
