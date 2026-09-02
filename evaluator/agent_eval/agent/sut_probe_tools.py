@@ -41,9 +41,10 @@ PROBE_TIMEOUT_S = 10.0
 # 猜接口烧光共享预算后，discover_login 被拒、页面分析整段跳过）。额度从宽——
 # 只兜住失控循环，不卡正常调试（候选跨域验证、用户纠正后重试都有余量）
 TOOL_BUDGETS: dict[str, int] = {
-    "probe_url": 15,  # 可达性抽检 + 前端包抓取入缓存；逐路径猜接口是反模式
+    "probe_url": 20,  # 可达性抽检 + 前端包/分块抓取入缓存；逐路径猜接口是反模式
     "discover_login": 5,  # 页面发现内含多条子请求，独立小池
-    "search_content": 15,  # 检索便宜且是分析主循环，从宽——只兜空转
+    "search_content": 30,  # 分析主循环：真实会话中含噪检索词（post/user/token 命中
+    # axios 库代码）与 js/css 双 hash 表分辨都要烧次数——额度从宽只兜空转
     "probe_protocol": 3,
     "probe_login": 6,  # 预览确认后实测；跨域候选逐个验证、用户纠正字段后的重试都计于此
 }
@@ -58,6 +59,15 @@ _MAX_MATCHES = 12  # search_content 单次摘录上限
 _MAX_PATTERN = 100  # 检索模式长度上限（子串，非正则——防 ReDoS 且够用）
 _DEFAULT_CONTEXT = 170
 _MAX_CONTEXT = 400
+# 登录模板语法纠偏：probe_login 用 Jinja2 渲染 body_template，实测曾出现 shell 风格
+# ${var} 占位符原样发出（服务端报「格式不是手机号」被误读为用户输入错误）——
+# 渲染后残留占位符一律拒发
+_TEMPLATE_SYNTAX_HINT = (
+    "body_template 语法为 Jinja2：变量写 {{ 字段名 }}（如 {{ username }}），"
+    '常量字段直接写字面值（如 "platform": "fs"）；${var}、%s 等 shell/字符串模板'
+    "风格不会被渲染，会原样发出"
+)
+_UNRENDERED_PLACEHOLDER_RE = re.compile(r"\$\{[^}]*\}|\{\{[^}]*?\}\}|\{%[^%]*?%\}")
 
 
 class _PageStructureParser(HTMLParser):
@@ -199,7 +209,8 @@ class SUTProbeToolServer(ToolExporterMixin):
         self.log_path = log_path
         self._http_factory = http_client_factory
         self._turn_calls: dict[str, int] = {}
-        # 抓取缓存（url → 完整内容）：前端包分析的存储侧，轮内有效
+        # 抓取缓存（url → 完整内容）：前端包分析的存储侧，会话内跨轮有效
+        # （预算按轮重置但分析状态不丢——新轮可直接检索续查）
         self._fetched: dict[str, str] = {}
         # 防锁：同 (ref, host, body_template) 只实测一次——配置未变不重试；
         # 用户纠正字段/接口后模板变化视为新组合，允许再次实测
@@ -208,9 +219,13 @@ class SUTProbeToolServer(ToolExporterMixin):
     # ── 会话挂点与内部设施 ────────────────────────────────────────
 
     def new_turn(self) -> None:
-        """每轮 REPL 开始时由 PackageAgent 调用：重置轮内预算与抓取缓存。"""
+        """每轮 REPL 开始时由 PackageAgent 调用：重置各工具轮内预算。
+
+        抓取缓存**跨轮保留**（会话内有效，容量有界）——预算报错指引「用户回复
+        任意消息开启新一轮后继续验证」，若连缓存一起清空，新轮先要把前端主包
+        重抓重搜才能回到原地，放大的预算也会先耗在重复劳动上。
+        """
         self._turn_calls.clear()
-        self._fetched.clear()
 
     def _cache_content(self, url: str, content: str) -> None:
         """完整内容入缓存（单文件截断 + 条目数上限，淘汰最早抓取的）。"""
@@ -665,18 +680,34 @@ class SUTProbeToolServer(ToolExporterMixin):
                     "备用通道）；收齐后重新调用本工具"
                 ),
             }
-        key = (ref.lower(), _host_of(url).lower(), str(template))
+        if not url:
+            return {"error": "login_cfg 缺少 url/path"}
+        # 防锁按（ref+完整 URL+模板）：同 host 不同路径是不同组合——实测曾因键缺
+        # 路径，猜错路径的失败连坐了用户随后给出的正确地址
+        key = (ref.lower(), url, str(template))
         if key in self._login_tried:
             return {
                 "error": (
                     "该接口与字段组合已实测过一次且失败（防锁红线），同一配置不再自动重试。"
-                    "若已与用户核对出新接口/字段名，更新 body_template 后即为新组合，可再试一次"
+                    "若已与用户核对出新接口/字段名，更新 body_template 或地址后即为新组合，"
+                    "可再试一次"
                 )
             }
-        if not url:
-            return {"error": "login_cfg 缺少 url/path"}
+        # 占位符语法校验：渲染后残留 ${var}/{{var}} 即模板写错——拒发（预览即最终
+        # 报文的核对由工具兜底，不依赖人眼发现占位符没被替换）
+        try:
+            rendered = Template(template).render(**values)
+        except Exception as e:  # noqa: BLE001 — 模板语法错误转纠正提示
+            return {"error": f"body_template 渲染失败（{e}）。{_TEMPLATE_SYNTAX_HINT}"}
+        if residual := _UNRENDERED_PLACEHOLDER_RE.findall(rendered):
+            return {
+                "error": (
+                    f"body_template 渲染后仍残留占位符 {residual[:3]}——请求未发送。"
+                    f"{_TEMPLATE_SYNTAX_HINT}"
+                )
+            }
 
-        body = _mask(Template(template).render(**values), list(values.values()))
+        body = _mask(rendered, list(values.values()))
         method = login_cfg.get("method", "POST").upper()
         # 脱敏预览 + 凭证外发同意（红线 2/预览即同意）：非交互形态一律不发送。
         # 预览必须显示完整 URL——路径抄错只有在这里用户才看得见（只显 host 等于没校对）
@@ -706,7 +737,7 @@ class SUTProbeToolServer(ToolExporterMixin):
                 response = await client.request(
                     method,
                     url,
-                    content=Template(template).render(**values),
+                    content=rendered,
                     headers={"Content-Type": "application/json"},
                 )
         except Exception as e:  # noqa: BLE001

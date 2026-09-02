@@ -270,11 +270,14 @@ class TestSearchContent:
         assert result["matches"] == []
         assert "next_step" in result  # 换词重试的指引，而非终结
 
-    def test_new_turn_clears_cache(self) -> None:
+    def test_new_turn_keeps_cache_and_resets_budget(self) -> None:
+        """缓存跨轮保留：预算报错指引「开新轮续查」——若连缓存清空，新轮要先重抓
+        重搜前端主包才能回到原地，放大的预算也先耗在重复劳动上。预算照常重置。"""
         server = _make()
         server._cache_content("https://sut.example.com/x.js", "abc")  # noqa: SLF001
         server.new_turn()
-        assert "缓存为空" in _run(server.search_content("abc"))["error"]
+        found = _run(server.search_content("abc"))
+        assert any("abc" in m["excerpt"] for m in found["matches"])  # 新轮直接续查
 
 
 # ── 前端包分析：泛化原语组合（真实 SPA 形态模拟） ────────────────────
@@ -434,6 +437,38 @@ class TestProbeLogin:
         result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
         assert result["aborted"] is True
         assert sent == []
+
+    def test_lockout_key_distinguishes_endpoints(self) -> None:
+        """防锁按（ref+完整 URL+模板）：同 host 不同路径是不同组合。
+
+        实测教训：键缺路径时，猜错路径（/api/auth/login）的失败连坐了用户随后
+        给出的正确地址（/users/login），只能靠录入凭证旁路解锁。
+        """
+        calls: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls.append(request.url.path)
+            return httpx.Response(401, json={"error": "bad"}, request=request)
+
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
+        guessed = {**_LOGIN_CFG, "url": "https://sut.example.com/api/auth/login"}
+        correct = {**_LOGIN_CFG, "url": "https://sut.example.com/users/login"}
+        assert _run(server.probe_login(guessed, "SUT"))["ok"] is False
+        assert _run(server.probe_login(correct, "SUT"))["ok"] is False  # 不同路径放行
+        assert _run(server.probe_login(guessed, "SUT"))["error"]  # 同路径同模板才防锁
+        assert calls == ["/api/auth/login", "/users/login"]
+
+    def test_unrendered_placeholder_rejected_not_sent(self) -> None:
+        """模板占位符语法错误（${var} 等非 Jinja 形态）→ 拒发并纠正语法。
+
+        实测：${phone} 原样发出，服务端报「格式不是手机号」，Agent 误归因用户输入。
+        """
+        server, sent = self._server(lambda r: httpx.Response(200, json={}), ask=None)
+        bad = {**_LOGIN_CFG, "body_template": '{"phone": "${phone}", "captcha": "${captcha}"}'}
+        result = _run(server.probe_login(bad, "SUT"))
+        assert "error" in result
+        assert "Jinja2" in result["error"] and "未发送" in result["error"]
+        assert sent == []  # 请求未发出
 
     def test_one_attempt_only_after_failure(self) -> None:
         calls = {"n": 0}
