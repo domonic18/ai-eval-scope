@@ -181,6 +181,35 @@ SUT 凭证缺失 → secrets set <ref>.<field> ／ 无项目包 → scenario new
 
 `console/equiv.py` 维护「动作 → argv 构造器」映射表；向导确认页渲染 `等价命令: agent-eval pipeline --package chat ...`。argv 由向导已收集的参数组装而成——与实际执行的参数对象同源（D-CLI-1），不会漂移。
 
+### 3.5 主菜单 v3.0：工作台 Agent 一级入口（v3.1 方案稿）
+
+> 背景：v3.0 将 CLI Agent 从「场景包工具」升维为 WorkbenchAgent（§六导语）——Agent 不再是
+> 某个域里的一个动作，而是工作台的首选工作方式。`start` 菜单结构随定位调整。
+
+主菜单（`WorkbenchSession.run`）目标态：
+
+```
+选择工作域
+  1. 工作台 Agent（对话式）   ← 新增一级入口（推荐）：自然语言下需求，跨域任务
+  2. 场景包管理
+  3. 执行评测
+  4. 查看结果
+  5. 账号与配置
+  6. 退出
+```
+
+- **一级入口 = 通用档位**：进入 WorkbenchAgent REPL（自我介绍横幅见 §6.10 + 会话循环），
+  能力域如实标注当前装配范围（场景包工程 + SUT 接入调试；其余域随 §6.9 路线图增装）。
+  `start --domain agent` 提供等价直达（与 `--domain auth` 别名惯例一致）。跨域会话内
+  任务对象切换仍随数据集域落地（§6.8）；一级入口先行不等它——复用既有 REPL 宿主与
+  既有工具面，横幅如实声明当前域。
+- **域内入口 = 档位快捷方式**：场景包域两项标签调整为「用 Agent 创建场景包」「用 Agent
+  修改选中的包」——语义从「Agent 的功能」改为「预载对象上下文的快捷方式」（改包先经
+  `select_editable_ref` 选定，选中对象注入首条上下文；对标在仓库目录里启动 claude，
+  cwd 即上下文）。快捷方式进入的会话显示同一横幅（档位=包域，示例文案为包域档）。
+- **preflight 差异**：Agent 入口前置检查 LLM 配置，未配置 → 指引 `models set` 并阻断进入
+  （无模型 Agent 不可用，与首屏「只提示不阻断」的查看类检查语义不同）。
+
 ---
 
 ## 四、命令体系与重命名落地
@@ -596,6 +625,48 @@ prompt 段 + 档位登记，**不改会话机**。
 
 > 需求侧同步待办：req/04 增补「工作台 Agent 通用域」需求条目与验收口径（本版仅架构侧）。
 
+### 6.10 启动横幅与自我介绍（v3.1 方案稿）
+
+> 用户诉求：Agent 定位升维后，新用户进入会话需要一段自我介绍——我是谁、能做什么、
+> 怎么用。对标 Claude Code 首屏（欢迎框 + cwd + tips）。现状：REPL 启动只有会话日志
+> 路径一行（`scenario_agent.py::_session`），用户不知道 Agent 的能力边界与正确用法。
+
+**内容要素（五件，顺序固定）**：
+
+| # | 要素 | 来源 |
+|---|---|---|
+| 1 | 身份一句话 | 资产文案（固定） |
+| 2 | 当前任务对象 + 可用能力域 | `{root}`（包根/新包草稿路径）+ `{domains}`（档位装配的能力域清单） |
+| 3 | 使用示例 2–4 条 | 资产文案按档位选取（示例必须与档位真实能力一致，不得宣传未装配域） |
+| 4 | 红线与确认方式 | 资产文案（暂存→diff→确认落盘 / 凭证不回流——与 §6.3/§6.6 红线同源） |
+| 5 | 控制方式 | 资产文案（Ctrl+C 暂停、空行退出、中断续作） |
+
+**成稿（场景包域 + SUT 接入调试档位；`{root}` 渲染为实际路径）**：
+
+> 你好，我是 **agent-eval 工作台 Agent**——你用自然语言下需求，我调用工具逐步完成
+> 评测工程中的多步操作。
+>
+> 当前任务对象：`{root}`　　可用能力域：场景包工程 · SUT 接入调试（其余域随版本增装）
+>
+> 可以这样用我：
+> - 「创建一个代码安全评测场景包，被测系统入口 https://…」——给页面登录地址即可，
+>   我会探测登录接口与 agent 协议、实测验证后才写入配置
+> - 「参照 chat 包，把规则集换成幻觉检测，再加 5 条考卷」
+> - 「这个包执行报 404，帮我排查 SUT 配置」
+>
+> 规则：所有文件改动先进暂存区，给你看 diff、你确认后才落盘；凭证只在会话内隐藏输入，
+> 不写进任何文件或日志。
+> 控制：Ctrl+C 随时中断（已完成进度保留，说「继续」接着干），输入空行退出。
+
+**实现要点**：
+
+- 文案落提示词资产独立 `intro` 小节（§6.8 迁移目标 `workbench_agent_prompts.yaml`），
+  模板变量 `{root}`/`{domains}` 走既有字面 replace 渲染；CLI（REPL 宿主）只渲染不写死
+  ——新域上线改资产即更新介绍，不改代码。
+- 渲染：rich Panel，REPL 启动时、会话日志行之前；续作会话在横幅后追加既有「已续接 N
+  条对话」提示；`--json` 与非 TTY（`--yes --instruction` CI 形态）静默跳过横幅。
+- §3.5 主菜单一级入口与域内快捷方式共用同一横幅（档位不同 → `{domains}`/示例文案不同）。
+
 ---
 
 ## 七、查看与结果浏览
@@ -653,7 +724,7 @@ prompt 段 + 档位登记，**不改会话机**。
 | `cli/workbench/session.py` + `workbench/domains/*` | 新增 | 向导框架与四域动作 |
 | `cli/cmds/`（scenario/models/auth/runs/open_url/doctor + 既有五组迁入） | 重组+新增 | 子命令组（typer 绑定 + 纯函数动作） |
 | `agent/package_agent.py` / `agent/package_tools.py` | 新增 | PackageAgent 组装与沙盒工具面（v3.0 目标态迁移为 `workbench_agent.py` / `workbench_tools.py`，§6.8） |
-| `agent_eval/assets/configs/package_agent_prompts.yaml` | 新增 | Agent 提示词资产（v3.0 目标态更名 `workbench_agent_prompts.yaml`） |
+| `agent_eval/assets/configs/package_agent_prompts.yaml` | 新增 | Agent 提示词资产（v3.0 目标态更名 `workbench_agent_prompts.yaml`）；v3.1 增 `intro` 自我介绍段（§6.10） |
 | 平台侧 `/cli-auth` 页（P1 增强）与 pair 端点（P2） | 09 侧 | 见 §5.1/§5.2 接口约定 |
 
 ---
@@ -687,3 +758,4 @@ prompt 段 + 档位登记，**不改会话机**。
 | v2.12 | 2026-09-02 | **§6.6 实测迭代九（预算耗尽在分块映射读出的前一步）**：复测会话里 Agent 已走对分块跟随方法（检索出路由映射 `9258:"login__teacher__index"`），但 search_content 15 次/轮在含噪检索（post/user/token 命中 axios 库代码）与 js/css 双 hash 表分辨中被烧光，差最后一步达上限。修复（用户要求放大额度）：①预算 probe_url 15 → 20、search_content 15 → 30（发现是分析主循环，从宽只兜空转）；②**抓取缓存改跨轮保留**——原 `new_turn()` 连缓存清空，预算报错指引的「回复任意消息开新轮续查」实际要先重抓重搜 1.7MB 主包回到原地，放大的预算也会先耗在重复劳动上；改后缓存会话内有效（容量有界 8 文件 × 3MB），新轮直接检索续查，prompts 同步；测试同步（new_turn 保留缓存断言） |
 | v2.13 | 2026-09-02 | **§6.6 实测迭代十（协议配置未验证即落盘，执行评测 404）**：创建会话把全部预算花在登录攻克（登录实测 200+token ✅）后，**probe_protocol 调用 0 次**就把入口页面域写进 `base_url`、`protocol_flavor: commands` 从 chat 参照包继承——执行时 commands 端点 404（该域只有网页）。修复：**红线从提示升级为落盘门禁**——`PackageAgent._gate_and_commit` 增 `_sut_protocol_gate`，sut_configs 声明 `channel: agent_protocol` 而 base_url 主机未经本会话 `probe_protocol` 实测（`SUTProbeToolServer.protocol_hosts` 记录）→ validation error 注入回改轮，未过不落盘；prompts ③ 步同步门禁存在与「接口域 ≠ 页面域」。配套执行侧修复见 arch/03 v4.6.7（本地模拟标注 / 导出层兜底 / host 边界 / 停止即兴引导） |
 | **v3.0** | 2026-09-02 | **§六 定位升维：PackageAgent → WorkbenchAgent（工作台 Agent），方案稿**（用户判词：「CLI 的 agent 不只是场景包创建/修改，还有数据修改、开源数据下载处理等复杂任务——应升维为与 Claude Code 类似的 agent，方案与代码组织方式一并优化」）。①定位分层：对标 Claude Code = **通用会话机 + 按域装配工具面（profile）+ 统一红线策略**，§六更名「工作台 Agent」、§6.1–6.6 保留为场景包域落地记录；②新增 **§6.7 会话机方案**（实测复盘：80 步撞线回滚致全失忆——语义转变 **D-WB-4「唯一的失败是用户放弃」**，上限=暂停；P0 salvage（MemorySaver 检查点 + 孤儿 tool_call 修复，成功路径架构不变）/ P1 自动分段续跑（单段阀 + 分段上限 + checkpoint 事件）/ P2 BudgetGuard 预算缰绳 + `--max-turns/--max-segments/--budget-usd` 配置化 / P3 进度外置（验证结论即写暂存草稿））；③新增 **§6.8 组织方式**（package_agent→workbench_agent 等一次性迁移表 + 域装配档位 + staging/网络红线泛化为工作台级策略）；④新增 **§6.9 域路线图**（数据集复用 arch/10 DatasetManager / 包内数据修改 / 运行域；需求侧同步待办标注）。本版仅方案，代码迁移随会话机实施 |
+| **v3.1** | 2026-09-02 | **工作台 Agent 入口与首屏 UX 方案**（用户诉求：start 菜单项随 Agent 定位调整 + 启动后给自我介绍）：①新增 **§3.5 主菜单一级入口「工作台 Agent」**——Agent 从域内动作升为工作台首选工作方式；域内两项入口降格为「档位快捷方式」（预载选中包上下文，对标 cwd 启动 claude）；`--domain agent` 直达；Agent 入口 preflight 阻断未配模型（区别于查看类「只提示不阻断」）；②新增 **§6.10 启动横幅与自我介绍**——五要素（身份/任务对象与能力域/使用示例/红线与确认/控制方式）+ 场景包域成稿文案；文案资产化（prompts 资产 `intro` 段按档位字面 replace 渲染，CLI 只渲染不写死，新域上线改资产不改代码）；rich Panel 渲染、`--json`/非 TTY 静默。随 §6.8 会话机切换一并实施 |
