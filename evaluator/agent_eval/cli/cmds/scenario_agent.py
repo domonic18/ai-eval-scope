@@ -99,7 +99,7 @@ def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[
     """流式渲染器（claude code 式）：思考/回复 token 直出；工具行实时可见。
 
     - 段首空白吞掉：模型 text/thinking 段常以 ``\\n\\n`` 开头，直接接头部会出现
-      「🤖 后空行」（用户实测反馈）；
+      「🤖 后空行」；
     - 工具参数生成阶段（大文件内容在 tool_call args 里增量生成，不走 text 流）
       以 ``\\r`` 单行进度显示，避免数十秒无输出的「卡住」观感；仅 TTY。
     """
@@ -132,7 +132,11 @@ def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[
         value = args.get(key)
         if isinstance(value, dict):
             value = ",".join(map(str, value)) or ""
-        if isinstance(value, str) and len(value) > 72:  # 绝对路径过长只留尾部（含文件名）
+        if key == "path" and isinstance(value, str) and value.startswith("/"):
+            # 绝对路径只显示文件名——草稿区全路径是会话实现细节，无需反复露出；
+            # 相对路径原样展示（保留目录信息）
+            value = value.rstrip("/").rsplit("/", 1)[-1]
+        elif isinstance(value, str) and len(value) > 72:
             value = "…" + value[-70:]
         return f" · {value}" if value else ""
 
@@ -195,7 +199,12 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — PackageAgent
     if emit:
         rprint("[dim]⏳ Agent 工作中（流式输出，Ctrl+C 中断本轮）…[/dim]")
     try:
-        result = run_turn(agent, text, confirm_fn=_cli_confirm, on_event=emit)
+        result = run_turn(
+            agent,
+            text,
+            confirm_fn=lambda reply, diff: _cli_confirm(reply, diff, agent),
+            on_event=emit,
+        )
     finally:
         if finish:
             finish()
@@ -207,11 +216,35 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — PackageAgent
     _render_outcome(result)
 
 
-def _cli_confirm(reply: str, diff: str) -> bool:
-    """确认交互：回复已在流式直播中输出，这里只展示 diff 并询问。"""
+def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN001 — PackageAgent
+    """确认交互：回复已在流式直播中输出，这里展示 diff + 预计落点并询问。"""
     if diff:
         _render_diff(diff)
+    landing = _landing_hint(agent) if agent is not None else None
+    if landing:
+        rprint(f"[green]确认后场景包将保存到 → {landing}[/green]")
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
+
+
+def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — PackageAgent
+    """确认时刻的预计落点：暂存清单 id 已定则显示 ./<id>-package/（形态 B 归位预告）。
+
+    归位预告随确认提示出现——草稿区路径只是会话中间态，确认前让用户看清最终落点。
+    """
+    import re as _re
+
+    from agent_eval.packages import MANIFEST_FILENAME
+
+    root = Path(getattr(agent.server, "root", ""))
+    pid = agent.server.staged_manifest_id()
+    if pid:
+        slug = _re.sub(r"[^A-Za-z0-9._-]+", "-", pid).strip("-.") or "scenario"
+        if root.name.startswith("agent-eval-pkg-"):  # 草稿区 → 会话后归位 cwd
+            return Path.cwd() / f"{slug}-package"
+        return root if root.name == f"{slug}-package" else Path.cwd() / f"{slug}-package"
+    if not (root / MANIFEST_FILENAME).is_file():
+        return None
+    return root
 
 
 def _session(agent: Any, first_text: str | None) -> None:

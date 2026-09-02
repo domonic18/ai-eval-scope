@@ -35,14 +35,22 @@ _WRITE_EXTS = {".yaml", ".yml", ".json", ".md"}
 _CRED_FIELD_RE = re.compile(
     r"^\s*(password|token|api_key|secret)\s*:\s*([^#\n]+?)\s*$", re.MULTILINE
 )
-_REFERENCE_NOTES = (
-    "内置包参照（packages/ 下可读）：\n"
-    "- chat/chat:1.0.0 — 对话评测（rules/chat-quality + task_sets/default 15 用例 "
-    "+ sut_configs/sasan-agent + metrics/policy.yaml）\n"
-    "- code/code:1.0.0 — 代码生成评测（format 门控 + code.correctness/style LLM Judge）\n"
-    "- courseware/courseware:1.0.0 — 课件评测（规则集三档 gate/quality/vision + 学科知识 datasets）\n"
-    "方法论：arch/14 场景扩展指南（manifest + policy + rules + prompts，entry_points 挂接专属评估器）"
-)
+
+
+def _reference_notes() -> str:
+    """内置包参照说明 + **真实文件树**（动态扫描）。
+
+    给出实际清单而非示例名：Agent 按猜测路径 read_reference 失败时可直接
+    从这里拿到正确的相对路径重试，避免放弃参照、凭记忆自创结构。
+    """
+    from agent_eval.packages import PackageManager
+
+    lines = ["内置包参照（read_reference 的 ref 与 path 以此为准）："]
+    for pkg in PackageManager().list(source="builtin"):
+        files = sorted(p.relative_to(pkg.root).as_posix() for p in pkg.root.rglob("*.yaml"))
+        lines.append(f"- {pkg.manifest.ref}（{len(files)} 个 yaml）: " + ", ".join(files))
+    lines.append("read_reference 的 path 直接复制上面清单中的文件名（相对包根）")
+    return "\n".join(lines)
 
 
 def _is_credential_violation(content: str) -> str | None:
@@ -277,7 +285,7 @@ class PackageToolServer(ToolExporterMixin):
             for p in sorted(pkg.root.rglob("*.yaml")):
                 if query.lower() in p.relative_to(pkg.root).as_posix().lower():
                     hits.append(f"{pkg.manifest.ref}::{p.relative_to(pkg.root).as_posix()}")
-        return {"query": query, "matched_files": hits[:20], "notes": _REFERENCE_NOTES}
+        return {"query": query, "matched_files": hits[:20], "notes": _reference_notes()}
 
     async def read_reference(self, ref: str, path: str, max_chars: int = 6000) -> dict[str, Any]:
         """只读内置/本地缓存包的文件内容（Agent 参照真实格式的合法通道，免沙盒逃逸）。
@@ -290,13 +298,18 @@ class PackageToolServer(ToolExporterMixin):
             pkg = PackageManager().resolve_ref(ref)
         except Exception as e:  # noqa: BLE001 — 错误交 Agent 自修复
             return {"error": f"参考包不存在: {ref}（{e}；先 search_reference 检索可用包）"}
+        available = sorted(p.relative_to(pkg.root).as_posix() for p in pkg.root.rglob("*.yaml"))
         try:
             target = (pkg.root / path).resolve()
             if not target.is_relative_to(pkg.root.resolve()):
                 raise ValueError(f"路径越出参考包根: {path}")
             content = target.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
-            return {"error": f"文件不存在或不可读: {ref}::{path}（{e}）"}
+            return {
+                "error": f"文件不存在或不可读: {ref}::{path}（{e}）",
+                "available_files": available,
+                "hint": "path 请原样取 available_files 中的相对路径重试",
+            }
         except ValueError as e:
             return {"error": str(e)}
         rel = target.relative_to(pkg.root.resolve()).as_posix()
@@ -321,6 +334,19 @@ class PackageToolServer(ToolExporterMixin):
             diff = "".join(difflib.unified_diff(old_lines, new_lines, fromfile=rel, tofile=rel))
             parts.append(diff or f"{rel}（无变化）")
         return "\n".join(parts)
+
+    def staged_manifest_id(self) -> str | None:
+        """暂存视图中的清单 id（无清单/解析失败返回 None）——归位预告用。"""
+        import yaml
+
+        text = self._view().get(MANIFEST_FILENAME)
+        if not text:
+            return None
+        try:
+            data = yaml.safe_load(text) or {}
+            return str((data.get("package") or {}).get("id") or "") or None
+        except yaml.YAMLError:
+            return None
 
     @property
     def has_staged_changes(self) -> bool:

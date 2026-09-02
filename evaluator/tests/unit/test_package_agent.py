@@ -193,6 +193,8 @@ class TestSandbox:
     def test_search_reference_offline(self) -> None:
         result = asyncio.run(PackageToolServer(Path()).search_reference("chat"))
         assert result["query"] == "chat" and result["notes"]
+        # notes 附真实文件树（猜路径失败时可就近取得正确相对路径）
+        assert "rules/chat-quality.yaml" in result["notes"]
 
     def test_read_reference_builtin_and_escape(self) -> None:
         server = PackageToolServer(Path())
@@ -206,6 +208,35 @@ class TestSandbox:
             assert "error" in missing
 
         asyncio.run(run())
+
+    def test_read_reference_miss_returns_available_files(self) -> None:
+        """猜错路径时返回该包真实清单，供 Agent 就近重试。"""
+        server = PackageToolServer(Path())
+
+        async def run() -> None:
+            miss = await server.read_reference("chat", "prompts/judge.yaml")
+            assert "文件不存在或不可读" in miss["error"]
+            assert miss["available_files"], "必须给出实际文件清单供重试"
+            assert "rules/chat-quality.yaml" in miss["available_files"]
+            assert "available_files"  # hint 指引重试
+            retry = await server.read_reference("chat", miss["available_files"][0])
+            assert "error" not in retry
+
+        asyncio.run(run())
+
+    def test_staged_manifest_id(self) -> None:
+        """暂存清单 id 读取——确认提示据此显示预计落点。"""
+        server = PackageToolServer(Path())
+        assert server.staged_manifest_id() is None  # 空暂存
+
+        async def stage() -> None:
+            await server.write_file(
+                "agent_eval.yaml",
+                "package:\n  id: demo-pkg\n  scenario: demo\n  version: 0.1.0\n",
+            )
+
+        asyncio.run(stage())
+        assert server.staged_manifest_id() == "demo-pkg"
 
 
 # ── PackageAgent 会话状态机（mock _invoke 回放） ────────────────────────
@@ -591,6 +622,32 @@ class TestCliEntries:
 
         assert _finalize_new_package(tmp_path, movable=False) == tmp_path
 
+    def test_landing_hint_from_staged_id(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """确认提示的预计落点：草稿区暂存 id → cwd/<id>-package/。"""
+        from types import SimpleNamespace
+
+        from agent_eval.cli.cmds.scenario_agent import _landing_hint
+
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "workspace" / ".staging" / "agent-eval-pkg-abcd1234"
+        draft.mkdir(parents=True)
+        agent = SimpleNamespace(
+            server=SimpleNamespace(
+                root=draft,
+                staged_manifest_id=lambda: "study-trip",
+            )
+        )
+        hint = _landing_hint(agent)
+        assert hint == tmp_path / "study-trip-package"
+
+        # 无暂存清单（磁盘也没有）→ 不提示
+        empty = SimpleNamespace(
+            server=SimpleNamespace(root=tmp_path / "empty", staged_manifest_id=lambda: None)
+        )
+        assert _landing_hint(empty) is None
+
     def test_edit_rejects_builtin(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from agent_eval.cli.cmds.scenario_agent import agent_edit_package
 
@@ -691,7 +748,7 @@ class TestStreamRender:
         assert "✻" in out and "🤖" in out  # 思考/正文各自起行标记
 
     def test_emitter_swallows_leading_blank_lines(self, capsys) -> None:
-        # 模型 text 段常以 \n\n 开头——段首空白吞掉，🤖 后不空行（用户实测反馈）
+        # 模型 text 段常以 \n\n 开头——段首空白吞掉，🤖 后不空行
         from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
