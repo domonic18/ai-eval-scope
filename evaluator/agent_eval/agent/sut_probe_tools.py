@@ -401,10 +401,14 @@ class SUTProbeToolServer(ToolExporterMixin):
             ),
         }
         if not looks_like_html:
-            result["note"] = (
-                "传入地址疑似接口而非登录页面（响应非 HTML）——若这是用户提供的登录 API，"
-                "无需页面发现：直接用它构建 login_cfg 走 probe_login 实测验证"
-                "（GET 404 不代表接口无效，POST-only 接口 GET 即 404）"
+            # 接口地址场景下覆盖兜底指引——两套指引并存方向相反时，Agent 会滑回
+            # probe_url 逐路径猜（实测教训）；单一权威指引
+            result["next_step"] = (
+                "传入地址疑似接口而非登录页面（响应非 HTML）。用户提供的地址是权威输入——"
+                "不要再用 probe_url 试其他路径：立即用该地址调用 probe_login 做实测"
+                "（可先最小 login_cfg：body_template 传 '{}' 做存在性探测——POST 404=路径"
+                "不存在；400/401/422=接口存在，再补真实字段与凭证实测）；"
+                "发送前脱敏预览会请用户确认"
             )
         return result
 
@@ -597,15 +601,30 @@ class SUTProbeToolServer(ToolExporterMixin):
         )
         # 凭证旁路：账密与响应 token 一并脱敏——值不得回流 LLM 上下文
         mask_values = [*values.values(), token_value] if token_value else list(values.values())
+        status = response.status_code
+        if status == 404:
+            guidance = (
+                "404：该路径不存在（或方法不同）——把证据呈现给用户核对地址，不要自行换路径重猜"
+            )
+        elif status < 400 and token_extracted:
+            guidance = (
+                "成功→把 url/body_template/字段名/token_path 写进 sut_configs"
+                "（凭证仅 credential_ref 引用）"
+            )
+        elif status < 400:
+            guidance = "请求成功但未提取到 token——核对 token_path 配置或把证据呈现给用户"
+        else:
+            guidance = (
+                f"HTTP {status}：接口存在（路由已匹配，校验/鉴权未过）——按证据核对字段名，"
+                "逐字段 ask_user(kind=credential) 收集/更正凭证后重测（新凭证录入即解锁"
+                "一次重试），或按证据更正 body_template（模板变化亦为新组合）"
+            )
         return {
-            "ok": response.status_code < 400 and token_extracted,
-            "status": response.status_code,
+            "ok": status < 400 and token_extracted,
+            "status": status,
             "token_extracted": token_extracted,
             "evidence": _wrap_evidence("登录响应（已脱敏）", _mask(response.text, mask_values)),
-            "next_step": (
-                "成功→把 url/body_template/字段名/token_path 写进 sut_configs（凭证仅 credential_ref 引用）；"
-                "失败→把证据呈现给用户，与用户核对接口与字段，不要自行重试"
-            ),
+            "next_step": guidance,
         }
 
     # ── 工具五：ask_user（文本/单选/凭证，值不回流） ──────────────
@@ -658,6 +677,9 @@ class SUTProbeToolServer(ToolExporterMixin):
         bucket = next((k for k in secrets if k.upper() == ref.upper()), ref)
         secrets.setdefault(bucket, {})[field.lower()] = value
         save_secrets_file(secrets, None)
+        # 新凭证录入解锁该 ref 的登录防锁：一次录入换一次实测
+        # （重试循环被「必须经用户录入」天然限流）
+        self._login_tried = {k for k in self._login_tried if k[0] != ref.lower()}
         self._log("ask_user", event="credential_saved", ref=ref, field=field)
         return {
             "saved": True,

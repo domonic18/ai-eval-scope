@@ -173,7 +173,7 @@ class TestDiscoverLogin:
 
         def handler(request: httpx.Request) -> httpx.Response:
             if request.url.path == "/web/login":  # 页面路径不在常见登录路径清单内
-                return httpx.Response(200, text="plain", request=request)
+                return httpx.Response(200, text="<html>空页面</html>", request=request)
             return httpx.Response(404, request=request)
 
         server = _make(http_client_factory=_transport(handler))
@@ -206,21 +206,21 @@ class TestDiscoverLogin:
         assert {"account", "password", "captcha"} <= set(result["field_hints"])
 
     def test_api_endpoint_input_notes_direct_probe_login(self) -> None:
-        """传入接口地址（响应非 HTML）→ 提示直接 probe_login 实测，无需页面发现。"""
+        """传入接口地址（响应非 HTML）→ next_step 覆盖为直通 probe_login（单一权威指引）。"""
 
         def not_found(request: httpx.Request) -> httpx.Response:
             return httpx.Response(404, text="Cannot GET /users/login", request=request)
 
         server = _make(http_client_factory=_transport(not_found))
         result = _run(server.discover_login("https://sut.example.com/users/login"))
-        note = result.get("note", "")
-        assert "probe_login" in note and "GET 404 不代表接口无效" in note
+        # next_step 直接覆盖（不与兜底指引并存——两套指引方向相反时 Agent 会滑回猜路径）
+        assert "权威输入" in result["next_step"]
+        assert "probe_login" in result["next_step"]
+        assert "不要再用 probe_url" in result["next_step"]
 
-        html_server = _make(
-            http_client_factory=_ok_transport("<html><body>登录页</body></html>")
-        )
+        html_server = _make(http_client_factory=_ok_transport("<html><body>登录页</body></html>"))
         page_result = _run(html_server.discover_login("https://sut.example.com/login"))
-        assert "note" not in page_result
+        assert "权威输入" not in page_result["next_step"]  # 页面场景保留兜底指引
 
 
 # ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────
@@ -326,6 +326,38 @@ class TestProbeLogin:
         }
         second = _run(server.probe_login(renamed, "SUT"))
         assert "error" not in second and calls["n"] == 2  # 新组合放行而非防锁拒绝
+
+    def test_credential_save_unlocks_login_retry(self) -> None:
+        """防锁解锁：失败后重新录入凭证（同模板）允许再实测——循环由录入交互限流。"""
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(401, json={"error": "bad"}, request=request)
+
+        seq = iter(["发送", "new-pass", "发送"])
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: next(seq)))
+        assert _run(server.probe_login(_LOGIN_CFG, "SUT"))["ok"] is False
+        assert "防锁" in _run(server.probe_login(_LOGIN_CFG, "SUT"))["error"]
+        _run(server.ask_user("更正密码", kind="credential", ref="SUT", field="password"))
+        third = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert "error" not in third and calls["n"] == 2  # 解锁放行而非拒绝
+
+    def test_status_guidance_distinguishes_404_from_auth_fail(self) -> None:
+        """POST 判别语义：404=路径不存在交用户核对；401=接口存在，收集凭证重测。"""
+
+        def gone(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(404, text="Not Found", request=request)
+
+        server, _ = self._server(gone, ask=_ask(lambda q, **kw: "发送"))
+        assert "不存在" in _run(server.probe_login(_LOGIN_CFG, "SUT"))["next_step"]
+
+        def unauthorized(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(401, json={"error": "bad creds"}, request=request)
+
+        auth_server, _ = self._server(unauthorized, ask=_ask(lambda q, **kw: "发送"))
+        auth_result = _run(auth_server.probe_login(_LOGIN_CFG, "SUT"))
+        assert "接口存在" in auth_result["next_step"]
 
 
 # ── probe_protocol：矩阵 + 清理 ──────────────────────────────────────
