@@ -64,6 +64,13 @@ _XHR_URL_RE = re.compile(
     re.I,
 )
 _ABS_URL_RE = re.compile(r"""https?://[^\s"'`<>\\)]+""", re.I)
+# 登录相关字段键名在前端包里的常见形态（SPA 表单由 JS 渲染，静态 HTML 无 <form>
+# 可解析时，这里是实际字段名的主要来源）
+_LOGIN_FIELD_RE = re.compile(
+    r"""["']?(username|user_name|account|loginname|login_name|usercode|"""
+    r"""mobile|phone|email|password|passwd|pwd|captcha|verifycode|verify_code)["']?\s*[:=]""",
+    re.I,
+)
 
 
 def _host_of(url: str) -> str:
@@ -103,7 +110,7 @@ class SUTProbeToolServer(ToolExporterMixin):
         ),
         ToolSpec(
             name="discover_login",
-            description="从页面登录地址发现登录 API：解析 form 字段 → 扫 JS XHR 线索 → 常见路径定向检查 → 全失败给 ask_user 问答引导（不给凭证）",
+            description="从页面登录地址发现登录 API：解析 form 字段 → 扫 JS XHR 与真实字段名线索 → OpenAPI 文档 → 常见路径定向检查 → 兜底问答引导（不给凭证）",
             method="discover_login",
         ),
         ToolSpec(
@@ -121,8 +128,8 @@ class SUTProbeToolServer(ToolExporterMixin):
             description=(
                 "向用户提问，一次只问一个问题（多项信息拆成多次调用，问题不超 200 字）。"
                 "kind 三态：text=开放答案（地址/描述，默认）；choice=明确候选，options 用 | 分隔"
-                "（如 需要登录|免登录）；credential=凭证字段录入，必带 ref 与 field（输入直写密钥区"
-                "不回流）。不要用 options 表达「请文本输入」之类的说明"
+                "（如 需要登录|免登录）；credential=凭证字段录入，必带 ref 与 field 且一次只录"
+                "一个字段（输入直写密钥区不回流）。不要用 options 表达「请文本输入」之类的说明"
             ),
             method="ask_user",
         ),
@@ -302,6 +309,13 @@ class SUTProbeToolServer(ToolExporterMixin):
             if any(k in hit.lower() for k in ("login", "auth", "token")) and (hit not in seen):
                 seen.add(hit)
                 candidates.append({"source": "js_url", "path": hit, "fields": [], "method": "?"})
+        # 真实字段名提示：登录请求体的键名常直接出现在前端包里（按首次出现排序）
+        field_hints: list[str] = []
+        for match in _LOGIN_FIELD_RE.finditer(js_text):
+            name = match.group(1).lower()
+            if name not in field_hints:
+                field_hints.append(name)
+        field_hints = field_hints[:10]
 
         # 阶梯②.5：OpenAPI 文档探测（命中即得精确登录端点与字段 schema）
         if not candidates:
@@ -368,14 +382,15 @@ class SUTProbeToolServer(ToolExporterMixin):
         self._log("discover_login", page_url=page_url, candidates=len(candidates))
         return {
             "candidates": candidates[:8],
+            "field_hints": field_hints,
             "page_evidence": _wrap_evidence(f"页面 {page_url}", page),
             "next_step": (
                 "有候选→用 probe_login 实测验证（js 相对路径候选以登录页域为缺省 base_url，"
                 "404 可换入口域再试——不同域即新组合）；无候选→只向用户问登录接口地址一项"
                 "（用户答不知道则从 common_path 候选里挑最像登录的一项）；"
-                "字段名不要问用户——按 candidates 已给出的 fields 或常见约定"
-                "（username/password）拟定，probe_login 发送前的脱敏预览会让用户"
-                "看到字段并可纠正"
+                "字段名不要问用户——优先用 candidates[].fields 与 field_hints（真实提取），"
+                "全无线索才用常见约定（username/password）拟定，"
+                "probe_login 发送前的脱敏预览会让用户看到字段并可纠正"
             ),
         }
 
@@ -499,8 +514,9 @@ class SUTProbeToolServer(ToolExporterMixin):
             return {
                 "missing_fields": missing,
                 "hint": (
-                    f"凭证缺失：请 ask_user(kind=credential, ref={ref!r}) 逐字段收集，"
-                    f"或提示用户 agent-eval secrets set {ref}.<field>"
+                    f"凭证缺失：逐字段 ask_user(kind=credential, ref={ref!r}, field=<字段名>) "
+                    "收集——一次只录一个字段，会话内隐藏输入直接完成"
+                    "（勿让用户另开终端执行命令，那是非交互/CI 的备用通道）；收齐后重新调用本工具"
                 ),
             }
         key = (ref.lower(), _host_of(url).lower(), str(template))
@@ -599,6 +615,15 @@ class SUTProbeToolServer(ToolExporterMixin):
             if kind == "credential":
                 if not (ref and field):
                     return {"error": "kind=credential 需要 ref 与 field 参数"}
+                # 一次只录一个字段：多字段打包会整串存成一个键名，probe_login 逐字段
+                # 查不到（实测 Agent 曾传 field="username,password"）
+                if len(field.split()) != 1 or any(c in field for c in ",，、;；/"):
+                    return {
+                        "error": (
+                            f"field 一次只接受一个字段名（收到 {field!r}）；"
+                            "请逐字段分别调用 ask_user(kind=credential)，每次录一个字段"
+                        )
+                    }
                 value = await self.ask_fn(f"请输入 {ref}.{field}", options=None, secret=True)
                 if not value:
                     return {"aborted": True, "note": "用户未输入，凭证未保存"}

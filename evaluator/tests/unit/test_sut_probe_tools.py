@@ -193,6 +193,17 @@ class TestDiscoverLogin:
         candidate = next(c for c in result["candidates"] if c["source"] == "js_url")
         assert candidate["path"] == "https://sasan-server.example.com/users/login"
 
+    def test_js_field_hints_extracted(self) -> None:
+        """前端包里的真实字段键名 → field_hints（SPA 表单 JS 渲染时的字段来源）。"""
+        html = (
+            "<html><script>"
+            "var body={account: form.u, password: md5(form.p), captcha: code};"
+            "</script></html>"
+        )
+        server = _make(http_client_factory=_ok_transport(html))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        assert {"account", "password", "captcha"} <= set(result["field_hints"])
+
 
 # ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────
 
@@ -228,8 +239,20 @@ class TestProbeLogin:
             server.probe_login({**_LOGIN_CFG, "body_template": '{"k": "{{ otp }}"}'}, "SUT")
         )
         assert result["missing_fields"] == ["otp"]
-        assert "secrets set" in result["hint"]
+        # hint 单通道指引：会话内 ask_user 直接收集，勿让用户另开终端跑命令
+        assert "ask_user" in result["hint"] and "一次只录一个字段" in result["hint"]
+        assert "secrets set" not in result["hint"]
         assert sent == []
+
+    def test_credential_roundtrip_feeds_probe_login(self) -> None:
+        """ask_user 录入 → probe_login 立即可读（会话内闭环，实测曾误引向终端命令）。"""
+        seq = iter(["u-name", "p-word", "取消"])
+        server = _make(ask_fn=_ask(lambda q, **kw: next(seq)), credential_store=CredentialStore())
+        _run(server.ask_user("录入用户名", kind="credential", ref="SUT", field="username"))
+        _run(server.ask_user("录入密码", kind="credential", ref="SUT", field="password"))
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert "missing_fields" not in result  # 会话内录入的凭证立即可读
+        assert result["aborted"] is True  # 已走到脱敏预览确认（桩选取消）
 
     def test_non_interactive_never_sends(self) -> None:
         server, sent = self._server(lambda r: httpx.Response(200, json={"token": "T"}), ask=None)
@@ -347,6 +370,15 @@ class TestAskUser:
         server = _make(ask_fn=_ask(lambda q, **kw: "x"))
         result = _run(server.ask_user("?", kind="credential"))
         assert "ref" in result["error"] and "field" in result["error"]
+
+    def test_credential_field_must_be_single(self) -> None:
+        """一次只录一个字段：多字段打包拒绝（实测 Agent 曾传 field="username,password"）。"""
+        server = _make(ask_fn=_ask(lambda q, **kw: "x"))
+        result = _run(
+            server.ask_user("录入", kind="credential", ref="SUT", field="username,password")
+        )
+        assert "一次只接受一个字段" in result["error"]
+        assert "逐字段" in result["error"]
 
     def test_single_option_degrades_to_text(self) -> None:
         """单选项 options 无选择意义：降级为文本输入，不走 select（防假单选）。"""
