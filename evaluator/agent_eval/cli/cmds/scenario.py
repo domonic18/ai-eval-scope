@@ -76,6 +76,15 @@ def scenario_new(
     trust_agent: bool = typer.Option(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
+    max_turns: int = typer.Option(
+        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+    ),
+    max_segments: int = typer.Option(
+        3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"
+    ),
+    budget_usd: float | None = typer.Option(
+        None, "--budget-usd", help="Agent 会话预算上限（美元；缺省不启用）"
+    ),
 ) -> None:
     """创建场景包（skeleton 骨架 / agent 自然语言生成 / template 模板）。"""
     if mode == "skeleton":
@@ -98,6 +107,9 @@ def scenario_new(
             instruction=instruction,
             yes=yes,
             trust_agent=trust_agent,
+            max_turns=max_turns,
+            max_segments=max_segments,
+            budget_usd=budget_usd,
         )
         rprint(
             f"[green]✅ 场景包已生成[/green] → {root}\n"
@@ -121,13 +133,30 @@ def scenario_edit(
     trust_agent: bool = typer.Option(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
+    max_turns: int = typer.Option(
+        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+    ),
+    max_segments: int = typer.Option(
+        3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"
+    ),
+    budget_usd: float | None = typer.Option(
+        None, "--budget-usd", help="Agent 会话预算上限（美元；缺省不启用）"
+    ),
 ) -> None:
     """Agent 会话改包：自然语言增删改查（沙盒 + diff 确认 + 校验门禁）。"""
     from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
     if ref is None:
         ref = select_editable_ref()
-    agent_edit_package(ref=ref, instruction=instruction, yes=yes, trust_agent=trust_agent)
+    agent_edit_package(
+        ref=ref,
+        instruction=instruction,
+        yes=yes,
+        trust_agent=trust_agent,
+        max_turns=max_turns,
+        max_segments=max_segments,
+        budget_usd=budget_usd,
+    )
 
 
 def _resolve_root(ref: str) -> tuple[Path, PackageManifest]:

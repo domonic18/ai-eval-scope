@@ -19,6 +19,7 @@ from agent_eval.agent.workbench_agent import (
     WorkbenchAgent,
     WorkbenchAgentConfig,
     _resume_messages,
+    repair_orphan_tool_calls,
 )
 from agent_eval.agent.workbench_tools import PackageToolServer
 from agent_eval.core.exceptions import AgentError
@@ -445,12 +446,12 @@ class TestAgentTurn:
         assert {"type": "token", "text": "已生成完整场景包"} in events
         assert {"type": "phase", "name": "confirm"} in events  # 确认前关闭流式文本行
 
-    def test_turn_interrupt_rolls_back(
+    def test_turn_interrupt_pauses_with_scene_kept(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # Ctrl+C 中断（协内表现为 CancelledError）：暂存清空 + 历史截断，
-        # 磁盘从未见过本轮内容。不用 KeyboardInterrupt 直抛——Runner 的 SIGINT
-        # 机制会接管并重试循环（实测死循环）
+        # Ctrl+C 中断（协内表现为 CancelledError）= 暂停保现场（§6.7 D-WB-4）：
+        # 暂存保留 + 历史保留（需求不丢），唯一回滚触发器是用户显式「放弃」。
+        # 不用 KeyboardInterrupt 直抛——Runner 的 SIGINT 机制会接管并重试循环
         async def boom(
             self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
         ) -> dict[str, Any]:
@@ -463,8 +464,13 @@ class TestAgentTurn:
         with pytest.raises(asyncio.CancelledError):
             asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
+        assert agent.server.staging  # 现场保留
+        assert any(m[1] == "生成包" for m in agent._messages if isinstance(m, tuple))
+        assert agent._dialogue and agent._dialogue[-1]["text"] == "生成包"
+        assert not (tmp_path / "rules").exists()  # 暂存未确认，磁盘仍未见
+
+        agent.abandon_pending()  # 用户显式放弃 → 唯一回滚触发器
         assert not agent.server.staging
-        assert agent._messages == []
         assert not (tmp_path / "rules").exists()
 
     def test_emit_tool_events_from_updates(self) -> None:
@@ -791,6 +797,47 @@ class TestCliEntries:
         monkeypatch.setattr(sa, "ask", lambda prompt: "")
         sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), "首轮需求")  # 不上抛
 
+    def test_repl_pause_then_abandon_rolls_back(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # Ctrl+C 暂停（进度保留）→ 用户输入「放弃」→ 暂存回滚、会话继续（D-WB-4）
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        _seed_valid_package(tmp_path)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        states = iter(["paused", "abandoned", "done"])
+
+        def fake_run_turn(agent_: Any, text: str, *, confirm_fn: Any, on_event: Any = None) -> Any:
+            state = next(states)
+            if state == "paused":
+                raise asyncio.CancelledError  # Ctrl+C（协内形态）
+            return TurnResult(reply="ok", diff="", staged=False)
+
+        async def stage_secret() -> None:
+            await agent.server.write_file("rules/a.yaml", RULES)
+
+        monkeypatch.setattr("agent_eval.agent.workbench_agent.run_turn", fake_run_turn)
+        inputs = iter(["继续", "放弃", ""])
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
+        asyncio.run(stage_secret())  # 预置暂存（模拟暂停轮遗留）
+        sa._session(agent, None)
+        out = capsys.readouterr().out
+        assert "进度已保留" in out  # 暂停提示（替代旧「已回滚」语义）
+        assert "已放弃暂存改动" in out
+        assert not agent.server.staging  # 「放弃」= 唯一回滚触发器
+        assert not (tmp_path / "rules" / "a.yaml").exists()  # 暂存未落盘
+
+    def test_emitter_renders_checkpoint_phase(self, capsys) -> None:
+        # P1 自动分段：checkpoint 事件 → 「已自动续跑」提示行
+        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        emit({"type": "phase", "name": "checkpoint", "segment": 2, "max_segments": 3})
+        finish()
+        assert "已自动续跑（第 2 / 3 段" in capsys.readouterr().out
+
 
 # ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
 
@@ -1073,3 +1120,146 @@ class TestAgentConfig:
         msgs = dict(WorkbenchAgent.__dict__) and _resume_messages(dialogue, cfg)
         joined = "\n".join(m[1] for m in msgs)
         assert "y" in joined and "xxx…" not in joined
+
+
+class TestSessionMachine:
+    """§6.7 会话机：salvage 保现场 / 自动分段续跑 / 预算缰绳（D-WB-3/4/5）。"""
+
+    @staticmethod
+    def _recursion_exc() -> type[BaseException]:
+        from agent_eval.agent.workbench_agent import _GraphRecursionError
+
+        if _GraphRecursionError is None:  # langgraph 缺席（纯单测 CI）
+            pytest.skip("langgraph 未安装（[agent] extra 缺席）")
+        return _GraphRecursionError
+
+    def test_recursion_limit_auto_continues_next_segment(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # P1 自动分段：撞线不再交还用户，自动开新段续跑（同一对话/暂存）
+        exc = self._recursion_exc()
+        calls: list[list[Any]] = []
+        fake, replay_calls = _replay([_write_valid])
+        events: list[dict[str, Any]] = []
+
+        async def segmented(
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            calls.append(list(messages))
+            if len(calls) == 1:
+                raise exc("recursion limit hit")
+            return await fake(self, messages, on_event=on_event)
+
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", segmented)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        result = asyncio.run(
+            agent.turn("生成包", confirm_fn=lambda r, d: True, on_event=events.append)
+        )
+        assert result.committed
+        checkpoint = [e for e in events if e.get("name") == "checkpoint"]
+        assert checkpoint and checkpoint[0]["segment"] == 2  # 第 2 段续跑
+
+    def test_segment_limit_pauses_with_scene(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 分段耗尽 = 暂停（进度完整），不是失败回滚
+        exc = self._recursion_exc()
+
+        async def always_limit(
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            await self.server.write_file("rules/a.yaml", RULES)
+            raise exc("recursion limit hit")
+
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", always_limit)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_segments=2), log_dir=tmp_path / "log"
+        )
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+        assert result.aborted_reason == "segment_limit"
+        assert result.staged and agent.server.staging  # 现场保留
+        assert not (tmp_path / "rules").exists()  # 磁盘仍未见未确认内容
+
+    def test_transient_error_keeps_scene_and_history(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 瞬时错误（LLM 断流）= 暂停：上抛宿主呈现，暂存与历史保留可重试
+        async def flaky(
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            await self.server.write_file("rules/a.yaml", RULES)
+            raise RuntimeError("LLM 网关断流")
+
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", flaky)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        with pytest.raises(RuntimeError, match="断流"):
+            asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+        assert agent.server.staging
+        assert any(m[1] == "生成包" for m in agent._messages if isinstance(m, tuple))
+
+    def test_budget_exceeded_pauses(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # P2 预算缰绳：BudgetGuard 到界 = 暂停交还（不是失败）
+        from agent_eval.core.exceptions import BudgetExceededError
+
+        async def overspend(
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            raise BudgetExceededError("超预算")
+
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", overspend)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+        assert result.aborted_reason == "budget_exceeded"
+
+    def test_budget_guard_wired_when_configured(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent._budget_guard is None  # 缺省不启用
+        priced = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(budget_usd=0.5), log_dir=tmp_path / "log"
+        )
+        assert priced._budget_guard is not None
+
+    def test_salvage_repairs_orphan_tool_calls(self, tmp_path: Path) -> None:
+        # P0：孤儿 tool_call 合成失败 ToolMessage（当年截断历史的真实原因）
+        ai = SimpleNamespace(type="ai", content="", tool_calls=[{"id": "c1", "name": "write_file"}])
+        repaired = repair_orphan_tool_calls([ai])
+        assert len(repaired) == 2
+        orphan = repaired[1]
+        assert getattr(orphan, "tool_call_id", "") == "c1"
+        assert "打断" in str(getattr(orphan, "content", ""))
+        # 已配对的调用不重复合成
+        paired = [
+            ai,
+            SimpleNamespace(type="tool", content="ok", tool_call_id="c1", name="write_file"),
+        ]
+        assert repair_orphan_tool_calls(paired) == paired
+
+    def test_salvage_pulls_checkpoint_state(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 撞线后 aget_state 捞半途消息（含输入全线程），孤儿修复后并入宿主历史
+        exc = self._recursion_exc()
+        half_way = [
+            SimpleNamespace(type="human", content="生成包"),
+            SimpleNamespace(type="ai", content="", tool_calls=[{"id": "c9", "name": "probe_url"}]),
+        ]
+
+        class _FakeGraph:
+            async def aget_state(self, config: dict[str, Any]) -> Any:
+                return SimpleNamespace(values={"messages": list(half_way)})
+
+        async def boom(
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            self._graph = _FakeGraph()  # 模拟已组装图（aget_state 可用）
+            self._last_thread_id = "wb-1"  # 真实 _invoke 的副产物（thread_id 已发）
+            raise exc("limit")
+
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", boom)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_segments=1), log_dir=tmp_path / "log"
+        )
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+        assert result.aborted_reason == "segment_limit"  # max_segments=1：撞线即暂停
+        assert len(agent._messages) == 3  # human + ai + 合成的失败 ToolMessage
+        assert getattr(agent._messages[-1], "tool_call_id", "") == "c9"

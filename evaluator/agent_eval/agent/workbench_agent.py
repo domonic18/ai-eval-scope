@@ -12,13 +12,19 @@
 
     你> <自然语言需求>
       → ainvoke（Agent 输出计划 → 调工具写暂存 → 自检 preview_diff）
+        ↳ recursion_limit 撞线 → 自动开新段续跑（≤ max_segments，checkpoint 事件）
       → 宿主 confirm_fn(reply, diff)：False = 回滚本轮（暂存清空，对话保留）
       → validate_package 门禁：失败则把 errors 注入下一轮回改（≤ max_fix_rounds）
       → commit() 原子落盘 + 会话日志
 
+失败语义（§6.7 D-WB-4）：**唯一的失败是用户放弃**。撞线分段耗尽 / Ctrl+C 中断 /
+LLM 瞬时错误 / 预算到界一律 = 暂停保现场——salvage 捞检查点半途消息（孤儿
+tool_call 合成失败 ToolMessage）并入历史，暂存不动，用户可「继续」接着干或
+显式「放弃」（:meth:`abandon_pending`，唯一回滚触发器）。
+
 底座：复用 DeepAgents（``create_deep_agent`` + ``build_chat_model``，arch/03 §3.2）；
-不挂 checkpointer（会话历史由宿主持有重放）；预算以 recursion_limit 约束
-（BudgetGuard 回调接入留待逐任务预算需求出现时）。
+成功路径仍由宿主持有消息重放，内存检查点（MemorySaver）仅作事故现场保存器；
+BudgetGuard 会话级预算（budget_usd 启用）到线同样走暂停。
 """
 
 from __future__ import annotations
@@ -36,11 +42,62 @@ from urllib.parse import urlparse
 
 import yaml
 
+from agent_eval.agent.callbacks import BudgetGuard
 from agent_eval.agent.sut_probe_tools import PROBE_TIMEOUT_S, TOOL_BUDGETS, SUTProbeToolServer
 from agent_eval.agent.workbench_tools import PackageToolServer
 from agent_eval.config.paths import PACKAGE_ROOT, paths
-from agent_eval.core.exceptions import AgentError
+from agent_eval.core.exceptions import AgentError, BudgetExceededError
 from agent_eval.execution.auth.credentials import CredentialStore
+
+try:  # langgraph 属 [agent] extra；缺席（CI 纯单测）时撞线判定恒 False
+    from langgraph.errors import GraphRecursionError as _GraphRecursionError
+except ImportError:  # pragma: no cover
+    _GraphRecursionError = None  # type: ignore[assignment,misc]
+
+
+def _is_recursion_limit(exc: BaseException) -> bool:
+    """recursion_limit 撞线判定（langgraph 缺席时恒 False）。"""
+    return _GraphRecursionError is not None and isinstance(exc, _GraphRecursionError)
+
+
+# salvage 合成的失败 ToolMessage 正文（同时告知模型该调用未完成，可重发）
+_ORPHAN_TOOL_NOTE = "（会话在此被打断，未执行完——如仍需该结果请重新调用）"
+
+
+def _synthetic_tool_message(call_id: str, name: str) -> Any:
+    """构造孤儿 tool_call 的失败 ToolMessage（langchain_core 缺席时退化占位对象）。"""
+    try:
+        from langchain_core.messages import ToolMessage
+    except ImportError:  # pragma: no cover — 单测 mock 环境
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            type="tool", tool_call_id=call_id, name=name, content=_ORPHAN_TOOL_NOTE
+        )
+    return ToolMessage(content=_ORPHAN_TOOL_NOTE, tool_call_id=call_id, name=name)
+
+
+def repair_orphan_tool_calls(messages: list[Any]) -> list[Any]:
+    """半途消息的孤儿 tool_call 修复：无结果的调用合成失败 ToolMessage。
+
+    当年「历史不完整就整段截断」的真实原因是孤儿 tool_call 会破坏图（AI 发起
+    调用后没有配对 ToolMessage，下次调模型 API 直接 400）——salvage 并入宿主
+    历史前必须补齐，进度才真正可续。
+    """
+    repaired = list(messages)
+    pending: dict[str, str] = {}  # tool_call_id → name（含序）
+    for msg in repaired:
+        mtype = getattr(msg, "type", "")
+        if mtype == "ai":
+            for call in getattr(msg, "tool_calls", None) or []:
+                call_id = str(call.get("id", "") if isinstance(call, dict) else "")
+                if call_id:
+                    pending[call_id] = str(call.get("name", "") if isinstance(call, dict) else "")
+        elif mtype == "tool":
+            pending.pop(str(getattr(msg, "tool_call_id", "")), None)
+    repaired.extend(_synthetic_tool_message(call_id, name) for call_id, name in pending.items())
+    return repaired
+
 
 _PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "workbench_agent_prompts.yaml"
 
@@ -59,8 +116,10 @@ class WorkbenchAgentConfig:
     （``--max-turns/--max-segments/--budget-usd``）以本对象为同一载体注入。
     """
 
-    max_turns: int = 40  # 单段安全阀基数（recursion_limit = max_turns × 2）
+    max_turns: int = 40  # 单段安全阀基数（recursion_limit = max_turns × 2，非任务预算）
     max_fix_rounds: int = 3  # 校验门禁回改轮上限
+    max_segments: int = 3  # 自动分段续跑上限（§6.7 P1；撞线即开新段直到此数）
+    budget_usd: float | None = None  # 会话预算（§6.7 P2；None = 不启用）
     max_dialogue_entries: int = 40  # 持久化的对话条数上限（防跨会话无限膨胀）
     resume_max_entries: int = 24  # 续作注入上下文的最多条数
     resume_max_chars: int = 400  # 续作注入单条截断
@@ -180,6 +239,12 @@ class WorkbenchAgent:
         )
         self.llm_role = llm_role
         self._messages: list[Any] = []
+        # 失控缰绳（§6.7）：预算护栏会话级累计（跨段/跨轮不清零）；内存检查点
+        # 仅作事故现场保存器（成功路径宿主持有消息重放，架构不变）
+        self._budget_guard = BudgetGuard(self.config.budget_usd) if self.config.budget_usd else None
+        self._checkpointer: Any = None  # 惰性创建（langgraph 属 [agent] extra）
+        self._call_seq = 0
+        self._last_thread_id = ""
         # 会话记忆持久化（跨进程续作）：同一包目录命中同一记录文件
         self._session_file = (
             paths.default_workspace / "agent_sessions" / _session_key(Path(pkg_root))
@@ -265,13 +330,19 @@ class WorkbenchAgent:
                 "请执行: uv sync --extra agent",
                 details={"missing_module": "deepagents"},
             ) from None
+        from langgraph.checkpoint.memory import MemorySaver
+
         from agent_eval.agent.model_bridge import build_chat_model
 
+        # P0 salvage（§6.7）：内存检查点无 IO、实例销毁即释放；v4.6.3 摘除的是
+        # 文件版检查器全量读写空转，内存版无此问题
+        self._checkpointer = MemorySaver()
         tools = self.server.to_langchain_tools() + self.probe.to_langchain_tools()
         return create_deep_agent(
             model=build_chat_model(self.llm_role),
             tools=tools,
             system_prompt=self._build_system_prompt(),
+            checkpointer=self._checkpointer,
         )
 
     # ─── 会话（宿主循环调用） ──────────────────────────────────────
@@ -290,58 +361,126 @@ class WorkbenchAgent:
         误以为文件已写入。
         on_event 收流式进度事件（``token`` / ``tool_start`` / ``tool_end`` / ``phase``），
         CLI 据此直播工作过程；None = 静默。
-        中断（Ctrl+C）或异常回滚暂存并截断本轮历史后原样上抛——半途历史不完整，
-        且磁盘从未见过本轮内容。
+        撞线/中断/瞬时错误/预算到界 = 暂停保现场（§6.7 D-WB-4）：salvage 捞检查点
+        半途消息并入历史、暂存不动——分段未耗尽时自动续跑（P1），否则上抛或以
+        aborted_reason=segment_limit/budget_exceeded 交还宿主（进度完整）。
         """
         self._log("turn_start", instruction=user_text)
         self.probe.new_turn()  # 重置 SUT 探测轮内预算（arch/15 §6.6 总量约束）
         if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
             self._messages.extend(_resume_messages(self._dialogue, self.config))
-        history_len = len(self._messages)
         self._messages.append(("user", user_text))
-        try:
-            state = await self._invoke(self._messages, on_event=on_event)
-            self._messages = list(state.get("messages", self._messages))
-            reply = _last_ai_text(self._messages)
-            self._record_turn(user_text, reply)
+        segment = 1
+        while True:  # 自动分段续跑（§6.7 P1）：同一对话/预算池/暂存，撞线开新段
+            try:
+                state = await self._invoke(self._messages, on_event=on_event)
+                break
+            except BaseException as exc:  # noqa: BLE001 — 统一暂停语义（D-WB-4）
+                salvaged = await self._salvage_halfway()
+                if salvaged:
+                    self._messages = salvaged  # 检查点含输入——全线程替换保真
+                if _is_recursion_limit(exc) and segment < self.config.max_segments:
+                    segment += 1
+                    self._log("segment_continue", segment=segment)
+                    if on_event:
+                        on_event(
+                            {
+                                "type": "phase",
+                                "name": "checkpoint",
+                                "segment": segment,
+                                "max_segments": self.config.max_segments,
+                            }
+                        )
+                    continue
+                reply = _last_ai_text(self._messages)
+                if isinstance(exc, asyncio.CancelledError):
+                    reason = "interrupted"
+                elif _is_recursion_limit(exc):
+                    reason = "segment_limit"
+                elif isinstance(exc, BudgetExceededError):
+                    reason = "budget_exceeded"
+                else:
+                    reason = "error"  # 瞬时错误（LLM 断流等）：现场保留，可直接重试
+                self._record_turn(user_text, reply)
+                self._log("turn_paused", reason=reason, segment=segment, error=str(exc) or None)
+                if reason in ("interrupted", "error"):
+                    raise  # 宿主呈现失败/中断——现场保留，「继续」即接着跑
+                return self._paused_result(reply, reason)
 
-            if not self.server.has_staged_changes:
-                self._log("turn_end", committed=False, reason="no_changes")
-                return TurnResult(reply=reply, diff="", staged=False)
+        self._messages = list(state.get("messages", self._messages))
+        reply = _last_ai_text(self._messages)
+        self._record_turn(user_text, reply)
 
-            diff = self.server.render_diff()
-            if on_event:
-                on_event({"type": "phase", "name": "confirm"})
-            if not confirm_fn(reply, diff):
-                self.server.reset_staging()
-                # 文件变更回滚，对话上下文保留——评测地址等讨论信息不因放弃而丢失
-                self._messages.append(
-                    (
-                        "user",
-                        "（用户放弃了本轮文件变更：暂存已全部回滚，磁盘未做任何修改。"
-                        "本轮对话中的结论与信息仍有效，可在后续轮次继续使用；"
-                        "若需写入此前讨论的内容请重新执行）",
-                    )
-                )
-                self._log("turn_end", committed=False, reason="user_aborted")
-                return TurnResult(
-                    reply=reply, diff=diff, staged=True, aborted_reason="user_aborted"
-                )
+        if not self.server.has_staged_changes:
+            self._log("turn_end", committed=False, reason="no_changes")
+            return TurnResult(reply=reply, diff="", staged=False)
 
-            result = await self._gate_and_commit(on_event)
-            return TurnResult(
-                reply=reply,
-                diff=diff,
-                staged=True,
-                committed=result["committed"],
-                committed_files=result.get("files", []),
-                validation_errors=result.get("errors", []),
-                aborted_reason=result.get("reason", ""),
-            )
-        except BaseException:
+        diff = self.server.render_diff()
+        if on_event:
+            on_event({"type": "phase", "name": "confirm"})
+        if not confirm_fn(reply, diff):
             self.server.reset_staging()
-            del self._messages[history_len:]
-            raise
+            # 文件变更回滚，对话上下文保留——评测地址等讨论信息不因放弃而丢失
+            self._messages.append(
+                (
+                    "user",
+                    "（用户放弃了本轮文件变更：暂存已全部回滚，磁盘未做任何修改。"
+                    "本轮对话中的结论与信息仍有效，可在后续轮次继续使用；"
+                    "若需写入此前讨论的内容请重新执行）",
+                )
+            )
+            self._log("turn_end", committed=False, reason="user_aborted")
+            return TurnResult(reply=reply, diff=diff, staged=True, aborted_reason="user_aborted")
+
+        result = await self._gate_and_commit(on_event)
+        return TurnResult(
+            reply=reply,
+            diff=diff,
+            staged=True,
+            committed=result["committed"],
+            committed_files=result.get("files", []),
+            validation_errors=result.get("errors", []),
+            aborted_reason=result.get("reason", ""),
+        )
+
+    # ─── 暂停与续作（§6.7：唯一的失败是用户放弃） ──────────────────
+
+    async def _salvage_halfway(self) -> list[Any] | None:
+        """撞线/中断后从检查点捞半途消息（孤儿 tool_call 已修复）；无现场返回 None。"""
+        if self._graph is None or not self._last_thread_id:
+            return None
+        try:
+            snap = await self._graph.aget_state(
+                {"configurable": {"thread_id": self._last_thread_id}}
+            )
+            messages = list((snap.values or {}).get("messages") or []) if snap else []
+        except Exception:  # noqa: BLE001 — salvage 尽力而为，失败不掩盖原异常
+            return None
+        if not messages:
+            return None
+        return repair_orphan_tool_calls(messages)
+
+    def _paused_result(self, reply: str, reason: str) -> TurnResult:
+        """暂停轮结果：暂存与对话原样保留，宿主呈现「继续 / 放弃」处置。"""
+        staged = self.server.has_staged_changes
+        return TurnResult(
+            reply=reply,
+            diff=self.server.render_diff() if staged else "",
+            staged=staged,
+            aborted_reason=reason,
+        )
+
+    def abandon_pending(self) -> None:
+        """用户显式放弃暂停轮的暂存改动（D-WB-4 的唯一回滚触发器入口）。"""
+        self.server.reset_staging()
+        self._messages.append(
+            (
+                "user",
+                "（用户放弃了此前中断轮的文件变更：暂存已全部回滚，磁盘未做任何修改。"
+                "本轮对话中的结论与信息仍有效；若需写入此前讨论的内容请重新执行）",
+            )
+        )
+        self._log("turn_end", committed=False, reason="user_aborted_after_pause")
 
     async def _gate_and_commit(
         self, on_event: Callable[[dict[str, Any]], None] | None = None
@@ -412,8 +551,16 @@ class WorkbenchAgent:
         """
         if self._graph is None:
             self._graph = self._build_graph()
-        # langgraph 运行时配置（单段安全阀；撞线语义见 §6.7 P1 自动分段续跑）
-        runtime_config = {"recursion_limit": self.config.max_turns * 2}
+        # langgraph 运行时配置：单段安全阀（P1 降格，非任务预算）；每次调用独立
+        # thread_id——检查点仅作本调用的事故现场保存器，成功路径行为不变
+        self._call_seq += 1
+        self._last_thread_id = f"wb-{self._call_seq}"
+        runtime_config: dict[str, Any] = {
+            "recursion_limit": self.config.max_turns * 2,
+            "configurable": {"thread_id": self._last_thread_id},
+        }
+        if self._budget_guard is not None:
+            runtime_config["callbacks"] = [self._budget_guard]
         if on_event is None:
             result: dict[str, Any] = await self._graph.ainvoke(
                 {"messages": messages}, config=runtime_config

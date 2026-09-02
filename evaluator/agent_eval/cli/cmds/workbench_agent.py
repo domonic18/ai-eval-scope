@@ -2,9 +2,9 @@
 
 用户在 CLI 持续输入自然语言（``你> ...``），WorkbenchAgent 经沙盒工具面改包，工作
 过程**流式直播**（claude code 式：回复 token 直出 + 工具调用行实时可见）；每轮展示
-diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘。空行退出会话，Ctrl+C 中断当前轮
-（暂存与历史回滚，磁盘不受影响）。非交互形态（CI）需 ``--instruction`` +
-``--yes --trust-agent`` 双开关。
+diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘。空行退出会话；Ctrl+C 暂停当前轮
+（进度保留，输入「继续」接着跑、「放弃」回滚暂存——§6.7 D-WB-4）。
+非交互形态（CI）需 ``--instruction`` + ``--yes --trust-agent`` 双开关。
 """
 
 from __future__ import annotations
@@ -48,6 +48,12 @@ def _render_outcome(result: Any) -> None:  # noqa: ANN001 — TurnResult
         rprint(f"[green]✅ 已落盘[/green]（{len(result.committed_files)} 个文件变更）")
     elif result.aborted_reason == "user_aborted":
         rprint("[yellow]↩️ 已放弃本轮（磁盘未受影响）[/yellow]")
+    elif result.aborted_reason == "segment_limit":
+        rprint("[yellow]⏸ 已达自动分段上限，已暂停（进度完整保留在暂存与对话中）[/yellow]")
+        rprint("[dim]说「继续」接着跑；或调高 --max-segments；输入「放弃」回滚暂存[/dim]")
+    elif result.aborted_reason == "budget_exceeded":
+        rprint("[yellow]⏸ 已达会话预算上限，已暂停（进度完整保留在暂存与对话中）[/yellow]")
+        rprint("[dim]说「继续」接着跑；或调高 --budget-usd；输入「放弃」回滚暂存[/dim]")
     elif result.validation_errors:
         rprint("[red]❌ 校验未通过（未落盘）:[/red]")
         for e in result.validation_errors:
@@ -146,6 +152,13 @@ def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[
 
     def emit(event: dict[str, Any]) -> None:
         kind = event.get("type")
+        if kind == "phase" and event.get("name") == "checkpoint":
+            _close_line()
+            rprint(
+                f"[dim]⏭ 单段步数撞线，已自动续跑（第 {event.get('segment')} / "
+                f"{event.get('max_segments')} 段，进度保留）[/dim]"
+            )
+            return
         if kind in ("token", "thinking"):
             mode = "text" if kind == "token" else "thinking"
             text = event.get("text", "")
@@ -252,19 +265,34 @@ def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
 
 
 def _session(agent: Any, first_text: str | None) -> None:
-    """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。"""
+    """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。
+
+    中断/瞬时错误 = 暂停保现场（§6.7 D-WB-4）：暂存与对话上下文完整，「继续」
+    接着跑；「放弃」是唯一回滚触发器（显式指令，防误触丢进度）。
+    """
+    import asyncio
 
     def _attempt(text: str) -> None:
-        # 首轮与后续轮同防护：瞬时错误（如 LLM 网关断流）不杀会话，可见可重试
         try:
             _run_one(agent, text)
-        except KeyboardInterrupt:
-            rprint("\n[yellow]⏹ 已中断本轮（磁盘未受影响），可继续输入[/yellow]")
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            rprint("\n[yellow]⏸ 已暂停（进度已保留：暂存草稿与对话上下文完整）[/yellow]")
+            rprint("[dim]输入「继续」接着跑，或直接说下一步；输入「放弃」回滚本轮暂存改动[/dim]")
         except Exception as e:  # noqa: BLE001 — 会话内错误可见可继续下一轮
             rprint(f"[red]❌ 本轮失败: {e}[/red]")
-            rprint("[dim]暂存与上下文已回滚，可直接重新输入上一条需求重试[/dim]")
+            rprint("[dim]进度已保留——可直接重试；输入「放弃」回滚本轮暂存改动[/dim]")
 
-    rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 中断当前轮）[/dim]")
+    def _maybe_abandon(text: str) -> bool:
+        if text.strip() not in ("放弃", "abort"):
+            return False
+        if not agent.server.has_staged_changes:
+            rprint("[dim]当前没有待确认的暂存改动[/dim]")
+            return True
+        agent.abandon_pending()
+        rprint("[yellow]↩️ 已放弃暂存改动（磁盘未受影响，对话上下文保留）[/yellow]")
+        return True
+
+    rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 暂停当前轮）[/dim]")
     resumed = getattr(agent, "resumed_dialogue_count", 0)
     if resumed:
         rprint(f"[dim]已续接此前会话记录（{resumed} 条对话），Agent 可延续此前的讨论上下文[/dim]")
@@ -279,6 +307,8 @@ def _session(agent: Any, first_text: str | None) -> None:
         if not text.strip():
             rprint("👋 会话结束")
             return
+        if _maybe_abandon(text):
+            continue
         _attempt(text)
 
 
@@ -312,6 +342,8 @@ def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — Work
         _render_turn(result.reply, result)
     elif result.diff:
         _render_diff(result.diff)
+    if result.aborted_reason in ("segment_limit", "budget_exceeded"):
+        _render_outcome(result)
     if not result.committed:
         raise typer.Exit(code=1)
 
@@ -419,6 +451,9 @@ def agent_new_package(
     instruction: str | None,
     yes: bool,
     trust_agent: bool,
+    max_turns: int = 40,
+    max_segments: int = 3,
+    budget_usd: float | None = None,
 ) -> Path:
     """``scenario new --mode agent``：自然语言生成完整场景包（REPL 会话）。
 
@@ -427,7 +462,7 @@ def agent_new_package(
     给了 ref 默认落 ``cwd/<id>-package/``，给了 --output 则原地生成（支持指回
     草稿续作，非空目录放行）。
     """
-    from agent_eval.agent.workbench_agent import WorkbenchAgent
+    from agent_eval.agent.workbench_agent import WorkbenchAgent, WorkbenchAgentConfig
     from agent_eval.packages import parse_ref
 
     _guard_llm_ready()
@@ -457,7 +492,13 @@ def agent_new_package(
             raise typer.Exit(code=2)
         instruction = ask("描述评测需求（包名可由 Agent 拟定，会话中可自然语言修改）")
 
-    agent = WorkbenchAgent(root, ask_fn=None if (yes and trust_agent) else _make_ask_fn())
+    agent = WorkbenchAgent(
+        root,
+        config=WorkbenchAgentConfig(
+            max_turns=max_turns, max_segments=max_segments, budget_usd=budget_usd
+        ),
+        ask_fn=None if (yes and trust_agent) else _make_ask_fn(),
+    )
     first_text = WorkbenchAgent.first_turn_text(instruction, new_package=True, ref=pin)
     try:
         if yes and trust_agent:
@@ -479,9 +520,12 @@ def agent_edit_package(
     instruction: str | None,
     yes: bool,
     trust_agent: bool,
+    max_turns: int = 40,
+    max_segments: int = 3,
+    budget_usd: float | None = None,
 ) -> None:
     """``scenario edit``：对项目包做自然语言增删改查（REPL 会话）。"""
-    from agent_eval.agent.workbench_agent import WorkbenchAgent
+    from agent_eval.agent.workbench_agent import WorkbenchAgent, WorkbenchAgentConfig
     from agent_eval.packages import MANIFEST_FILENAME, PackageManager
 
     _guard_llm_ready()
@@ -504,7 +548,13 @@ def agent_edit_package(
         root = pkg.root
 
     interactive = not (instruction and yes and trust_agent)
-    agent = WorkbenchAgent(root, ask_fn=_make_ask_fn() if interactive else None)
+    agent = WorkbenchAgent(
+        root,
+        config=WorkbenchAgentConfig(
+            max_turns=max_turns, max_segments=max_segments, budget_usd=budget_usd
+        ),
+        ask_fn=_make_ask_fn() if interactive else None,
+    )
     rprint(
         f"[bold]📦 Agent 改包会话[/bold] "
         f"[dim]{root}（沙盒：仅限包内；写操作经确认 + 校验后落盘）[/dim]"
