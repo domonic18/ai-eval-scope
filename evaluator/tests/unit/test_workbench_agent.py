@@ -21,6 +21,7 @@ from agent_eval.agent.workbench_agent import (
     _resume_messages,
 )
 from agent_eval.agent.workbench_tools import PackageToolServer
+from agent_eval.core.exceptions import AgentError
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
 RULES = "rules:\n  - id: r1\n    evaluator: llm_judge\n"
@@ -1001,6 +1002,20 @@ class TestGeneralizedFileTools:
         assert "scenario-package-format.md" in prompt
         assert str(agent.server.assets_root) in prompt  # {assets_root} 已展开
         assert "内容规范" not in prompt
+
+    def test_system_prompt_workbench_identity_with_domain_segment(self, tmp_path: Path) -> None:
+        # 定位升维（D-WB-2）：会话机段=工作台身份，场景包只是装配域段
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        prompt = agent._build_system_prompt()
+        assert "工作台的对话式 Agent（WorkbenchAgent）" in prompt
+        assert "场景包工程 · SUT 接入调试" in prompt  # {domain} 取 domain_labels
+        assert "工作流程" in prompt and "SUT 接入调试" in prompt  # 域段已装配
+        assert "场景包工程 Agent" not in prompt  # 旧身份清零
+
+    def test_unknown_domain_rejected(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, domain="nope", log_dir=tmp_path / "log")
+        with pytest.raises(AgentError, match="未装配的域档位"):
+            agent._build_system_prompt()
 
     def test_generate_template_points_to_guide(self) -> None:
         text = WorkbenchAgent.first_turn_text("做一个代码安全评测包", new_package=True)

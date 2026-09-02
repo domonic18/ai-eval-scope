@@ -1,4 +1,7 @@
-"""WorkbenchAgent — 场景包工程会话 Agent（arch/15 §六，REPL 式）。
+"""WorkbenchAgent — 评测工作台会话 Agent（arch/15 §六，REPL 式）。
+
+对标 Claude Code 的形态：通用会话机 + 按域装配的工具面（profile，D-WB-2）——
+场景包工程（含 SUT 接入调试）是首个装配域，新域 = 新工具面 + 新提示词段，会话机不动。
 
 用户在 CLI 中持续输入自然语言（``你> ...``），Agent 经沙盒工具面改包、
 宿主展示 diff 并确认、校验门禁通过后落盘——多轮会话共享消息历史与暂存区
@@ -112,7 +115,12 @@ def _resume_messages(
 
 @functools.lru_cache(maxsize=1)
 def _load_prompts() -> dict[str, Any]:
-    """加载 workbench_agent_prompts.yaml → {system_prompt, templates}。"""
+    """加载 workbench_agent_prompts.yaml。
+
+    结构（D-WB-2 域 = 提示词段 + 工具面 + 门禁策略）：
+    ``system_prompt_base``（会话机段，零域语义）/ ``domain_segments.*``（域段）/
+    ``domain_labels.*``（域展示名）/ ``templates``（首轮与回改模板）。
+    """
     try:
         data = yaml.safe_load(_PROMPTS_PATH.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as e:
@@ -120,9 +128,10 @@ def _load_prompts() -> dict[str, Any]:
             f"WorkbenchAgent 提示词资产损坏: {_PROMPTS_PATH}（{e}）",
             details={"path": str(_PROMPTS_PATH)},
         ) from e
-    if not isinstance(data, dict) or not data.get("system_prompt") or not data.get("templates"):
+    required = ("system_prompt_base", "domain_segments", "templates")
+    if not isinstance(data, dict) or any(not data.get(k) for k in required):
         raise AgentError(
-            f"WorkbenchAgent 提示词资产结构不完整（需 system_prompt/templates）: {_PROMPTS_PATH}",
+            f"WorkbenchAgent 提示词资产结构不完整（需 {'/'.join(required)}）: {_PROMPTS_PATH}",
             details={"path": str(_PROMPTS_PATH)},
         )
     return data
@@ -142,18 +151,24 @@ class TurnResult:
 
 
 class WorkbenchAgent:
-    """场景包工程会话 Agent（一个实例 = 一次 REPL 会话，跨轮共享历史与暂存）。"""
+    """工作台会话 Agent（一个实例 = 一次 REPL 会话，跨轮共享历史与暂存）。
+
+    ``domain`` 为域档位（缺省场景包域）：选择提示词段；工具面当前固定为
+    包域文件沙盒 + SUT 探测，随域路线图（§6.9）扩展为按档位装配。
+    """
 
     def __init__(
         self,
         pkg_root: Path,
         *,
         config: WorkbenchAgentConfig | None = None,
+        domain: str = "scenario_package",
         llm_role: str = "agent",
         log_dir: Path | None = None,
         ask_fn: Any = None,  # async (question, *, options, secret) -> str | None
     ) -> None:
         self.config = config or WorkbenchAgentConfig()
+        self.domain = domain  # 域档位：选择提示词段（工具面装配随域扩展，§6.8）
         self.server = PackageToolServer(Path(pkg_root), ask_fn=ask_fn)
         # SUT 接入调试工具面（arch/15 §6.6）：与文件沙盒并列；凭证域隔离到密钥区
         self.probe = SUTProbeToolServer(
@@ -220,11 +235,22 @@ class WorkbenchAgent:
         return "\n".join(f"- {s.name}: {s.description}" for s in specs)
 
     def _build_system_prompt(self) -> str:
+        """分段装配：会话机段（base）+ 当前域档位的域段（D-WB-2）。"""
+        prompts = _load_prompts()
+        segments: dict[str, str] = prompts["domain_segments"]
+        segment = segments.get(self.domain)
+        if segment is None:
+            raise AgentError(
+                f"未装配的域档位: {self.domain}（可用: {', '.join(sorted(segments))}）",
+                details={"domain": self.domain},
+            )
         # 字面 replace 而非 str.format：提示词是散文体，含 { type: ... } 等
         # 字面大括号示例，format 会误当占位符吞掉
-        template: str = _load_prompts()["system_prompt"]
+        template = f"{prompts['system_prompt_base']}\n{segment}"
+        label = prompts.get("domain_labels", {}).get(self.domain, self.domain)
         return (
-            template.replace("{tools}", self._describe_tools())
+            template.replace("{domain}", label)
+            .replace("{tools}", self._describe_tools())
             .replace("{pkg_root}", str(self.server.root))
             .replace("{assets_root}", str(self.server.assets_root))
         )
