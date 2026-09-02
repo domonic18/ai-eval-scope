@@ -398,9 +398,9 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
    用户确认门禁（劫持指令无法绕过确认直接落盘）
 4. **登录防锁**：真实凭证打真实接口，每（ref, host, body_template）组合只试一次，失败即停交
    用户——防试错锁死账号；用户纠正接口/字段后模板变化视为新组合，允许再试一次
-5. **总量约束**：单探测 10s 超时、轮内预算**按工具分池**（probe_url 8 / discover_login 3 /
-   probe_protocol 2 / probe_login 4——单工具暴力试探不得饿死发现链，达上限指引继续验证而非收尾）；
-   阶梯③路径清单固定 ≤10 条（对用户自报 host 的定向检查，非扫描行为）
+5. **总量约束**：单探测 10s 超时、轮内预算**按工具分池**（probe_url 15 / discover_login 5 /
+   probe_protocol 3 / probe_login 6——额度从宽只兜失控循环，单工具暴力试探不得饿死发现链，
+   达上限指引继续验证而非收尾）；阶梯③路径清单固定 ≤10 条（对用户自报 host 的定向检查，非扫描行为）
 6. **探测副作用言明**：probe_protocol 建临时线程属对被测系统的写操作，探测前经 `ask_user` 言明
    （可与 probe_login 预览确认合并为一次交互）
 
@@ -436,7 +436,7 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 - 红线实现：host 边界（`_ensure_host` 未授权 host 经 ask_user 征得同意，拒绝即拉黑）；凭证外发硬门禁
   （无 ask_fn 一律不发送）；防锁（(ref, host, body_template) 组合一次即停，用户纠正
   字段后模板变化视为新组合可再试）；轮内预算 `new_turn()` 挂 `PackageAgent.turn`
-  （按工具分池：probe_url 8 / discover_login 3 / probe_protocol 2 / probe_login 4）；注入防护
+  （按工具分池：probe_url 15 / discover_login 5 / probe_protocol 3 / probe_login 6）；注入防护
   （`_wrap_evidence` data 区块声明 + 截断）；探测证据随会话日志落 `workspace/agent_logs/`
 - 集成：`PackageAgent` 双 server 组装（文件沙盒 + 探测面），`_describe_tools` 汇总；CLI
   `scenario_agent._make_ask_fn()` 桥接 `ask()/select()/hide` 交互原语（`--yes` CI 形态不装配）；

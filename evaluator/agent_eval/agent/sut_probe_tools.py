@@ -31,12 +31,13 @@ from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
 
 PROBE_TIMEOUT_S = 10.0
 # 轮内预算按工具分池：单工具的暴力试探不得饿死发现链（真机实测 probe_url 逐路径
-# 猜接口烧光共享预算后，discover_login 被拒、页面分析整段跳过）
+# 猜接口烧光共享预算后，discover_login 被拒、页面分析整段跳过）。额度从宽——
+# 只兜住失控循环，不卡正常调试（候选跨域验证、用户纠正后重试都有余量）
 TOOL_BUDGETS: dict[str, int] = {
-    "probe_url": 8,  # 可达性抽检；逐路径猜接口是反模式，发现交 discover_login
-    "discover_login": 3,  # 页面发现内含多条子请求，独立小池
-    "probe_protocol": 2,
-    "probe_login": 4,  # 预览确认后实测；用户纠正字段后的重试也计于此
+    "probe_url": 15,  # 可达性抽检；逐路径猜接口是反模式，发现交 discover_login
+    "discover_login": 5,  # 页面发现内含多条子请求，独立小池
+    "probe_protocol": 3,
+    "probe_login": 6,  # 预览确认后实测；跨域候选逐个验证、用户纠正字段后的重试都计于此
 }
 MAX_DISCOVER_PATHS = 10
 _MAX_EVIDENCE = 600
