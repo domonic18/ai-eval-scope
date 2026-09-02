@@ -23,11 +23,13 @@ from __future__ import annotations
 import asyncio
 import functools
 import json
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import yaml
 
@@ -60,6 +62,14 @@ def _session_key(pkg_root: Path) -> str:
 
     digest = hashlib.sha1(str(pkg_root.resolve()).encode()).hexdigest()[:16]
     return f"{digest}-{pkg_root.name or 'package'}.json"
+
+
+def _base_url_host(base_url: str) -> str:
+    """从 sut.base_url 提取主机（支持 ``${VAR:-https://host}`` env 缺省形态）。"""
+    if match := re.search(r":-(.+?)\}", base_url):
+        base_url = match.group(1)
+    candidate = base_url if "//" in base_url else f"https://{base_url}"
+    return (urlparse(candidate).hostname or "").lower()
 
 
 def _resume_messages(dialogue: list[dict[str, str]]) -> list[tuple[str, str]]:
@@ -300,11 +310,11 @@ class PackageAgent:
         templates: dict[str, str] = _load_prompts()["templates"]
         for round_no in range(1, self.max_fix_rounds + 1):
             validation = await self.server.validate_package()
-            if validation["ok"]:
+            errors = [*validation["errors"], *self._sut_protocol_gate()]
+            if not errors:
                 files = self.server.commit()
                 self._log("commit", files=files)
                 return {"committed": True, "files": files}
-            errors = validation["errors"]
             self._log("validate_failed", round=round_no, errors=errors)
             if round_no == self.max_fix_rounds:
                 return {"committed": False, "errors": errors, "reason": "max_fix_rounds"}
@@ -319,6 +329,35 @@ class PackageAgent:
             state = await self._invoke(self._messages, on_event=on_event)
             self._messages = list(state.get("messages", self._messages))
         return {"committed": False, "errors": ["校验轮次耗尽"], "reason": "max_fix_rounds"}
+
+    def _sut_protocol_gate(self) -> list[str]:
+        """落盘门禁：声明 agent_protocol 通道的 sut_config 必须有 probe_protocol 实测。
+
+        实测教训：创建会话把全部预算花在登录攻克后，未做协议探测就把入口页面域
+        写进 base_url（protocol_flavor 从参照包继承），执行时 commands 端点 404。
+        红线从提示升级为门禁——协议形态与地址必须是本会话的验证结论才允许落盘。
+        """
+        probed = self.probe.protocol_hosts
+        errors: list[str] = []
+        for rel, content in sorted(self.server.view().items()):
+            if not rel.startswith("sut_configs/") or not rel.endswith((".yaml", ".yml")):
+                continue
+            try:
+                data = yaml.safe_load(content) or {}
+            except yaml.YAMLError:
+                continue  # 语法错误由 validate_package 上报
+            sut = data.get("sut") or {}
+            if str(sut.get("channel", "")).lower() != "agent_protocol":
+                continue
+            host = _base_url_host(str(sut.get("base_url", "")))
+            if host and host not in probed:
+                errors.append(
+                    f"{rel} 声明 channel: agent_protocol，但 base_url 的主机 {host} "
+                    "本会话未经 probe_protocol 实测（协议形态与地址必须是验证过的结论）。"
+                    "请先调用 probe_protocol(base_url=…) 探测该主机并按 ✅ 端点写 "
+                    "protocol_flavor；探测不通则与用户确认正确的接口域后再写配置"
+                )
+        return errors
 
     async def _invoke(
         self,

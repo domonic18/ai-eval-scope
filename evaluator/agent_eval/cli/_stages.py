@@ -15,6 +15,7 @@ import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import urlparse
 
 from rich import print as rprint
 
@@ -218,10 +219,11 @@ def execute_stage(
     """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。"""
     from agent_eval.agent.execution_agent import ExecutionAgent
     from agent_eval.agent.protocol_tools import AgentProtocolToolServer
+    from agent_eval.agent.sut_tools import SUTToolServer
     from agent_eval.execution.auth.credentials import preflight_sut_credentials
     from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
     from agent_eval.execution.channels.base import create_channel
-    from agent_eval.execution.models import AgentConfig
+    from agent_eval.execution.models import AgentConfig, SUTToolsConfig
 
     sut = run_inputs.sut
     # 凭证缺失 fail fast（不进 Agent 循环烧轮次）。本层零交互（arch/15 组织
@@ -234,10 +236,17 @@ def execute_stage(
         cast(AgentProtocolChannel, channel),
         default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
     )
+    # invoke_http_sut 的 host 边界收敛到被测系统配置域（实测：协议通道 404 后
+    # LLM 曾臆测 localhost:8000/8080 乱试）；base_url 缺失时留空 = 不限制
+    sut_host = urlparse(sut.base_url).hostname if sut.base_url else None
     agent = ExecutionAgent(
         AgentConfig(
             llm_role=llm_role or "agent",
             max_turns=max_turns or 20,
+            workspace_dir=workspace_root,
+        ),
+        sut_tools=SUTToolServer(
+            SUTToolsConfig(allowed_hosts=[sut_host] if sut_host else []),
             workspace_dir=workspace_root,
         ),
         extra_tool_servers=[protocol_tools],

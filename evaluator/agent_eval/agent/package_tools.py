@@ -140,6 +140,10 @@ class PackageToolServer(ToolExporterMixin):
         view.update(self.staging)
         return {k: v for k, v in view.items() if v is not None}
 
+    def view(self) -> dict[str, str]:
+        """暂存视图（宿主门禁读取：如 agent_protocol 通道必须经 probe_protocol 实测）。"""
+        return self._view()
+
     # ─── 工具（Agent 可调用；错误以 {"error": ...} 返回） ─────────
 
     async def list_package_files(self) -> dict[str, Any]:

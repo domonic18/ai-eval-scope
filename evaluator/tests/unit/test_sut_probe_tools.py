@@ -568,6 +568,13 @@ class TestProbeProtocol:
         assert result["matrix"]  # 单端点失败不整体中断
         assert result["matrix"][0]["ok"] is False
 
+    def test_probed_hosts_recorded_for_commit_gate(self) -> None:
+        """探测过的 host 记录供落盘门禁（agent_protocol 通道必须出自实测证据）。"""
+        server = _make()
+        assert server.protocol_hosts == set()
+        _run(server.probe_protocol("https://sut.example.com"))
+        assert server.protocol_hosts == {"sut.example.com"}
+
 
 # ── ask_user 桥与凭证直写 ────────────────────────────────────────────
 

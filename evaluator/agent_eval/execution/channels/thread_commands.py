@@ -40,6 +40,8 @@ def commands_agent_info(
 
     /agents/search 是 runs 形态端点；AG-UI 网关族对未知路径回 SPA HTML，
     探测只会得到非 JSON，故 commands 形态以配置自描述替代网络发现。
+    本地构造值必须显式标注（local-simulated）：执行 Agent 曾把该「成功」当
+    服务端健康证据，在 commands 端点 404 后反复重试不撒手。
     """
     resolved = agent_id or channel.sut.agent_id or "default"
     return {
@@ -53,6 +55,11 @@ def commands_agent_info(
             "state": "/threads/{thread_id}/state",
             "stream": "/threads/{thread_id}/stream(/events)",
         },
+        "source": "local-simulated",
+        "note": (
+            "能力描述由本地配置构造（commands 形态无 /agents/search 端点）——"
+            "本次未访问服务器，不能作为服务端可达的证据"
+        ),
     }
 
 

@@ -349,6 +349,60 @@ class TestAgentTurn:
 
         assert not result.staged and not result.committed and result.diff == ""
 
+    def test_agent_protocol_channel_requires_probe_protocol(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """落盘门禁：声明 agent_protocol 通道的 base_url 主机必须经 probe_protocol
+        实测（实测教训：创建会话未做协议探测把入口页面域写进 base_url，执行时
+        commands 端点 404——红线从提示升级为门禁）。"""
+        sut_yaml = (
+            "sut:\n  name: bj33\n  channel: agent_protocol\n"
+            "  base_url: ${BJ33_AGENT_URL:-https://agent.staging.example.com}\n"
+        )
+
+        async def write_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file("sut_configs/bj33.yaml", sut_yaml)
+            return "写了 sut 配置（未探测协议）"
+
+        fake, _ = _replay([write_sut, write_sut])
+        monkeypatch.setattr(PackageAgent, "_invoke", fake)
+        agent = PackageAgent(tmp_path, max_fix_rounds=2, log_dir=tmp_path / "log")
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not result.committed  # 未实测 → 门禁打回
+        assert any("probe_protocol" in e for e in result.validation_errors)
+        assert not (tmp_path / "sut_configs" / "bj33.yaml").exists()  # 门禁未过不落盘
+
+        # Agent 实测过该主机后放行
+        agent.probe._protocol_hosts.add("agent.staging.example.com")  # noqa: SLF001
+        fake2, _ = _replay([write_sut])
+        monkeypatch.setattr(PackageAgent, "_invoke", fake2)
+        retry = asyncio.run(agent.turn("已按提示探测，重写", confirm_fn=lambda r, d: True))
+        assert retry.committed
+
+    def test_protocol_gate_skips_non_agent_protocol_channel(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """门禁只针对 agent_protocol 通道：http 等通道不受 probe_protocol 约束。"""
+
+        async def write_http_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file(
+                "sut_configs/api.yaml",
+                "sut:\n  name: api\n  channel: http\n  base_url: https://api.example.com\n",
+            )
+            return "写了 http 通道配置"
+
+        fake, _ = _replay([write_http_sut])
+        monkeypatch.setattr(PackageAgent, "_invoke", fake)
+        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert result.committed  # 非 agent_protocol 通道不触发门禁
+
     def test_first_turn_text_uses_templates(self) -> None:
         text = PackageAgent.first_turn_text(
             "做一个客服质检包", new_package=True, ref="demo/quality"

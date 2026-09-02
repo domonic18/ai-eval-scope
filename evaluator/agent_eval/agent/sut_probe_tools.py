@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 from urllib.parse import urlparse
 
-from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.agent.tools import TEMPLATE_SYNTAX_HINT, ToolExporterMixin, ToolSpec, truncate
 
 PROBE_TIMEOUT_S = 10.0
 # 轮内预算按工具分池：单工具的暴力试探不得饿死发现链（真机实测 probe_url 逐路径
@@ -62,11 +62,7 @@ _MAX_CONTEXT = 400
 # 登录模板语法纠偏：probe_login 用 Jinja2 渲染 body_template，实测曾出现 shell 风格
 # ${var} 占位符原样发出（服务端报「格式不是手机号」被误读为用户输入错误）——
 # 渲染后残留占位符一律拒发
-_TEMPLATE_SYNTAX_HINT = (
-    "body_template 语法为 Jinja2：变量写 {{ 字段名 }}（如 {{ username }}），"
-    '常量字段直接写字面值（如 "platform": "fs"）；${var}、%s 等 shell/字符串模板'
-    "风格不会被渲染，会原样发出"
-)
+_TEMPLATE_SYNTAX_HINT = TEMPLATE_SYNTAX_HINT
 _UNRENDERED_PLACEHOLDER_RE = re.compile(r"\$\{[^}]*\}|\{\{[^}]*?\}\}|\{%[^%]*?%\}")
 
 
@@ -215,6 +211,9 @@ class SUTProbeToolServer(ToolExporterMixin):
         # 防锁：同 (ref, host, body_template) 只实测一次——配置未变不重试；
         # 用户纠正字段/接口后模板变化视为新组合，允许再次实测
         self._login_tried: set[tuple[str, str, str]] = set()
+        # 已实测过协议矩阵的 host（供 PackageAgent 落盘门禁：声明 agent_protocol
+        # 通道的 sut_config，其 base_url 必须出自这里的实测证据）
+        self._protocol_hosts: set[str] = set()
 
     # ── 会话挂点与内部设施 ────────────────────────────────────────
 
@@ -564,11 +563,18 @@ class SUTProbeToolServer(ToolExporterMixin):
 
     # ── 工具三：协议符合性矩阵（含写操作，收尾清理） ──────────────
 
+    @property
+    def protocol_hosts(self) -> set[str]:
+        """已实测过协议矩阵的 host（小写）——落盘门禁的证据源。"""
+        return set(self._protocol_hosts)
+
     async def probe_protocol(self, base_url: str, flavor: str = "commands") -> dict[str, Any]:
         if budget_err := self._budget("probe_protocol"):
             return budget_err
         if host_err := await self._ensure_host(base_url):
             return {"error": host_err}
+        if host := _host_of(base_url):
+            self._protocol_hosts.add(host.lower())
         base = base_url.rstrip("/")
         matrix: list[dict[str, Any]] = []
         tid = ""

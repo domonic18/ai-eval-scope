@@ -19,11 +19,12 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from jinja2 import Template as JinjaTemplate
 
-from agent_eval.agent.tools import ToolExporterMixin, ToolSpec
+from agent_eval.agent.tools import TEMPLATE_SYNTAX_HINT, ToolExporterMixin, ToolSpec
 from agent_eval.agent.tools import truncate as _truncate
 from agent_eval.core.exceptions import CollectionError, ToolExecutionError
 from agent_eval.execution.models import SUTToolsConfig
@@ -143,7 +144,13 @@ class SUTToolServer(ToolExporterMixin):
         merged_headers = {**self.config.http_default_headers, **(headers or {})}
         body: str | None = None
         if body_template is not None:
-            body = JinjaTemplate(body_template).render(**(template_vars or {}))
+            try:
+                body = JinjaTemplate(body_template).render(**(template_vars or {}))
+            except Exception as e:  # noqa: BLE001 — 模板错误转纠正提示（渲染 TypeError 等曾击穿会话）
+                raise ToolExecutionError(
+                    f"body_template 渲染失败（{e}）。{TEMPLATE_SYNTAX_HINT}",
+                    details={"url": url},
+                ) from e
 
         client_cm = (
             self._http_client_factory()
@@ -381,8 +388,23 @@ class SUTToolServer(ToolExporterMixin):
         return h.hexdigest()
 
     def _resolve_url(self, url: str) -> str:
-        """相对 URL 拼接配置的 http_base_url；无 base_url 的相对路径直接报错。"""
+        """相对 URL 拼接配置的 http_base_url；无 base_url 的相对路径直接报错。
+
+        绝对 URL 受 host 边界约束（allowed_hosts 非空时仅放行白名单，缺省不限
+        制）：实测执行 Agent 曾在协议通道 404 后臆测 localhost:8000/8080 等地址
+        乱试——LLM 只该打被测系统配置域，越界直接拒绝并指回语义工具。
+        """
         if url.startswith(("http://", "https://")):
+            allowed = {h.lower() for h in self.config.allowed_hosts if h}
+            if allowed:
+                host = (urlparse(url).hostname or "").lower()
+                if host not in allowed:
+                    raise ToolExecutionError(
+                        f"URL 越界: {url}——仅允许访问被测系统配置域"
+                        f"（{', '.join(sorted(allowed))}）。协议通道任务请用 agent_run 等"
+                        "语义工具调用 SUT，不要自行构造 HTTP 地址",
+                        details={"url": url, "host": host},
+                    )
             return url
         if not self.config.http_base_url:
             raise ToolExecutionError(

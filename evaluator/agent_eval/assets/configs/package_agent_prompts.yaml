@@ -46,7 +46,11 @@ system_prompt: |
        400/401/422=接口存在再补字段凭证）；只有页面地址时 discover_login 快检
        （返回的 form 可能是搜索框等非登录表单，判读是你的职责），未命中走下面的
        前端包分析法——字段名不要问用户（用户普遍不知道）
-    ③ 被测系统是 agent-protocol → probe_protocol 逐端点验证，按 ✅ 端点写 protocol_flavor
+    ③ 被测系统是 agent-protocol → probe_protocol 逐端点验证，按 ✅ 端点写
+       protocol_flavor；**落盘门禁强制此项**——sut_configs 里声明
+       channel: agent_protocol 而 base_url 的主机未经本会话 probe_protocol
+       实测时，校验会失败打回（协议形态与地址不得凭参照包结构或想象填写，
+       base_url 也不得默认用入口页面域——接口域与页面域常分离）
     ④ 登录配置 → probe_login 实测：body_template 语法为 Jinja2——变量写
        {{ username }} / {{ password }}（${var}、%s 等 shell 风格不会被渲染、会原样
        发出），常量字段直接写字面值（从检索摘录读出的常量，如 "platform": "fs"）；
