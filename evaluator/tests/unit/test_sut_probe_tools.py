@@ -266,6 +266,26 @@ class TestAskUser:
         result = _run(server.ask_user("?", kind="credential"))
         assert "ref" in result["error"] and "field" in result["error"]
 
+    def test_single_option_degrades_to_text(self) -> None:
+        """单选项 options 无选择意义：降级为文本输入，不走 select（防假单选）。"""
+        seen: dict[str, Any] = {}
+
+        def spy(question: str, *, options=None, secret=False):
+            seen["options"] = options
+            return "https://sut.example.com"
+
+        server = _make(ask_fn=_ask(spy))
+        result = _run(server.ask_user("入口地址？", options="文本输入"))
+        assert result["answer"] == "https://sut.example.com"
+        assert seen["options"] is None  # 单项已被丢弃
+
+    def test_overlong_question_rejected_with_split_hint(self) -> None:
+        """多问打包超长 → 拒答并指引拆分（一次一问契约）。"""
+        server = _make(ask_fn=_ask(lambda q, **kw: "x"))
+        result = _run(server.ask_user("很长的多问打包" * 60))
+        assert "一次只问一个问题" in result["error"]
+        assert "拆" in result["error"]
+
 
 # ── 轮内预算 ─────────────────────────────────────────────────────────
 

@@ -32,6 +32,7 @@ PROBE_TIMEOUT_S = 10.0
 MAX_PROBES_PER_TURN = 12
 MAX_DISCOVER_PATHS = 10
 _MAX_EVIDENCE = 600
+_MAX_QUESTION_CHARS = 200  # ask_user 单问上限：多问打包会让用户不知从何答起
 _COMMON_LOGIN_PATHS = (
     "/login",
     "/api/login",
@@ -98,7 +99,12 @@ class SUTProbeToolServer(ToolExporterMixin):
         ),
         ToolSpec(
             name="ask_user",
-            description="向用户提问（文本/单选/凭证录入）。kind=credential 时输入直写 secrets 不回流；非交互环境返回需交互错误",
+            description=(
+                "向用户提问，一次只问一个问题（多项信息拆成多次调用，问题不超 200 字）。"
+                "kind 三态：text=开放答案（地址/描述，默认）；choice=明确候选，options 用 | 分隔"
+                "（如 需要登录|免登录）；credential=凭证字段录入，必带 ref 与 field（输入直写密钥区"
+                "不回流）。不要用 options 表达「请文本输入」之类的说明"
+            ),
             method="ask_user",
         ),
     ]
@@ -488,6 +494,13 @@ class SUTProbeToolServer(ToolExporterMixin):
             return {
                 "error": "非交互环境（--yes/CI），ask_user 不可用；请引导用户在交互终端运行或预先 secrets set"
             }
+        if len(question) > _MAX_QUESTION_CHARS:
+            return {
+                "error": (
+                    f"问题过长（{len(question)} 字，上限 {_MAX_QUESTION_CHARS}）：一次只问一个问题，"
+                    "需要多项信息请拆成多次 ask_user 逐个询问"
+                )
+            }
         try:
             opts = [o.strip() for o in options.split("|") if o.strip()] if options else None
             if kind == "credential":
@@ -497,6 +510,9 @@ class SUTProbeToolServer(ToolExporterMixin):
                 if not value:
                     return {"aborted": True, "note": "用户未输入，凭证未保存"}
                 return self._save_credential(ref, field, value)
+            # 单选项无选择意义：降级为文本输入（防「假单选」困惑）
+            if opts is not None and len(opts) < 2:
+                opts = None
             answer = await self.ask_fn(question, options=opts, secret=False)
             return {"answer": answer or ""}
         except Exception as e:  # noqa: BLE001 — 交互桥异常转错误数据

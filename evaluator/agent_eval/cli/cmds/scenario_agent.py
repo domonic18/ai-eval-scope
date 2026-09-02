@@ -313,15 +313,24 @@ def _make_ask_fn() -> Any:
     """ask_user 桥（arch/15 §6.6）：SUT 探测工具的提问转发 CLI 交互原语。
 
     凭证录入走隐藏回显；返回值交探测工具内部处理（凭证直写密钥区，不回流对话）。
+    长问题先独立展示再输入——塞进 ask/select 提示行会挤压成一行（实测不可读）。
     非交互（``--yes`` CI）形态不装配——工具面收到 ask_fn=None 自行返回「需交互」。
     """
 
+    def _show(question: str) -> None:
+        rprint(f"[bold]? {question}[/bold]")
+
     async def ask_fn(question: str, *, options: list[str] | None, secret: bool) -> str:
         if secret:
-            return ask(f"? {question}", hide=True)
+            _show(question)
+            return ask("└─ 输入（隐藏回显）", hide=True)
         if options:
-            return select(question, options)
-        return ask(f"? {question}")
+            _show(question)
+            return select("└─ 选择", options)
+        if len(question) <= 60:
+            return ask(f"? {question}")
+        _show(question)
+        return ask("└─ 输入")
 
     return ask_fn
 
