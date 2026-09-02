@@ -2,13 +2,14 @@
 
 用户在 CLI 中持续输入自然语言（``你> ...``），Agent 经沙盒工具面改包、
 宿主展示 diff 并确认、校验门禁通过后落盘——多轮会话共享消息历史与暂存区
-（Agent 记得之前的改动上下文）。
+（Agent 记得之前的改动上下文）；对话要点持久化到 ``workspace/agent_sessions/``，
+草稿续作（新进程）时自动注入此前对话，跨会话不失忆。
 
 会话流程（每轮 :meth:`turn`）::
 
     你> <自然语言需求>
       → ainvoke（Agent 输出计划 → 调工具写暂存 → 自检 preview_diff）
-      → 宿主 confirm_fn(reply, diff)：False = 回滚本轮（暂存清空 + 历史截断）
+      → 宿主 confirm_fn(reply, diff)：False = 回滚本轮（暂存清空，对话保留）
       → validate_package 门禁：失败则把 errors 注入下一轮回改（≤ max_fix_rounds）
       → commit() 原子落盘 + 会话日志
 
@@ -43,6 +44,44 @@ _REF_AGENT_CHOSEN = (
     "未指定——请根据评测需求拟定（小写英文与连字符，语义贴合需求），"
     "并在改动计划第一行明确给出「拟定引用: <scenario/id>」"
 )
+
+_MAX_DIALOGUE_ENTRIES = 40  # 持久化的对话条数上限（防跨会话无限膨胀）
+_RESUME_MAX_ENTRIES = 24  # 续作注入上下文的最多条数
+_RESUME_MAX_CHARS = 400  # 续作注入单条截断
+
+
+def _session_key(pkg_root: Path) -> str:
+    """会话记录文件名：root 绝对路径摘要 + 目录名。
+
+    草稿续作（``--output`` 指回同一目录）命中同一文件——对话上下文跨进程延续；
+    包归位后路径变化自然开新记录。
+    """
+    import hashlib
+
+    digest = hashlib.sha1(str(pkg_root.resolve()).encode()).hexdigest()[:16]
+    return f"{digest}-{pkg_root.name or 'package'}.json"
+
+
+def _resume_messages(dialogue: list[dict[str, str]]) -> list[tuple[str, str]]:
+    """把持久化的此前对话组装为注入消息（user 记录 + assistant 应答确认）。
+
+    只重放对话要点（用户输入与最终回复），不重放工具调用流量——文件内容
+    以当前包内实际文件为准（回滚/落盘差异由提示言明，防 Agent 误判）。
+    """
+    lines = []
+    for d in dialogue[-_RESUME_MAX_ENTRIES:]:
+        who = "用户" if d.get("role") == "user" else "助手"
+        text = str(d.get("text", ""))
+        if len(text) > _RESUME_MAX_CHARS:
+            text = text[:_RESUME_MAX_CHARS] + "…"
+        lines.append(f"{who}: {text}")
+    context = (
+        "（续接此前会话——以下是本场景包先前对话的记录，其中用户给出的信息与讨论结论仍有效：\n"
+        + "\n".join(lines)
+        + "\n——记录结束。请在此基础上继续，勿重复追问已给出的信息；"
+        "此前提到的文件内容以当前包内实际文件为准）"
+    )
+    return [("user", context), ("assistant", "已了解此前会话记录，将继续完成场景包工作。")]
 
 
 @functools.lru_cache(maxsize=1)
@@ -104,6 +143,11 @@ class PackageAgent:
         self.max_turns = max_turns
         self.max_fix_rounds = max_fix_rounds
         self._messages: list[Any] = []
+        # 会话记忆持久化（跨进程续作）：同一包目录命中同一记录文件
+        self._session_file = (
+            paths.default_workspace / "agent_sessions" / _session_key(Path(pkg_root))
+        )
+        self._dialogue: list[dict[str, str]] = self._load_dialogue()
         self._graph: Any | None = None
         self._log_path = (
             log_dir
@@ -112,6 +156,40 @@ class PackageAgent:
             / f"package_agent_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
         )
         self.probe.log_path = self._log_path  # 探测证据与会话日志同文件（时间线完整）
+
+    # ─── 会话记忆（跨进程续作） ────────────────────────────────────
+
+    def _load_dialogue(self) -> list[dict[str, str]]:
+        try:
+            data = json.loads(self._session_file.read_text(encoding="utf-8"))
+            dialogue = data.get("dialogue", [])
+        except (OSError, ValueError):
+            return []
+        return [d for d in dialogue if isinstance(d, dict) and d.get("role") and d.get("text")]
+
+    @property
+    def resumed_dialogue_count(self) -> int:
+        """已续接的此前会话对话条数（0 = 全新会话），宿主据此显示续作提示。"""
+        return len(self._dialogue)
+
+    def _record_turn(self, user_text: str, reply: str) -> None:
+        """记录本轮对话要点并持久化（仅 user/assistant 文本，不含工具流量）。"""
+        self._dialogue.append({"role": "user", "text": user_text})
+        if reply:
+            self._dialogue.append({"role": "assistant", "text": reply})
+        self._dialogue = self._dialogue[-_MAX_DIALOGUE_ENTRIES:]
+        try:
+            self._session_file.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "root": str(self.server.root),
+                "updated": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "dialogue": self._dialogue,
+            }
+            self._session_file.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8"
+            )
+        except OSError:
+            pass  # 记录失败不影响会话（同 _log 容错策略）
 
     # ─── 组装 ─────────────────────────────────────────────────────
 
@@ -157,20 +235,25 @@ class PackageAgent:
     ) -> TurnResult:
         """执行一轮：Agent 生成（流式）→ 用户确认 → 校验门禁（≤N 回改）→ 落盘/回滚。
 
-        confirm_fn(reply, diff) 由 CLI 注入（全部应用 / 放弃）；放弃时本轮暂存清空
-        且消息历史截断回本轮前，保持 Agent 上下文与磁盘/暂存一致。
+        confirm_fn(reply, diff) 由 CLI 注入（全部应用 / 放弃）；放弃时本轮暂存清空，
+        但消息历史保留（评测地址等讨论结论不丢失），以显式回滚说明收尾防 Agent
+        误以为文件已写入。
         on_event 收流式进度事件（``token`` / ``tool_start`` / ``tool_end`` / ``phase``），
         CLI 据此直播工作过程；None = 静默。
-        中断（Ctrl+C）或异常同样回滚暂存并截断历史后原样上抛——磁盘从未见过本轮内容。
+        中断（Ctrl+C）或异常回滚暂存并截断本轮历史后原样上抛——半途历史不完整，
+        且磁盘从未见过本轮内容。
         """
         self._log("turn_start", instruction=user_text)
         self.probe.new_turn()  # 重置 SUT 探测轮内预算（arch/15 §6.6 总量约束）
+        if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
+            self._messages.extend(_resume_messages(self._dialogue))
         history_len = len(self._messages)
         self._messages.append(("user", user_text))
         try:
             state = await self._invoke(self._messages, on_event=on_event)
             self._messages = list(state.get("messages", self._messages))
             reply = _last_ai_text(self._messages)
+            self._record_turn(user_text, reply)
 
             if not self.server.has_staged_changes:
                 self._log("turn_end", committed=False, reason="no_changes")
@@ -181,7 +264,15 @@ class PackageAgent:
                 on_event({"type": "phase", "name": "confirm"})
             if not confirm_fn(reply, diff):
                 self.server.reset_staging()
-                del self._messages[history_len:]
+                # 文件变更回滚，对话上下文保留——评测地址等讨论信息不因放弃而丢失
+                self._messages.append(
+                    (
+                        "user",
+                        "（用户放弃了本轮文件变更：暂存已全部回滚，磁盘未做任何修改。"
+                        "本轮对话中的结论与信息仍有效，可在后续轮次继续使用；"
+                        "若需写入此前讨论的内容请重新执行）",
+                    )
+                )
                 self._log("turn_end", committed=False, reason="user_aborted")
                 return TurnResult(
                     reply=reply, diff=diff, staged=True, aborted_reason="user_aborted"

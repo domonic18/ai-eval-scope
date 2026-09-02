@@ -261,6 +261,9 @@ def _session(agent: Any, first_text: str | None) -> None:
             rprint("[dim]暂存与上下文已回滚，可直接重新输入上一条需求重试[/dim]")
 
     rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 中断当前轮）[/dim]")
+    resumed = getattr(agent, "resumed_dialogue_count", 0)
+    if resumed:
+        rprint(f"[dim]已续接此前会话记录（{resumed} 条对话），Agent 可延续此前的讨论上下文[/dim]")
     if first_text:
         _attempt(first_text)
     while True:

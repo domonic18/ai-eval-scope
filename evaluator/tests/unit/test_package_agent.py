@@ -270,7 +270,34 @@ class TestAgentTurn:
         assert result.aborted_reason == "user_aborted" and not result.committed
         assert not agent.server.staging  # 暂存清空
         assert not (tmp_path / "rules").exists()  # 磁盘未受影响
-        assert agent._messages == []  # 历史截断回本轮前，上下文与磁盘一致
+        # 文件变更回滚但对话上下文保留（含本轮讨论），显式回滚说明防 Agent 误判
+        assert any("生成包" in str(m) for m in agent._messages)
+        assert any("放弃" in str(m) for m in agent._messages)
+
+    def test_dialogue_persisted_and_replayed_on_resume(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 实测教训：会话中断重开后进程内历史清零，用户此前给的评测地址全部丢失
+        root = tmp_path / "pkg"
+
+        fake, _ = _replay([_write_valid])
+        monkeypatch.setattr(PackageAgent, "_invoke", fake)
+        first = PackageAgent(root, log_dir=tmp_path / "log")
+        asyncio.run(
+            first.turn("评测地址 https://sut.example.com，请生成包", confirm_fn=lambda r, d: True)
+        )
+        assert first.resumed_dialogue_count == 2  # user + assistant 要点已持久化
+
+        async def cont(server: PackageToolServer) -> str:
+            return "继续"
+
+        fake2, calls = _replay([cont])
+        monkeypatch.setattr(PackageAgent, "_invoke", fake2)
+        resumed = PackageAgent(root, log_dir=tmp_path / "log")  # 模拟新进程续作
+        assert resumed.resumed_dialogue_count == 2
+        asyncio.run(resumed.turn("继续", confirm_fn=lambda r, d: True))
+        injected = str(calls[0][0])  # 首条注入消息
+        assert "续接此前会话" in injected and "sut.example.com" in injected
 
     def test_turn_validate_gate_fix_rounds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
