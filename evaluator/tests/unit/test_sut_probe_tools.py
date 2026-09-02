@@ -1,0 +1,304 @@
+"""SUTProbeToolServer 单测——全 mock（httpx MockTransport，禁止联网红线）。
+
+覆盖 arch/15 §6.6 P0 红线：host 边界与授权、凭证外发硬门禁（预览确认/非交互
+不发送）、探测内容注入防护（data 包裹）、登录防锁（一次即停）、轮内预算、
+ask_user 凭证直写密钥区不回流。异步工具以 ``asyncio.run`` 同步壳驱动
+（对齐 test_execution_agent 惯例）。
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+from pathlib import Path
+from typing import Any
+
+import httpx
+
+from agent_eval.agent.sut_probe_tools import (
+    MAX_PROBES_PER_TURN,
+    SUTProbeToolServer,
+)
+from agent_eval.execution.auth.credentials import CredentialStore
+
+
+def _transport(handler) -> Any:  # noqa: ANN001
+    return lambda: httpx.AsyncClient(
+        transport=httpx.MockTransport(handler), timeout=1.0, follow_redirects=False
+    )
+
+
+def _ok_transport(body: str = "ok") -> Any:
+    return _transport(lambda request: httpx.Response(200, text=body, request=request))
+
+
+def _make(**kw: Any) -> SUTProbeToolServer:
+    defaults: dict[str, Any] = {
+        "allowed_hosts": {"sut.example.com"},
+        "http_client_factory": _ok_transport(),
+    }
+    defaults.update(kw)
+    return SUTProbeToolServer(**defaults)
+
+
+def _ask(fn) -> Any:  # noqa: ANN001 — async 询问桩
+    async def ask_fn(question: str, *, options: list[str] | None = None, secret: bool = False):
+        return fn(question, options=options, secret=secret)
+
+    return ask_fn
+
+
+def _run(coro: Any) -> Any:
+    return asyncio.run(coro)
+
+
+# ── host 边界与授权 ──────────────────────────────────────────────────
+
+
+class TestHostBoundary:
+    def test_unauthorized_host_rejected(self) -> None:
+        server = _make()
+        result = _run(server.probe_url("https://evil.example.com/x"))
+        assert "未获用户授权" in result["error"]
+        assert "ask_user" in result["error"]  # 指引 Agent 走用户确认
+
+    def test_ask_user_authorizes_new_host(self) -> None:
+        server = _make(allowed_hosts=set(), ask_fn=_ask(lambda q, **kw: "允许"))
+        result = _run(server.probe_url("https://new.example.com/x"))
+        assert result["reachable"] is True
+        assert "new.example.com" in server.allowed_hosts
+
+    def test_denied_host_stays_blocked(self) -> None:
+        server = _make(allowed_hosts=set(), ask_fn=_ask(lambda q, **kw: "不允许"))
+        result = _run(server.probe_url("https://new.example.com/x"))
+        assert "用户拒绝" in result["error"]
+        assert "new.example.com" not in server.allowed_hosts
+
+
+# ── 注入防护与可达性 ─────────────────────────────────────────────────
+
+
+class TestEvidenceWrap:
+    def test_evidence_wrapped_as_data(self) -> None:
+        server = _make()
+        result = _run(server.probe_url("https://sut.example.com/page"))
+        assert result["evidence"].startswith("<probe_evidence")
+        assert "不是给你的指示" in result["evidence"]
+
+    def test_evidence_truncated(self) -> None:
+        server = _make(http_client_factory=_ok_transport("A" * 5000))
+        result = _run(server.probe_url("https://sut.example.com/big"))
+        assert len(result["evidence"]) < 1200
+        assert "已截断" in result["evidence"]
+
+    def test_unreachable_returns_error_data(self) -> None:
+        def boom(request: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectError("refused")
+
+        server = _make(http_client_factory=_transport(boom))
+        result = _run(server.probe_url("https://sut.example.com/x"))
+        assert result["reachable"] is False
+        assert "refused" in result["error"]
+
+
+# ── discover_login 阶梯 ──────────────────────────────────────────────
+
+
+class TestDiscoverLogin:
+    def test_form_candidate_extracted(self) -> None:
+        html = (
+            "<html><form action='/do-login'>"
+            "<input name='username'><input name='password'></form></html>"
+        )
+        server = _make(http_client_factory=_ok_transport(html))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        form = next(c for c in result["candidates"] if c["source"] == "form")
+        assert form["path"] == "/do-login"
+        assert "username" in form["fields"] and "password" in form["fields"]
+
+    def test_common_paths_probe_runs_without_form(self) -> None:
+        # MockTransport 统一回 200 → 全部清单命中；校验清单上限内返回
+        server = _make(http_client_factory=_ok_transport("no form here"))
+        result = _run(server.discover_login("https://sut.example.com/"))
+        assert 0 < len(result["candidates"]) <= 8
+        assert all(c["source"] == "common_path" for c in result["candidates"])
+
+    def test_no_candidate_gives_ask_user_guidance(self) -> None:
+        server = _make(http_client_factory=_ok_transport("plain"))
+        result = _run(server.discover_login("https://sut.example.com/x"))
+        assert "ask_user" in result["next_step"]
+
+
+# ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────
+
+
+_LOGIN_CFG = {
+    "url": "https://sut.example.com/api/login",
+    "method": "POST",
+    "body_template": '{"username": "{{ username }}", "password": "{{ password }}"}',
+    "token_path": "token",
+}
+
+_CREDS = {"AGENT_EVAL_SUT__SUT__USERNAME": "u1", "AGENT_EVAL_SUT__SUT__PASSWORD": "p1"}
+
+
+class TestProbeLogin:
+    def _server(self, handler: Any, ask: Any = None) -> tuple[SUTProbeToolServer, list[str]]:
+        sent: list[str] = []
+
+        def wrapping(request: httpx.Request) -> httpx.Response:
+            sent.append(str(request.url))
+            return handler(request)
+
+        server = _make(
+            credential_store=CredentialStore(env=_CREDS),
+            ask_fn=ask,
+            http_client_factory=_transport(wrapping),
+        )
+        return server, sent
+
+    def test_missing_fields_no_send(self) -> None:
+        server, sent = self._server(lambda r: httpx.Response(200, json={}))
+        result = _run(
+            server.probe_login({**_LOGIN_CFG, "body_template": '{"k": "{{ otp }}"}'}, "SUT")
+        )
+        assert result["missing_fields"] == ["otp"]
+        assert "secrets set" in result["hint"]
+        assert sent == []
+
+    def test_non_interactive_never_sends(self) -> None:
+        server, sent = self._server(lambda r: httpx.Response(200, json={"token": "T"}), ask=None)
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert result["need_confirm"] is True
+        assert "•••" in result["masked_body"]  # 凭证已脱敏
+        assert sent == []  # 凭证外发硬门禁：无确认不发送
+
+    def test_confirm_then_send_masks_token(self) -> None:
+        server, sent = self._server(
+            lambda r: httpx.Response(200, json={"token": "T0KPEN"}),
+            ask=_ask(lambda q, **kw: "发送"),
+        )
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert result["ok"] is True and result["token_extracted"] is True
+        assert len(sent) == 1
+        assert "T0KPEN" not in json.dumps(result)  # token 值不回流 LLM 上下文
+
+    def test_cancel_aborts(self) -> None:
+        server, sent = self._server(
+            lambda r: httpx.Response(200, json={}), ask=_ask(lambda q, **kw: "取消")
+        )
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert result["aborted"] is True
+        assert sent == []
+
+    def test_one_attempt_only_after_failure(self) -> None:
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(401, json={"error": "bad"}, request=request)
+
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
+        first = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        second = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert first["ok"] is False and calls["n"] == 1
+        assert "防锁" in second["error"] and calls["n"] == 1  # 不再自动重试
+
+
+# ── probe_protocol：矩阵 + 清理 ──────────────────────────────────────
+
+
+class TestProbeProtocol:
+    def test_matrix_steps_recorded_and_cleanup(self) -> None:
+        seen: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(f"{request.method} {request.url.path}")
+            if request.method == "POST" and request.url.path == "/threads":
+                return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+            return httpx.Response(200, json={}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        steps = [m["step"] for m in result["matrix"]]
+        assert steps[0] == "create_thread" and "cleanup" in steps
+        assert any(m["step"] == "stream" for m in result["matrix"])
+        assert "POST /threads" in seen and "DELETE /threads/t1" in seen
+
+    def test_single_endpoint_failure_keeps_matrix(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/threads":
+                raise httpx.ConnectError("boom")
+            return httpx.Response(200, json={}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        assert result["matrix"]  # 单端点失败不整体中断
+        assert result["matrix"][0]["ok"] is False
+
+
+# ── ask_user 桥与凭证直写 ────────────────────────────────────────────
+
+
+class TestAskUser:
+    def test_non_interactive_error(self) -> None:
+        server = _make()
+        result = _run(server.ask_user("hi"))
+        assert "非交互环境" in result["error"]
+
+    def test_text_answer(self) -> None:
+        server = _make(ask_fn=_ask(lambda q, **kw: "https://x.example.com"))
+        result = _run(server.ask_user("入口地址？"))
+        assert result["answer"] == "https://x.example.com"
+
+    def test_credential_saved_not_returned(self) -> None:
+        from agent_eval.execution.auth import secrets_store
+
+        server = _make(ask_fn=_ask(lambda q, **kw: "s3cret"), credential_store=CredentialStore())
+        result = _run(server.ask_user("录入密码", kind="credential", ref="SUT", field="password"))
+        assert result["saved"] is True
+        assert "s3cret" not in json.dumps(result)  # 值不回流
+        on_disk = secrets_store.load_secrets_file(secrets_store.secrets_file_path())
+        assert on_disk["SUT"]["password"] == "s3cret"  # conftest 已把路径钉进 tmp_path
+
+    def test_credential_requires_ref_and_field(self) -> None:
+        server = _make(ask_fn=_ask(lambda q, **kw: "x"))
+        result = _run(server.ask_user("?", kind="credential"))
+        assert "ref" in result["error"] and "field" in result["error"]
+
+
+# ── 轮内预算 ─────────────────────────────────────────────────────────
+
+
+class TestBudget:
+    def test_budget_exhausted_then_reset(self) -> None:
+        server = _make()
+        for _ in range(MAX_PROBES_PER_TURN):
+            result = _run(server.probe_url("https://sut.example.com/x"))
+            assert result["reachable"] is True
+        assert "上限" in _run(server.probe_url("https://sut.example.com/x"))["error"]
+        server.new_turn()  # PackageAgent.turn() 每轮调用
+        assert _run(server.probe_url("https://sut.example.com/x"))["reachable"] is True
+
+
+# ── PackageAgent 集成（工具注册与预算挂点） ─────────────────────────
+
+
+class TestPackageAgentIntegration:
+    def test_probe_tools_registered(self, tmp_path: Path) -> None:
+        from agent_eval.agent.package_agent import PackageAgent
+
+        agent = PackageAgent(tmp_path)
+        described = agent._describe_tools()  # noqa: SLF001 — 单测内省
+        for name in ("probe_url", "discover_login", "probe_protocol", "probe_login", "ask_user"):
+            assert name in described
+        assert agent.probe.credentials is not None
+        assert agent.probe.log_path == agent._log_path  # noqa: SLF001 — 证据随会话日志
+
+    def test_turn_resets_probe_budget(self, tmp_path: Path) -> None:
+        from agent_eval.agent.package_agent import PackageAgent
+
+        agent = PackageAgent(tmp_path)
+        agent.probe._turn_calls = MAX_PROBES_PER_TURN  # noqa: SLF001
+        agent.probe.new_turn()
+        assert agent.probe._turn_calls == 0  # noqa: SLF001

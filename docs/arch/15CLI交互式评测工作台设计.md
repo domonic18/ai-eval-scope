@@ -349,6 +349,102 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
   - `scenario_packages_root()` 降级为兼容扫描根（旧包不搬家仍可见），`list_project` 双根发现不变
 - 验证：单测 mock `_invoke` 回放状态机 + `_FakeGraph` 流式事件（沙盒逃逸/凭证明文/门禁回改/放弃回滚/原子落盘/中断回滚/blocks 解析）；真机 KIMI 端到端冒烟（一句话生成合法包、一句话改字段，思考/正文/工具全程直播）。
 
+### 6.6 SUT 接入调试（方案 v1.1；**P0 已落地** 2026-09-02 feat/agent-sut-debug）
+
+> 背景：PyPI 直装用户实测反馈——PackageAgent 目前只生成场景包文件，而被测系统（SUT）接入信息
+> （API 地址可达性、agent-protocol 符合性、登录 API 地址与关键字段）全靠用户手工提供；
+> 实际用户只知道「带登录框的页面地址」，不知道登录 API 域与字段名。目标：**创建场景包时即由
+> Agent 智能探测与调试 SUT，验证过的结论才写进 `sut_configs/`，需要用户决策的点经 ask_user 询问**。
+
+#### 现状差距
+
+| 现状 | 差距 |
+|---|---|
+| `PackageToolServer` 十工具为纯文件沙盒（§6.2 红线：无 shell、**无网络**） | Agent 对外部零感知，sut_configs 靠想象生成——生成即盲配 |
+| `preflight` / `ensure_sut_credentials` 仅执行时发现地址不通/凭证缺失 | 调试后置到最贵环节（跑考卷时才炸） |
+| 登录链路要求精确知道 `login.path`、`body_template` 字段、`token_path` | 用户只知道页面地址，且不知道登录域可与 API 域分离 |
+| REPL 仅 diff 确认一种交互（§6.3） | Agent 无法会话中主动向用户要信息 |
+
+可复用拼装件：`execution/auth/provider.py::_login_by_api`（body_template Jinja 渲染 + token_path 提取 + 自动重登）、
+`execution/channels/thread_commands.py`（协议客户端，stream 端点已有多路径回退链）、`agent/protocol_tools.py::tool_guard`
+（错误转 `{"error": ...}` 交 Agent 自修复）、REPL staging/confirm 门禁 + 流式直播。
+
+#### 工具面：`SUTProbeToolServer`（与文件沙盒并列的独立 server，绑定同一 DeepAgents）
+
+| 工具 | 职责 | 关键设计 |
+|---|---|---|
+| `probe_url(url)` | 可达性：状态码/耗时/content-type/重定向链 | 只读 GET；响应证据截断防上下文爆炸 |
+| `discover_login(page_url)` | 登录 API 发现阶梯（**普通用户只需输入页面登录地址**）：① 解析页面 `<form>` 与字段名 → ② 扫 JS 中 XHR/fetch/baseURL 线索 → ③ 常见路径存在性探测（GET/OPTIONS，固定清单 ≤10 条，不发凭证）→ ④ 全失败转 `ask_user` 简单问答兜底 | SPA 无线索是常态，第④级是**预期路径**而非失败兜底；只逐字段问（给缺省 username/password），不要求用户做 DevTools 操作 |
+| `probe_protocol(base_url, flavor)` | agent-protocol 符合性矩阵：agent info → POST /threads 建临时线程 → commands → GET state → stream 端点 | 逐项 ✅/❌ + 证据，不做二值判定（实现形态差异大，回退链先例）；临时线程收尾清理 |
+| `probe_login(login_cfg, ref)` | 登录实测：secrets 旁路取凭证 → 渲染 body → **脱敏预览（URL + 掩码 body + 目标 host）经 `ask_user` 确认后发送** → 校验 token_path 可提取 | **凭证值不进 LLM 上下文**；缺凭证返回 missing fields 触发 `ask_user`；对齐 `terraform plan`→apply 先展示后执行惯例 |
+| `ask_user(question, options?)` | 会话中主动提问：开放文本 / 单选 / 凭证录入（直写 secrets，隐藏输入） | 桥接 CLI `ask()`/`select()`；非 TTY（`--yes` CI 形态）返回「需交互」错误 |
+| `parse_curl(text)`（**P1 可选加速器**） | 解析「Copy as cURL」文本 → login.path / body_template / 字段线索 | 仅面向熟悉接口的进阶用户，**不入 P0 必经路径**（2026-09-02 用户拍板：普通用户只提供页面登录地址） |
+
+#### 流程整合（创建包时即调试）
+
+system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含被测系统 → 主动问入口地址（页面地址即可）→
+逐层探测 → **只把验证过的结论**写进 `sut_configs/`（protocol_flavor、login.path、body_template 字段名、token_path）→
+引导 `secrets set` 录凭证 → 全绿才视为 SUT 段完成。探测证据落 `workspace/agent_logs/`（包内只落最终 YAML）。
+
+#### 安全红线增量（§6.4 之外新增，工程难点所在）
+
+1. **凭证旁路**：probe_login/ask_user 凭证路径中，值只经 secrets store ↔ 工具内部，LLM 上下文只见
+   成败 + 脱敏响应骨架——把「sut_configs 禁凭证明文」红线延伸到网络面
+2. **host 边界（评审修订：升格凭证外发硬门禁）**：网络工具仅可访问「用户本轮提供 host + sut_configs
+   已有 host」；**凭证只发往用户确认过的 host**（页面同源，或经 `ask_user` 明确认可的 API 域）——
+   自动猜测/发现的 host 一律不得接收凭证，防阶梯误判即凭证外泄
+3. **探测内容注入防护（评审新增）**：probe_url/discover_login 抓回的 HTML/JS/响应头一律视为
+   **data 而非 instructions**——分隔标记包裹 + 截断 + 剥离指令样文本；最终防线仍是 staging→diff→
+   用户确认门禁（劫持指令无法绕过确认直接落盘）
+4. **登录防锁**：真实凭证打真实接口，每字段组合只试一次，失败即停交用户——防试错锁死账号
+5. **总量约束**：单探测 10s 超时、单轮探测调用数上限；阶梯③路径清单固定 ≤10 条（对用户自报 host
+   的定向检查，非扫描行为）
+6. **探测副作用言明**：probe_protocol 建临时线程属对被测系统的写操作，探测前经 `ask_user` 言明
+   （可与 probe_login 预览确认合并为一次交互）
+
+#### CLI 配套与分期
+
+- P1 配套：`agent-eval sut probe <包|url>`（无 Agent 纯规则快速自检）；doctor 增 SUT 连通性项
+- **P0**（本分支首批）：四探测工具 + ask_user + host 边界 + 凭证旁路 + prompts 调试阶段 + 全 mock 测试
+  ——最小闭环「给页面地址 → 智能探测 → 写 sut_configs → secrets 引导」
+- **P1**：协议符合性细化（stream/错误语义分级）、OpenAPI 文档解析工具、`parse_curl` 粘贴解析加速器（进阶可选）、`sut probe` 命令、doctor 集成
+- **P2**：探测经验模板化沉淀、多 SUT 候选对比
+
+#### 待决问题（评审拍板）
+
+| # | 决策点 | 结论 |
+|---|---|---|
+| 1 | host 边界 | ✅ 已定（2026-09-02 评审）：严格项——仅「用户提供 + sut_configs 已有」；凭证外发升格硬门禁（红线 2） |
+| 2 | 登录实测 | ✅ 已定（2026-09-02 评审）：会话内实测 + 发送前脱敏预览确认（terraform plan 式） |
+| 3 | P0 范围 | ✅ 已定（2026-09-02 用户拍板）：**A 四件全量**——probe_protocol 入 P0（协议符合性为需求原文，复用 thread_commands 客户端增量可控） |
+| 4 | `sut probe` 独立命令 | ✅ 已定（2026-09-02 用户拍板）：**P1**——P0 专注 Agent 会话内调试闭环，独立命令与 doctor 集成后置 |
+
+> **评审记录（2026-09-02）**：其余评审结论用户均确认；**问题 3（cURL 导入）按用户意见调整**——普通用户
+> 一般只提供页面登录地址 URL，主轴保持「页面地址 + 简单问答」，`parse_curl` 降为 P1 可选加速器、
+> 不入 P0 必经路径。
+
+#### P0 落地注记（2026-09-02，feat/agent-sut-debug）
+
+- `agent/sut_probe_tools.py`：`SUTProbeToolServer` 五工具全量——probe_url（只读 GET + 证据截断）、
+  discover_login（form 属性/字段解析 → 同 host JS XHR 线索 → ≤10 常见路径定向检查 → ask_user 问答兜底）、
+  probe_protocol（建线程→commands/state→stream 端点矩阵 + DELETE 清理，逐端点事实非二值）、
+  probe_login（缺凭证报 missing_fields → ask_user(credential) 收集直写密钥区 → **脱敏预览经用户确认
+  才发送**，响应 token 与账密一律掩码，值不回流 LLM 上下文）、ask_user（文本/单选/凭证三态，非交互
+  返回需交互错误）
+- 红线实现：host 边界（`_ensure_host` 未授权 host 经 ask_user 征得同意，拒绝即拉黑）；凭证外发硬门禁
+  （无 ask_fn 一律不发送）；防锁（(ref, host) 组合一次即停）；轮内预算 `new_turn()` 挂 `PackageAgent.turn`
+  （上限 12）；注入防护（`_wrap_evidence` data 区块声明 + 截断）；探测证据随会话日志落
+  `workspace/agent_logs/`
+- 集成：`PackageAgent` 双 server 组装（文件沙盒 + 探测面），`_describe_tools` 汇总；CLI
+  `scenario_agent._make_ask_fn()` 桥接 `ask()/select()/hide` 交互原语（`--yes` CI 形态不装配）；
+  prompts 增「SUT 接入调试」阶段（纯包内语境，无 docs/ 引用——prompts 随包发布）
+- 测试：`tests/unit/test_sut_probe_tools.py` 23 项全 mock（httpx MockTransport，禁止联网红线）——host
+  边界/授权拉黑、注入包裹与截断、form 发现、凭证缺失不发送、非交互硬门禁、确认发送且 token 不回流、
+  防锁一次即停、协议矩阵含清理、预算重置、ask_user 凭证直写不回流
+
+风险与对策：SPA 登录静态发现成功率低 → 阶梯第④级引导为预期路径，话术顺滑；登录实测副作用 → 单次尝试 +
+直播 + 证据留存；探测轮次烧 token → 调用上限 + 流式直播可随时 Ctrl+C（草稿续作已具备）。
+
 ---
 
 ## 七、查看与结果浏览
@@ -425,3 +521,7 @@ def create_package_agent(pkg_root: Path, *, budget_usd: float = 0.5) -> PackageA
 | v1.7 | 2026-09-01 | **D-CLI-4 修订：平台身份迁密钥区 `~/.agent_eval/platform.json`**（用户评估反馈——与 llm.json / sut_credentials.json 三域三文件统一）；`config/platform_file.py`（0600 + `apply_platform_env` 启动注入仅补缺，env 直供优先）；`.env` 归用户手工管理：`_env_file.py` 收缩为只读残留检测，登录/登出提示不代删；conftest 钉 `AGENT_EVAL_PLATFORM_CONFIG` 隔离真实密钥区 |
 | v1.8 | 2026-09-01 | **S11 secrets 执行前缺失自动补录**：`ensure_sut_credentials` 挂 `execute_stage`（run/pipeline/suite 同一挂点）——非抛错探测 `missing_credential_fields`（与预检同源数据驱动）→ 列缺失项确认 → 逐字段隐藏输入一次落盘 → 复检继续；取消/`--no-input` 退回原 fail fast；conftest 增 `AGENT_EVAL_SUT_CREDENTIALS` autouse 隔离（§7.2、复用清单同步） |
 | v1.9 | 2026-09-01 | **补录挂点实测反馈修复**：`ensure_sut_credentials` 由 `execute_stage` 内移至 run/pipeline/suite 命令层**进度视图启动前**——stage_progress 转轮单行重绘会刷掉输入提示行（提示被「执行 N 个任务」掩盖，用户不知所措）；`execute_stage` 恢复纯 preflight fail fast（组织约定 5「_stages 零交互」+ 依赖方向修正）；动作上提 `cli/_common.py`（跨组共享，消除 cmds 横向 import）；补录前置于 run_id 生成，取消不留半截运行目录 |
+| v2.0 | 2026-09-02 | **新增 §6.6 SUT 接入调试方案稿（待评审）**：用户反馈「创建场景包时应由 Agent 智能探测调试 SUT（地址可达性 / agent-protocol 符合性 / 登录 API 发现与字段），验证结论写进 sut_configs，缺信息经 ask_user 询问」——新增 `SUTProbeToolServer` 五工具（probe_url / discover_login / probe_protocol / probe_login / ask_user）、流程整合（创建即调试）、安全红线增量（凭证旁路 / host 边界 / 登录防锁 / 总量约束）、P0-P2 分期与四项待决问题；本版仅方案，未实施 |
+| v2.1 | 2026-09-02 | **§6.6 评审修订并入（方案 v1.1）**：①新增红线「探测内容注入防护」——抓取内容视为 data，分隔 + 截断 + 剥离指令样文本，diff 确认为最终防线；②host 边界升格**凭证外发硬门禁**——凭证只发用户确认过的 host，自动发现 host 不得接收凭证；③discover_login 明确「页面登录地址 + 简单问答」为普通用户主轴，`parse_curl` 降 P1 可选加速器（用户拍板：普通用户不提供 cURL）；④probe_login 增发送前脱敏预览确认（terraform plan 惯例）；⑤阶梯③路径清单 ≤10 条上限、probe_protocol 建临时线程写操作言明；待决问题 1/2 落定，3/4 待拍板 |
+| v2.2 | 2026-09-02 | **§6.6 待决问题全部落定**：决策 3 = A（probe_protocol 入 P0，四件全量）；决策 4 = P1（`sut probe` 独立命令与 doctor 集成后置）。P0 范围冻结：SUTProbeToolServer 五工具 + ask_user 桥 + 四条安全红线 + prompts 调试阶段 + 全 mock 测试 |
+| v2.3 | 2026-09-02 | **§6.6 P0 落地**（feat/agent-sut-debug）：`agent/sut_probe_tools.py` 五工具 + 四条红线实现（host 授权/凭证外发门禁/防锁/轮内预算 12 + 注入防护）+ PackageAgent 双 server 组装 + CLI ask 桥 + prompts「SUT 接入调试」阶段（无 docs/ 引用，prompts 随包发布）+ 23 项全 mock 单测；详见 §6.6 P0 落地注记 |

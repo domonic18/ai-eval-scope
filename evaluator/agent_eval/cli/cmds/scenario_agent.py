@@ -276,6 +276,23 @@ def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — Pack
         raise typer.Exit(code=1)
 
 
+def _make_ask_fn() -> Any:
+    """ask_user 桥（arch/15 §6.6）：SUT 探测工具的提问转发 CLI 交互原语。
+
+    凭证录入走隐藏回显；返回值交探测工具内部处理（凭证直写密钥区，不回流对话）。
+    非交互（``--yes`` CI）形态不装配——工具面收到 ask_fn=None 自行返回「需交互」。
+    """
+
+    async def ask_fn(question: str, *, options: list[str] | None, secret: bool) -> str:
+        if secret:
+            return ask(f"? {question}", hide=True)
+        if options:
+            return select(question, options)
+        return ask(f"? {question}")
+
+    return ask_fn
+
+
 def _require_empty_dir(root: Path) -> None:
     if root.exists() and any(root.iterdir()):
         rprint(f"[red]❌ 目标目录非空: {root}（Agent 模式不覆盖，请换 --output）[/red]")
@@ -391,7 +408,7 @@ def agent_new_package(
             raise typer.Exit(code=2)
         instruction = ask("描述评测需求（包名可由 Agent 拟定，会话中可自然语言修改）")
 
-    agent = PackageAgent(root)
+    agent = PackageAgent(root, ask_fn=None if (yes and trust_agent) else _make_ask_fn())
     first_text = PackageAgent.first_turn_text(instruction, new_package=True, ref=pin)
     try:
         if yes and trust_agent:
@@ -437,7 +454,8 @@ def agent_edit_package(
             raise typer.Exit(code=1)
         root = pkg.root
 
-    agent = PackageAgent(root)
+    interactive = not (instruction and yes and trust_agent)
+    agent = PackageAgent(root, ask_fn=_make_ask_fn() if interactive else None)
     rprint(
         f"[bold]📦 Agent 改包会话[/bold] "
         f"[dim]{root}（沙盒：仅限包内；写操作经确认 + 校验后落盘）[/dim]"

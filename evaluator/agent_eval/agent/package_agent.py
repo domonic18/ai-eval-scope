@@ -31,6 +31,7 @@ from typing import Any
 import yaml
 
 from agent_eval.agent.package_tools import PackageToolServer
+from agent_eval.agent.sut_probe_tools import SUTProbeToolServer
 from agent_eval.core.exceptions import AgentError
 
 _PROMPTS_PATH = (
@@ -86,10 +87,19 @@ class PackageAgent:
         max_turns: int = 40,
         max_fix_rounds: int = 3,
         log_dir: Path | None = None,
+        ask_fn: Any = None,  # async (question, *, options, secret) -> str | None
     ) -> None:
         from agent_eval.config.paths import paths
 
         self.server = PackageToolServer(Path(pkg_root))
+        # SUT 接入调试工具面（arch/15 §6.6）：与文件沙盒并列；凭证域隔离到密钥区
+        from agent_eval.execution.auth.credentials import CredentialStore
+
+        self.probe = SUTProbeToolServer(
+            ask_fn=ask_fn,
+            credential_store=CredentialStore(),
+            log_path=None,  # 探测证据随 agent_logs 统一落盘，见 _log_path
+        )
         self.llm_role = llm_role
         self.max_turns = max_turns
         self.max_fix_rounds = max_fix_rounds
@@ -101,11 +111,13 @@ class PackageAgent:
             / "agent_logs"
             / f"package_agent_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
         )
+        self.probe.log_path = self._log_path  # 探测证据与会话日志同文件（时间线完整）
 
     # ─── 组装 ─────────────────────────────────────────────────────
 
     def _describe_tools(self) -> str:
-        return "\n".join(f"- {s.name}: {s.description}" for s in PackageToolServer.TOOL_SPECS)
+        specs = [*PackageToolServer.TOOL_SPECS, *SUTProbeToolServer.TOOL_SPECS]
+        return "\n".join(f"- {s.name}: {s.description}" for s in specs)
 
     def _build_system_prompt(self) -> str:
         # 字面 replace 而非 str.format：提示词是散文体，含 { type: ... } 等
@@ -127,7 +139,7 @@ class PackageAgent:
             ) from None
         from agent_eval.agent.model_bridge import build_chat_model
 
-        tools = self.server.to_langchain_tools()
+        tools = self.server.to_langchain_tools() + self.probe.to_langchain_tools()
         return create_deep_agent(
             model=build_chat_model(self.llm_role),
             tools=tools,
@@ -152,6 +164,7 @@ class PackageAgent:
         中断（Ctrl+C）或异常同样回滚暂存并截断历史后原样上抛——磁盘从未见过本轮内容。
         """
         self._log("turn_start", instruction=user_text)
+        self.probe.new_turn()  # 重置 SUT 探测轮内预算（arch/15 §6.6 总量约束）
         history_len = len(self._messages)
         self._messages.append(("user", user_text))
         try:
