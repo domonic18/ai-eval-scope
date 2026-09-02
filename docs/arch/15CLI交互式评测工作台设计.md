@@ -13,7 +13,7 @@
 | 需求目标 | 设计要点 |
 |---------|---------|
 | G1 全生命周期闭环 | 工作台四域（场景包/执行/结果/账号配置）统一入口；全部动作下沉到既有编排与内核 |
-| G2 场景包 Agent 化 | PackageAgent 复用 DeepAgents 底座 + 独立沙盒工具面 + 校验门禁（§六） |
+| G2 场景包 Agent 化 | PackageAgent 复用 DeepAgents 底座 + 独立沙盒工具面 + 校验门禁（§六）；**v3.0 升维为工作台 Agent（WorkbenchAgent）**——场景包降为首个域，会话机与组织方式见 §6.7/§6.8 |
 | G3 零门槛交互 | 向导原语库（选择/确认/输入）+ preflight 引导链 + 等价命令显示（§三） |
 | G4 脚本/CI 友好 | 非 TTY 降级、`--no-input`、`--output-format json`、退出码集中映射（§4.3） |
 | G5 单一事实源不变 | 配置仍落 llm.json / sut_credentials.json / platform.json（密钥区三文件）+ .env（开关与直供）；包结构仍走 13 规范 |
@@ -51,7 +51,7 @@
 │   ExecutionAgent / ResultSink / upload                          │
 └───────────────────────────────────────────────────────────────┘
         ▲ 工具面（沙盒：仅限包根目录）
-   PackageAgent（DeepAgents，独立于执行侧 SUTToolServer）
+   WorkbenchAgent（DeepAgents，独立于执行侧 SUTToolServer；v3.0 原 PackageAgent 升维）
 ```
 
 ### 2.2 模块布局
@@ -91,9 +91,10 @@ agent_eval/cli/
     └── secrets.py / suite.py / dataset.py / knowledge.py / rule_set.py   # 既有迁入
 
 agent_eval/agent/
-├── package_agent.py   # 新增：PackageAgent 组装（create_deep_agent + build_chat_model）
-├── package_tools.py   # 新增：PackageToolServer（沙盒六工具，独立于 sut_tools.py）
-└── assets/configs/package_agent_prompts.yaml   # System/Task Prompt 资产
+├── workbench_agent.py # v3.0 目标态：工作台 Agent 会话机（现 package_agent.py，§6.8 迁移）
+├── workbench_tools.py # v3.0 目标态：暂存沙盒原语 + 包域工具面（现 package_tools.py）
+├── sut_probe_tools.py # SUT 接入调试域工具面（§6.6）
+└── assets/configs/workbench_agent_prompts.yaml # v3.0 目标态（现 package_agent_prompts.yaml）
 ```
 
 **组织约定**（可维护性与扩展性的落点）：
@@ -282,7 +283,28 @@ CLI                                          平台
 
 ---
 
-## 六、PackageAgent
+## 六、工作台 Agent（WorkbenchAgent）
+
+> **v3.0 定位升维**（2026-09-02，用户判词：「CLI 的 agent 不只是进行场景包的创建或者修改，
+> 还会进行数据的修改、开源数据的下载以及处理等更多复杂任务——应升维为与 Claude Code
+> 类似的 agent」）：场景包工程只是工作台 Agent 的**首个域**。目标形态对标 Claude Code：
+> **一个通用会话机 + 按域装配的工具面（profile）+ 统一红线策略**，域以工具面与提示词段
+> 形式增装，会话机不动。本章结构：§6.1–6.6 为场景包域的落地记录（PackageAgent /
+> PackageToolServer 等命名在该域语境与代码中沿用，组织方式迁移见 §6.8）；
+> §6.7（会话机：长任务与失控防线）、§6.8（组织方式升维）、§6.9（域路线图）为 v3.0 新增，
+> **本版为方案稿，代码迁移随会话机实施一次性切换（D-CLI-6）**。
+
+#### 关键决策（D-WB）
+
+| # | 决策点 | 结论 | 理由 |
+|---|---|---|---|
+| D-WB-1 | 定位与命名 | PackageAgent → **WorkbenchAgent（工作台 Agent）**；场景包编辑降为首域 | 对标 Claude Code「一个通用终端 Agent」；与 `start` 工作台、ExecutionAgent/EvaluationAgent 命名同族；避免「package」锁死能力想象 |
+| D-WB-2 | 会话机与域解耦 | turn/流式/预算/分段/salvage/持久化收进会话机；域 = 工具面 + 提示词段 + 门禁策略（档位注入） | 新域零改会话机；会话机的打磨（§6.7）全域受益 |
+| D-WB-3 | 失控缰绳 | **预算为主（token/成本），步数为阀**（单段 recursion_limit + 分段上限），人工中断随时可达 | Claude Code 无步数硬上限；步数 ≠ 工作量（前端包分析正当长链路即撞线） |
+| D-WB-4 | 失败语义 | **唯一的失败是用户放弃**；撞线/中断/瞬时错误/预算到界一律 = 暂停（salvage 保现场） | AgentCompass P0「失败语义分层 + 断点续跑」；实测回滚致全失忆是本轮事故直接根因 |
+| D-WB-5 | salvage 机制 | MemorySaver 检查点（仅作事故现场保存器）+ 孤儿 tool_call 合成失败 ToolMessage | deepagents 0.7.8 原生支持；成功路径保持「宿主持有消息重放」架构不变；v4.6.3 摘除的是文件版检查器，内存版无 IO 问题 |
+| D-WB-6 | 进度外置 | 验证结论即写暂存草稿（文件系统即记忆，deepagents/Anthropic context management） | 对话历史是最脆弱的存储；跨轮/跨进程续作都从文件恢复 |
+| D-WB-7 | 组织方式 | 会话机与域工具面分文件（§6.8 迁移表）；暂存/网络红线泛化为工作台级策略 | 「一域一 server」既有形态（package_tools/sut_probe_tools）直接推广 |
 
 ### 6.1 组装
 
@@ -478,6 +500,102 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
   `请输入 ref.field` 用户不知道在输入什么」）；probe_login 预览从 host 改**完整 URL**（路径抄错
   只有在预览里用户才看得见）并在结果中携带 url。
 
+### 6.7 会话机：长任务执行与失控防线（v3.0 方案，待实施）
+
+> 实测复盘（2026-09-02，bj33 包创建会话）：Agent 独立走完前端包分析最难的一段（模块映射
+> `9258:"login__teacher__index"` → 分块命名 `{id}.{hash}.async.js` → 接口域 baseURL）后撞上
+> `recursion_limit = max_turns × 2 = 80`，异常回滚——**暂存清空 + 本轮对话截断**；用户输入
+> 「请你继续」后 Agent 全失忆（包是空的、对话是空的、探测缓存无人知晓）。两层根因：
+> ①**步数安全阀被误用为任务预算**——`recursion_limit` 本是防死循环的阀，但前端包分析这类
+> 正当长链路（30+ 次检索/抓取 + 分块跟随）legitimate 就会撞线；②**撞线 = 销毁现场**——
+> `except BaseException` 一刀切回滚（当年为防孤儿 tool_call 破坏图而截断半途历史），把
+> 「历史不完整」处理成了「丢弃一切」，连用户刚给的入口地址一起陪葬。
+
+#### 语义转变（D-WB-4）：唯一的失败是用户放弃
+
+| 事件 | 现行为 | 目标行为 |
+|---|---|---|
+| recursion_limit 撞线 | 异常 → 回滚 + 全失忆 | **暂停**：salvage 保现场 →（P1）自动续跑 / 交还用户 |
+| Ctrl+C 中断 | 回滚 + 全失忆 | **暂停**：salvage 保现场，提示「说继续接着干 / 放弃改动回滚」 |
+| LLM 瞬时错误（断流等） | 回滚 + 全失忆 | **暂停**：salvage 保现场，可直接重试 |
+| 预算到界（P2 新增） | 无预算 | **暂停**：交还用户，进度完整 |
+| 用户确认时放弃 | 回滚文件、保留对话 | 不变——**唯一回滚触发器** |
+
+#### P0 salvage：撞线保现场（根治失忆）
+
+- `create_deep_agent(..., checkpointer=MemorySaver())`（deepagents 0.7.8 支持，已核实签名；
+  langgraph `MemorySaver` 纯内存——v4.6.3 摘除的是**文件版**检查器全量读写 IO 空转，内存版
+  无此问题；会话级生命周期，检查点容量有界，Agent 实例销毁即释放）；
+- `_invoke` 每次以独立 `thread_id` 调用：**成功路径行为不变**（宿主持有消息重放的既有架构
+  不动，checkpointer 仅作事故现场保存器）；
+- 撞线/中断时 `aget_state` 捞半途消息 → **孤儿 tool_call 修复**（无结果的调用合成
+  「（会话在此被打断，未执行完）」失败 ToolMessage——当年截断的真实原因就此解决）→
+  并入宿主历史；暂存区保留（跨轮本就保留）。
+
+#### P1 自动分段续跑：干完为止（Claude Code 式）
+
+- `recursion_limit` 降格为**单段安全阀**：撞线不再交还用户，自动开新段续跑（同一对话、
+  同一预算池、同一暂存），直到——任务完成 / 分段数上限（默认 3）/ 用户 Ctrl+C；
+- 段边界发 `phase: checkpoint` 事件，CLI 显示「已自动续跑 N/上限」；交还用户时进度完整，
+  「继续」即接着跑；`probe.new_turn()` 仍只在**用户轮**开始时调用（域预算按用户轮计，
+  不随段重置）。
+
+#### P2 预算缰绳 + 配置化（失控控制的单位从「步数」换成「钱」）
+
+- 接入 `BudgetGuard` 会话级 token/成本预算（§6.5 在案偏差「BudgetGuard 待接入」正式收账，
+  复用执行侧组件）：到线 = 暂停交还（salvage 保进度），不是失败；
+- 轮数去 hardcode：`scenario new/edit --max-turns / --max-segments / --budget-usd`
+  （缺省值只是安全阀，不是天花板）。
+
+#### P3 进度外置：进度活在文件里，不活在对话里
+
+- prompts 规约：**每验证一条结论立即 `write_file` 更新暂存草稿**（sut_configs/task_sets
+  随探测渐进成形，不攒到最后一次性写）——暂存跨轮保留，故任何暂停/崩溃后进度都在文件里；
+- 配合 agent_sessions 对话持久化与草稿目录（§6.5），跨进程断点续作成立。
+
+#### 失控缰绳盘点（改后）
+
+| 缰绳 | 语义 |
+|---|---|
+| 工具级预算分池 | probe_url 20 / search_content 30 …（§6.6，防单工具空转，不变） |
+| 单段步数阀 | recursion_limit（防单段死循环——阀，非任务预算） |
+| 分段数上限 | 默认 3 段（总工作量封顶） |
+| token/成本预算 | BudgetGuard 会话级（真实经济缰绳） |
+| 人工控制 | 随时 Ctrl+C（进度保留）+ ask_user 交互点 + staging→diff→确认门 |
+
+### 6.8 组织方式升维（v3.0，随会话机实施一次性切换）
+
+**分层原则**：会话机（通用，零域语义）/ 域工具面（一域一 server）/ 域门禁（档位策略）。
+会话机对应 Claude Code 的「主循环」，域对应「工具 + 上下文」——新域 = 新 tool server +
+prompt 段 + 档位登记，**不改会话机**。
+
+| 现文件 | 目标 | 说明 |
+|---|---|---|
+| `agent/package_agent.py` | `agent/workbench_agent.py` | 会话机：turn/流式/预算/分段/salvage/对话持久化/门禁编排（门禁策略由档位注入）；包域语义全部下沉 |
+| `agent/package_tools.py` | `agent/workbench_tools.py` | 暂存沙盒原语（staging/view/commit/diff、路径与扩展名守卫）+ 包域工具（validate/manifest/reference）；原语/域的文件拆分留待第二域落地时按需切开（YAGNI） |
+| `agent/sut_probe_tools.py` | 不动 | SUT 域工具面；其网络红线实现即是「工作台级工具面策略」的范本 |
+| `cli/cmds/scenario_agent.py` | `cli/cmds/workbench_agent.py` | REPL 宿主（流式渲染/ask 桥/中断提示）本就是通用的，随域名修正 |
+| `assets/configs/package_agent_prompts.yaml` | `workbench_agent_prompts.yaml` | 提示词资产随会话机更名；包域段落保持独立小节（域提示词分段装配） |
+
+**域装配档位（profile）**：`WorkbenchAgent(root, profile=<域档位>)` = 工具面清单 + 提示词段
++ 门禁策略。**域命令是档位快捷方式**——`scenario new/edit` 预置包域档位；通用入口
+`agent-eval agent`（跨域 REPL，会话内可切换任务对象）随数据集域一起落地（§6.9）。
+
+**红线泛化**：§6.3 staging 门禁（磁盘只见「用户确认 + 校验通过」的内容）与 §6.6 网络四红线
+（host 边界 / 凭证旁路 / 防锁 / 注入防护）升格为**工作台级工具面策略**——任何新域的网络面 /
+落盘面工具必须以策略形式接入（如数据集下载 = host 确认 + 磁盘限额），不得绕过。
+
+### 6.9 域路线图
+
+| 域 | 工具面（增量） | 门禁 / 红线 | 依赖 |
+|---|---|---|---|
+| 场景包（✅ 已落地 §6.1–6.6） | 文件沙盒 + validate/reference + SUT 探测 | staging 门禁 + 凭证明文拦截 | — |
+| 数据集（P1 候选） | 检索 / 下载 / 处理 / 抽检（复用 DatasetManager，[10 数据集下载设计](./10数据集下载设计.md)） | 下载 host 确认 + 磁盘用量限额 + 来源记录 | 会话机 v3.0 |
+| 包内数据修改 | 复用暂存沙盒，扩展可写路径（datasets/、knowledge） | 同 staging 门禁 | — |
+| 运行 / 结果 | runs 查询 / 失败诊断 / 补评估触发 | 只读优先，写操作走确认 | — |
+
+> 需求侧同步待办：req/04 增补「工作台 Agent 通用域」需求条目与验收口径（本版仅架构侧）。
+
 ---
 
 ## 七、查看与结果浏览
@@ -534,8 +652,8 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 | `cli/console/{prompts,render,output,equiv}.py` | 新增 | 表现层基础设施（原语/渲染/JSON+退出码/等价命令） |
 | `cli/workbench/session.py` + `workbench/domains/*` | 新增 | 向导框架与四域动作 |
 | `cli/cmds/`（scenario/models/auth/runs/open_url/doctor + 既有五组迁入） | 重组+新增 | 子命令组（typer 绑定 + 纯函数动作） |
-| `agent/package_agent.py` / `agent/package_tools.py` | 新增 | PackageAgent 组装与沙盒工具面 |
-| `agent_eval/assets/configs/package_agent_prompts.yaml` | 新增 | Agent 提示词资产 |
+| `agent/package_agent.py` / `agent/package_tools.py` | 新增 | PackageAgent 组装与沙盒工具面（v3.0 目标态迁移为 `workbench_agent.py` / `workbench_tools.py`，§6.8） |
+| `agent_eval/assets/configs/package_agent_prompts.yaml` | 新增 | Agent 提示词资产（v3.0 目标态更名 `workbench_agent_prompts.yaml`） |
 | 平台侧 `/cli-auth` 页（P1 增强）与 pair 端点（P2） | 09 侧 | 见 §5.1/§5.2 接口约定 |
 
 ---
@@ -568,3 +686,4 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 | v2.11 | 2026-09-02 | **§6.6 实测迭代八（模板语法无校验 + 防锁键缺路径，复现实验定谳）**：会话日志取证 + chat 包真机对照（chat 契约 POST /users/login 200+token 提取成功，服务端与地址无责）定位三层根因：①Agent 写 `${var}`（shell 风格）占位符，probe_login 用 Jinja2 渲染后原样发出，服务端报「格式不是手机号」被 Agent 误归因用户输入、让用户重输两次（复现：同报文 400 `格式不是手机号`）；②防锁键 `(ref, host, template)` 缺路径维度——猜错的 `/api/auth/login` 失败连坐用户随后给出的正确 `/users/login`，只能靠录入凭证旁路解锁；③Agent 从路由字符串猜分块文件名（真名在主包映射里，检索词清单无 `async.js`）、滑回路径猜测被 catch-all 全 200 误导。修复：①防锁键改 `(ref, 完整URL, template)`；②probe_login 渲染后残留占位符（`${...}`/`{{...}}`/`{%...%}`）一律拒发并返回 Jinja2 语法纠正（含常量字段写字面值指引）；③prompts 三红线（预览即最终报文、见占位符即语法错误；分块名从主包映射检索读取禁止凭路由猜；probed_path 非 404 即存在在 catch-all 上不可信、存在性以实测为准）；测试 41 → 43 项（全套 737 绿） |
 | v2.12 | 2026-09-02 | **§6.6 实测迭代九（预算耗尽在分块映射读出的前一步）**：复测会话里 Agent 已走对分块跟随方法（检索出路由映射 `9258:"login__teacher__index"`），但 search_content 15 次/轮在含噪检索（post/user/token 命中 axios 库代码）与 js/css 双 hash 表分辨中被烧光，差最后一步达上限。修复（用户要求放大额度）：①预算 probe_url 15 → 20、search_content 15 → 30（发现是分析主循环，从宽只兜空转）；②**抓取缓存改跨轮保留**——原 `new_turn()` 连缓存清空，预算报错指引的「回复任意消息开新轮续查」实际要先重抓重搜 1.7MB 主包回到原地，放大的预算也会先耗在重复劳动上；改后缓存会话内有效（容量有界 8 文件 × 3MB），新轮直接检索续查，prompts 同步；测试同步（new_turn 保留缓存断言） |
 | v2.13 | 2026-09-02 | **§6.6 实测迭代十（协议配置未验证即落盘，执行评测 404）**：创建会话把全部预算花在登录攻克（登录实测 200+token ✅）后，**probe_protocol 调用 0 次**就把入口页面域写进 `base_url`、`protocol_flavor: commands` 从 chat 参照包继承——执行时 commands 端点 404（该域只有网页）。修复：**红线从提示升级为落盘门禁**——`PackageAgent._gate_and_commit` 增 `_sut_protocol_gate`，sut_configs 声明 `channel: agent_protocol` 而 base_url 主机未经本会话 `probe_protocol` 实测（`SUTProbeToolServer.protocol_hosts` 记录）→ validation error 注入回改轮，未过不落盘；prompts ③ 步同步门禁存在与「接口域 ≠ 页面域」。配套执行侧修复见 arch/03 v4.6.7（本地模拟标注 / 导出层兜底 / host 边界 / 停止即兴引导） |
+| **v3.0** | 2026-09-02 | **§六 定位升维：PackageAgent → WorkbenchAgent（工作台 Agent），方案稿**（用户判词：「CLI 的 agent 不只是场景包创建/修改，还有数据修改、开源数据下载处理等复杂任务——应升维为与 Claude Code 类似的 agent，方案与代码组织方式一并优化」）。①定位分层：对标 Claude Code = **通用会话机 + 按域装配工具面（profile）+ 统一红线策略**，§六更名「工作台 Agent」、§6.1–6.6 保留为场景包域落地记录；②新增 **§6.7 会话机方案**（实测复盘：80 步撞线回滚致全失忆——语义转变 **D-WB-4「唯一的失败是用户放弃」**，上限=暂停；P0 salvage（MemorySaver 检查点 + 孤儿 tool_call 修复，成功路径架构不变）/ P1 自动分段续跑（单段阀 + 分段上限 + checkpoint 事件）/ P2 BudgetGuard 预算缰绳 + `--max-turns/--max-segments/--budget-usd` 配置化 / P3 进度外置（验证结论即写暂存草稿））；③新增 **§6.8 组织方式**（package_agent→workbench_agent 等一次性迁移表 + 域装配档位 + staging/网络红线泛化为工作台级策略）；④新增 **§6.9 域路线图**（数据集复用 arch/10 DatasetManager / 包内数据修改 / 运行域；需求侧同步待办标注）。本版仅方案，代码迁移随会话机实施 |
