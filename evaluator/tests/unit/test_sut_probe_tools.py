@@ -101,7 +101,7 @@ class TestEvidenceWrap:
         assert "refused" in result["error"]
 
     def test_404_guides_to_discover_login(self) -> None:
-        """404 ≠ 不可达：指引 discover_login 分析页面，禁止逐路径猜接口。"""
+        """404 ≠ 不可达：POST-only 接口 GET 即 404——指引 probe_login 实测或 discover_login 发现。"""
 
         def not_found(request: httpx.Request) -> httpx.Response:
             return httpx.Response(404, text="Cannot GET /", request=request)
@@ -109,7 +109,8 @@ class TestEvidenceWrap:
         server = _make(http_client_factory=_transport(not_found))
         result = _run(server.probe_url("https://sut.example.com/"))
         assert result["reachable"] is True
-        assert "discover_login" in result["next_step"]
+        assert "probe_login" in result["next_step"]  # 用户给的登录 API：POST 实测验证
+        assert "discover_login" in result["next_step"]  # 找页面：交页面发现
         assert "逐路径" in result["next_step"]
         ok_server = _make()  # 200 正常响应不带 next_step 指引
         assert "next_step" not in _run(ok_server.probe_url("https://sut.example.com/ok"))
@@ -203,6 +204,23 @@ class TestDiscoverLogin:
         server = _make(http_client_factory=_ok_transport(html))
         result = _run(server.discover_login("https://sut.example.com/login"))
         assert {"account", "password", "captcha"} <= set(result["field_hints"])
+
+    def test_api_endpoint_input_notes_direct_probe_login(self) -> None:
+        """传入接口地址（响应非 HTML）→ 提示直接 probe_login 实测，无需页面发现。"""
+
+        def not_found(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(404, text="Cannot GET /users/login", request=request)
+
+        server = _make(http_client_factory=_transport(not_found))
+        result = _run(server.discover_login("https://sut.example.com/users/login"))
+        note = result.get("note", "")
+        assert "probe_login" in note and "GET 404 不代表接口无效" in note
+
+        html_server = _make(
+            http_client_factory=_ok_transport("<html><body>登录页</body></html>")
+        )
+        page_result = _run(html_server.discover_login("https://sut.example.com/login"))
+        assert "note" not in page_result
 
 
 # ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────

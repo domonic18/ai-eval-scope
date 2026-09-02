@@ -249,9 +249,11 @@ class SUTProbeToolServer(ToolExporterMixin):
         }
         if response.status_code >= 400:
             result["next_step"] = (
-                f"HTTP {response.status_code} 多为「路径未匹配」而非服务不可达（API 服务根路径"
-                "常见）。不要用 probe_url 逐路径猜测登录接口——向用户要登录页面地址后，"
-                "用 discover_login 分析页面一步发现"
+                f"HTTP {response.status_code}（GET）：多为「路径未匹配或方法不允许」——"
+                "POST-only 接口用 GET 探测即 404（Express 系常见），不代表服务或接口无效。"
+                "若该地址是用户提供的登录 API：直接用 probe_login（POST + 字段）实测验证；"
+                "若在找登录页面：向用户要登录页面地址后用 discover_login 分析页面发现，"
+                "不要用 probe_url 逐路径猜测"
             )
         self._log("probe_url", url=url, status=response.status_code)
         return result
@@ -267,6 +269,11 @@ class SUTProbeToolServer(ToolExporterMixin):
         page = await self._fetch_text(page_url)
         if page is None:
             return {"error": f"页面不可达: {page_url}"}
+        # 传入接口地址（响应非 HTML）的识别：用户直接给登录 API 时无需页面发现
+        head = page[:1000].lower()
+        looks_like_html = any(
+            tag in head for tag in ("<html", "<body", "<div", "<form", "<!doctype")
+        )
 
         # 阶梯①：form 解析（开标签属性取 action；内层取 input 字段名）
         candidates: list[dict[str, Any]] = []
@@ -380,7 +387,7 @@ class SUTProbeToolServer(ToolExporterMixin):
                             }
                         )
         self._log("discover_login", page_url=page_url, candidates=len(candidates))
-        return {
+        result: dict[str, Any] = {
             "candidates": candidates[:8],
             "field_hints": field_hints,
             "page_evidence": _wrap_evidence(f"页面 {page_url}", page),
@@ -393,6 +400,13 @@ class SUTProbeToolServer(ToolExporterMixin):
                 "probe_login 发送前的脱敏预览会让用户看到字段并可纠正"
             ),
         }
+        if not looks_like_html:
+            result["note"] = (
+                "传入地址疑似接口而非登录页面（响应非 HTML）——若这是用户提供的登录 API，"
+                "无需页面发现：直接用它构建 login_cfg 走 probe_login 实测验证"
+                "（GET 404 不代表接口无效，POST-only 接口 GET 即 404）"
+            )
+        return result
 
     async def _fetch_text(self, url: str) -> str | None:
         try:
