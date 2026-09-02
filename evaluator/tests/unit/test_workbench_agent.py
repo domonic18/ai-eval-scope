@@ -1,6 +1,6 @@
-"""PackageAgent / PackageToolServer 单测 — 沙盒红线、门禁回改、落盘原子性（arch/15 §六）。
+"""WorkbenchAgent / PackageToolServer 单测 — 沙盒红线、门禁回改、落盘原子性（arch/15 §六）。
 
-LLM 链路以回放状态机 mock（monkeypatch ``PackageAgent._invoke``），
+LLM 链路以回放状态机 mock（monkeypatch ``WorkbenchAgent._invoke``），
 不依赖 deepagents / LLM / 网络；工具面直调异步方法。
 """
 
@@ -14,8 +14,8 @@ from typing import Any
 import pytest
 import typer
 
-from agent_eval.agent.package_agent import PackageAgent, TurnResult
-from agent_eval.agent.package_tools import PackageToolServer
+from agent_eval.agent.workbench_agent import TurnResult, WorkbenchAgent
+from agent_eval.agent.workbench_tools import PackageToolServer
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
 RULES = "rules:\n  - id: r1\n    evaluator: llm_judge\n"
@@ -45,7 +45,7 @@ def _replay(effects: list[Any]) -> tuple[Any, list[list[Any]]]:
     remaining = list(effects)
 
     async def fake_invoke(
-        self: PackageAgent, messages: list[Any], *, on_event: Any = None
+        self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
     ) -> dict[str, Any]:
         calls.append(list(messages))
         reply = await remaining.pop(0)(self.server)
@@ -239,7 +239,7 @@ class TestSandbox:
         assert server.staged_manifest_id() == "demo-pkg"
 
 
-# ── PackageAgent 会话状态机（mock _invoke 回放） ────────────────────────
+# ── WorkbenchAgent 会话状态机（mock _invoke 回放） ────────────────────────
 
 
 class TestAgentTurn:
@@ -247,8 +247,8 @@ class TestAgentTurn:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         fake, calls = _replay([_write_valid])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
@@ -262,8 +262,8 @@ class TestAgentTurn:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         fake, _ = _replay([_write_valid])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: False))
 
@@ -281,8 +281,8 @@ class TestAgentTurn:
         root = tmp_path / "pkg"
 
         fake, _ = _replay([_write_valid])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        first = PackageAgent(root, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        first = WorkbenchAgent(root, log_dir=tmp_path / "log")
         asyncio.run(
             first.turn("评测地址 https://sut.example.com，请生成包", confirm_fn=lambda r, d: True)
         )
@@ -292,8 +292,8 @@ class TestAgentTurn:
             return "继续"
 
         fake2, calls = _replay([cont])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake2)
-        resumed = PackageAgent(root, log_dir=tmp_path / "log")  # 模拟新进程续作
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake2)
+        resumed = WorkbenchAgent(root, log_dir=tmp_path / "log")  # 模拟新进程续作
         assert resumed.resumed_dialogue_count == 2
         asyncio.run(resumed.turn("继续", confirm_fn=lambda r, d: True))
         injected = str(calls[0][0])  # 首条注入消息
@@ -307,8 +307,8 @@ class TestAgentTurn:
             return "初版"
 
         fake, calls = _replay([broken, _write_valid])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
@@ -325,8 +325,8 @@ class TestAgentTurn:
             return "仍不完整"
 
         fake, _ = _replay([broken, broken])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, max_fix_rounds=2, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, max_fix_rounds=2, log_dir=tmp_path / "log")
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
@@ -342,8 +342,8 @@ class TestAgentTurn:
             return "无需改动"
 
         fake, _ = _replay([noop])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
 
         result = asyncio.run(agent.turn("看看", confirm_fn=lambda r, d: True))
 
@@ -366,8 +366,8 @@ class TestAgentTurn:
             return "写了 sut 配置（未探测协议）"
 
         fake, _ = _replay([write_sut, write_sut])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, max_fix_rounds=2, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, max_fix_rounds=2, log_dir=tmp_path / "log")
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
@@ -378,7 +378,7 @@ class TestAgentTurn:
         # Agent 实测过该主机后放行
         agent.probe._protocol_hosts.add("agent.staging.example.com")  # noqa: SLF001
         fake2, _ = _replay([write_sut])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake2)
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake2)
         retry = asyncio.run(agent.turn("已按提示探测，重写", confirm_fn=lambda r, d: True))
         assert retry.committed
 
@@ -396,27 +396,27 @@ class TestAgentTurn:
             return "写了 http 通道配置"
 
         fake, _ = _replay([write_http_sut])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
         assert result.committed  # 非 agent_protocol 通道不触发门禁
 
     def test_first_turn_text_uses_templates(self) -> None:
-        text = PackageAgent.first_turn_text(
+        text = WorkbenchAgent.first_turn_text(
             "做一个客服质检包", new_package=True, ref="demo/quality"
         )
         assert "客服质检包" in text and "demo/quality" in text
 
     def test_first_turn_text_agent_chosen_ref(self) -> None:
         # ref 省略：指引 Agent 按需求拟定引用并在计划首行给出
-        text = PackageAgent.first_turn_text("研学计划质检", new_package=True)
+        text = WorkbenchAgent.first_turn_text("研学计划质检", new_package=True)
         assert "拟定" in text and "{ref}" not in text
 
     def test_build_system_prompt_keeps_literal_braces(self, tmp_path: Path) -> None:
         # 回归：提示词含 `{ type: ... }` 字面大括号示例，str.format 会误吞（冒烟实测）
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         prompt = agent._build_system_prompt()
         assert "- write_file:" in prompt  # {tools} 已展开
         assert str(tmp_path.resolve()) in prompt  # {pkg_root} 已展开
@@ -426,8 +426,8 @@ class TestAgentTurn:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         fake, _ = _replay([_write_valid])
-        monkeypatch.setattr(PackageAgent, "_invoke", fake)
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         events: list[dict[str, Any]] = []
 
         asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True, on_event=events.append))
@@ -442,13 +442,13 @@ class TestAgentTurn:
         # 磁盘从未见过本轮内容。不用 KeyboardInterrupt 直抛——Runner 的 SIGINT
         # 机制会接管并重试循环（实测死循环）
         async def boom(
-            self: PackageAgent, messages: list[Any], *, on_event: Any = None
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
         ) -> dict[str, Any]:
             await self.server.write_file("rules/a.yaml", RULES)
             raise asyncio.CancelledError
 
-        monkeypatch.setattr(PackageAgent, "_invoke", boom)
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", boom)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
 
         with pytest.raises(asyncio.CancelledError):
             asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
@@ -458,7 +458,7 @@ class TestAgentTurn:
         assert not (tmp_path / "rules").exists()
 
     def test_emit_tool_events_from_updates(self) -> None:
-        from agent_eval.agent.package_agent import _emit_tool_events
+        from agent_eval.agent.workbench_agent import _emit_tool_events
 
         events: list[dict[str, Any]] = []
         updates = {
@@ -495,7 +495,7 @@ class TestAgentTurn:
     ) -> None:
         # KIMI/Claude 系模型 content 为 blocks（thinking/text）——真机冒烟实测曾因
         # isinstance(str) 过滤导致 token 零输出
-        from agent_eval.agent.package_agent import _text_from_content
+        from agent_eval.agent.workbench_agent import _text_from_content
 
         assert _text_from_content("纯文本") == "纯文本"
         assert (
@@ -516,7 +516,7 @@ class TestAgentTurn:
             async def ainvoke(self, inp: dict, config: dict | None = None) -> dict:
                 return {"messages": ["fallback"]}
 
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         agent._graph = _FakeGraph(
             [
                 (
@@ -586,9 +586,9 @@ class TestCliEntries:
     def test_new_noninteractive_requires_instruction(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from agent_eval.cli.cmds.scenario_agent import agent_new_package
+        from agent_eval.cli.cmds.workbench_agent import agent_new_package
 
-        monkeypatch.setattr("agent_eval.cli.cmds.scenario_agent._guard_llm_ready", lambda: None)
+        monkeypatch.setattr("agent_eval.cli.cmds.workbench_agent._guard_llm_ready", lambda: None)
         with pytest.raises(typer.Exit) as exc:
             agent_new_package(
                 ref="x/y", output=tmp_path / "p", instruction=None, yes=True, trust_agent=True
@@ -598,11 +598,11 @@ class TestCliEntries:
     def test_new_noninteractive_happy_path(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from agent_eval.cli.cmds import scenario_agent as sa
+        from agent_eval.cli.cmds import workbench_agent as sa
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.setattr(
-            "agent_eval.agent.package_agent.run_turn",
+            "agent_eval.agent.workbench_agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             ),
@@ -617,7 +617,7 @@ class TestCliEntries:
     ) -> None:
         # ref 省略：草稿落 workspace/.staging（conftest 钉 WORKSPACE_DIR 到
         # tmp_path/workspace），会话结束后按清单 id 归位 cwd 直出 <id>-package/
-        from agent_eval.cli.cmds import scenario_agent as sa
+        from agent_eval.cli.cmds import workbench_agent as sa
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.chdir(tmp_path)
@@ -630,7 +630,7 @@ class TestCliEntries:
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             )
 
-        monkeypatch.setattr("agent_eval.agent.package_agent.run_turn", fake_run_turn)
+        monkeypatch.setattr("agent_eval.agent.workbench_agent.run_turn", fake_run_turn)
         root = sa.agent_new_package(
             ref=None, output=None, instruction="研学计划质检", yes=True, trust_agent=True
         )
@@ -642,12 +642,12 @@ class TestCliEntries:
     def test_new_agent_interrupted_keeps_draft(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from agent_eval.cli.cmds import scenario_agent as sa
+        from agent_eval.cli.cmds import workbench_agent as sa
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
-            "agent_eval.agent.package_agent.run_turn",
+            "agent_eval.agent.workbench_agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: (_ for _ in ()).throw(typer.Exit(1)),
         )
         with pytest.raises(typer.Exit):
@@ -661,7 +661,7 @@ class TestCliEntries:
     def test_finalize_conflict_keeps_draft(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from agent_eval.cli.cmds.scenario_agent import _finalize_new_package
+        from agent_eval.cli.cmds.workbench_agent import _finalize_new_package
 
         monkeypatch.chdir(tmp_path)
         root = tmp_path / "gen"  # 草稿位
@@ -679,11 +679,11 @@ class TestCliEntries:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """--output 指向非空目录放行（续作草稿），默认路径仍要求空。"""
-        from agent_eval.cli.cmds import scenario_agent as sa
+        from agent_eval.cli.cmds import workbench_agent as sa
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.setattr(
-            "agent_eval.agent.package_agent.run_turn",
+            "agent_eval.agent.workbench_agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             ),
@@ -699,7 +699,7 @@ class TestCliEntries:
         assert root == draft  # --output 原地生成，不归位
 
     def test_finalize_not_movable_noop(self, tmp_path: Path) -> None:
-        from agent_eval.cli.cmds.scenario_agent import _finalize_new_package
+        from agent_eval.cli.cmds.workbench_agent import _finalize_new_package
 
         assert _finalize_new_package(tmp_path, movable=False) == tmp_path
 
@@ -709,7 +709,7 @@ class TestCliEntries:
         """确认提示的预计落点：草稿区暂存 id → cwd/<id>-package/。"""
         from types import SimpleNamespace
 
-        from agent_eval.cli.cmds.scenario_agent import _landing_hint
+        from agent_eval.cli.cmds.workbench_agent import _landing_hint
 
         monkeypatch.chdir(tmp_path)
         draft = tmp_path / "workspace" / ".staging" / "agent-eval-pkg-abcd1234"
@@ -730,9 +730,9 @@ class TestCliEntries:
         assert _landing_hint(empty) is None
 
     def test_edit_rejects_builtin(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+        from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
-        monkeypatch.setattr("agent_eval.cli.cmds.scenario_agent._guard_llm_ready", lambda: None)
+        monkeypatch.setattr("agent_eval.cli.cmds.workbench_agent._guard_llm_ready", lambda: None)
         with pytest.raises(typer.Exit) as exc:
             agent_edit_package(ref="chat", instruction=None, yes=False, trust_agent=False)
         assert exc.value.exit_code == 1
@@ -740,10 +740,10 @@ class TestCliEntries:
     def test_edit_rejects_single_flag(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+        from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
         _seed_valid_package(tmp_path)
-        monkeypatch.setattr("agent_eval.cli.cmds.scenario_agent._guard_llm_ready", lambda: None)
+        monkeypatch.setattr("agent_eval.cli.cmds.workbench_agent._guard_llm_ready", lambda: None)
         with pytest.raises(typer.Exit) as exc:
             agent_edit_package(ref=str(tmp_path), instruction="改", yes=True, trust_agent=False)
         assert exc.value.exit_code == 2
@@ -751,35 +751,35 @@ class TestCliEntries:
     def test_repl_session_loop_exits_on_empty(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from agent_eval.cli.cmds import scenario_agent as sa
+        from agent_eval.cli.cmds import workbench_agent as sa
 
         _seed_valid_package(tmp_path)
         seen: list[str] = []
         inputs = iter(["加一条规则", ""])  # 首轮需求 + 空行退出（勿按 seen 取值：
         # run_turn 每轮异常会让 seen 永不增长 → REPL 无限循环吃满 CPU，实测教训）
         monkeypatch.setattr(
-            "agent_eval.agent.package_agent.run_turn",
+            "agent_eval.agent.workbench_agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: (
                 seen.append(text) or TurnResult(reply="ok", diff="", staged=False)
             ),
         )
         monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
-        sa._session(PackageAgent(tmp_path, log_dir=tmp_path / "log"), None)
+        sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), None)
         assert seen == ["加一条规则"]  # 一轮后空输入退出
 
     def test_repl_first_turn_error_contained(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # 首轮瞬时错误（LLM 网关断流等）不杀会话——曾因首轮在 try 外直接 traceback 退出
-        from agent_eval.cli.cmds import scenario_agent as sa
+        from agent_eval.cli.cmds import workbench_agent as sa
 
         _seed_valid_package(tmp_path)
         monkeypatch.setattr(
-            "agent_eval.agent.package_agent.run_turn",
+            "agent_eval.agent.workbench_agent.run_turn",
             lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("peer closed")),
         )
         monkeypatch.setattr(sa, "ask", lambda prompt: "")
-        sa._session(PackageAgent(tmp_path, log_dir=tmp_path / "log"), "首轮需求")  # 不上抛
+        sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), "首轮需求")  # 不上抛
 
 
 # ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
@@ -787,7 +787,7 @@ class TestCliEntries:
 
 class TestStreamRender:
     def test_emitter_streams_tokens_and_tools(self, capsys) -> None:
-        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -815,7 +815,7 @@ class TestStreamRender:
         assert "完成" in out
 
     def test_emitter_renders_thinking_stream(self, capsys) -> None:
-        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -830,7 +830,7 @@ class TestStreamRender:
 
     def test_emitter_swallows_leading_blank_lines(self, capsys) -> None:
         # 模型 text 段常以 \n\n 开头——段首空白吞掉，🤖 后不空行
-        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -843,7 +843,7 @@ class TestStreamRender:
 
     def test_emitter_tool_args_silent_non_tty(self, capsys) -> None:
         # 非 TTY 不渲染 \r 进度行（管道日志免受控制符污染），事件本身不崩
-        from agent_eval.cli.cmds.scenario_agent import _make_stream_emitter
+        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -987,13 +987,13 @@ class TestGeneralizedFileTools:
         self, tmp_path: Path
     ) -> None:
         # 结构知识外置（§6.11.1）：提示词只指路规范文档，字段表不再 hardcode
-        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         prompt = agent._build_system_prompt()
         assert "scenario-package-format.md" in prompt
         assert str(agent.server.assets_root) in prompt  # {assets_root} 已展开
         assert "内容规范" not in prompt
 
     def test_generate_template_points_to_guide(self) -> None:
-        text = PackageAgent.first_turn_text("做一个代码安全评测包", new_package=True)
+        text = WorkbenchAgent.first_turn_text("做一个代码安全评测包", new_package=True)
         assert "scenario-package-format.md" in text
         assert "rules/" not in text  # 目录清单不再 hardcode 在模板（task_sets/sut_configs 除外）

@@ -1,9 +1,10 @@
-# 场景包工程 Agent 提示词（PackageAgent，arch/15 §六）
+# 场景包工程 Agent 提示词（WorkbenchAgent 包域档位，arch/15 §六）
 # prompt 管理在此 YAML 中，不 hardcode 在代码里（对齐 execution_agent_prompts.yaml 惯例）。
 #
 # system_prompt 变量（代码侧字面 replace，模板其余大括号均为字面内容）：
-#   {tools}       工具注册表描述清单（运行时由 PackageToolServer 汇总）
-#   {pkg_root}    包根目录（沙盒边界）
+#   {tools}        工具注册表描述清单（运行时由 PackageToolServer/SUTProbeToolServer 汇总）
+#   {pkg_root}     包根目录（写沙盒边界）
+#   {assets_root}  随包资源根（assets/，自动授权只读域）
 
 system_prompt: |
   你是场景包工程 Agent（PackageAgent），负责按用户需求增删改查评测场景包。

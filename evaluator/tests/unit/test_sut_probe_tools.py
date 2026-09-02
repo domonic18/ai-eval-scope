@@ -683,7 +683,7 @@ class TestBudget:
         assert "上限" in error and "未经验证" in error  # 拒绝时指引继续验证而非收尾
         page = _run(server.discover_login("https://sut.example.com/web/login"))
         assert "error" not in page  # 独立预算池——发现工具不受 probe_url 牵连
-        server.new_turn()  # PackageAgent.turn() 每轮调用
+        server.new_turn()  # WorkbenchAgent.turn() 每轮调用
         assert _run(server.probe_url("https://sut.example.com/x"))["reachable"] is True
 
     def test_search_budget_independent_pool(self) -> None:
@@ -694,14 +694,14 @@ class TestBudget:
         assert "上限" in _run(server.search_content("a"))["error"]
 
 
-# ── PackageAgent 集成（工具注册与预算挂点） ─────────────────────────
+# ── WorkbenchAgent 集成（工具注册与预算挂点） ─────────────────────────
 
 
-class TestPackageAgentIntegration:
+class TestWorkbenchAgentIntegration:
     def test_probe_tools_registered(self, tmp_path: Path) -> None:
-        from agent_eval.agent.package_agent import PackageAgent
+        from agent_eval.agent.workbench_agent import WorkbenchAgent
 
-        agent = PackageAgent(tmp_path)
+        agent = WorkbenchAgent(tmp_path)
         described = agent._describe_tools()  # noqa: SLF001 — 单测内省
         for name in (
             "probe_url",
@@ -716,9 +716,9 @@ class TestPackageAgentIntegration:
         assert agent.probe.log_path == agent._log_path  # noqa: SLF001 — 证据随会话日志
 
     def test_turn_resets_probe_budget(self, tmp_path: Path) -> None:
-        from agent_eval.agent.package_agent import PackageAgent
+        from agent_eval.agent.workbench_agent import WorkbenchAgent
 
-        agent = PackageAgent(tmp_path)
+        agent = WorkbenchAgent(tmp_path)
         agent.probe._turn_calls["probe_url"] = TOOL_BUDGETS["probe_url"]  # noqa: SLF001
         agent.probe.new_turn()
         assert agent.probe._turn_calls.get("probe_url", 0) == 0  # noqa: SLF001

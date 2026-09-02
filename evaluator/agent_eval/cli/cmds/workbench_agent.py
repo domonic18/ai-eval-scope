@@ -1,6 +1,6 @@
 """场景包 Agent 会话入口 — REPL 式自然语言改包（arch/15 §六，requirement F-C-SCN-AGENT）。
 
-用户在 CLI 持续输入自然语言（``你> ...``），PackageAgent 经沙盒工具面改包，工作
+用户在 CLI 持续输入自然语言（``你> ...``），WorkbenchAgent 经沙盒工具面改包，工作
 过程**流式直播**（claude code 式：回复 token 直出 + 工具调用行实时可见）；每轮展示
 diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘。空行退出会话，Ctrl+C 中断当前轮
 （暂存与历史回滚，磁盘不受影响）。非交互形态（CI）需 ``--instruction`` +
@@ -191,9 +191,9 @@ def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]
     return None if is_json() else _make_stream_emitter()
 
 
-def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — PackageAgent
+def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """执行并渲染一轮：流式直播（回复不重复打印）或非流式兜底。"""
-    from agent_eval.agent.package_agent import run_turn
+    from agent_eval.agent.workbench_agent import run_turn
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
@@ -216,7 +216,7 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — PackageAgent
     _render_outcome(result)
 
 
-def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN001 — PackageAgent
+def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN001 — WorkbenchAgent
     """确认交互：回复已在流式直播中输出，这里展示 diff + 预计落点并询问。"""
     if diff:
         _render_diff(diff)
@@ -226,7 +226,7 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 
-def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — PackageAgent
+def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
     """确认时刻的预计落点：暂存清单 id 已定则显示 ./<id>-package/（形态 B 归位预告）。
 
     归位预告随确认提示出现——草稿区路径只是会话中间态，确认前让用户看清最终落点。
@@ -292,9 +292,9 @@ def _guard_llm_ready() -> None:
         raise typer.Exit(code=1) from e
 
 
-def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — PackageAgent
+def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """--yes --trust-agent 单轮执行（流式进度 + 自动确认；未落盘退出码 1）。"""
-    from agent_eval.agent.package_agent import run_turn
+    from agent_eval.agent.workbench_agent import run_turn
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
@@ -423,7 +423,7 @@ def agent_new_package(
     给了 ref 默认落 ``cwd/<id>-package/``，给了 --output 则原地生成（支持指回
     草稿续作，非空目录放行）。
     """
-    from agent_eval.agent.package_agent import PackageAgent
+    from agent_eval.agent.workbench_agent import WorkbenchAgent
     from agent_eval.packages import parse_ref
 
     _guard_llm_ready()
@@ -453,8 +453,8 @@ def agent_new_package(
             raise typer.Exit(code=2)
         instruction = ask("描述评测需求（包名可由 Agent 拟定，会话中可自然语言修改）")
 
-    agent = PackageAgent(root, ask_fn=None if (yes and trust_agent) else _make_ask_fn())
-    first_text = PackageAgent.first_turn_text(instruction, new_package=True, ref=pin)
+    agent = WorkbenchAgent(root, ask_fn=None if (yes and trust_agent) else _make_ask_fn())
+    first_text = WorkbenchAgent.first_turn_text(instruction, new_package=True, ref=pin)
     try:
         if yes and trust_agent:
             _run_noninteractive(agent, first_text)
@@ -477,7 +477,7 @@ def agent_edit_package(
     trust_agent: bool,
 ) -> None:
     """``scenario edit``：对项目包做自然语言增删改查（REPL 会话）。"""
-    from agent_eval.agent.package_agent import PackageAgent
+    from agent_eval.agent.workbench_agent import WorkbenchAgent
     from agent_eval.packages import MANIFEST_FILENAME, PackageManager
 
     _guard_llm_ready()
@@ -500,7 +500,7 @@ def agent_edit_package(
         root = pkg.root
 
     interactive = not (instruction and yes and trust_agent)
-    agent = PackageAgent(root, ask_fn=_make_ask_fn() if interactive else None)
+    agent = WorkbenchAgent(root, ask_fn=_make_ask_fn() if interactive else None)
     rprint(
         f"[bold]📦 Agent 改包会话[/bold] "
         f"[dim]{root}（沙盒：仅限包内；写操作经确认 + 校验后落盘）[/dim]"

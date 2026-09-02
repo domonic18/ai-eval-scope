@@ -98,7 +98,7 @@ def test_store_install_then_list_local(tmp_path: Path, monkeypatch: pytest.Monke
 def test_project_package_discovered_and_resolvable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # 项目包：cwd 一级子目录含 agent_eval.yaml（scenario new / PackageAgent 默认落盘位置）
+    # 项目包：cwd 一级子目录含 agent_eval.yaml（scenario new / WorkbenchAgent 默认落盘位置）
     monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path))
     root = tmp_path / "weekly-report-package"
     root.mkdir()

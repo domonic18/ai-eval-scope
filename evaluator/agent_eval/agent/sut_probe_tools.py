@@ -1,6 +1,6 @@
 """SUTProbeToolServer — SUT 接入调试受控网络工具面（arch/15 §6.6 P0）。
 
-与文件沙盒（package_tools，无网络不变式）并列的独立 server：创建场景包时由
+与文件沙盒（workbench_tools，无网络不变式）并列的独立 server：创建场景包时由
 Agent 主动探测被测系统（地址可达性 / agent-protocol 符合性 / 登录 API 发现与
 实测），**验证过的结论才经 staging 门禁写进 sut_configs/**。
 
@@ -211,14 +211,14 @@ class SUTProbeToolServer(ToolExporterMixin):
         # 防锁：同 (ref, host, body_template) 只实测一次——配置未变不重试；
         # 用户纠正字段/接口后模板变化视为新组合，允许再次实测
         self._login_tried: set[tuple[str, str, str]] = set()
-        # 已实测过协议矩阵的 host（供 PackageAgent 落盘门禁：声明 agent_protocol
+        # 已实测过协议矩阵的 host（供 WorkbenchAgent 落盘门禁：声明 agent_protocol
         # 通道的 sut_config，其 base_url 必须出自这里的实测证据）
         self._protocol_hosts: set[str] = set()
 
     # ── 会话挂点与内部设施 ────────────────────────────────────────
 
     def new_turn(self) -> None:
-        """每轮 REPL 开始时由 PackageAgent 调用：重置各工具轮内预算。
+        """每轮 REPL 开始时由 WorkbenchAgent 调用：重置各工具轮内预算。
 
         抓取缓存**跨轮保留**（会话内有效，容量有界）——预算报错指引「用户回复
         任意消息开启新一轮后继续验证」，若连缓存一起清空，新轮先要把前端主包

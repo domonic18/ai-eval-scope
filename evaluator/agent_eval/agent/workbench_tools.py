@@ -348,7 +348,7 @@ class PackageToolServer(ToolExporterMixin):
         if "error" in current:
             return current
         merged = {**current["manifest"], **fields}
-        content = "# 场景包清单（PackageAgent 更新）\npackage:\n" + yaml.safe_dump(
+        content = "# 场景包清单（WorkbenchAgent 更新）\npackage:\n" + yaml.safe_dump(
             merged, allow_unicode=True, sort_keys=False
         )
         return await self.write_file(MANIFEST_FILENAME, content)

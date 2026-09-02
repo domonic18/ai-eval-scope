@@ -19,13 +19,13 @@ def main(session: Any) -> None:  # WorkbenchSession（避免循环导入用 duck
         _view()
     elif action.startswith("Agent 会话改包"):
         from agent_eval.cli.cmds.scenario import select_editable_ref
-        from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+        from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
         agent_edit_package(
             ref=select_editable_ref(), instruction=None, yes=False, trust_agent=False
         )
     elif action.startswith("Agent 生成新包"):
-        from agent_eval.cli.cmds.scenario_agent import agent_new_package
+        from agent_eval.cli.cmds.workbench_agent import agent_new_package
 
         # 包名不前置询问——Agent 按需求拟定，会话中自然语言可改（F-C-SCN-AGENT）
         agent_new_package(ref=None, output=None, instruction=None, yes=False, trust_agent=False)

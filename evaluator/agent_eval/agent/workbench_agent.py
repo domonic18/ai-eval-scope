@@ -1,4 +1,4 @@
-"""PackageAgent — 场景包工程会话 Agent（arch/15 §六，REPL 式）。
+"""WorkbenchAgent — 场景包工程会话 Agent（arch/15 §六，REPL 式）。
 
 用户在 CLI 中持续输入自然语言（``你> ...``），Agent 经沙盒工具面改包、
 宿主展示 diff 并确认、校验门禁通过后落盘——多轮会话共享消息历史与暂存区
@@ -33,12 +33,12 @@ from urllib.parse import urlparse
 
 import yaml
 
-from agent_eval.agent.package_tools import PackageToolServer
 from agent_eval.agent.sut_probe_tools import SUTProbeToolServer
+from agent_eval.agent.workbench_tools import PackageToolServer
 from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.core.exceptions import AgentError
 
-_PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "package_agent_prompts.yaml"
+_PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "workbench_agent_prompts.yaml"
 
 # ref 缺省时的拟定指引（Agent 按需求起名，用户可在会话中自然语言改）
 _REF_AGENT_CHOSEN = (
@@ -95,17 +95,17 @@ def _resume_messages(dialogue: list[dict[str, str]]) -> list[tuple[str, str]]:
 
 @functools.lru_cache(maxsize=1)
 def _load_prompts() -> dict[str, Any]:
-    """加载 package_agent_prompts.yaml → {system_prompt, templates}。"""
+    """加载 workbench_agent_prompts.yaml → {system_prompt, templates}。"""
     try:
         data = yaml.safe_load(_PROMPTS_PATH.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as e:
         raise AgentError(
-            f"PackageAgent 提示词资产损坏: {_PROMPTS_PATH}（{e}）",
+            f"WorkbenchAgent 提示词资产损坏: {_PROMPTS_PATH}（{e}）",
             details={"path": str(_PROMPTS_PATH)},
         ) from e
     if not isinstance(data, dict) or not data.get("system_prompt") or not data.get("templates"):
         raise AgentError(
-            f"PackageAgent 提示词资产结构不完整（需 system_prompt/templates）: {_PROMPTS_PATH}",
+            f"WorkbenchAgent 提示词资产结构不完整（需 system_prompt/templates）: {_PROMPTS_PATH}",
             details={"path": str(_PROMPTS_PATH)},
         )
     return data
@@ -124,7 +124,7 @@ class TurnResult:
     aborted_reason: str = ""  # 用户放弃 / 轮次耗尽等
 
 
-class PackageAgent:
+class WorkbenchAgent:
     """场景包工程会话 Agent（一个实例 = 一次 REPL 会话，跨轮共享历史与暂存）。"""
 
     def __init__(
@@ -162,7 +162,7 @@ class PackageAgent:
             log_dir
             or paths.default_workspace
             / "agent_logs"
-            / f"package_agent_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
+            / f"workbench_agent_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
         )
         self.probe.log_path = self._log_path  # 探测证据与会话日志同文件（时间线完整）
 
@@ -222,7 +222,7 @@ class PackageAgent:
             from deepagents import create_deep_agent
         except ImportError:
             raise AgentError(
-                "PackageAgent 需要 deepagents（DeepAgents 底座，见 arch/15 §六）。"
+                "WorkbenchAgent 需要 deepagents（DeepAgents 底座，见 arch/15 §六）。"
                 "请执行: uv sync --extra agent",
                 details={"missing_module": "deepagents"},
             ) from None
@@ -515,7 +515,7 @@ def _emit_tool_events(updates: dict[str, Any], emit: Callable[[dict[str, Any]], 
 
 
 def run_turn(
-    agent: PackageAgent,
+    agent: WorkbenchAgent,
     user_text: str,
     *,
     confirm_fn: Callable[[str, str], bool],

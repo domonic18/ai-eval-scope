@@ -90,7 +90,7 @@ def scenario_new(
         )
         return
     if mode == "agent":
-        from agent_eval.cli.cmds.scenario_agent import agent_new_package
+        from agent_eval.cli.cmds.workbench_agent import agent_new_package
 
         root = agent_new_package(
             ref=ref,
@@ -123,7 +123,7 @@ def scenario_edit(
     ),
 ) -> None:
     """Agent 会话改包：自然语言增删改查（沙盒 + diff 确认 + 校验门禁）。"""
-    from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+    from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
     if ref is None:
         ref = select_editable_ref()
