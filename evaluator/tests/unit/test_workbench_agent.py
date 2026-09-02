@@ -829,7 +829,7 @@ class TestCliEntries:
 
     def test_emitter_renders_checkpoint_phase(self, capsys) -> None:
         # P1 自动分段：checkpoint 事件 → 「已自动续跑」提示行
-        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -844,7 +844,7 @@ class TestCliEntries:
 
 class TestStreamRender:
     def test_emitter_streams_tokens_and_tools(self, capsys) -> None:
-        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -872,7 +872,7 @@ class TestStreamRender:
         assert "完成" in out
 
     def test_emitter_renders_thinking_stream(self, capsys) -> None:
-        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -887,7 +887,7 @@ class TestStreamRender:
 
     def test_emitter_swallows_leading_blank_lines(self, capsys) -> None:
         # 模型 text 段常以 \n\n 开头——段首空白吞掉，🤖 后不空行
-        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")
@@ -900,7 +900,7 @@ class TestStreamRender:
 
     def test_emitter_tool_args_silent_non_tty(self, capsys) -> None:
         # 非 TTY 不渲染 \r 进度行（管道日志免受控制符污染），事件本身不崩
-        from agent_eval.cli.cmds.workbench_agent import _make_stream_emitter
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
         from agent_eval.cli.console.output import set_output_format
 
         set_output_format("text")

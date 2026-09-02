@@ -9,8 +9,6 @@ diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘。空�
 
 from __future__ import annotations
 
-import json
-import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -18,19 +16,10 @@ from typing import Any
 import typer
 from rich import print as rprint
 
+from agent_eval.cli.console.agent_stream import make_stream_emitter
 from agent_eval.cli.console.prompts import ask, select
 
 __all__ = ["agent_edit_package", "agent_new_package"]
-
-# 工具行首参提示：start 行只展示最关键参数，其余省略
-_TOOL_ARG_HINT = {
-    "write_file": "path",
-    "read_file": "path",
-    "delete_file": "path",
-    "read_reference": "ref",
-    "search_reference": "query",
-}
-
 
 _DIFF_MAX_LINES = 80  # diff 终端预览截断（完整内容落盘为准，超长节略展示）
 _ASK_INLINE_QUESTION_CHARS = 60  # ask 桥单行提示的问题长度上限（超长改两行式展示）
@@ -73,139 +62,11 @@ def _render_turn(reply: str, result: Any) -> None:  # noqa: ANN001 — 非流式
     _render_outcome(result)
 
 
-def _tool_end_line(event: dict[str, Any]) -> str | None:
-    """tool_end → 结果行（None = 不渲染）；error 交 Agent 自修复仅黄色提示。"""
-    name = event.get("name", "")
-    output = event.get("output", "")
-    data: dict[str, Any] = {}
-    if isinstance(output, str):
-        try:
-            parsed = json.loads(output)
-            data = parsed if isinstance(parsed, dict) else {}
-        except ValueError:
-            data = {}
-    if not event.get("ok", True) or "error" in data:
-        detail = data.get("error") or output or "失败"
-        return f"  [yellow]⚠ {name}: {str(detail)[:120]}[/yellow]"
-    if "staged" in data:
-        return f"  [green]✓[/green] [dim]已暂存 {data['staged']}[/dim]"
-    if "staged_delete" in data:
-        return f"  [green]✓[/green] [dim]已暂存删除 {data['staged_delete']}[/dim]"
-    if name == "validate_package":
-        return "  [green]✓[/green] [dim]暂存视图校验通过[/dim]"
-    if name == "preview_diff":
-        return f"  [green]✓[/green] [dim]diff 就绪（{data.get('changed', '?')} 处变更）[/dim]"
-    return None
-
-
-def _write_stream(text: str, style: str | None = None) -> None:
-    """流式片段直写：不解释 markup / 不做高亮（模型文本原样），style 用于思考态。"""
-    import rich
-
-    rich.get_console().print(text, end="", style=style, markup=False, highlight=False)
-
-
-def _make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]]:
-    """流式渲染器（claude code 式）：思考/回复 token 直出；工具行实时可见。
-
-    - 段首空白吞掉：模型 text/thinking 段常以 ``\\n\\n`` 开头，直接接头部会出现
-      「🤖 后空行」；
-    - 工具参数生成阶段（大文件内容在 tool_call args 里增量生成，不走 text 流）
-      以 ``\\r`` 单行进度显示，避免数十秒无输出的「卡住」观感；仅 TTY。
-    """
-    tty = sys.stdout.isatty()
-    state: dict[str, Any] = {
-        "mid_line": False,  # 流式文本行未收尾（需先换行才能打工具行）
-        "mode": "",  # "" | text | thinking
-        "pend": "",  # 参数生成中的工具名
-        "pend_len": 0,
-        "pend_shown": False,
-    }
-
-    def _clear_pending() -> None:
-        if state["pend_shown"]:
-            sys.stdout.write("\r\033[K")  # 光标回行首并清行
-            sys.stdout.flush()
-            state["pend_shown"] = False
-
-    def _close_line() -> None:
-        _clear_pending()
-        if state["mid_line"]:
-            sys.stdout.write("\n")
-            sys.stdout.flush()
-            state.update(mid_line=False, mode="")
-
-    def _hint(name: str, args: dict[str, Any]) -> str:
-        key = _TOOL_ARG_HINT.get(name)
-        if not key:
-            return ""
-        value = args.get(key)
-        if isinstance(value, dict):
-            value = ",".join(map(str, value)) or ""
-        if key == "path" and isinstance(value, str) and value.startswith("/"):
-            # 绝对路径只显示文件名——草稿区全路径是会话实现细节，无需反复露出；
-            # 相对路径原样展示（保留目录信息）
-            value = value.rstrip("/").rsplit("/", 1)[-1]
-        elif isinstance(value, str) and len(value) > 72:
-            value = "…" + value[-70:]
-        return f" · {value}" if value else ""
-
-    def emit(event: dict[str, Any]) -> None:
-        kind = event.get("type")
-        if kind == "phase" and event.get("name") == "checkpoint":
-            _close_line()
-            rprint(
-                f"[dim]⏭ 单段步数撞线，已自动续跑（第 {event.get('segment')} / "
-                f"{event.get('max_segments')} 段，进度保留）[/dim]"
-            )
-            return
-        if kind in ("token", "thinking"):
-            mode = "text" if kind == "token" else "thinking"
-            text = event.get("text", "")
-            if state["mode"] != mode:  # 思考 ↔ 正文切换才起行，片段间续写不换行
-                text = text.lstrip("\r\n ")
-                if not text:
-                    return  # 段首全是空白——等首个有内容的片段再起行
-                _close_line()
-                rprint(
-                    "[dim italic]✻ [/dim italic]"
-                    if mode == "thinking"
-                    else "[bold cyan]🤖[/bold cyan] ",
-                    end="",
-                )
-                state.update(mid_line=True, mode=mode)
-            _write_stream(text, "dim" if mode == "thinking" else None)
-            return
-        if kind == "tool_args":
-            name = event.get("name") or state["pend"]
-            if name and name != state["pend"]:
-                _clear_pending()
-                state.update(pend=name, pend_len=0)
-            state["pend_len"] += int(event.get("delta") or 0)
-            if tty and name and state["pend_len"]:
-                sys.stdout.write(f"\r  ⏳ {name} 生成参数中 · {state['pend_len']} 字")
-                sys.stdout.flush()
-                state["pend_shown"] = True
-            return
-        _close_line()
-        state.update(pend="", pend_len=0)
-        if kind == "tool_start":
-            rprint(
-                f"  [dim]🔧 {event.get('name', '')}{_hint(event.get('name', ''), event.get('args') or {})}[/dim]"
-            )
-        elif kind == "tool_end":
-            line = _tool_end_line(event)
-            if line:
-                rprint(line)
-
-    return emit, _close_line
-
-
 def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]] | None:
     """流式开关：JSON 模式下 stdout 仅 JSON（F-C-INTEG-02），返回 None 走静默路径。"""
     from agent_eval.cli.console.output import is_json
 
-    return None if is_json() else _make_stream_emitter()
+    return None if is_json() else make_stream_emitter()
 
 
 def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
