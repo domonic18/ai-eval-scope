@@ -15,7 +15,14 @@ def main(session: Any) -> None:  # WorkbenchSession（避免循环导入用 duck
     # 语义从「Agent 的功能」改为「用 Agent 做某事」，通用对话式入口在主菜单一级
     action = select(
         "场景包动作",
-        ["查看包内容", "用 Agent 修改选中的包", "用 Agent 创建场景包", "列出全部包", "校验项目包", "返回"],
+        [
+            "查看包内容",
+            "用 Agent 修改选中的包",
+            "用 Agent 创建场景包",
+            "列出全部包",
+            "校验项目包",
+            "返回",
+        ],
     )
     if action.startswith("查看包内容"):
         _view()

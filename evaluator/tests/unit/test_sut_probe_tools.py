@@ -15,7 +15,7 @@ from typing import Any
 
 import httpx
 
-from agent_eval.agent.sut_probe_tools import (
+from agent_eval.agent.probe import (
     TOOL_BUDGETS,
     SUTProbeToolServer,
 )

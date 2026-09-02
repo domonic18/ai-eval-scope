@@ -141,9 +141,7 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
         ["描述需求，生成新场景包", "选择已有场景包修改", "返回"],
     )
     if action.startswith("描述需求"):
-        agent_new_package(
-            ref=None, output=None, instruction=None, yes=False, trust_agent=False
-        )
+        agent_new_package(ref=None, output=None, instruction=None, yes=False, trust_agent=False)
     elif action.startswith("选择已有"):
         agent_edit_package(
             ref=select_editable_ref(), instruction=None, yes=False, trust_agent=False

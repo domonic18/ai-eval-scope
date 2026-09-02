@@ -43,7 +43,7 @@ from urllib.parse import urlparse
 import yaml
 
 from agent_eval.agent.callbacks import BudgetGuard
-from agent_eval.agent.sut_probe_tools import PROBE_TIMEOUT_S, TOOL_BUDGETS, SUTProbeToolServer
+from agent_eval.agent.probe import PROBE_TIMEOUT_S, TOOL_BUDGETS, SUTProbeToolServer
 from agent_eval.agent.workbench_tools import PackageToolServer
 from agent_eval.config.paths import PACKAGE_ROOT, paths
 from agent_eval.core.exceptions import AgentError, BudgetExceededError
