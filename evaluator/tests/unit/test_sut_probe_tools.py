@@ -123,10 +123,49 @@ class TestDiscoverLogin:
         assert 0 < len(result["candidates"]) <= 8
         assert all(c["source"] == "common_path" for c in result["candidates"])
 
-    def test_no_candidate_gives_ask_user_guidance(self) -> None:
-        server = _make(http_client_factory=_ok_transport("plain"))
-        result = _run(server.discover_login("https://sut.example.com/x"))
-        assert "ask_user" in result["next_step"]
+    def test_openapi_doc_yields_endpoint_candidate(self) -> None:
+        """阶梯②.5：OpenAPI 文档命中 → 精确端点 + 字段 schema 直接成为候选。"""
+        spec = {
+            "paths": {
+                "/health": {"get": {}},
+                "/auth/login": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {"properties": {"username": {}, "password": {}}}
+                                }
+                            }
+                        }
+                    }
+                },
+            }
+        }
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/openapi.json":
+                return httpx.Response(200, json=spec, request=request)
+            return httpx.Response(200, text="<html>SPA 页面</html>", request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        candidate = next(c for c in result["candidates"] if c["source"] == "openapi")
+        assert candidate["path"] == "/auth/login"
+        assert candidate["fields"] == ["password", "username"]  # 排序后字段 schema
+
+    def test_no_candidate_guidance_never_asks_field_names(self) -> None:
+        """全阶梯落空：兜底指引只向用户要接口地址，字段名由 Agent 拟定。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/web/login":  # 页面路径不在常见登录路径清单内
+                return httpx.Response(200, text="plain", request=request)
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.discover_login("https://sut.example.com/web/login"))
+        assert result["candidates"] == []
+        assert "登录接口地址" in result["next_step"]
+        assert "字段名不要问用户" in result["next_step"]
 
 
 # ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────
@@ -203,6 +242,23 @@ class TestProbeLogin:
         second = _run(server.probe_login(_LOGIN_CFG, "SUT"))
         assert first["ok"] is False and calls["n"] == 1
         assert "防锁" in second["error"] and calls["n"] == 1  # 不再自动重试
+
+    def test_renamed_template_counts_as_new_combination(self) -> None:
+        """防锁按（接口+字段组合）：用户纠正字段更新 body_template 后允许再实测一次。"""
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(401, json={"error": "bad"}, request=request)
+
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
+        assert _run(server.probe_login(_LOGIN_CFG, "SUT"))["ok"] is False
+        renamed = {
+            **_LOGIN_CFG,
+            "body_template": '{"user": "{{ username }}", "pwd": "{{ password }}"}',
+        }
+        second = _run(server.probe_login(renamed, "SUT"))
+        assert "error" not in second and calls["n"] == 2  # 新组合放行而非防锁拒绝
 
 
 # ── probe_protocol：矩阵 + 清理 ──────────────────────────────────────
