@@ -853,3 +853,147 @@ class TestStreamRender:
         finish()
         out = capsys.readouterr().out
         assert "🔧 write_file" in out and "⏳" not in out and "\r" not in out
+
+
+# ── 泛化文件工具（Claude Code 式分级授权，arch/15 §6.11.1） ─────────────
+
+
+class TestGeneralizedFileTools:
+    def test_read_file_assets_auto_granted(self, tmp_path: Path) -> None:
+        """随包资源 assets/ 为自动授权只读域——结构规范整篇可读。"""
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            guide = await server.read_file(
+                str(server.assets_root / "guides" / "scenario-package-format.md")
+            )
+            assert "error" not in guide
+            assert "包清单" in guide["content"]
+
+        asyncio.run(run())
+
+    def test_read_file_external_grant_records_once(self, tmp_path: Path) -> None:
+        """外部文件经 ask_fn 授权；授权记账后同文件不再二次询问。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "user-doc.md"
+        outside.write_text("用户提供的数据", encoding="utf-8")
+        server = PackageToolServer(root)
+        asks: list[str] = []
+
+        async def ask_fn(question: str, *, options: Any, secret: bool) -> str:
+            asks.append(question)
+            return "允许"
+
+        server.ask_fn = ask_fn
+
+        async def run() -> None:
+            first = await server.read_file(str(outside))
+            assert "用户提供的数据" in first["content"]
+            second = await server.read_file(str(outside))
+            assert "error" not in second
+
+        asyncio.run(run())
+        assert len(asks) == 1
+
+    def test_read_file_external_deny_blacklists(self, tmp_path: Path) -> None:
+        """拒绝即拉黑：后续同路径直接拒绝且不再询问（防反复试探）。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "user-doc.md"
+        outside.write_text("x", encoding="utf-8")
+        server = PackageToolServer(root)
+
+        async def ask_fn(question: str, *, options: Any, secret: bool) -> str:
+            return "拒绝"
+
+        server.ask_fn = ask_fn
+
+        async def run() -> None:
+            first = await server.read_file(str(outside))
+            assert "用户拒绝" in first["error"]
+            second = await server.read_file(str(outside))
+            assert "勿再试探" in second["error"]
+
+        asyncio.run(run())
+
+    def test_read_file_external_needs_interactive_channel(self, tmp_path: Path) -> None:
+        """非交互（CI）无授权通道：报错指引放入会话根目录。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "user-doc.md"
+        outside.write_text("x", encoding="utf-8")
+        result = asyncio.run(PackageToolServer(root).read_file(str(outside)))
+        assert "需用户授权" in result["error"]
+        assert "会话根目录" in result["error"]
+
+    def test_read_file_credential_paths_hard_denied(self, tmp_path: Path) -> None:
+        # 凭证类路径先于授权逻辑硬拒（红线：凭证不回流 LLM 上下文）——用户同意也不可读
+        root = tmp_path / "root"
+        root.mkdir()
+        server = PackageToolServer(root)
+
+        async def ask_fn(question: str, *, options: Any, secret: bool) -> str:
+            raise AssertionError("凭证路径不得进入授权询问")
+
+        server.ask_fn = ask_fn
+
+        async def run() -> None:
+            for evil in (
+                Path.home() / ".agent_eval" / "llm.json",
+                Path.home() / ".agent_eval" / "sut_credentials.json",
+                tmp_path / "root" / ".env",
+                tmp_path / "workspace" / "sut_sessions" / "sasan.json",
+            ):
+                result = await server.read_file(str(evil))
+                assert "安全红线" in result["error"], evil
+
+        asyncio.run(run())
+
+    def test_list_files_session_statuses_and_assets(self, tmp_path: Path) -> None:
+        _seed_valid_package(tmp_path)
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await server.write_file("rules/new.yaml", RULES)
+            listing = await server.list_files("")
+            statuses = {f["path"]: f["status"] for f in listing["files"]}
+            assert statuses["rules/new.yaml"] == "added"
+            assert statuses["rules/quality.yaml"] == "unchanged"
+            assets = await server.list_files(str(server.assets_root))
+            assert "guides/scenario-package-format.md" in assets["files"]
+
+        asyncio.run(run())
+
+    def test_list_files_external_requires_grant(self, tmp_path: Path) -> None:
+        root = tmp_path / "root"
+        root.mkdir()
+        outside_dir = tmp_path / "user-data"
+        outside_dir.mkdir()
+        (outside_dir / "a.txt").write_text("1", encoding="utf-8")
+        server = PackageToolServer(root)
+
+        no_channel = asyncio.run(server.list_files(str(outside_dir)))
+        assert "需用户授权" in no_channel["error"]
+
+        async def ask_fn(question: str, *, options: Any, secret: bool) -> str:
+            return "允许"
+
+        server.ask_fn = ask_fn
+        ok = asyncio.run(server.list_files(str(outside_dir)))
+        assert ok["files"] == ["a.txt"]
+
+    def test_system_prompt_references_guide_without_hardcoded_structure(
+        self, tmp_path: Path
+    ) -> None:
+        # 结构知识外置（§6.11.1）：提示词只指路规范文档，字段表不再 hardcode
+        agent = PackageAgent(tmp_path, log_dir=tmp_path / "log")
+        prompt = agent._build_system_prompt()
+        assert "scenario-package-format.md" in prompt
+        assert str(agent.server.assets_root) in prompt  # {assets_root} 已展开
+        assert "内容规范" not in prompt
+
+    def test_generate_template_points_to_guide(self) -> None:
+        text = PackageAgent.first_turn_text("做一个代码安全评测包", new_package=True)
+        assert "scenario-package-format.md" in text
+        assert "rules/" not in text  # 目录清单不再 hardcode 在模板（task_sets/sut_configs 除外）

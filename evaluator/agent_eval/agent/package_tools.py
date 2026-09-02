@@ -4,12 +4,13 @@
 写操作一律进暂存区（内存 dict），宿主在 diff 确认 + 校验门禁通过后经
 :meth:`commit` 原子提交（staging → disk）。
 
-沙盒（arch/15 §6.4 安全红线）：
-- 路径 ``resolve()`` 后必须位于包根内（防 ``..`` 与 symlink 逃逸）；
-- 写扩展名白名单 ``.yaml / .yml / .json / .md``；
-- ``sut_configs/`` 内容出现凭证明文（password/token/api_key/secret 值字段）
-  即拒绝并提示走 ``agent-eval secrets set``；
-- 无 shell、无网络、无包外路径。
+读写分级（arch/15 §6.11.1，Claude Code 式文件工具机制）：
+- **写**（write_file / delete_file）：硬沙盒——路径 ``resolve()`` 后必须位于包根内
+  （防 ``..`` 与 symlink 逃逸），扩展名白名单 ``.yaml/.yml/.json/.md``，
+  ``sut_configs/`` 凭证明文拒绝；无 shell、无网络、无包外写；
+- **读**（read_file / list_files）分级授权：会话根内（暂存视图优先）→ 随包资源
+  ``assets/``（自动授权只读）→ 外部路径经 ``ask_fn`` 向用户申请授权（拒绝即拉黑）；
+  凭证类路径（密钥区 / sut_sessions / .env）一律硬拒，先于授权——凭证不回流 LLM 上下文。
 
 工具实现为普通异步方法（可直接调用与测试，零框架依赖），经
 ``ToolExporterMixin`` 惰性导出为 LangChain Tool 绑定给 DeepAgents
@@ -28,6 +29,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.packages import MANIFEST_FILENAME
 
 _WRITE_EXTS = {".yaml", ".yml", ".json", ".md"}
@@ -35,6 +37,22 @@ _WRITE_EXTS = {".yaml", ".yml", ".json", ".md"}
 _CRED_FIELD_RE = re.compile(
     r"^\s*(password|token|api_key|secret)\s*:\s*([^#\n]+?)\s*$", re.MULTILINE
 )
+
+# 随包发布资源根（自动授权只读域，arch/15 §6.11.1）：结构规范 / JSON Schema / 示例配置。
+# 运行时资料禁止引用仓库 docs/ 路径（pip 安装用户没有 docs/）
+_ASSETS_ROOT = PACKAGE_ROOT / "assets"
+_LIST_MAX_FILES = 200
+
+# 读取硬禁区（安全红线：凭证/token 不回流 LLM 上下文）——先于授权逻辑，用户同意也不可读：
+# 密钥区 ~/.agent_eval/（platform/llm/sut_credentials 三文件）、SUT 会话 token、.env 键值
+_CREDENTIAL_HINT_DIRS = {".agent_eval", "sut_sessions"}
+
+
+def _is_credential_path(target: Path) -> bool:
+    """凭证类路径判定：密钥区目录 / SUT 会话 token / .env（按约定名）。"""
+    if target.name in (".env", "sut_credentials.json"):
+        return True
+    return any(part in _CREDENTIAL_HINT_DIRS for part in target.parts)
 
 
 def _reference_notes() -> str:
@@ -70,11 +88,17 @@ class PackageToolServer(ToolExporterMixin):
 
     TOOL_SPECS: ClassVar[list[ToolSpec]] = [
         ToolSpec(
-            "list_package_files",
-            "列出包内全部文件（含暂存态标记：added/staged/deleted/unchanged）",
-            "list_package_files",
+            "list_files",
+            "列出目录文件：会话根内（含暂存态标记 added/staged/deleted/unchanged）或"
+            "随包资源 assets/；外部目录向用户申请授权后为普通清单",
+            "list_files",
         ),
-        ToolSpec("read_file", "读取包内文件内容（暂存版本优先）", "read_file"),
+        ToolSpec(
+            "read_file",
+            "读取文件：会话根内（暂存版本优先）/ 随包资源 assets/（自动授权只读，"
+            "如 guides/scenario-package-format.md 包结构规范）/ 外部路径（向用户申请授权）",
+            "read_file",
+        ),
         ToolSpec(
             "write_file",
             "写入/新建包内文件（进暂存区，落盘需宿主确认+校验通过）",
@@ -110,8 +134,19 @@ class PackageToolServer(ToolExporterMixin):
         ),
     ]
 
-    def __init__(self, pkg_root: Path) -> None:
+    def __init__(
+        self,
+        pkg_root: Path,
+        *,
+        assets_root: Path | None = None,
+        ask_fn: Any = None,  # async (question, *, options, secret) -> str（外部读取授权）
+    ) -> None:
         self.root = Path(pkg_root).resolve()
+        self.assets_root = (assets_root or _ASSETS_ROOT).resolve()
+        self.ask_fn = ask_fn
+        # 外部路径授权账本（host 边界同款：允许记账放行 / 拒绝拉黑防反复试探）
+        self._granted: set[Path] = set()
+        self._denied: set[Path] = set()
         # 暂存区：rel_path(POSIX) -> 新内容；None 表示删除
         self.staging: dict[str, str | None] = {}
 
@@ -146,7 +181,39 @@ class PackageToolServer(ToolExporterMixin):
 
     # ─── 工具（Agent 可调用；错误以 {"error": ...} 返回） ─────────
 
-    async def list_package_files(self) -> dict[str, Any]:
+    async def list_files(self, path: str = "") -> dict[str, Any]:
+        """列目录文件（Claude Code 式分级，arch/15 §6.11.1）。
+
+        会话根内（空/相对路径，含暂存态标记）与随包资源 assets/ 直接列出；
+        其余外部目录复用 read_file 的授权账本（拒绝即拉黑）。
+        """
+        candidate = Path(path) if path else self.root
+        target = (candidate if candidate.is_absolute() else self.root / candidate).resolve()
+        if _is_credential_path(target):
+            return {"error": f"安全红线：凭证类位置不可列（不回流 LLM 上下文）: {target}"}
+        in_session = target == self.root or target.is_relative_to(self.root)
+        in_assets = target == self.assets_root or target.is_relative_to(self.assets_root)
+        if not (in_session or in_assets):
+            err = await self._ensure_grant(target, listing=True)
+            if err:
+                return {"error": err}
+        if in_session and target == self.root:
+            return self._list_session()
+        if not target.is_dir():
+            return {"error": f"目录不存在: {target}"}
+        files = sorted(
+            p.relative_to(target).as_posix()
+            for p in target.rglob("*")
+            if p.is_file() and ".git" not in p.parts and not _is_credential_path(p)
+        )
+        listed = files[:_LIST_MAX_FILES]
+        result: dict[str, Any] = {"root": str(target), "files": listed, "total": len(files)}
+        if len(files) > len(listed):
+            result["truncated"] = True
+        return result
+
+    def _list_session(self) -> dict[str, Any]:
+        """会话根清单（含暂存状态标记）。"""
         staged = set(self.staging)
         on_disk = (
             {
@@ -171,20 +238,65 @@ class PackageToolServer(ToolExporterMixin):
         return {"files": files, "root": str(self.root)}
 
     async def read_file(self, path: str, max_chars: int = 8000) -> dict[str, Any]:
+        """读文件（Claude Code 式分级授权，arch/15 §6.11.1）。
+
+        会话根内（相对或根内绝对路径）→ 暂存视图优先；随包资源 assets/ → 自动授权
+        只读；其余外部路径 → 经 ask_fn 向用户申请授权（拒绝即拉黑）。凭证路径一律
+        硬拒（先于授权——红线：凭证/token 不回流 LLM 上下文）。
+        """
+        candidate = Path(path)
+        target = (candidate if candidate.is_absolute() else self.root / candidate).resolve()
+        if _is_credential_path(target):
+            return {"error": f"安全红线：凭证类文件不可读（不回流 LLM 上下文）: {target}"}
+        if target.is_relative_to(self.root):
+            rel = target.relative_to(self.root).as_posix()
+            if rel in self.staging:
+                content = self.staging[rel]
+                if content is None:
+                    return {"error": f"文件已在暂存区标记删除: {rel}"}
+            else:
+                content = self._disk_text(target)
+                if content is None:
+                    return {"error": f"文件不存在或不可读: {rel}"}
+            return {"path": rel, "content": truncate(content, max_chars)}
+        if target.is_relative_to(self.assets_root):
+            return self._read_raw(target, max_chars)
+        err = await self._ensure_grant(target)
+        if err:
+            return {"error": err}
+        return self._read_raw(target, max_chars)
+
+    def _read_raw(self, abs_path: Path, max_chars: int) -> dict[str, Any]:
         try:
-            abs_path = self._resolve_in(path)
-        except ValueError as e:
-            return {"error": str(e)}
-        rel = abs_path.relative_to(self.root).as_posix()
-        if rel in self.staging:
-            content = self.staging[rel]
-            if content is None:
-                return {"error": f"文件已在暂存区标记删除: {rel}"}
-        else:
-            content = self._disk_text(abs_path)
-            if content is None:
-                return {"error": f"文件不存在或不可读: {rel}"}
-        return {"path": rel, "content": truncate(content, max_chars)}
+            content = abs_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as e:
+            return {"error": f"文件不存在或不可读: {abs_path}（{e}）"}
+        return {"path": str(abs_path), "content": truncate(content, max_chars)}
+
+    async def _ensure_grant(self, target: Path, *, listing: bool = False) -> str | None:
+        """外部路径授权门（host 边界同款：允许记账放行 / 拒绝拉黑）。None = 放行。"""
+        for denied in (*self._denied,):
+            if target == denied or target.is_relative_to(denied):
+                return f"该路径此前已被用户拒绝，勿再试探: {target}"
+        for granted in (*self._granted,):
+            if target == granted or target.is_relative_to(granted):
+                return None
+        if self.ask_fn is None:
+            return (
+                f"会话根外的路径需用户授权{'列出' if listing else '读取'}: {target}"
+                "（当前无交互通道——请把文件放入会话根目录后重试）"
+            )
+        verb = "列出目录" if listing else "读取文件"
+        choice = await self.ask_fn(
+            f"允许 Agent {verb}吗？（会话工作区之外）\n{target}",
+            options=["允许", "拒绝"],
+            secret=False,
+        )
+        if choice != "允许":
+            self._denied.add(target)
+            return f"用户拒绝{verb}: {target}"
+        self._granted.add(target)
+        return None
 
     async def write_file(self, path: str, content: str) -> dict[str, Any]:
         if Path(path).suffix not in _WRITE_EXTS:

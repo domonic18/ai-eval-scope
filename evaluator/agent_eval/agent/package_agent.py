@@ -35,11 +35,10 @@ import yaml
 
 from agent_eval.agent.package_tools import PackageToolServer
 from agent_eval.agent.sut_probe_tools import SUTProbeToolServer
+from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.core.exceptions import AgentError
 
-_PROMPTS_PATH = (
-    Path(__file__).resolve().parent.parent / "assets" / "configs" / ("package_agent_prompts.yaml")
-)
+_PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "package_agent_prompts.yaml"
 
 # ref 缺省时的拟定指引（Agent 按需求起名，用户可在会话中自然语言改）
 _REF_AGENT_CHOSEN = (
@@ -140,7 +139,7 @@ class PackageAgent:
     ) -> None:
         from agent_eval.config.paths import paths
 
-        self.server = PackageToolServer(Path(pkg_root))
+        self.server = PackageToolServer(Path(pkg_root), ask_fn=ask_fn)
         # SUT 接入调试工具面（arch/15 §6.6）：与文件沙盒并列；凭证域隔离到密钥区
         from agent_eval.execution.auth.credentials import CredentialStore
 
@@ -211,8 +210,10 @@ class PackageAgent:
         # 字面 replace 而非 str.format：提示词是散文体，含 { type: ... } 等
         # 字面大括号示例，format 会误当占位符吞掉
         template: str = _load_prompts()["system_prompt"]
-        return template.replace("{tools}", self._describe_tools()).replace(
-            "{pkg_root}", str(self.server.root)
+        return (
+            template.replace("{tools}", self._describe_tools())
+            .replace("{pkg_root}", str(self.server.root))
+            .replace("{assets_root}", str(self.server.assets_root))
         )
 
     def _build_graph(self) -> Any:

@@ -696,16 +696,22 @@ prompt 段 + 档位登记，**不改会话机**。
    （如 `read_reference("chat", "rules/chat-quality.yaml")`——规范与真实样例串接）+
    关联 JSON Schema 文件名。随包发布（prompts 同款红线：**运行时资料禁止引用仓库
    docs/ 路径**——pip 安装用户没有 docs/）。
-2. **`workbench_tools.py` 增 `read_guide(topic)` 工具**：按二级标题切节返回（截断），
-   ToolSpec 列出 topic 清单，无 topic 返回目录；放包域工具面（结构知识属包域）。
-3. **prompts 瘦身**：「内容规范」段退役 → 一行「包结构规范用 read_guide 阅读，格式以
-   规范文档 + 内置包为准，不要凭记忆自创」；`generate_new_package` 模板的目录清单同步
-   删除；参照使用指引三处重复（prompts 工作流程第 3 步 / tool description /
-   available_files hint）收敛到工具返回值。行为规约（工作流程 / SUT 调试方法论 /
-   ask_user 规约 / 输出规范）全部保留。
+2. **通用文件工具泛化（评审修订：不做 read_guide 专用工具）**——「按文档逐个封装专用
+   工具」正是 §6.6 泛化原则反对的 hardcode 形态，且未来通用入口需要读**用户提供的
+   文件**。`read_file` / `list_files` 泛化为 **Claude Code 式分级授权**：会话根内
+   （暂存视图优先）→ 随包资源 `assets/`（自动授权只读）→ 外部路径经 `ask_fn` 向用户
+   申请授权（允许记账放行 / 拒绝即拉黑，与 §6.6 host 边界同款机制）；**凭证类路径
+   硬拒**（密钥区 / sut_sessions / .env——先于授权逻辑，凭证不回流 LLM 上下文）。
+   写路径不泛化：write/delete 仍硬沙盒 confined 会话根 + staging 门禁（§6.3 不变量
+   不动）——读写不对称正是 Claude Code 的形态（读宽松、写有门）。
+3. **prompts 瘦身**：「内容规范」段退役 → 沙盒边界改读写分级表述 + 工作流程第 3 步
+   指路规范文档路径（新增 `{assets_root}` 模板变量）；`generate_new_package` 模板的
+   目录清单删除。行为规约（工作流程 / SUT 调试方法论 / ask_user 规约 / 输出规范）
+   全部保留。
 4. **真相源分层（关键不变式）**：`validate_package` 门禁（代码）= **硬真相**——Agent
    照 guide 写错仍会被打回自修复，漂移的最坏后果是多一轮回改，**不产生坏包**；guide
-   页首注明「与 arch/13 §四同步，变更 arch/13 须同步本文件」（资料源纪律，非机器门禁）。
+   为运行时速查（受众是 Agent 与开源用户），arch/13 §四为设计真相源，变更 arch/13 时
+   须同步 guide（文档侧纪律）。
 5. **顺带修正（review 发现）**：`search_reference` ToolSpec 描述声称返回「场景扩展
    方法论要点」，实现只返回文件树——改描述对齐行为（方法论已由 prompts 前端包分析法
    承载）；`_load_prompts` 资产结构校验随 `intro`（§6.10）/ guide 段扩充。
@@ -822,7 +828,7 @@ class WorkbenchAgentConfig:
 | `cli/cmds/`（scenario/models/auth/runs/open_url/doctor + 既有五组迁入） | 重组+新增 | 子命令组（typer 绑定 + 纯函数动作） |
 | `agent/package_agent.py` / `agent/package_tools.py` | 新增 | PackageAgent 组装与沙盒工具面（v3.0 目标态迁移为 `workbench_agent.py` / `workbench_tools.py`，§6.8） |
 | `agent_eval/assets/configs/package_agent_prompts.yaml` | 新增 | Agent 提示词资产（v3.0 目标态更名 `workbench_agent_prompts.yaml`）；v3.1 增 `intro` 自我介绍段（§6.10） |
-| `agent_eval/assets/guides/scenario-package-format.md` | 新增（v3.2） | 随包发布的包结构规范——Agent 经 `read_guide` 阅读（§6.11.1），与 arch/13 §四同步 |
+| `agent_eval/assets/guides/scenario-package-format.md` | 新增（v3.2） | 随包发布的包结构规范——Agent 经 `read_file` 直读（assets 自动授权域，§6.11.1） |
 | 平台侧 `/cli-auth` 页（P1 增强）与 pair 端点（P2） | 09 侧 | 见 §5.1/§5.2 接口约定 |
 
 ---
