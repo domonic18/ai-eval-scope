@@ -9,6 +9,7 @@ diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘。空�
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -125,13 +126,55 @@ def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
     return root
 
 
+def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — WorkbenchSession
+    """``start`` 主菜单一级入口（§3.5 通用档位 P0 形态）。
+
+    工作台 Agent 是首选工作方式——跨域会话内任务对象切换随数据集域落地（§6.8），
+    当前先以「选任务起点」引导：新包（Agent 拟名草稿）或改已有包；两支共用同一
+    REPL 横幅（档位 = 包域，§6.10）。LLM 未配置在此阻断（无模型 Agent 不可用）。
+    """
+    _guard_llm_ready()
+    from agent_eval.cli.cmds.scenario import select_editable_ref
+
+    action = select(
+        "工作台 Agent（当前能力域：场景包工程 · SUT 接入调试）",
+        ["描述需求，生成新场景包", "选择已有场景包修改", "返回"],
+    )
+    if action.startswith("描述需求"):
+        agent_new_package(
+            ref=None, output=None, instruction=None, yes=False, trust_agent=False
+        )
+    elif action.startswith("选择已有"):
+        agent_edit_package(
+            ref=select_editable_ref(), instruction=None, yes=False, trust_agent=False
+        )
+
+
+def _render_intro(agent: Any) -> None:  # noqa: ANN001 — WorkbenchAgent
+    """启动自我介绍横幅（§6.10）：资产文案 rich Panel 渲染；--json 与非 TTY 静默。"""
+    from rich.panel import Panel
+    from rich.text import Text
+
+    from agent_eval.cli.console.output import is_json
+
+    if is_json() or not sys.stdout.isatty():
+        return
+    text = agent.intro_text()
+    if not text:
+        return
+    rprint(Panel(Text(text.rstrip()), border_style="cyan", title="工作台 Agent"))
+
+
 def _session(agent: Any, first_text: str | None) -> None:
     """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。
 
+    启动先渲染自我介绍横幅（§6.10，会话日志行之前；续作提示其后）。
     中断/瞬时错误 = 暂停保现场（§6.7 D-WB-4）：暂存与对话上下文完整，「继续」
     接着跑；「放弃」是唯一回滚触发器（显式指令，防误触丢进度）。
     """
     import asyncio
+
+    _render_intro(agent)
 
     def _attempt(text: str) -> None:
         try:

@@ -838,6 +838,56 @@ class TestCliEntries:
         finish()
         assert "已自动续跑（第 2 / 3 段" in capsys.readouterr().out
 
+    def test_intro_text_from_asset(self, tmp_path: Path) -> None:
+        # §6.10 横幅资产化：{root}/{domains} 展开，示例与红线同源（CLI 只渲染）
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        intro = agent.intro_text()
+        assert "工作台 Agent" in intro
+        assert str(tmp_path) in intro  # {root}
+        assert "场景包工程 · SUT 接入调试" in intro  # {domains} 与系统提示同源
+        assert "暂存" in intro and "Ctrl+C" in intro  # 红线与控制方式
+
+    def test_session_renders_intro_banner(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        import sys as _sys
+
+        from agent_eval.cli.cmds import workbench_agent as sa
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        _seed_valid_package(tmp_path)
+
+        class _Tty:  # capsys 的 stdout 非 TTY——横幅设计为 TTY 专属，垫一层
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(sa.sys, "stdout", _Tty(_sys.stdout))
+        monkeypatch.setattr(
+            "agent_eval.agent.workbench_agent.run_turn",
+            lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
+                reply="ok", diff="", staged=False
+            ),
+        )
+        inputs = iter([""])
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
+        sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), None)
+        out = capsys.readouterr().out
+        assert "工作台 Agent" in out and "可以这样用我" in out  # 横幅在会话日志行之前
+
+    def test_intro_silent_for_non_tty(self, tmp_path: Path, capsys) -> None:
+        # CI / 管道形态横幅静默（§6.10）
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
+        assert capsys.readouterr().out == ""
+
 
 # ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
 

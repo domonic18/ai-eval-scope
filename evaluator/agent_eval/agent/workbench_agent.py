@@ -607,6 +607,17 @@ class WorkbenchAgent:
                 final = payload
         return final or await self._graph.ainvoke({"messages": messages}, config=runtime_config)
 
+    # ─── 自我介绍（§6.10 横幅：资产化，CLI 只渲染不写死） ────────────
+
+    def intro_text(self) -> str:
+        """渲染启动横幅文案（{root}/{domains} 字面 replace；资产无 intro 段返回空）。"""
+        prompts = _load_prompts()
+        intro = prompts.get("intro")
+        if not intro:
+            return ""
+        label = prompts.get("domain_labels", {}).get(self.domain, self.domain)
+        return intro.replace("{root}", str(self.server.root)).replace("{domains}", label)
+
     # ─── 首轮模板 ─────────────────────────────────────────────────
 
     @staticmethod
