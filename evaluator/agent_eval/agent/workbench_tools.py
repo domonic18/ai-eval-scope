@@ -42,6 +42,9 @@ _CRED_FIELD_RE = re.compile(
 # 运行时资料禁止引用仓库 docs/ 路径（pip 安装用户没有 docs/）
 _ASSETS_ROOT = PACKAGE_ROOT / "assets"
 _LIST_MAX_FILES = 200
+# 工具签名缺省截断（LLM 可传参覆盖）：读长文件防上下文爆炸
+_DEFAULT_READ_CHARS = 8_000  # read_file 单次正文
+_DEFAULT_REFERENCE_CHARS = 6_000  # read_reference 内置包样例摘录
 
 # 读取硬禁区（安全红线：凭证/token 不回流 LLM 上下文）——先于授权逻辑，用户同意也不可读：
 # 密钥区 ~/.agent_eval/（platform/llm/sut_credentials 三文件）、SUT 会话 token、.env 键值
@@ -237,7 +240,7 @@ class PackageToolServer(ToolExporterMixin):
                 files.append({"path": rel, "status": "unchanged"})
         return {"files": files, "root": str(self.root)}
 
-    async def read_file(self, path: str, max_chars: int = 8000) -> dict[str, Any]:
+    async def read_file(self, path: str, max_chars: int = _DEFAULT_READ_CHARS) -> dict[str, Any]:
         """读文件（Claude Code 式分级授权，arch/15 §6.11.1）。
 
         会话根内（相对或根内绝对路径）→ 暂存视图优先；随包资源 assets/ → 自动授权
@@ -403,7 +406,9 @@ class PackageToolServer(ToolExporterMixin):
                     hits.append(f"{pkg.manifest.ref}::{p.relative_to(pkg.root).as_posix()}")
         return {"query": query, "matched_files": hits[:20], "notes": _reference_notes()}
 
-    async def read_reference(self, ref: str, path: str, max_chars: int = 6000) -> dict[str, Any]:
+    async def read_reference(
+        self, ref: str, path: str, max_chars: int = _DEFAULT_REFERENCE_CHARS
+    ) -> dict[str, Any]:
         """只读内置/本地缓存包的文件内容（Agent 参照真实格式的合法通道，免沙盒逃逸）。
 
         ref 走 PackageManager 解析（如 ``chat`` / ``courseware``）；path 限目标包根内。

@@ -48,7 +48,7 @@ TOOL_BUDGETS: dict[str, int] = {
     "probe_protocol": 3,
     "probe_login": 6,  # 预览确认后实测；跨域候选逐个验证、用户纠正字段后的重试都计于此
 }
-MAX_DISCOVER_PATHS = 10
+_MAX_DISCOVER_PATHS = 10
 _MAX_EVIDENCE = 600
 _MAX_QUESTION_CHARS = 200  # ask_user 单问上限：多问打包会让用户不知从何答起
 # 抓取缓存（前端包分析原语的存储侧）：完整内容只进缓存不进 LLM 上下文，
@@ -198,12 +198,17 @@ class SUTProbeToolServer(ToolExporterMixin):
         credential_store: Any = None,  # CredentialStore
         log_path: Path | None = None,
         http_client_factory: Any = None,
+        budgets: dict[str, int] | None = None,  # 轮内预算按工具分池（缺省 TOOL_BUDGETS）
+        timeout_s: float = PROBE_TIMEOUT_S,
     ) -> None:
         self.allowed_hosts = {h.lower() for h in (allowed_hosts or {})}
         self.ask_fn = ask_fn
         self.credentials = credential_store
         self.log_path = log_path
         self._http_factory = http_client_factory
+        # 预算/超时可注入（WorkbenchAgentConfig 探测档位默认，arch/15 §6.11.2）
+        self.budgets = dict(budgets) if budgets is not None else dict(TOOL_BUDGETS)
+        self.timeout_s = timeout_s
         self._turn_calls: dict[str, int] = {}
         # 抓取缓存（url → 完整内容）：前端包分析的存储侧，会话内跨轮有效
         # （预算按轮重置但分析状态不丢——新轮可直接检索续查）
@@ -243,7 +248,7 @@ class SUTProbeToolServer(ToolExporterMixin):
             f.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
 
     def _budget(self, tool: str) -> dict[str, str] | None:
-        limit = TOOL_BUDGETS.get(tool)
+        limit = self.budgets.get(tool)
         if limit is None:
             return None
         self._turn_calls[tool] = self._turn_calls.get(tool, 0) + 1
@@ -295,7 +300,7 @@ class SUTProbeToolServer(ToolExporterMixin):
 
         if self._http_factory is not None:
             return self._http_factory()
-        return httpx.AsyncClient(timeout=PROBE_TIMEOUT_S, follow_redirects=False)
+        return httpx.AsyncClient(timeout=self.timeout_s, follow_redirects=False)
 
     # ── 工具一：可达性 ────────────────────────────────────────────
 
@@ -397,7 +402,9 @@ class SUTProbeToolServer(ToolExporterMixin):
                 self._cache_content(script_url, js)
 
         # 阶梯②：Agent 自拟候选路径的定向检查（≤10 条，GET 只读，非 404 记为存在）
-        probe_paths = [p for p in re.split(r"[|,，、\s]+", paths.strip()) if p][:MAX_DISCOVER_PATHS]
+        probe_paths = [p for p in re.split(r"[|,，、\s]+", paths.strip()) if p][
+            :_MAX_DISCOVER_PATHS
+        ]
         if probe_paths:
             client_cm = await self._client()
             async with client_cm as client:

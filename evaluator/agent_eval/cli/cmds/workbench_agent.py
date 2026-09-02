@@ -32,9 +32,13 @@ _TOOL_ARG_HINT = {
 }
 
 
-def _render_diff(diff: str, max_lines: int = 80) -> None:
+_DIFF_MAX_LINES = 80  # diff 终端预览截断（完整内容落盘为准，超长节略展示）
+_ASK_INLINE_QUESTION_CHARS = 60  # ask 桥单行提示的问题长度上限（超长改两行式展示）
+
+
+def _render_diff(diff: str) -> None:
     rprint("[dim]── diff（暂存 vs 磁盘）──[/dim]")
-    for line in diff.splitlines()[:max_lines]:
+    for line in diff.splitlines()[:_DIFF_MAX_LINES]:
         color = "green" if line.startswith("+") else ("red" if line.startswith("-") else "")
         rprint(f"[{color}]{line}[/{color}]" if color else line)
 
@@ -330,7 +334,7 @@ def _make_ask_fn() -> Any:
         if options:
             _show(question)
             return select("└─ 选择", options)
-        if len(question) <= 60:
+        if len(question) <= _ASK_INLINE_QUESTION_CHARS:
             return ask(f"? {question}")
         _show(question)
         return ask("└─ 输入")

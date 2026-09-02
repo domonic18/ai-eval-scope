@@ -33,10 +33,11 @@ from urllib.parse import urlparse
 
 import yaml
 
-from agent_eval.agent.sut_probe_tools import SUTProbeToolServer
+from agent_eval.agent.sut_probe_tools import PROBE_TIMEOUT_S, TOOL_BUDGETS, SUTProbeToolServer
 from agent_eval.agent.workbench_tools import PackageToolServer
-from agent_eval.config.paths import PACKAGE_ROOT
+from agent_eval.config.paths import PACKAGE_ROOT, paths
 from agent_eval.core.exceptions import AgentError
+from agent_eval.execution.auth.credentials import CredentialStore
 
 _PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "workbench_agent_prompts.yaml"
 
@@ -46,9 +47,23 @@ _REF_AGENT_CHOSEN = (
     "并在改动计划第一行明确给出「拟定引用: <scenario/id>」"
 )
 
-_MAX_DIALOGUE_ENTRIES = 40  # 持久化的对话条数上限（防跨会话无限膨胀）
-_RESUME_MAX_ENTRIES = 24  # 续作注入上下文的最多条数
-_RESUME_MAX_CHARS = 400  # 续作注入单条截断
+
+@dataclass(frozen=True, slots=True)
+class WorkbenchAgentConfig:
+    """会话机可调参数（arch/15 §6.11.2：tunables 单点载体）。
+
+    默认值是安全阀不是天花板；§6.7 P2 的 CLI 旗标
+    （``--max-turns/--max-segments/--budget-usd``）以本对象为同一载体注入。
+    """
+
+    max_turns: int = 40  # 单段安全阀基数（recursion_limit = max_turns × 2）
+    max_fix_rounds: int = 3  # 校验门禁回改轮上限
+    max_dialogue_entries: int = 40  # 持久化的对话条数上限（防跨会话无限膨胀）
+    resume_max_entries: int = 24  # 续作注入上下文的最多条数
+    resume_max_chars: int = 400  # 续作注入单条截断
+    # 探测域档位默认（D-WB-2 域 = 工具面 + 提示词段 + 门禁策略，域档位可覆盖）
+    probe_budgets: dict[str, int] = field(default_factory=lambda: dict(TOOL_BUDGETS))
+    probe_timeout_s: float = PROBE_TIMEOUT_S
 
 
 def _session_key(pkg_root: Path) -> str:
@@ -71,18 +86,20 @@ def _base_url_host(base_url: str) -> str:
     return (urlparse(candidate).hostname or "").lower()
 
 
-def _resume_messages(dialogue: list[dict[str, str]]) -> list[tuple[str, str]]:
+def _resume_messages(
+    dialogue: list[dict[str, str]], config: WorkbenchAgentConfig
+) -> list[tuple[str, str]]:
     """把持久化的此前对话组装为注入消息（user 记录 + assistant 应答确认）。
 
     只重放对话要点（用户输入与最终回复），不重放工具调用流量——文件内容
     以当前包内实际文件为准（回滚/落盘差异由提示言明，防 Agent 误判）。
     """
     lines = []
-    for d in dialogue[-_RESUME_MAX_ENTRIES:]:
+    for d in dialogue[-config.resume_max_entries :]:
         who = "用户" if d.get("role") == "user" else "助手"
         text = str(d.get("text", ""))
-        if len(text) > _RESUME_MAX_CHARS:
-            text = text[:_RESUME_MAX_CHARS] + "…"
+        if len(text) > config.resume_max_chars:
+            text = text[: config.resume_max_chars] + "…"
         lines.append(f"{who}: {text}")
     context = (
         "（续接此前会话——以下是本场景包先前对话的记录，其中用户给出的信息与讨论结论仍有效：\n"
@@ -131,26 +148,22 @@ class WorkbenchAgent:
         self,
         pkg_root: Path,
         *,
+        config: WorkbenchAgentConfig | None = None,
         llm_role: str = "agent",
-        max_turns: int = 40,
-        max_fix_rounds: int = 3,
         log_dir: Path | None = None,
         ask_fn: Any = None,  # async (question, *, options, secret) -> str | None
     ) -> None:
-        from agent_eval.config.paths import paths
-
+        self.config = config or WorkbenchAgentConfig()
         self.server = PackageToolServer(Path(pkg_root), ask_fn=ask_fn)
         # SUT 接入调试工具面（arch/15 §6.6）：与文件沙盒并列；凭证域隔离到密钥区
-        from agent_eval.execution.auth.credentials import CredentialStore
-
         self.probe = SUTProbeToolServer(
             ask_fn=ask_fn,
             credential_store=CredentialStore(),
+            budgets=self.config.probe_budgets,
+            timeout_s=self.config.probe_timeout_s,
             log_path=None,  # 探测证据随 agent_logs 统一落盘，见 _log_path
         )
         self.llm_role = llm_role
-        self.max_turns = max_turns
-        self.max_fix_rounds = max_fix_rounds
         self._messages: list[Any] = []
         # 会话记忆持久化（跨进程续作）：同一包目录命中同一记录文件
         self._session_file = (
@@ -186,7 +199,7 @@ class WorkbenchAgent:
         self._dialogue.append({"role": "user", "text": user_text})
         if reply:
             self._dialogue.append({"role": "assistant", "text": reply})
-        self._dialogue = self._dialogue[-_MAX_DIALOGUE_ENTRIES:]
+        self._dialogue = self._dialogue[-self.config.max_dialogue_entries :]
         try:
             self._session_file.parent.mkdir(parents=True, exist_ok=True)
             payload = {
@@ -257,7 +270,7 @@ class WorkbenchAgent:
         self._log("turn_start", instruction=user_text)
         self.probe.new_turn()  # 重置 SUT 探测轮内预算（arch/15 §6.6 总量约束）
         if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
-            self._messages.extend(_resume_messages(self._dialogue))
+            self._messages.extend(_resume_messages(self._dialogue, self.config))
         history_len = len(self._messages)
         self._messages.append(("user", user_text))
         try:
@@ -309,7 +322,7 @@ class WorkbenchAgent:
     ) -> dict[str, Any]:
         """校验门禁：失败注入错误回改（≤ max_fix_rounds），通过则原子落盘。"""
         templates: dict[str, str] = _load_prompts()["templates"]
-        for round_no in range(1, self.max_fix_rounds + 1):
+        for round_no in range(1, self.config.max_fix_rounds + 1):
             validation = await self.server.validate_package()
             errors = [*validation["errors"], *self._sut_protocol_gate()]
             if not errors:
@@ -317,7 +330,7 @@ class WorkbenchAgent:
                 self._log("commit", files=files)
                 return {"committed": True, "files": files}
             self._log("validate_failed", round=round_no, errors=errors)
-            if round_no == self.max_fix_rounds:
+            if round_no == self.config.max_fix_rounds:
                 return {"committed": False, "errors": errors, "reason": "max_fix_rounds"}
             self._messages.append(
                 (
@@ -373,16 +386,17 @@ class WorkbenchAgent:
         """
         if self._graph is None:
             self._graph = self._build_graph()
-        config = {"recursion_limit": self.max_turns * 2}
+        # langgraph 运行时配置（单段安全阀；撞线语义见 §6.7 P1 自动分段续跑）
+        runtime_config = {"recursion_limit": self.config.max_turns * 2}
         if on_event is None:
             result: dict[str, Any] = await self._graph.ainvoke(
-                {"messages": messages}, config=config
+                {"messages": messages}, config=runtime_config
             )
             return result
         final: dict[str, Any] = {}
         async for mode, payload in self._graph.astream(
             {"messages": messages},
-            config=config,
+            config=runtime_config,
             stream_mode=["messages", "updates", "values"],
         ):
             if mode == "messages":
@@ -418,7 +432,7 @@ class WorkbenchAgent:
                 _emit_tool_events(payload, on_event)
             elif mode == "values" and isinstance(payload, dict):
                 final = payload
-        return final or await self._graph.ainvoke({"messages": messages}, config=config)
+        return final or await self._graph.ainvoke({"messages": messages}, config=runtime_config)
 
     # ─── 首轮模板 ─────────────────────────────────────────────────
 

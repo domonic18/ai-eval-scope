@@ -14,7 +14,12 @@ from typing import Any
 import pytest
 import typer
 
-from agent_eval.agent.workbench_agent import TurnResult, WorkbenchAgent
+from agent_eval.agent.workbench_agent import (
+    TurnResult,
+    WorkbenchAgent,
+    WorkbenchAgentConfig,
+    _resume_messages,
+)
 from agent_eval.agent.workbench_tools import PackageToolServer
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
@@ -326,7 +331,9 @@ class TestAgentTurn:
 
         fake, _ = _replay([broken, broken])
         monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
-        agent = WorkbenchAgent(tmp_path, max_fix_rounds=2, log_dir=tmp_path / "log")
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=2), log_dir=tmp_path / "log"
+        )
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
@@ -367,7 +374,9 @@ class TestAgentTurn:
 
         fake, _ = _replay([write_sut, write_sut])
         monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
-        agent = WorkbenchAgent(tmp_path, max_fix_rounds=2, log_dir=tmp_path / "log")
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=2), log_dir=tmp_path / "log"
+        )
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
@@ -997,3 +1006,55 @@ class TestGeneralizedFileTools:
         text = WorkbenchAgent.first_turn_text("做一个代码安全评测包", new_package=True)
         assert "scenario-package-format.md" in text
         assert "rules/" not in text  # 目录清单不再 hardcode 在模板（task_sets/sut_configs 除外）
+
+
+class TestAgentConfig:
+    """WorkbenchAgentConfig——tunables 单点载体（§6.11.2，§6.7 P2 CLI 旗标同注入路径）。"""
+
+    def test_defaults_and_frozen(self) -> None:
+        cfg = WorkbenchAgentConfig()
+        assert cfg.max_turns == 40
+        assert cfg.max_fix_rounds == 3
+        assert cfg.probe_budgets  # 探测预算默认取 TOOL_BUDGETS
+        with pytest.raises((AttributeError, TypeError)):  # frozen dataclass 禁改字段
+            cfg.max_turns = 1  # type: ignore[misc]
+
+    def test_probe_domain_injection(self, tmp_path: Path) -> None:
+        # 探测域档位（预算/超时）经 config 注入 SUTProbeToolServer
+        cfg = WorkbenchAgentConfig(probe_budgets={"probe_url": 1}, probe_timeout_s=2.5)
+        agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
+        assert agent.probe.budgets == {"probe_url": 1}
+        assert agent.probe.timeout_s == 2.5
+
+    def test_resume_truncation_uses_config(self, tmp_path: Path) -> None:
+        # 续作注入的条数与单条截断由 config 决定（原模块常量迁入）
+        cfg = WorkbenchAgentConfig(resume_max_entries=1, resume_max_chars=5)
+        dialogue = [
+            {"role": "user", "text": "第一轮很长很长很长的需求"},
+            {"role": "user", "text": "短需求"},
+        ]
+        joined = "\n".join(text for _, text in _resume_messages(dialogue, cfg))
+        assert "短需求" in joined
+        assert "第一轮很长" not in joined  # 条数取最后 1 条
+
+    def test_config_defaults_and_frozen(self) -> None:
+        # tunables 单点（§6.11.2）：默认值冻结，改动须经显式 config 注入
+        cfg = WorkbenchAgentConfig()
+        assert cfg.max_turns == 40 and cfg.max_fix_rounds == 3
+        with pytest.raises(Exception):  # noqa: B017, PT011 — frozen dataclass 不允许改字段
+            cfg.max_turns = 1  # type: ignore[misc]
+
+    def test_config_injects_probe_domain(self, tmp_path: Path) -> None:
+        # 探测域档位默认随 config 注入 SUTProbeToolServer（预算/超时可调）
+        cfg = WorkbenchAgentConfig(probe_budgets={"probe_url": 1}, probe_timeout_s=2.5)
+        agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
+        assert agent.probe.budgets == {"probe_url": 1}
+        assert agent.probe.timeout_s == 2.5
+
+    def test_resume_injection_respects_config(self, tmp_path: Path) -> None:
+        # 续作注入条数/截断由 config 决定（原模块常量迁入）
+        cfg = WorkbenchAgentConfig(resume_max_entries=1, resume_max_chars=10)
+        dialogue = [{"role": "user", "text": "x" * 50}, {"role": "user", "text": "y"}]
+        msgs = dict(WorkbenchAgent.__dict__) and _resume_messages(dialogue, cfg)
+        joined = "\n".join(m[1] for m in msgs)
+        assert "y" in joined and "xxx…" not in joined
