@@ -43,7 +43,7 @@ from urllib.parse import urlparse
 import yaml
 
 from agent_eval.agent.callbacks import BudgetGuard
-from agent_eval.agent.probe import PROBE_TIMEOUT_S, TOOL_BUDGETS, SUTProbeToolServer
+from agent_eval.agent.probe import CORE_STEP, PROBE_TIMEOUT_S, TOOL_BUDGETS, SUTProbeToolServer
 from agent_eval.agent.workbench_tools import PackageToolServer
 from agent_eval.config.paths import PACKAGE_ROOT, paths
 from agent_eval.core.exceptions import AgentError, BudgetExceededError
@@ -571,13 +571,15 @@ class WorkbenchAgent:
                 f"{hint}"
             ]
         flavor = str(sut.get("protocol_flavor", "commands"))
-        core = "send_command" if flavor == "commands" else "run_wait"
+        core = CORE_STEP.get(flavor, "run_wait")
         if not fact["steps"].get(core):
             return [
                 f"{rel} 声明 protocol_flavor: {flavor}，但本会话协议矩阵不支持：核心端点 "
                 f"{core} 非 ✅（矩阵事实：{fact['steps']}）。重定向与 catch-all 200 不是"
-                "协议证据，建线程失败的 host 不能声明 agent_protocol——接口域很可能不在"
-                "该主机（与登录域同理，与用户确认真实接口域后重探）"
+                "协议证据；POST /threads 是否存在不在判据内（执行器契约由客户端生成"
+                "线程 ID、首个 run.start 隐式建线程）——核心端点不通说明接口域很可能"
+                "不在该主机：先复用会话内证据（登录域/检索到的 baseURL 域）逐一候选"
+                "探测，全部落空再向用户确认"
             ]
         return []
 

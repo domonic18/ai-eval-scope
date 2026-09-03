@@ -184,10 +184,10 @@ domain_segments:
       「验证过的结论」；分析页面、发现接口是你的职责——不要让用户去查开发者工具/
       Network 面板。
     - **协议路径同样不问用户**（与登录字段同理）：核心端点全 404 时先穷尽本会话证据
-      ——在已缓存的前端 JS 里检索请求痕迹（threads / commands / run.start /
-      EventSource / text/event-stream / makers-conversation-id），逐个候选域
-      probe_protocol 实测（登录实测成功的域是头号候选）；全部落空才问用户，问题要附
-      已知证据与已排除项，不要给臆造的示例地址。
+      ——在已缓存的前端 JS 里检索请求构造痕迹，检索词自拟（协议词汇只是起点，如
+      threads、commands、EventSource、text/event-stream），逐个候选域 probe_protocol
+      实测（登录实测成功的域是头号候选）；全部落空才问用户，问题要附已知证据与
+      已排除项，不要给臆造的示例地址。
     - **probe_login 只用于登录实测**——不要拿它探测协议端点（其防锁语义按登录设计，
       混用会让探测结论失去证据效力）。
 

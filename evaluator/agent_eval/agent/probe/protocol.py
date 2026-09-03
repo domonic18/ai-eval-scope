@@ -29,6 +29,9 @@ from agent_eval.execution.channels.thread_commands import (
 )
 
 _PROBE_INPUT = "agent-eval-probe"  # 临时线程的探测输入（收尾即清理）
+# flavor → 协议判定核心端点（单源）：矩阵步骤名与落盘对账门禁（workbench_agent
+# _reconcile_protocol）共用——协议判定只看核心端点，POST /threads 不在判据内
+CORE_STEP: dict[str, str] = {"commands": "send_command", "runs": "run_wait"}
 
 
 class ProtocolMixin:

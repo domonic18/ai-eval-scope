@@ -5,10 +5,11 @@
 
 from __future__ import annotations
 
+from agent_eval.agent.probe.protocol import CORE_STEP
 from agent_eval.agent.probe.server import (
     PROBE_TIMEOUT_S,
     TOOL_BUDGETS,
     SUTProbeToolServer,
 )
 
-__all__ = ["PROBE_TIMEOUT_S", "SUTProbeToolServer", "TOOL_BUDGETS"]
+__all__ = ["CORE_STEP", "PROBE_TIMEOUT_S", "SUTProbeToolServer", "TOOL_BUDGETS"]
