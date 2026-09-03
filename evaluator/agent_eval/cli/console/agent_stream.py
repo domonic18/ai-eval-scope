@@ -67,6 +67,8 @@ def make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[]
 
     - 段首空白吞掉：模型 text/thinking 段常以 ``\\n\\n`` 开头，直接接头部会出现
       「🤖 后空行」（实测反馈）；
+    - 段尾换行挂账：正文流结尾的 ``\\n`` 不立即落笔——同模式续写时补写（保留
+      段落间隔），工具行 / 模式切换前丢弃（实测反馈：工具行与上方正文间空隙）；
     - 思考 ↔ 正文切换才起行，同模式片段续写不换行；
     - 工具参数生成阶段（大文件内容在 tool_call args 里增量生成，不走 text 流）
       以 ``\\r`` 单行进度显示，避免数十秒无输出的「卡住」观感；仅 TTY。
@@ -78,6 +80,7 @@ def make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[]
         "pend": "",  # 参数生成中的工具名
         "pend_len": 0,
         "pend_shown": False,
+        "tail_nl": 0,  # 正文流尾部已收到、尚未落笔的换行数（挂账）
     }
 
     def _clear_pending() -> None:
@@ -88,10 +91,18 @@ def make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[]
 
     def _close_line() -> None:
         _clear_pending()
+        state["tail_nl"] = 0  # 尾部换行丢弃：工具行紧邻正文，不留空隙
         if state["mid_line"]:
             sys.stdout.write("\n")
             sys.stdout.flush()
             state.update(mid_line=False, mode="")
+
+    def _write_text(text: str, style: str | None) -> None:
+        pending, body = state["tail_nl"], text.rstrip("\r\n")
+        state["tail_nl"] = len(text) - len(body)
+        if body:
+            sys.stdout.write("\n" * pending)  # 同模式续写：此前挂账的段落间隔此刻补写
+            _write_stream(body, style)
 
     def _hint(name: str, args: dict[str, Any]) -> str:
         key = _TOOL_ARG_HINT.get(name)
@@ -132,9 +143,10 @@ def make_stream_emitter() -> tuple[Callable[[dict[str, Any]], None], Callable[[]
                     end="",
                 )
                 state.update(mid_line=True, mode=mode)
-            _write_stream(text, "dim" if mode == "thinking" else None)
+            _write_text(text, "dim" if mode == "thinking" else None)
             return
         if kind == "tool_args":
+            _close_line()  # 进度行独占一行：正文行先收尾（尾部换行已挂账，恰补一个换行）
             name = event.get("name") or state["pend"]
             if name and name != state["pend"]:
                 _clear_pending()

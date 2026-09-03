@@ -1042,6 +1042,37 @@ class TestStreamRender:
         out = capsys.readouterr().out
         assert "🔧 write_file" in out and "⏳" not in out and "\r" not in out
 
+    def test_emitter_trims_gap_before_tool_line(self, capsys) -> None:
+        # 实测反馈：正文流段尾换行在工具行前回收——工具行紧邻正文不留空隙；
+        # 同模式续写时挂账换行补写，段落间隔保留
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        emit({"type": "token", "text": "第一段\n\n"})
+        emit({"type": "token", "text": "第二段结束。\n\n\n"})
+        emit({"type": "tool_start", "name": "search_content", "args": {}})
+        finish()
+        out = capsys.readouterr().out
+        assert "第一段\n\n第二段" in out  # 段落间隔保留
+        assert "第二段结束。\n  🔧 search_content" in out  # 工具行紧邻（仅一个换行），无空行
+
+    def test_emitter_tool_args_starts_own_line(self, capsys) -> None:
+        # 正文未收尾时 tool_args 先收行再显进度（\r 不得回写覆盖正文行）——TTY 语义，
+        # 非 TTY 只验证事件链不崩且工具行正常
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        emit({"type": "token", "text": "正文进行中"})
+        emit({"type": "tool_args", "name": "write_file", "delta": 10})
+        emit({"type": "tool_start", "name": "write_file", "args": {"path": "a.yaml"}})
+        finish()
+        out = capsys.readouterr().out
+        assert "正文进行中" in out and "🔧 write_file · a.yaml" in out
+
 
 # ── 泛化文件工具（Claude Code 式分级授权，arch/15 §6.11.1） ─────────────
 
