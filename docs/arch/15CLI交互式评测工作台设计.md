@@ -203,6 +203,13 @@ SUT 凭证缺失 → secrets set <ref>.<field> ／ 无项目包 → scenario new
   `start --domain agent` 提供等价直达（与 `--domain auth` 别名惯例一致）。跨域会话内
   任务对象切换仍随数据集域落地（§6.8）；一级入口先行不等它——复用既有 REPL 宿主与
   既有工具面，横幅如实声明当前域。
+  **直入对话，无前置菜单（v3.4，实测反馈修订）**：进入即横幅介绍能力与示例，
+  随后直接 REPL——「新建 / 改已有包 / 排查」都是会话里的一句话，不由菜单分流
+  （对标 claude：打开即对话，能力介绍先行）。默认任务对象 = 新包草稿
+  （`workspace/.staging`，会话后按清单 id 归位 `cwd/<id>-package/`，空会话退出
+  清理草稿）；改已有项目包由 Agent 经 `read_file` 读入现有内容后在草稿中改造
+  （prompts 域段「改造已有项目包」规约），`scenario new/edit --mode agent` 命令
+  与域内快捷方式保留为显式直达。
 - **域内入口 = 档位快捷方式**：场景包域两项标签调整为「用 Agent 创建场景包」「用 Agent
   修改选中的包」——语义从「Agent 的功能」改为「预载对象上下文的快捷方式」（改包先经
   `select_editable_ref` 选定，选中对象注入首条上下文；对标在仓库目录里启动 claude，
@@ -696,11 +703,14 @@ prompt 段 + 档位登记，**不改会话机**。
   条对话」提示；`--json` 与非 TTY（`--yes --instruction` CI 形态）静默跳过横幅。
 - §3.5 主菜单一级入口与域内快捷方式共用同一横幅（档位不同 → `{domains}`/示例文案不同）。
 
-> **落地形态（2026-09-03）**：五要素文案落 `workbench_agent_prompts.yaml::intro` 资产，
-> `WorkbenchAgent.intro_text()` 字面 replace 渲染；CLI `_render_intro`（rich Panel +
-> `is_json() or not sys.stdout.isatty()` 静默）在 `_session` 开头、会话日志行之前调用；
-> §3.5 一级入口 `agent_workbench_entry` + `--domain agent` 直达 + LLM preflight 阻断同批
-> 落地；测试覆盖横幅渲染（TTY 垫片）/非 TTY 静默/`{root}`/`{domains}` 与系统提示同源。
+> **落地形态（2026-09-03；v3.4 实测反馈修订）**：五要素文案落
+> `workbench_agent_prompts.yaml::intro` 资产，`WorkbenchAgent.intro_text()` 字面 replace
+> 渲染；CLI `_render_intro`（rich Panel 定宽 ≤100 列——超宽终端不拉满整行，防 CJK 双宽
+> 渲染截断 + `is_json() or not sys.stdout.isatty()` 静默）。**横幅先于任何输入**：
+> §3.5 一级入口渲染横幅后直入 REPL（`_session(show_intro=False)` 抑制重复，直连命令
+> `scenario new/edit --mode agent` 仍由 `_session` 渲染）——实测反馈曾先问需求后显横幅，
+> 顺序颠倒。样例四条（创建+探测主轴 / 改已有项目包 / 参照内置包新建 / 执行报错排查）
+> 与档位真实能力一致；LLM preflight 阻断仍在横幅之前（无模型 Agent 不可用）。
 
 ### 6.11 代码质量与开源规范优化（v3.2；**已落地** 2026-09-03 feat/agent-sut-debug）
 
@@ -908,3 +918,4 @@ class WorkbenchAgentConfig:
 | **v3.1** | 2026-09-02 | **工作台 Agent 入口与首屏 UX 方案**（用户诉求：start 菜单项随 Agent 定位调整 + 启动后给自我介绍）：①新增 **§3.5 主菜单一级入口「工作台 Agent」**——Agent 从域内动作升为工作台首选工作方式；域内两项入口降格为「档位快捷方式」（预载选中包上下文，对标 cwd 启动 claude）；`--domain agent` 直达；Agent 入口 preflight 阻断未配模型（区别于查看类「只提示不阻断」）；②新增 **§6.10 启动横幅与自我介绍**——五要素（身份/任务对象与能力域/使用示例/红线与确认/控制方式）+ 场景包域成稿文案；文案资产化（prompts 资产 `intro` 段按档位字面 replace 渲染，CLI 只渲染不写死，新域上线改资产不改代码）；rich Panel 渲染、`--json`/非 TTY 静默。随 §6.8 会话机切换一并实施 |
 | **v3.2** | 2026-09-02 | **§6.11 代码质量与开源规范优化，方案稿**（开源前置 review：①结构知识 hardcode ②常量散落）。**§6.11.1 结构知识外置**：新资产 `assets/guides/scenario-package-format.md`（随包发布、与 arch/13 §四同步）+ `read_guide(topic)` 工具 + prompts 瘦身（「内容规范」段退役、参照指引收敛到工具返回、结构字段表全部移出）+ 真相源分层（validate 门禁=硬真相，guide 漂移最坏多一轮回改不产生坏包）；**§6.11.2 常量归集与命名**：按可变性分层（tunables → `WorkbenchAgentConfig` frozen dataclass，与 §6.7 P2 CLI 旗标同载体合流；固定阈值就近具名统一 `_MAX_*`）+ 常量盘点表 + `PACKAGE_ROOT` 违规修正 + `scenario_agent.py` 拆分（流式渲染迁 `console/agent_stream.py`）+ `sut_probe_tools.py` 拆分（P1）+ ToolSpec 描述漂移修正。随 §6.7/§6.8 切换实施；PACKAGE_ROOT / 描述修正可独立先行 |
 | **v3.3** | 2026-09-03 | **v3.0–v3.2 全案落地收官**（feat/agent-sut-debug，9 提交，单测 735 → 777 绿）：**①§6.8 组织迁移**——`package_agent.py→workbench_agent.py`、`package_tools.py→workbench_tools.py`、`cli/cmds/scenario_agent.py→cmds/workbench_agent.py`、prompts 资产更名 `workbench_agent_prompts.yaml`（D-CLI-6 一次性切换，无兼容层）；**②D-WB-2 分段装配**——prompts 拆 `system_prompt_base`（会话机段零域语义）+ `domain_segments` + `domain_labels`，`_build_system_prompt` 统一字面 replace，未装配域报错，凭证明文红线升格域无关泛化表述；**③§6.7 会话机 P0–P3**——MemorySaver salvage + 孤儿 tool_call 修复（D-WB-4/5）、撞线自动分段续跑 + checkpoint 事件（P1）、BudgetGuard 预算缰绳 + `WorkbenchAgentConfig` tunables 单点 + `--max-turns/--max-segments/--budget-usd`（P2）、prompts 进度即写盘规约（P3）、REPL「继续/放弃」处置闭环（落地注记见 §6.7）；**④§6.10 横幅**——intro 资产五要素 + rich Panel + `--json`/非 TTY 静默 + §3.5 一级入口/`--domain agent`/preflight 阻断；**⑤§6.11 质量**——结构知识外置 `assets/guides/scenario-package-format.md` + 泛化 `read_file/list_files` 分级授权（read_guide 专用工具否决，泛化为 Claude Code 式读写机制）、流式渲染拆 `console/agent_stream.py`、**P1 probe 拆分** `agent/probe/` 包五模块（fetch/discovery/protocol/login mixin + server 组装壳，D-WB-7 一域一 server 不变）、ToolSpec 描述修正。langgraph 缺席优雅降级；需求侧同步待办（req/04 通用域条目）仍开放 |
+| **v3.4** | 2026-09-03 | **§3.5/§6.10 实测反馈修订：入口直入对话，横幅先于输入**（用户反馈：①横幅在需求输入之后才显示，顺序反了；②「工作台 Agent」入口不应再有「新建/改包」菜单——这些能力应在对话中实现，介绍时说明能力并给样例即可）。①`agent_workbench_entry` 去前置菜单：`_guard_llm_ready` → 横幅（能力+示例四条）→ 直入 REPL；默认任务对象 = 新包草稿（归位提示保留），会话结束按清单 id 归位 `cwd/<id>-package/`、空会话退出清理草稿、中断保留草稿（`--output` 指回续作）；②改已有项目包为会话内能力——prompts 域段新增「改造已有项目包」规约（read_file 读入→草稿改造→归位冲突不覆盖交用户处置）；③`_session(show_intro=False)` 抑制重复横幅，`scenario new/edit --mode agent` 直连命令仍自带横幅；④`_render_intro` Panel 定宽 ≤100 列（超宽终端防 CJK 双宽渲染截断——实测贴图丢行即此因，内容本体三档宽度渲染零缺失）；⑤样例改写：创建+探测主轴 / 改 `./study-trip-package` / 参照 chat 新建 / 执行报错排查。`scenario new/edit` 命令与域内快捷方式保留为显式直达 |

@@ -888,6 +888,87 @@ class TestCliEntries:
         sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
         assert capsys.readouterr().out == ""
 
+    def test_agent_entry_direct_conversation_no_menu(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # §3.5 实测反馈：入口无前置菜单——横幅先于会话直入 REPL（Claude Code 式），
+        # 新建/改已有包都是会话里的一句话；默认任务对象 = 新包草稿
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        draft = tmp_path / "draft"
+        monkeypatch.setattr(sa, "_new_draft_root", lambda: draft)
+        order: list[str] = []
+        monkeypatch.setattr(sa, "_render_intro", lambda agent: order.append("intro"))
+
+        def fake_session(agent: Any, text: Any, *, show_intro: bool = True) -> None:
+            assert show_intro is False  # 入口已渲染，会话内不重复
+            order.append("session")
+
+        monkeypatch.setattr(sa, "_session", fake_session)
+        sa.agent_workbench_entry(None)
+        assert order == ["intro", "session"]  # 介绍先于输入（顺序曾颠倒）
+        assert not draft.exists()  # 空会话退出 → 草稿清理，不留残目录
+
+    def test_agent_entry_keeps_draft_when_session_has_content(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 会话产出了部分内容但清单未落盘（用户提前退出）→ 归位失败保留草稿
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        draft = tmp_path / "draft"
+        monkeypatch.setattr(sa, "_new_draft_root", lambda: draft)
+
+        def fake_session(agent: Any, text: Any, *, show_intro: bool = True) -> None:
+            (agent.server.root / "rules").mkdir(parents=True)
+            (agent.server.root / "rules" / "a.yaml").write_text(RULES, encoding="utf-8")
+
+        monkeypatch.setattr(sa, "_session", fake_session)
+        with pytest.raises(typer.Exit) as exc:
+            sa.agent_workbench_entry(None)
+        assert exc.value.exit_code == 1
+        assert draft.exists()  # 草稿保留，--output 指回续作
+
+    def test_agent_entry_interrupt_keeps_draft(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        draft = tmp_path / "draft"
+        monkeypatch.setattr(sa, "_new_draft_root", lambda: draft)
+
+        def boom(agent: Any, text: Any, *, show_intro: bool = True) -> None:
+            raise KeyboardInterrupt
+
+        monkeypatch.setattr(sa, "_session", boom)
+        with pytest.raises(KeyboardInterrupt):
+            sa.agent_workbench_entry(None)
+        assert draft.exists()  # 中断 ≠ 放弃：草稿保留
+
+    def test_session_intro_flag_controls_banner(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # show_intro=False 抑制重复横幅（入口形态）；默认 True（scenario new/edit 直连）
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        _seed_valid_package(tmp_path)
+        calls: list[bool] = []
+        monkeypatch.setattr(sa, "_render_intro", lambda agent: calls.append(True))
+        monkeypatch.setattr(
+            "agent_eval.agent.workbench_agent.run_turn",
+            lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
+                reply="ok", diff="", staged=False
+            ),
+        )
+        inputs = iter(["", "", ""])
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        sa._session(agent, None, show_intro=False)
+        sa._session(agent, None)
+        assert calls == [True]
+
 
 # ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
 

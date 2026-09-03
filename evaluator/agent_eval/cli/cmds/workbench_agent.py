@@ -127,25 +127,32 @@ def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
 
 
 def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — WorkbenchSession
-    """``start`` 主菜单一级入口（§3.5 通用档位 P0 形态）。
+    """``start`` 主菜单一级入口（§3.5）：横幅介绍能力后**直入对话**（Claude Code 式）。
 
-    工作台 Agent 是首选工作方式——跨域会话内任务对象切换随数据集域落地（§6.8），
-    当前先以「选任务起点」引导：新包（Agent 拟名草稿）或改已有包；两支共用同一
-    REPL 横幅（档位 = 包域，§6.10）。LLM 未配置在此阻断（无模型 Agent 不可用）。
+    无前置菜单——新建 / 改已有包 / 排查都是会话里的一句话（能力与样例见横幅，
+    §6.10）。默认任务对象为新包草稿（workspace/.staging，会话后按清单 id 归位
+    ``cwd/<id>-package/``）；改已有项目包由 Agent 经 read_file 读入现有内容后在
+    草稿中改造（prompts 域段规约）。LLM 未配置在此阻断（无模型 Agent 不可用）。
     """
-    _guard_llm_ready()
-    from agent_eval.cli.cmds.scenario import select_editable_ref
+    from agent_eval.agent.workbench_agent import WorkbenchAgent
 
-    action = select(
-        "工作台 Agent（当前能力域：场景包工程 · SUT 接入调试）",
-        ["描述需求，生成新场景包", "选择已有场景包修改", "返回"],
-    )
-    if action.startswith("描述需求"):
-        agent_new_package(ref=None, output=None, instruction=None, yes=False, trust_agent=False)
-    elif action.startswith("选择已有"):
-        agent_edit_package(
-            ref=select_editable_ref(), instruction=None, yes=False, trust_agent=False
-        )
+    _guard_llm_ready()
+    root = _new_draft_root()
+    root.mkdir(parents=True)
+    rprint("[dim]包完成后将归位到 ./<包名>-package/（包名以 Agent 拟定的清单 id 为准）[/dim]")
+    agent = WorkbenchAgent(root, ask_fn=_make_ask_fn())
+    _render_intro(agent)
+    try:
+        _session(agent, None, show_intro=False)
+    except BaseException:
+        # 中断 ≠ 放弃：草稿保留，续作用 --output 指回（与 agent_new_package 同约定）
+        rprint(f"[yellow]⚠ 会话中断，草稿已保留: {root}[/yellow]")
+        rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {root}[/dim]")
+        raise
+    if not any(root.iterdir()):
+        root.rmdir()  # 空会话（用户看一眼就退出）不留草稿残目录
+        return
+    _finalize_new_package(root, movable=True)
 
 
 def _render_intro(agent: Any) -> None:  # noqa: ANN001 — WorkbenchAgent
@@ -160,19 +167,25 @@ def _render_intro(agent: Any) -> None:  # noqa: ANN001 — WorkbenchAgent
     text = agent.intro_text()
     if not text:
         return
-    rprint(Panel(Text(text.rstrip()), border_style="cyan", title="工作台 Agent"))
+    # 定宽上限：超宽终端不拉满整行（CJK 双宽下超宽 Panel 易被终端渲染截断）
+    from rich.console import Console
+
+    width = min(Console().width or 100, 100)
+    rprint(Panel(Text(text.rstrip()), border_style="cyan", title="工作台 Agent", width=width))
 
 
-def _session(agent: Any, first_text: str | None) -> None:
+def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> None:
     """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。
 
-    启动先渲染自我介绍横幅（§6.10，会话日志行之前；续作提示其后）。
+    启动渲染自我介绍横幅（§6.10，会话日志行之前）；入口已渲染过横幅时以
+    ``show_intro=False`` 抑制，避免重复（§3.5 直入对话形态）。
     中断/瞬时错误 = 暂停保现场（§6.7 D-WB-4）：暂存与对话上下文完整，「继续」
     接着跑；「放弃」是唯一回滚触发器（显式指令，防误触丢进度）。
     """
     import asyncio
 
-    _render_intro(agent)
+    if show_intro:
+        _render_intro(agent)
 
     def _attempt(text: str) -> None:
         try:
