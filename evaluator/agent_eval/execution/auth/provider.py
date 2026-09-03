@@ -20,7 +20,7 @@ from agent_eval.execution.auth.session import (
     SUTSession,
     session_from_login_response,
 )
-from agent_eval.execution.registry import SUTSystemConfig
+from agent_eval.execution.registry import SUTSystemConfig, resolve_login_url
 
 
 class AuthProvider:
@@ -129,10 +129,9 @@ class AuthProvider:
             for field in required_credential_fields(self.sut)
         }
         body = JinjaTemplate(login.body_template).render(**context)
-        if login.path.startswith(("http://", "https://")):
-            url = login.path
-        else:
-            url = f"{self.sut.base_url.rstrip('/')}/{login.path.lstrip('/')}"
+        # URL 解析单源（registry.resolve_login_url）：创建侧落盘对账门禁用同一
+        # 逻辑还原「配置实际会打到哪个 URL」，与执行行为永不漂移
+        url = resolve_login_url(self.sut.base_url, login.path)
         client_cm = (
             self._http_client_factory()
             if self._http_client_factory

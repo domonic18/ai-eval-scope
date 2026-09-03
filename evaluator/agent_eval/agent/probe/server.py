@@ -87,8 +87,11 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         ToolSpec(
             name="probe_login",
             description=(
-                "登录实测：缺凭证先报 missing_fields；发送前必出脱敏预览（完整 URL + 掩码"
-                " body）并经用户确认；同一接口与字段组合只试一次"
+                "登录实测：login_cfg 与 sut_configs 的 auth.login 同构"
+                "（method/path/body_template/token_path，path 填完整 http(s):// URL）；"
+                "缺凭证先报 missing_fields；发送前必出脱敏预览（完整 URL + 掩码 body）"
+                "并经用户确认；同一接口与字段组合只试一次；成功返回可直接照抄的"
+                " sut_config_auth_snippet（原样写入包的 auth: 段，勿改写）"
             ),
             method="probe_login",
         ),
@@ -131,9 +134,12 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         # 防锁：同 (ref, host, body_template) 只实测一次——配置未变不重试；
         # 用户纠正字段/接口后模板变化视为新组合，允许再次实测
         self._login_tried: set[tuple[str, str, str]] = set()
-        # 已实测过协议矩阵的 host（供 WorkbenchAgent 落盘门禁：声明 agent_protocol
-        # 通道的 sut_config，其 base_url 必须出自这里的实测证据）
-        self._protocol_hosts: set[str] = set()
+        # 证据账本（落盘对账门禁的事实源，arch/15 §6.6 v3.6）：探测工具在验证
+        # 成功时把事实**机械登记**于此（不经 LLM 转述），提交门禁用执行器同款
+        # 解析逻辑与暂存 sut_configs 逐字段对账——验证结论到落盘配置的传递
+        # 「原样即可、变形必被打回」
+        self._verified_logins: dict[str, dict[str, str]] = {}  # ref(小写) → 实测事实
+        self._verified_protocols: dict[str, dict[str, Any]] = {}  # host → 矩阵事实
 
     # ── 会话挂点与共享设施（mixin 协作契约的实现侧） ───────────────
 
@@ -153,6 +159,26 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         entry = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S"), "tool": tool, **payload}
         with self.log_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
+
+    # ── 证据账本（门禁对账的事实源：登记/查询收口在此，mixin 经助手写入） ──
+
+    def _record_login(self, fact: dict[str, str]) -> None:
+        """登录实测成功 → 登记账本（同 ref 取最新一次成功）。"""
+        self._verified_logins[fact["ref"].lower()] = fact
+        self._log("login_verified", ref=fact["ref"], url=fact["url"])
+
+    def _record_protocol(self, host: str, flavor: str, steps: dict[str, bool]) -> None:
+        """协议矩阵实测 → 协议账本（含失败矩阵——「探测过但未支持」也是事实）。"""
+        self._verified_protocols[host.lower()] = {"flavor": flavor, "steps": steps}
+        self._log("protocol_probed", host=host, flavor=flavor, steps=steps)
+
+    def verified_login(self, ref: str) -> dict[str, str] | None:
+        """查登录实测事实（落盘对账门禁用）。"""
+        return self._verified_logins.get(ref.lower())
+
+    def verified_protocol(self, host: str) -> dict[str, Any] | None:
+        """查协议矩阵事实（落盘对账门禁用）。"""
+        return self._verified_protocols.get(host.lower())
 
     def _budget(self, tool: str) -> dict[str, str] | None:
         limit = self.budgets.get(tool)

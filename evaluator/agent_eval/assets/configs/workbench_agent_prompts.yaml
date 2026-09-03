@@ -93,12 +93,21 @@ domain_segments:
          400/401/422=接口存在再补字段凭证）；只有页面地址时 discover_login 快检
          （返回的 form 可能是搜索框等非登录表单，判读是你的职责），未命中走下面的
          前端包分析法——字段名不要问用户（用户普遍不知道）
-      ③ 被测系统是 agent-protocol → probe_protocol 逐端点验证，按 ✅ 端点写
-         protocol_flavor；**落盘门禁强制此项**——sut_configs 里声明
-         channel: agent_protocol 而 base_url 的主机未经本会话 probe_protocol
-         实测时，校验会失败打回（协议形态与地址不得凭参照包结构或想象填写，
-         base_url 也不得默认用入口页面域——接口域与页面域常分离）
-      ④ 登录配置 → probe_login 实测：body_template 语法为 Jinja2——变量写
+      ③ 被测系统是 agent-protocol → probe_protocol 逐端点验证；只有建线程与
+         核心端点（commands / runs）均为 ✅ 才可声明 channel: agent_protocol 与
+         protocol_flavor——**重定向（301/302）与 catch-all 200 不是协议证据**
+         （矩阵会如实标注），建线程失败的 host 不能声明 agent_protocol（接口域
+         很可能不在该主机，与登录域同理）。**落盘对账门禁强制此项**：门禁按
+         本会话矩阵事实逐字段核对声明，探测过但核心端点非 ✅、或未经探测都会
+         打回——协议形态与地址不得凭参照包结构或想象填写，base_url 也不得
+         默认用入口页面域（接口域与页面域常分离）
+      ④ 登录配置 → probe_login 实测：login_cfg 与 sut_configs 的 auth.login
+         **同构**（method/path/body_template/token_path，path 填完整 http(s)://
+         URL——跨域登录接口直接写完整地址，执行器没有 login.base_url 字段）；
+         实测成功时返回 sut_config_auth_snippet——把这段 YAML **原样**写进
+         sut_configs 的 auth: 段（勿拆分 URL、勿增删字段、勿改写 body_template），
+         对账门禁会用执行器同款逻辑与实测证据逐字段比对，不一致打回；
+         body_template 语法为 Jinja2——变量写
          {{ username }} / {{ password }}（${var}、%s 等 shell 风格不会被渲染、会原样
          发出），常量字段直接写字面值（从检索摘录读出的常量，如 "platform": "fs"）；
          发送前预览是**最终报文**——body 里若仍见 ${...} 之类占位符即模板语法错误，

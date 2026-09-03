@@ -539,6 +539,46 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
   `请输入 ref.field` 用户不知道在输入什么」）；probe_login 预览从 host 改**完整 URL**（路径抄错
   只有在预览里用户才看得见）并在结果中携带 url。
 
+#### 证据账本与落盘对账（v3.6；2026-09-03 feat/agent-sut-debug）
+
+> 实测复盘（bj33 安全评测包执行登录 404）：Agent 实测的是 sasan-server 域登录接口
+> （probe_login 200+token），落盘时却拆成相对 `path` + 自造 `login.base_url` 字段
+> （执行器无此字段，Pydantic `extra="allow"` 静默丢弃）→ 执行时拼回页面域 404；
+> 同会话在「POST /threads 404」的矩阵结论上仍声明 `channel: agent_protocol`（页面域
+> 探测过，旧门禁只查「host 探测过」即放行）。三层文档知识（schema 描述 / chat 参照包
+> 注释 / guide 示例）都在，LLM 转述落盘时仍然变形——**教训：凡可机械传递的事实不经
+> LLM 转述；必须转述处，由机械对账兜底**。点查式门禁（v2.13）逐字段打补丁不可持续，
+> 改为通用机制。
+
+**三环防线**（「验证结果正确落到场景包文件」的完整链路）：
+
+| 环 | 机制 | 落点 |
+|---|---|---|
+| ① 同构词汇（消除转换需求） | `probe_login` 的 `login_cfg` 与执行器 `auth.login` 同形：`path` 承载完整 URL（`url` 键保留为兼容别名；不接受 `base_url` 拼接——那正是变形源头） | `probe/login.py` |
+| ② 工具返回即产物（装配在证据产生处完成一次） | 实测成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责收缩为「原样粘贴」 | `probe/login.py::_render_auth_snippet` |
+| ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path；协议核心端点 ✅）——不一致打回并携带权威片段 | `workbench_agent.py::_sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
+
+配套修正：
+
+- **证据账本**：`SUTProbeToolServer` 持有 `_verified_logins`（ref→登录事实）与
+  `_verified_protocols`（host→矩阵事实，含失败矩阵）；`protocol_hosts` 降为派生视图；
+  登记/查询收口 `record/verified_*`（mixin 经助手写入，门禁经公共访问器读取）。
+- **协议假阳性修正**（`probe/protocol.py`）：3xx 重定向不再计 ✅（页面服务/catch-all
+  常见——曾是「commands ✅」假证据的来源）；建线程失败（无 tid）即跳过后续端点并
+  如实记录「未探测」——对空 tid 畸形路径的请求落在 catch-all 上会产出假 ✅。
+- **未知键显式拒绝**（`registry.validate_sut_config_document`）：执行器模型
+  `extra="allow"`（运行时前向兼容）意味着发明字段被静默丢弃——包校验层以
+  `model_fields` 为白名单（不引入第二份会漂移的字段清单）把「静默丢弃」变成
+  「显式打回」，并复用 `SUTSystemConfig` 校验必填/枚举/`${VAR}` 展开语义；
+  `validate_package`（staging）与 `scenario validate`（CLI）双端接线。
+- **URL 解析单源**：`registry.resolve_login_url` 为「配置实际会打到哪个 URL」的
+  唯一真相，`provider._login_by_api` 与落盘门禁共用，永不漂移。
+- prompts/guide 同步：auth 段原样照抄规约、核心端点 ✅ 才可声明、301 非证据、
+  「没有 login.base_url 字段」。
+
+> 执行侧配套（后续项，未入本版）：run 级登录冒烟预检——首个认证层配置错误应终止
+> run 而非 15 任务逐个烧 LLM 重试（本轮故障的放大器）。
+
 ### 6.7 会话机：长任务执行与失控防线（v3.0 方案；**P0–P3 已落地** 2026-09-03 feat/agent-sut-debug）
 
 > 实测复盘（2026-09-02，bj33 包创建会话）：Agent 独立走完前端包分析最难的一段（模块映射
@@ -923,3 +963,4 @@ class WorkbenchAgentConfig:
 | **v3.3** | 2026-09-03 | **v3.0–v3.2 全案落地收官**（feat/agent-sut-debug，9 提交，单测 735 → 777 绿）：**①§6.8 组织迁移**——`package_agent.py→workbench_agent.py`、`package_tools.py→workbench_tools.py`、`cli/cmds/scenario_agent.py→cmds/workbench_agent.py`、prompts 资产更名 `workbench_agent_prompts.yaml`（D-CLI-6 一次性切换，无兼容层）；**②D-WB-2 分段装配**——prompts 拆 `system_prompt_base`（会话机段零域语义）+ `domain_segments` + `domain_labels`，`_build_system_prompt` 统一字面 replace，未装配域报错，凭证明文红线升格域无关泛化表述；**③§6.7 会话机 P0–P3**——MemorySaver salvage + 孤儿 tool_call 修复（D-WB-4/5）、撞线自动分段续跑 + checkpoint 事件（P1）、BudgetGuard 预算缰绳 + `WorkbenchAgentConfig` tunables 单点 + `--max-turns/--max-segments/--budget-usd`（P2）、prompts 进度即写盘规约（P3）、REPL「继续/放弃」处置闭环（落地注记见 §6.7）；**④§6.10 横幅**——intro 资产五要素 + rich Panel + `--json`/非 TTY 静默 + §3.5 一级入口/`--domain agent`/preflight 阻断；**⑤§6.11 质量**——结构知识外置 `assets/guides/scenario-package-format.md` + 泛化 `read_file/list_files` 分级授权（read_guide 专用工具否决，泛化为 Claude Code 式读写机制）、流式渲染拆 `console/agent_stream.py`、**P1 probe 拆分** `agent/probe/` 包五模块（fetch/discovery/protocol/login mixin + server 组装壳，D-WB-7 一域一 server 不变）、ToolSpec 描述修正。langgraph 缺席优雅降级；需求侧同步待办（req/04 通用域条目）仍开放 |
 | **v3.4** | 2026-09-03 | **§3.5/§6.10 实测反馈修订：入口直入对话，横幅先于输入**（用户反馈：①横幅在需求输入之后才显示，顺序反了；②「工作台 Agent」入口不应再有「新建/改包」菜单——这些能力应在对话中实现，介绍时说明能力并给样例即可）。①`agent_workbench_entry` 去前置菜单：`_guard_llm_ready` → 横幅（能力+示例四条）→ 直入 REPL；默认任务对象 = 新包草稿（归位提示保留），会话结束按清单 id 归位 `cwd/<id>-package/`、空会话退出清理草稿、中断保留草稿（`--output` 指回续作）；②改已有项目包为会话内能力——prompts 域段新增「改造已有项目包」规约（read_file 读入→草稿改造→归位冲突不覆盖交用户处置）；③`_session(show_intro=False)` 抑制重复横幅，`scenario new/edit --mode agent` 直连命令仍自带横幅；④`_render_intro` Panel 定宽 ≤100 列（超宽终端防 CJK 双宽渲染截断——实测贴图丢行即此因，内容本体三档宽度渲染零缺失）；⑤样例改写：创建+探测主轴 / 改 `./study-trip-package` / 参照 chat 新建 / 执行报错排查。`scenario new/edit` 命令与域内快捷方式保留为显式直达 |
 | **v3.5** | 2026-09-03 | **§6.6 防锁红线修订：失败语义分层，不误伤路径探索**（用户实测反馈：提供了正确登录 API 地址与凭证后，Agent 对 404 候选路径的连续探索被防锁拦截，「实际真正的探索请求被拦截了」）。根因：防锁键（ref+URL+模板）的入锁不分失败语义——404（路径不存在，请求未到认证层，无凭证校验即无撞锁风险）与 401/422（认证层已介入）同等入锁，把「路径探索」误判为「试错撞锁」。修复（probe/login.py）：①入锁时机从发送前移到响应后，仅认证层已介入的失败（非 404）入锁——404 与网络失败不入锁，同组合/换路径均可继续实测（受 probe_login 轮内预算约束）；②404 guidance 改探索指引（候选依据 discover_login 返回与前端包分析结论，openapi/form 优先，勿凭空拼凑路径清单）；③防锁拒绝文案言明「换路径探测不受此限」；④prompts 域段防锁条目改分层表述。红线本意保留：4xx 同组合仍只试一次，解锁通道不变（用户核对后改模板=新组合 / 重新录入凭证）。测试 783 → 785（404 探索放行 / 网络失败不入锁；既有 401 防锁四测全部不动仍绿） |
+| **v3.6** | 2026-09-03 | **§6.6 证据账本与落盘对账：验证结果机械落到场景包文件**（用户实测反馈：bj33 安全包执行登录一直 404——创建会话实测的是 sasan-server 域登录接口，落盘时拆成相对 path + 自造 `login.base_url` 字段被执行器静默丢弃拼回页面域；且在「POST /threads 404」矩阵结论上仍声明 agent_protocol。用户要求系统性解决而非逐字段打 patch）。新增 §6.6「证据账本与落盘对账」三环防线：①`probe_login` 词汇与执行器 `auth.login` 同构（path=完整 URL，弃 base_url 拼接）；②实测成功由工具机械渲染 `sut_config_auth_snippet` 并登记证据账本（工具返回即产物，装配在证据产生处完成一次）；③落盘门禁从点查式协议检查泛化为 `_sut_evidence_gate` 机械对账（执行器同款 `resolve_login_url` 还原最终 URL，登录/协议逐字段比对，不一致打回并携带权威片段）；④`probe_protocol` 假阳性修正（3xx 非 ✅、无 tid 跳过后续端点并如实记录）；⑤`registry.validate_sut_config_document` 未知键显式拒绝（model_fields 白名单，`validate_package` 与 `scenario validate` 双端接线）；⑥`resolve_login_url` 为 URL 解析单源。执行侧 run 级登录冒烟预检列为后续项 |

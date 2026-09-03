@@ -5,7 +5,12 @@ from __future__ import annotations
 import pytest
 
 from agent_eval.core.exceptions import SUTChannelError
-from agent_eval.execution.registry import SUTRegistry, SUTSystemConfig
+from agent_eval.execution.registry import (
+    SUTRegistry,
+    SUTSystemConfig,
+    resolve_login_url,
+    validate_sut_config_document,
+)
 
 AGENT_PROTOCOL_YAML = """
 sut:
@@ -152,3 +157,71 @@ def test_builtin_chat_package_has_no_internal_domain(monkeypatch) -> None:
     assert sut.base_url == "https://agent-server.example.com"
     assert "bj33smarter" not in str(sut.model_dump())
     assert sut.configurable["modelId"] == "1"  # 展开结果为字符串
+
+
+# ── resolve_login_url：URL 解析单源（执行器登录与落盘对账门禁共用） ──────────
+
+
+def test_resolve_login_url_absolute_path_used_verbatim() -> None:
+    assert (
+        resolve_login_url("https://agent.example.com", "https://login.example.com/users/login")
+        == "https://login.example.com/users/login"
+    )
+
+
+def test_resolve_login_url_relative_joins_sut_base_url() -> None:
+    assert resolve_login_url("https://api.example.com/", "/users/login") == (
+        "https://api.example.com/users/login"
+    )
+
+
+# ── validate_sut_config_document：未知键显式拒绝（静默丢弃 → 显式打回） ──────
+
+
+def _minimal_sut() -> dict:
+    return {
+        "sut": {
+            "name": "s",
+            "channel": "agent_protocol",
+            "base_url": "https://s.example.com",
+        }
+    }
+
+
+def test_validate_document_accepts_minimal_config() -> None:
+    assert validate_sut_config_document(_minimal_sut()) == []
+
+
+def test_validate_document_rejects_invented_login_base_url() -> None:
+    """实测教训：Agent 自造 login.base_url 被执行器静默丢弃，登录拼回页面域 404。"""
+    doc = _minimal_sut()
+    doc["sut"]["auth"] = {
+        "type": "api_login",
+        "credential_ref": "r",
+        "login": {
+            "method": "POST",
+            "path": "/users/login",
+            "base_url": "https://login.example.com",  # 发明的字段
+            "body_template": '{"u": "{{ username }}"}',
+        },
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("未知字段 'base_url'" in e and "完整 http(s):// URL" in e for e in errors)
+
+
+def test_validate_document_reports_required_and_enum_errors() -> None:
+    doc = {"sut": {"name": "s", "channel": "nope"}}
+    errors = validate_sut_config_document(doc)
+    assert any("channel" in e for e in errors)
+    assert any("base_url" in e for e in errors)
+
+
+def test_validate_document_missing_sut_section() -> None:
+    assert validate_sut_config_document({"foo": 1}) == ["sut_config 缺少顶层 'sut:' 段"]
+
+
+def test_validate_document_undefined_env_ref_reported() -> None:
+    doc = _minimal_sut()
+    doc["sut"]["base_url"] = "${UNDEFINED_VAR_X}"
+    errors = validate_sut_config_document(doc)
+    assert any("UNDEFINED_VAR_X" in e for e in errors)

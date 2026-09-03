@@ -339,7 +339,7 @@ class TestFrontendAnalysis:
 
 
 _LOGIN_CFG = {
-    "url": "https://sut.example.com/api/login",
+    "path": "https://sut.example.com/api/login",
     "method": "POST",
     "body_template": '{"username": "{{ username }}", "password": "{{ password }}"}',
     "token_path": "token",
@@ -451,8 +451,8 @@ class TestProbeLogin:
             return httpx.Response(401, json={"error": "bad"}, request=request)
 
         server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
-        guessed = {**_LOGIN_CFG, "url": "https://sut.example.com/api/auth/login"}
-        correct = {**_LOGIN_CFG, "url": "https://sut.example.com/users/login"}
+        guessed = {**_LOGIN_CFG, "path": "https://sut.example.com/api/auth/login"}
+        correct = {**_LOGIN_CFG, "path": "https://sut.example.com/users/login"}
         assert _run(server.probe_login(guessed, "SUT"))["ok"] is False
         assert _run(server.probe_login(correct, "SUT"))["ok"] is False  # 不同路径放行
         assert _run(server.probe_login(guessed, "SUT"))["error"]  # 同路径同模板才防锁
@@ -474,7 +474,7 @@ class TestProbeLogin:
         second = _run(server.probe_login(_LOGIN_CFG, "SUT"))  # 同组合 404 后仍可再发
         assert "防锁" not in second.get("error", "")
         assert calls == ["/api/login", "/api/login"]
-        other = {**_LOGIN_CFG, "url": "https://sut.example.com/users/login"}
+        other = {**_LOGIN_CFG, "path": "https://sut.example.com/users/login"}
         _run(server.probe_login(other, "SUT"))
         assert calls[-1] == "/users/login"  # 换路径探索放行
 
@@ -553,6 +553,54 @@ class TestProbeLogin:
         third = _run(server.probe_login(_LOGIN_CFG, "SUT"))
         assert "error" not in third and calls["n"] == 2  # 解锁放行而非拒绝
 
+    def test_relative_path_rejected_no_base_url_join(self) -> None:
+        """词汇同构（v3.6）：path 需完整 URL，不再接受 base_url 拼接——那正是
+        「实测的完整 URL 落盘时被拆段」的变形源头。"""
+        server, sent = self._server(lambda r: httpx.Response(200, json={}), ask=None)
+        split_cfg = {**_LOGIN_CFG, "path": "/users/login", "base_url": "https://sut.example.com"}
+        result = _run(server.probe_login(split_cfg, "SUT"))
+        assert "完整 http(s):// URL" in result["error"]
+        assert "base_url" in result["error"]  # 点明没有该字段
+        assert sent == []
+
+    def test_success_returns_snippet_and_records_ledger(self) -> None:
+        """工具返回即产物：成功时机械渲染可照抄的 auth 段，并把事实登记进
+        证据账本（落盘对账门禁的事实源）。"""
+        server, _ = self._server(
+            lambda r: httpx.Response(200, json={"token": "T"}), ask=_ask(lambda q, **kw: "发送")
+        )
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        snippet = result["sut_config_auth_snippet"]
+        assert "path: https://sut.example.com/api/login" in snippet  # 完整 URL 原样
+        assert "credential_ref: SUT" in snippet
+        fact = server.verified_login("SUT")
+        assert fact is not None and fact["url"] == _LOGIN_CFG["path"]
+        assert fact["body_template"] == _LOGIN_CFG["body_template"]
+        # 同构的直接证明：片段并入 sut_config 后通过执行器 schema 校验（零修改）
+        import yaml
+
+        from agent_eval.execution.registry import validate_sut_config_document
+
+        doc = {
+            "sut": {
+                "name": "s",
+                "channel": "agent_protocol",
+                "base_url": "https://sut.example.com",
+                **yaml.safe_load(snippet),
+            }
+        }
+        assert validate_sut_config_document(doc) == []
+
+    def test_failed_login_not_recorded_in_ledger(self) -> None:
+        """账本只记成功事实：401 失败不构成「验证过的登录配置」。"""
+
+        def unauthorized(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(401, json={"error": "bad"}, request=request)
+
+        server, _ = self._server(unauthorized, ask=_ask(lambda q, **kw: "发送"))
+        _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert server.verified_login("SUT") is None
+
     def test_status_guidance_distinguishes_404_from_auth_fail(self) -> None:
         """POST 判别语义：404=路径不存在交用户核对；401=接口存在，收集凭证重测。"""
 
@@ -607,6 +655,40 @@ class TestProbeProtocol:
         assert server.protocol_hosts == set()
         _run(server.probe_protocol("https://sut.example.com"))
         assert server.protocol_hosts == {"sut.example.com"}
+
+    def test_redirect_is_not_protocol_evidence(self) -> None:
+        """事实质量：3xx 重定向不是端点存在的证据（页面服务/catch-all 常见，
+        曾被 status<400 记成 ✅ 误导 Agent 声明 agent_protocol）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "POST" and request.url.path == "/threads":
+                return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+            if request.url.path.endswith("/commands"):
+                return httpx.Response(301, headers={"location": "/web/"}, request=request)
+            return httpx.Response(200, json={}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        cmd = next(m for m in result["matrix"] if m["step"] == "send_command")
+        assert cmd["ok"] is False and "重定向" in cmd["note"]
+        assert server.verified_protocol("sut.example.com")["steps"]["send_command"] is False
+
+    def test_no_thread_id_skips_downstream_steps(self) -> None:
+        """建线程失败即停：不对空 tid 畸形路径（/threads//…）发请求——catch-all
+        会把它记成假 ✅（bj33 页面域「commands ✅」假证据的来源）；失败矩阵入账本。"""
+        calls: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls.append(f"{request.method} {request.url.path}")
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        assert [m["step"] for m in result["matrix"]] == ["create_thread", "skipped"]
+        assert "未获得 thread_id" in result["matrix"][1]["note"]
+        assert all("//commands" not in c for c in calls)  # 畸形路径请求未发出
+        fact = server.verified_protocol("sut.example.com")
+        assert fact["steps"]["create_thread"] is False  # 「探测过但未支持」也是事实
 
 
 # ── ask_user 桥与凭证直写 ────────────────────────────────────────────

@@ -169,12 +169,16 @@ sut:
 
 关键约束：
 - `base_url` 与 `protocol_flavor` 必须来自本会话 `probe_protocol` 的实测结论
-  （落盘门禁强制：未实测主机的 agent_protocol 配置会被打回）；接口域与页面域常分离，
-  base_url 不得默认填入口页面域；
+  （落盘门禁强制：未实测主机、或核心端点非 ✅ 的 agent_protocol 配置会被打回）；
+  接口域与页面域常分离，base_url 不得默认填入口页面域；
+- `auth.login` 段原样使用 `probe_login` 成功时返回的 `sut_config_auth_snippet`
+  （落盘门禁会与实测证据逐字段对账）：`path` 写**完整 URL**（登录域可与 API 域
+  分离）——没有 `login.base_url` 字段，拆成相对路径会被拼回页面域；
 - `body_template` 是 Jinja2：变量写 `{{ username }}`（`$var`、`%s` 等风格不会被渲染），
   常量字段直接写字面值；
 - `auth.type`：`none | static_token | api_login | session_cookie`；凭证字段名 =
-  body_template 的 Jinja2 变量（static_token 固定 `token`）。
+  body_template 的 Jinja2 变量（static_token 固定 `token`）；
+- 只写执行器认识的字段（未知字段会被拒绝而非静默忽略）。
 
 权威样例：`read_reference("chat", "sut_configs/sasan-agent.yaml")`（commands 形态全字段）。
 

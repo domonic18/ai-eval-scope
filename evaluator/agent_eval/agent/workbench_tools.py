@@ -393,6 +393,22 @@ class PackageToolServer(ToolExporterMixin):
                     yaml.safe_load(rf.read_text(encoding="utf-8"))
                 except yaml.YAMLError as e:
                     errors.append(f"规则 YAML 解析失败 {rf.name}: {e}")
+            # sut_configs 走执行器同款 schema 校验（未知键显式打回——执行器运行时
+            # extra="allow" 会静默丢弃发明字段，落盘前必须拦截）
+            from agent_eval.execution.registry import validate_sut_config_document
+
+            sut_dir = tmp_root / "sut_configs"
+            if sut_dir.is_dir():
+                for sf in sorted([*sut_dir.glob("*.yaml"), *sut_dir.glob("*.yml")]):
+                    try:
+                        doc = yaml.safe_load(sf.read_text(encoding="utf-8"))
+                    except yaml.YAMLError as e:
+                        errors.append(f"sut_config YAML 解析失败 {sf.name}: {e}")
+                        continue
+                    errors += [
+                        f"sut_config 校验失败 {sf.name}: {msg}"
+                        for msg in validate_sut_config_document(doc)
+                    ]
         return {"ok": not errors, "errors": errors}
 
     async def search_reference(self, query: str) -> dict[str, Any]:

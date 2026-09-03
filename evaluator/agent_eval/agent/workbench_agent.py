@@ -48,6 +48,7 @@ from agent_eval.agent.workbench_tools import PackageToolServer
 from agent_eval.config.paths import PACKAGE_ROOT, paths
 from agent_eval.core.exceptions import AgentError, BudgetExceededError
 from agent_eval.execution.auth.credentials import CredentialStore
+from agent_eval.execution.registry import expand_env_refs, resolve_login_url
 
 try:  # langgraph 属 [agent] extra；缺席（CI 纯单测）时撞线判定恒 False
     from langgraph.errors import GraphRecursionError as _GraphRecursionError
@@ -489,7 +490,7 @@ class WorkbenchAgent:
         templates: dict[str, str] = _load_prompts()["templates"]
         for round_no in range(1, self.config.max_fix_rounds + 1):
             validation = await self.server.validate_package()
-            errors = [*validation["errors"], *self._sut_protocol_gate()]
+            errors = [*validation["errors"], *self._sut_evidence_gate()]
             if not errors:
                 files = self.server.commit()
                 self._log("commit", files=files)
@@ -509,14 +510,21 @@ class WorkbenchAgent:
             self._messages = list(state.get("messages", self._messages))
         return {"committed": False, "errors": ["校验轮次耗尽"], "reason": "max_fix_rounds"}
 
-    def _sut_protocol_gate(self) -> list[str]:
-        """落盘门禁：声明 agent_protocol 通道的 sut_config 必须有 probe_protocol 实测。
+    def _sut_evidence_gate(self) -> list[str]:
+        """落盘对账门禁：sut_configs 的结论字段必须逐字段对上本会话的实测证据。
 
-        实测教训：创建会话把全部预算花在登录攻克后，未做协议探测就把入口页面域
-        写进 base_url（protocol_flavor 从参照包继承），执行时 commands 端点 404。
-        红线从提示升级为门禁——协议形态与地址必须是本会话的验证结论才允许落盘。
+        机制（v3.6，取代点查式协议门禁）：探测工具在验证成功时把事实机械登记进
+        证据账本（``SUTProbeToolServer.verified_login/verified_protocol``）；
+        本门禁用**执行器同款解析逻辑**（``resolve_login_url``）把暂存配置还原成
+        「实际会打到哪个 URL / 声明了什么形态」，与账本逐字段对账——不一致即
+        打回，错误信息携带账本中的权威片段。
+
+        实测教训：Agent 实测的是 sasan-server 域登录接口（probe_login 200+token），
+        落盘时拆成相对 path + 自造 login.base_url（执行器静默丢弃）拼回页面域，
+        且在「POST /threads 404」的矩阵结论上仍声明 agent_protocol——验证结论
+        在「LLM 转述落盘」一步变形。凡可机械传递的事实不经转述；必须转述处，
+        由机械对账兜底。
         """
-        probed = self.probe.protocol_hosts
         errors: list[str] = []
         for rel, content in sorted(self.server.view().items()):
             if not rel.startswith("sut_configs/") or not rel.endswith((".yaml", ".yml")):
@@ -525,18 +533,93 @@ class WorkbenchAgent:
                 data = yaml.safe_load(content) or {}
             except yaml.YAMLError:
                 continue  # 语法错误由 validate_package 上报
-            sut = data.get("sut") or {}
-            if str(sut.get("channel", "")).lower() != "agent_protocol":
+            sut = data.get("sut")
+            if not isinstance(sut, dict):
                 continue
-            host = _base_url_host(str(sut.get("base_url", "")))
-            if host and host not in probed:
-                errors.append(
-                    f"{rel} 声明 channel: agent_protocol，但 base_url 的主机 {host} "
-                    "本会话未经 probe_protocol 实测（协议形态与地址必须是验证过的结论）。"
-                    "请先调用 probe_protocol(base_url=…) 探测该主机并按 ✅ 端点写 "
-                    "protocol_flavor；探测不通则与用户确认正确的接口域后再写配置"
-                )
+            try:
+                # 执行器同款预处理（SUTRegistry.load：expand_env_refs 后解析）——
+                # 对账面对的必须是「运行时会打到的值」，env 缺省形态不误判变形
+                sut = expand_env_refs(sut)
+            except Exception:  # noqa: BLE001 — 未定义 env 由 validate 层上报
+                continue
+            errors += self._reconcile_protocol(rel, sut)
+            errors += self._reconcile_login(rel, sut)
         return errors
+
+    def _reconcile_protocol(self, rel: str, sut: dict[str, Any]) -> list[str]:
+        """协议声明 vs 协议账本：host 须实测过，且矩阵核心端点为 ✅。"""
+        if str(sut.get("channel", "")).lower() != "agent_protocol":
+            return []
+        host = _base_url_host(str(sut.get("base_url", "")))
+        fact = self.probe.verified_protocol(host) if host else None
+        if fact is None:
+            return [
+                f"{rel} 声明 channel: agent_protocol，但 base_url 的主机 {host or '?'} "
+                "本会话未经 probe_protocol 实测（协议形态与地址必须是验证过的结论）。"
+                "请先调用 probe_protocol(base_url=…) 探测该主机并按 ✅ 端点写 "
+                "protocol_flavor；探测不通则与用户确认正确的接口域后再写配置"
+            ]
+        flavor = str(sut.get("protocol_flavor", "commands"))
+        core = "send_command" if flavor == "commands" else "run_wait"
+        if not fact["steps"].get(core):
+            return [
+                f"{rel} 声明 protocol_flavor: {flavor}，但本会话协议矩阵不支持：核心端点 "
+                f"{core} 非 ✅（矩阵事实：{fact['steps']}）。重定向与 catch-all 200 不是"
+                "协议证据，建线程失败的 host 不能声明 agent_protocol——接口域很可能不在"
+                "该主机（与登录域同理，与用户确认真实接口域后重探）"
+            ]
+        return []
+
+    def _reconcile_login(self, rel: str, sut: dict[str, Any]) -> list[str]:
+        """登录配置 vs 登记账本：解析出的最终 URL/字段组合须与实测事实一致。"""
+        auth = sut.get("auth")
+        if not isinstance(auth, dict) or str(auth.get("type", "none")) not in (
+            "api_login",
+            "session_cookie",
+        ):
+            return []
+        login = auth.get("login")
+        if not isinstance(login, dict) or not str(login.get("path", "")):
+            return [
+                f"{rel} 声明 auth.type: {auth.get('type')} 但缺 auth.login.path——"
+                "登录接口必须出自本会话 probe_login 实测（成功时返回 "
+                "sut_config_auth_snippet，原样写入即可）"
+            ]
+        ref = str(auth.get("credential_ref") or sut.get("name") or "")
+        fact = self.probe.verified_login(ref)
+        actual_url = resolve_login_url(str(sut.get("base_url", "")), str(login.get("path", "")))
+        if fact is None:
+            return [
+                f"{rel} 的登录配置（将请求 {actual_url}，凭证 ref={ref}）未经本会话 "
+                "probe_login 实测——对账门禁拒绝未验证的登录落盘。请先 probe_login "
+                f"实测该接口（成功时返回 sut_config_auth_snippet 原样写入）；"
+                "若已实测但 ref 不同，请用实测时的 credential_ref"
+            ]
+        extract = auth.get("extract") or {}
+        diffs: list[str] = []
+        if fact["url"] != actual_url:
+            diffs.append(
+                f"登录 URL：配置将请求 {actual_url}，实测成功的是 {fact['url']}"
+                "（跨域登录接口把完整 URL 写进 login.path，不要拆成相对路径拼接页面域）"
+            )
+        if str(login.get("method", "POST")).upper() != fact["method"].upper():
+            diffs.append(f"method：配置 {login.get('method')}，实测 {fact['method']}")
+        if str(login.get("body_template", "")) != fact["body_template"]:
+            diffs.append(
+                f"body_template：配置 {login.get('body_template')!r}，实测 "
+                f"{fact['body_template']!r}"
+            )
+        token_path = str(extract.get("token_path") or "") if isinstance(extract, dict) else ""
+        if token_path != fact["token_path"]:
+            diffs.append(f"extract.token_path：配置 {token_path!r}，实测 {fact['token_path']!r}")
+        if not diffs:
+            return []
+        return [
+            f"{rel} 的登录配置与本会话实测证据不一致：{'；'.join(diffs)}。"
+            "请把 probe_login 成功时返回的 sut_config_auth_snippet **原样**写入"
+            " auth: 段（勿拆分 URL、勿发明字段——执行器没有 login.base_url）。"
+            f"权威片段：\n{fact['auth_snippet']}"
+        ]
 
     async def _invoke(
         self,

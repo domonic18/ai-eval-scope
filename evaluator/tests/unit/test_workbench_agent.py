@@ -386,8 +386,10 @@ class TestAgentTurn:
         assert any("probe_protocol" in e for e in result.validation_errors)
         assert not (tmp_path / "sut_configs" / "bj33.yaml").exists()  # 门禁未过不落盘
 
-        # Agent 实测过该主机后放行
-        agent.probe._protocol_hosts.add("agent.staging.example.com")  # noqa: SLF001
+        # Agent 实测过该主机（矩阵核心端点 ✅）后放行
+        agent.probe._record_protocol(  # noqa: SLF001 — 单测模拟 probe_protocol 登记事实
+            "agent.staging.example.com", "commands", {"send_command": True}
+        )
         fake2, _ = _replay([write_sut])
         monkeypatch.setattr(WorkbenchAgent, "_invoke", fake2)
         retry = asyncio.run(agent.turn("已按提示探测，重写", confirm_fn=lambda r, d: True))
@@ -402,7 +404,7 @@ class TestAgentTurn:
             await _write_valid(server)
             await server.write_file(
                 "sut_configs/api.yaml",
-                "sut:\n  name: api\n  channel: http\n  base_url: https://api.example.com\n",
+                "sut:\n  name: api\n  channel: generic_http\n  base_url: https://api.example.com\n",
             )
             return "写了 http 通道配置"
 
@@ -413,6 +415,194 @@ class TestAgentTurn:
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
         assert result.committed  # 非 agent_protocol 通道不触发门禁
+
+    def test_protocol_gate_rejects_core_step_not_ok(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """对账门禁：探测过但矩阵核心端点非 ✅（如建线程 404 的页面域）不能声明
+        agent_protocol——旧门禁只查「host 探测过」，被 catch-all 假 ✅ 放行过。"""
+
+        async def write_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file(
+                "sut_configs/web.yaml",
+                "sut:\n  name: web\n  channel: agent_protocol\n"
+                "  base_url: https://web.example.com\n  protocol_flavor: commands\n",
+            )
+            return "写了协议配置（核心端点实际 ❌）"
+
+        fake, _ = _replay([write_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=1), log_dir=tmp_path / "log"
+        )
+        agent.probe._record_protocol(  # noqa: SLF001 — 模拟「探测过但建线程失败」矩阵
+            "web.example.com", "commands", {"create_thread": False}
+        )
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not result.committed
+        assert any("send_command 非 ✅" in e for e in result.validation_errors)
+        assert not (tmp_path / "sut_configs" / "web.yaml").exists()
+
+    # ── 登录对账（bj33 实测复盘：验证结论在落盘转述一步被变形） ──────────
+
+    _LOGIN_URL = "https://sasan-server.staging.example.com/users/login"
+
+    def _record_login_fact(self, agent: WorkbenchAgent) -> None:
+        agent.probe._record_login(  # noqa: SLF001 — 单测模拟 probe_login 成功登记
+            {
+                "ref": "teacher-login",
+                "method": "POST",
+                "url": self._LOGIN_URL,
+                "body_template": '{"phone": "{{ username }}"}',
+                "token_path": "token",
+                "auth_snippet": (
+                    "auth:\n  type: api_login\n  credential_ref: teacher-login\n"
+                    "  login:\n    method: POST\n"
+                    f"    path: {self._LOGIN_URL}\n"
+                    '    body_template: \'{"phone": "{{ username }}"}\'\n'
+                    "  extract:\n    token_path: token\n    token_type: Bearer"
+                ),
+            }
+        )
+
+    def test_evidence_gate_rejects_deformed_login_url(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """实测成功的是 sasan-server 域登录接口，落盘被拆成相对 path + 自造
+        login.base_url（执行器静默丢弃）拼回页面域——对账门禁用执行器同款
+        URL 解析逐字段比对，打回并携带权威片段。"""
+        sut_yaml = (
+            "sut:\n  name: bj33\n  channel: agent_protocol\n"
+            "  base_url: https://agent.staging.example.com\n  protocol_flavor: commands\n"
+            "  auth:\n    type: api_login\n    credential_ref: teacher-login\n"
+            "    login:\n      method: POST\n      path: /users/login\n"
+            "      base_url: https://sasan-server.staging.example.com\n"
+            '      body_template: \'{"phone": "{{ username }}"}\'\n'
+            "    extract:\n      token_path: token\n"
+        )
+
+        async def write_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file("sut_configs/bj33.yaml", sut_yaml)
+            return "写了登录配置（URL 被拆段）"
+
+        fake, _ = _replay([write_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=1), log_dir=tmp_path / "log"
+        )
+        agent.probe._record_protocol(  # noqa: SLF001
+            "agent.staging.example.com", "commands", {"send_command": True}
+        )
+        self._record_login_fact(agent)
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not result.committed
+        joined = "\n".join(result.validation_errors)
+        assert f"实测成功的是 {self._LOGIN_URL}" in joined  # 变形处被点明
+        assert "sut_config_auth_snippet" in joined  # 指回权威片段
+        # 自造 login.base_url 属未知字段：静默丢弃 → 显式打回（validate 层）
+        assert any("未知字段 'base_url'" in e for e in result.validation_errors)
+        assert not (tmp_path / "sut_configs" / "bj33.yaml").exists()
+
+    def test_evidence_gate_passes_verbatim_snippet_landing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """原样照抄实测片段（path=完整 URL）→ 对账通过落盘。"""
+        sut_yaml = (
+            "sut:\n  name: bj33\n  channel: agent_protocol\n"
+            "  base_url: https://agent.staging.example.com\n  protocol_flavor: commands\n"
+            "  auth:\n    type: api_login\n    credential_ref: teacher-login\n"
+            "    login:\n      method: POST\n"
+            f"      path: {self._LOGIN_URL}\n"
+            '      body_template: \'{"phone": "{{ username }}"}\'\n'
+            "    extract:\n      token_path: token\n      token_type: Bearer\n"
+        )
+
+        async def write_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file("sut_configs/bj33.yaml", sut_yaml)
+            return "已原样写入实测片段"
+
+        fake, _ = _replay([write_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        agent.probe._record_protocol(  # noqa: SLF001
+            "agent.staging.example.com", "commands", {"send_command": True}
+        )
+        self._record_login_fact(agent)
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert result.committed, result.validation_errors
+        assert (tmp_path / "sut_configs" / "bj33.yaml").is_file()
+
+    def test_evidence_gate_expands_env_default_like_executor(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """对账前先做执行器同款 ``${VAR:-默认}`` 展开——chat 式 env 缺省写法
+        （完整 URL 藏在默认值里）不误判为变形。"""
+        sut_yaml = (
+            "sut:\n  name: bj33\n  channel: agent_protocol\n"
+            "  base_url: https://agent.staging.example.com\n  protocol_flavor: commands\n"
+            "  auth:\n    type: api_login\n    credential_ref: teacher-login\n"
+            "    login:\n      method: POST\n"
+            f"      path: ${{SASAN_LOGIN_URL:-{self._LOGIN_URL}}}\n"
+            '      body_template: \'{"phone": "{{ username }}"}\'\n'
+            "    extract:\n      token_path: token\n"
+        )
+
+        async def write_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file("sut_configs/bj33.yaml", sut_yaml)
+            return "写了 env 缺省形态配置"
+
+        fake, _ = _replay([write_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        agent.probe._record_protocol(  # noqa: SLF001
+            "agent.staging.example.com", "commands", {"send_command": True}
+        )
+        self._record_login_fact(agent)
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert result.committed, result.validation_errors
+
+    def test_evidence_gate_requires_login_probe_evidence(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """api_login 登录配置无本会话实测证据 → 打回（未验证的登录不得落盘）。"""
+
+        async def write_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file(
+                "sut_configs/x.yaml",
+                "sut:\n  name: x\n  channel: agent_protocol\n"
+                "  base_url: https://x.example.com\n"
+                "  auth:\n    type: api_login\n    credential_ref: x-login\n"
+                "    login:\n      method: POST\n      path: https://x.example.com/login\n",
+            )
+            return "写了未经实测的登录配置"
+
+        fake, _ = _replay([write_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=1), log_dir=tmp_path / "log"
+        )
+        agent.probe._record_protocol(  # noqa: SLF001
+            "x.example.com", "commands", {"send_command": True}
+        )
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not result.committed
+        joined = "\n".join(result.validation_errors)
+        assert "未经本会话" in joined and "probe_login" in joined
 
     def test_first_turn_text_uses_templates(self) -> None:
         text = WorkbenchAgent.first_turn_text(

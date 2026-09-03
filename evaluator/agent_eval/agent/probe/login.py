@@ -23,6 +23,26 @@ _UNRENDERED_PLACEHOLDER_RE = re.compile(r"\$\{[^}]*\}|\{\{[^}]*?\}\}|\{%[^%]*?%\
 _MAX_QUESTION_CHARS = 200  # ask_user 单问上限：多问打包会让用户不知从何答起
 
 
+def _render_auth_snippet(*, ref: str, method: str, url: str, template: str, token_path: str) -> str:
+    """把实测成功的登录事实渲染为可照抄的 ``auth:`` 段 YAML。
+
+    装配在证据产生处完成一次（工具机械渲染，非经 LLM 转述）——这是「验证结果
+    正确落到场景包文件」的第一环：词汇与执行器 ``auth.login`` 同构，落盘时
+    原样粘贴即可，无需任何字段翻译。
+    """
+    import yaml
+
+    snippet = {
+        "auth": {
+            "type": "api_login",
+            "credential_ref": ref,
+            "login": {"method": method, "path": url, "body_template": template},
+            "extract": {"token_path": token_path, "token_type": "Bearer"},
+        }
+    }
+    return yaml.safe_dump(snippet, allow_unicode=True, sort_keys=False).strip()
+
+
 class LoginMixin:
     """工具四（登录实测）与工具五（ask_user：文本/单选/凭证，值不回流）。"""
 
@@ -31,9 +51,18 @@ class LoginMixin:
             return budget_err
         from jinja2 import Environment, Template, meta
 
-        url = login_cfg.get("url") or login_cfg.get("path", "")
-        if url and not url.startswith(("http://", "https://")) and login_cfg.get("base_url"):
-            url = f"{str(login_cfg['base_url']).rstrip('/')}/{str(url).lstrip('/')}"
+        # 词汇同构（v3.6）：login_cfg 与执行器 sut_configs 的 auth.login 同形——
+        # path 承载完整 URL。不再接受 base_url 拼接：那正是「实测完整 URL 在
+        # 探测工具里、落盘时拆成 path+base_url 被执行器静默丢弃」的变形源头
+        url = str(login_cfg.get("path") or login_cfg.get("url") or "")
+        if url and not url.startswith(("http://", "https://")):
+            return {
+                "error": (
+                    "login_cfg.path 需为完整 http(s):// URL（与 sut_configs 的 "
+                    "auth.login.path 同形——跨域登录接口直接写完整地址）。本工具没有 "
+                    "base_url 字段，不要把已发现的接口域拆成 path + base_url 两段"
+                )
+            }
         template = login_cfg.get("body_template", "")
         fields = sorted(meta.find_undeclared_variables(Environment().parse(template)))
         values: dict[str, str] = {}
@@ -152,9 +181,28 @@ class LoginMixin:
             # 认证层已介入（含成功）：同组合不自动重试——防的是真实撞锁风险
             self._login_tried.add(key)
             if status < 400 and token_extracted:
+                # 证据账本 + 装配片段：事实在产生处机械转换一次（YAML 由工具渲染，
+                # 非经 LLM 转述）——落盘时原样使用即可，变形会被对账门禁打回
+                self._record_login(
+                    {
+                        "ref": ref,
+                        "method": method,
+                        "url": url,
+                        "body_template": template,
+                        "token_path": token_path,
+                        "auth_snippet": _render_auth_snippet(
+                            ref=ref,
+                            method=method,
+                            url=url,
+                            template=template,
+                            token_path=token_path,
+                        ),
+                    }
+                )
                 guidance = (
-                    "成功→把 url/body_template/字段名/token_path 写进 sut_configs"
-                    "（凭证仅 credential_ref 引用）"
+                    "成功→把返回的 sut_config_auth_snippet **原样**写进 sut_configs"
+                    " 的 auth: 段（勿拆分 URL、勿增删字段；凭证仅 credential_ref 引用）；"
+                    "落盘对账门禁会用执行器同款逻辑与实测证据逐字段比对"
                 )
             elif status < 400:
                 guidance = "请求成功但未提取到 token——核对 token_path 配置或把证据呈现给用户"
@@ -164,7 +212,7 @@ class LoginMixin:
                     "逐字段 ask_user(kind=credential) 收集/更正凭证后重测（新凭证录入即解锁"
                     "一次重试），或按证据更正 body_template（模板变化亦为新组合）"
                 )
-        return {
+        result: dict[str, Any] = {
             "ok": status < 400 and token_extracted,
             "status": status,
             "url": url,
@@ -172,6 +220,9 @@ class LoginMixin:
             "evidence": _wrap_evidence("登录响应（已脱敏）", _mask(response.text, mask_values)),
             "next_step": guidance,
         }
+        if status < 400 and token_extracted and (fact := self.verified_login(ref)):
+            result["sut_config_auth_snippet"] = fact["auth_snippet"]
+        return result
 
     async def ask_user(
         self,
