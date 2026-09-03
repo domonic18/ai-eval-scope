@@ -105,10 +105,12 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
             name="probe_login",
             description=(
                 "登录实测：login_cfg 与 sut_configs 的 auth.login 同构"
-                "（method/path/body_template/token_path，path 填完整 http(s):// URL）；"
-                "缺凭证先报 missing_fields；发送前必出脱敏预览（完整 URL + 掩码 body）"
-                "并经用户确认；同一接口与字段组合只试一次；成功返回可直接照抄的"
-                " sut_config_auth_snippet（原样写入包的 auth: 段，勿改写）"
+                "（method/path/body_template/token_path，path 填完整 http(s):// URL，"
+                "body_template 传 JSON 文本字符串而非对象——传对象会被机械序列化，"
+                "以返回中生效的字符串为准）；缺凭证先报 missing_fields；发送前必出"
+                "脱敏预览（完整 URL + 掩码 body）并经用户确认；同一接口与字段组合"
+                "只试一次；成功返回可直接照抄的 sut_config_auth_snippet（原样写入"
+                "包的 auth: 段，勿改写）"
             ),
             method="probe_login",
         ),

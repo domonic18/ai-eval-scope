@@ -144,7 +144,9 @@ domain_segments:
     4. **登录配置落盘** → probe_login 实测：
        - login_cfg 与 sut_configs 的 auth.login **同构**（method/path/body_template/
          token_path）；path 填完整 http(s):// URL——跨域登录接口直接写完整地址，
-         执行器没有 login.base_url 字段。
+         执行器没有 login.base_url 字段；body_template 传 **JSON 文本字符串**
+         （不是对象，如 '{"phone": "{{ username }}"}'——传对象会被机械序列化，
+         以返回中生效的字符串为准）。
        - 实测成功时返回 sut_config_auth_snippet——把这段 YAML **原样**写进 sut_configs
          的 auth: 段（勿拆分 URL、勿增删字段、勿改写 body_template）；对账门禁会用
          执行器同款逻辑与实测证据逐字段比对，不一致打回。

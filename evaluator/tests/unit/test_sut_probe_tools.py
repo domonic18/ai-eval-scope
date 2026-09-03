@@ -417,6 +417,39 @@ class TestProbeLogin:
         result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
         assert result["url"] == "https://sut.example.com/api/login"
 
+    def test_body_template_object_normalized(self) -> None:
+        """LLM 把 body_template 写成 JSON 对象而非字符串（实测会话报「Can't compile
+        non template nodes」，旧文案套语法纠正话术、Agent 空转一轮才悟出类型问题）：
+        dict 机械序列化为字符串（凡可机械传递的事实不经 LLM 转述），生效模板随
+        结果回显、snippet 落字符串形态——零轮次自愈。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
+
+        server = _make(
+            credential_store=CredentialStore(env=_CREDS),
+            ask_fn=_ask(lambda q, **kw: "发送"),
+            http_client_factory=_transport(handler),
+        )
+        result = _run(
+            server.probe_login(
+                {**_LOGIN_CFG, "body_template": {"phone": "{{ username }}", "platform": "fs"}},
+                "SUT",
+            )
+        )
+        assert result["ok"] is True and result["token_extracted"] is True
+        assert "已机械序列化" in result["note"]
+        assert result["status"] == 200  # 渲染生效：对象模板不再击穿 jinja2
+        snippet = result["sut_config_auth_snippet"]
+        assert '{"phone": "{{ username }}", "platform": "fs"}' in snippet
+
+    def test_body_template_non_string_rejected_with_type_guidance(self) -> None:
+        server, sent = self._server(lambda r: httpx.Response(200, json={"token": "T"}))
+        result = _run(server.probe_login({**_LOGIN_CFG, "body_template": 123}, "SUT"))
+        assert "需为 JSON 文本字符串" in result["error"]
+        assert "int" in result["error"]
+        assert sent == []  # 类型错误不发送
+
     def test_non_interactive_never_sends(self) -> None:
         server, sent = self._server(lambda r: httpx.Response(200, json={"token": "T"}), ask=None)
         result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
@@ -850,9 +883,7 @@ class TestProbeProtocol:
         assert "configurable" in bare["next_step"]
 
         replay = _run(
-            server.probe_protocol(
-                "https://sut.example.com", configurable={"modelId": "19"}
-            )
+            server.probe_protocol("https://sut.example.com", configurable={"modelId": "19"})
         )
         replay_cmd = next(m for m in replay["matrix"] if m["step"] == "send_command")
         assert replay_cmd["ok"] is True and replay_cmd["status"] == 200

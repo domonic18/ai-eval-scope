@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Any
 
@@ -64,13 +65,39 @@ class LoginMixin:
                 )
             }
         template = login_cfg.get("body_template", "")
+        # v3.14：LLM 会把 body_template 写成 JSON 对象（dict）而非字符串——
+        # jinja2 对非字符串源抛 TypeError「Can't compile non template nodes」，
+        # 旧错误文案套「Jinja2 语法纠正」话术，误导 Agent 去修「语法」而实际是
+        # 「类型」（实测会话空转一轮才悟出「应该是 JSON 字符串」）。dict/list 是
+        # 唯一有明确字符串形态的输入：机械序列化（凡可机械传递的事实不经 LLM
+        # 转述），生效模板随结果回显，落盘以工具渲染的 sut_config_auth_snippet 为准
+        template_note = ""
+        if isinstance(template, (dict, list)):
+            try:
+                template = json.dumps(template, ensure_ascii=False)
+            except (TypeError, ValueError) as e:
+                return {"error": f"body_template 无法序列化为模板字符串（{e}）——请传 JSON 文本"}
+            template_note = (
+                "body_template 传的是对象，已机械序列化为字符串："
+                + template
+                + " ——重试与落盘以此字符串形态传参（成功返回的 sut_config_auth_snippet"
+                " 已是该形态）"
+            )
+        elif not isinstance(template, str):
+            return {
+                "error": (
+                    f"body_template 需为 JSON 文本字符串（收到 {type(template).__name__}）："
+                    '模板是字符串不是对象，如 \'{"phone": "{{ username }}"}\'——'
+                    "对象内的变量按 Jinja2 语法写 {{ 字段名 }}，常量字段写字面值"
+                )
+            }
         fields = sorted(meta.find_undeclared_variables(Environment().parse(template)))
         values: dict[str, str] = {}
         if self.credentials is not None:
             values = {f: self.credentials.get(ref, f) or "" for f in fields}
         missing = [f for f in fields if not values.get(f)]
         if missing:
-            return {
+            result: dict[str, Any] = {
                 "missing_fields": missing,
                 "hint": (
                     f"凭证缺失：逐字段 ask_user(kind=credential, ref={ref!r}, field=<字段名>, "
@@ -80,6 +107,9 @@ class LoginMixin:
                     "备用通道）；收齐后重新调用本工具"
                 ),
             }
+            if template_note:
+                result["note"] = template_note
+            return result
         if not url:
             return {"error": "login_cfg 缺少 url/path"}
         # 防锁按（ref+完整 URL+模板）：同 host 不同路径是不同组合——实测曾因键缺
@@ -120,13 +150,16 @@ class LoginMixin:
             "确认发送？"
         )
         if self.ask_fn is None:
-            return {
+            result = {
                 "need_confirm": True,
                 "url": url,
                 "method": method,
                 "masked_body": body,
                 "note": "非交互环境不发送登录请求；请用户交互运行确认后重试",
             }
+            if template_note:
+                result["note"] = f"{template_note}；{result['note']}"
+            return result
         answer = await self.ask_fn(preview, options=["发送", "取消"], secret=False)
         if not answer or "发送" not in answer:
             self._log("probe_login", ref=ref, event="user_aborted")
@@ -223,7 +256,7 @@ class LoginMixin:
                 "逐字段 ask_user(kind=credential) 收集/更正凭证后重测（新凭证录入即解锁"
                 "一次重试），或按证据更正 body_template（模板变化亦为新组合）"
             )
-        result: dict[str, Any] = {
+        result = {
             "ok": status < 400 and token_extracted,
             "status": status,
             "url": url,
@@ -231,6 +264,8 @@ class LoginMixin:
             "evidence": _wrap_evidence("登录响应（已脱敏）", _mask(response.text, mask_values)),
             "next_step": guidance,
         }
+        if template_note:
+            result["note"] = template_note
         if status < 400 and token_extracted and (fact := self.verified_login(ref)):
             result["sut_config_auth_snippet"] = fact["auth_snippet"]
         return result
