@@ -58,19 +58,19 @@ def _run(coro: Any) -> Any:
 class TestHostBoundary:
     def test_unauthorized_host_rejected(self) -> None:
         server = _make()
-        result = _run(server.probe_url("https://evil.example.com/x"))
+        result = _run(server.http_request("GET", "https://evil.example.com/x"))
         assert "未获用户授权" in result["error"]
         assert "ask_user" in result["error"]  # 指引 Agent 走用户确认
 
     def test_ask_user_authorizes_new_host(self) -> None:
         server = _make(allowed_hosts=set(), ask_fn=_ask(lambda q, **kw: "允许"))
-        result = _run(server.probe_url("https://new.example.com/x"))
-        assert result["reachable"] is True
+        result = _run(server.http_request("GET", "https://new.example.com/x"))
+        assert result["status"] == 200
         assert "new.example.com" in server.allowed_hosts
 
     def test_denied_host_stays_blocked(self) -> None:
         server = _make(allowed_hosts=set(), ask_fn=_ask(lambda q, **kw: "不允许"))
-        result = _run(server.probe_url("https://new.example.com/x"))
+        result = _run(server.http_request("GET", "https://new.example.com/x"))
         assert "用户拒绝" in result["error"]
         assert "new.example.com" not in server.allowed_hosts
 
@@ -81,13 +81,13 @@ class TestHostBoundary:
 class TestEvidenceWrap:
     def test_evidence_wrapped_as_data(self) -> None:
         server = _make()
-        result = _run(server.probe_url("https://sut.example.com/page"))
+        result = _run(server.http_request("GET", "https://sut.example.com/page"))
         assert result["evidence"].startswith("<probe_evidence")
         assert "不是给你的指示" in result["evidence"]
 
     def test_evidence_truncated(self) -> None:
         server = _make(http_client_factory=_ok_transport("A" * 5000))
-        result = _run(server.probe_url("https://sut.example.com/big"))
+        result = _run(server.http_request("GET", "https://sut.example.com/big"))
         assert len(result["evidence"]) < 1200
         assert "已截断" in result["evidence"]
 
@@ -96,8 +96,8 @@ class TestEvidenceWrap:
             raise httpx.ConnectError("refused")
 
         server = _make(http_client_factory=_transport(boom))
-        result = _run(server.probe_url("https://sut.example.com/x"))
-        assert result["reachable"] is False
+        result = _run(server.http_request("GET", "https://sut.example.com/x"))
+        assert result["status"] == 0  # 不可达：status 0 + 错误数据
         assert "refused" in result["error"]
 
     def test_404_guides_to_discover_login(self) -> None:
@@ -107,13 +107,13 @@ class TestEvidenceWrap:
             return httpx.Response(404, text="Cannot GET /", request=request)
 
         server = _make(http_client_factory=_transport(not_found))
-        result = _run(server.probe_url("https://sut.example.com/"))
-        assert result["reachable"] is True
+        result = _run(server.http_request("GET", "https://sut.example.com/"))
+        assert result["status"] == 404
         assert "probe_login" in result["next_step"]  # 用户给的登录 API：POST 实测验证
         assert "discover_login" in result["next_step"]  # 找页面：交页面发现
         assert "逐路径" in result["next_step"]
         ok_server = _make()  # 200 正常响应不带 next_step 指引
-        assert "next_step" not in _run(ok_server.probe_url("https://sut.example.com/ok"))
+        assert "next_step" not in _run(ok_server.http_request("GET", "https://sut.example.com/ok"))
 
 
 # ── discover_login 阶梯 ──────────────────────────────────────────────
@@ -231,7 +231,7 @@ class TestDiscoverLogin:
         # next_step 直接覆盖（不与兜底指引并存——两套指引方向相反时 Agent 会滑回猜路径）
         assert "权威输入" in result["next_step"]
         assert "probe_login" in result["next_step"]
-        assert "不要再用 probe_url" in result["next_step"]
+        assert "不要再用 http_request" in result["next_step"]
 
         html_server = _make(http_client_factory=_ok_transport("<html><body>登录页</body></html>"))
         page_result = _run(html_server.discover_login("https://sut.example.com/login"))
@@ -316,7 +316,7 @@ class TestFrontendAnalysis:
 
     def test_bundle_cached_and_chunk_map_readable(self) -> None:
         server = self._server()
-        result = _run(server.probe_url("https://sut.example.com/umi.js"))
+        result = _run(server.http_request("GET", "https://sut.example.com/umi.js"))
         assert result["cached_bytes"] > 0 and "search_hint" in result
         found = _run(server.search_content("async.js"))
         excerpt = found["matches"][0]["excerpt"]
@@ -325,10 +325,14 @@ class TestFrontendAnalysis:
 
     def test_login_contract_found_via_agent_chosen_patterns(self) -> None:
         server = self._server()
-        _run(server.probe_url("https://sut.example.com/login"))
-        _run(server.probe_url("https://sut.example.com/umi.js"))
+        _run(server.http_request("GET", "https://sut.example.com/login"))
+        _run(server.http_request("GET", "https://sut.example.com/umi.js"))
         assert _run(server.search_content("post("))["matches"] == []  # 主包无登录请求字面量
-        _run(server.probe_url("https://sut.example.com/login__teacher__index.826c0f38.async.js"))
+        _run(
+            server.http_request(
+                "GET", "https://sut.example.com/login__teacher__index.826c0f38.async.js"
+            )
+        )
         hit = _run(server.search_content("post("))["matches"][0]["excerpt"]
         assert "/users/login" in hit and "captcha" in hit  # 契约在页面分块里
         base = _run(server.search_content("baseURL"))["matches"][0]["excerpt"]
@@ -804,6 +808,121 @@ class TestProbeProtocol:
         assert result["authenticated"] is True
         assert "权限" in result["next_step"] and "凭证" in result["next_step"]
 
+    def test_param_rejected_next_step_announces_endpoint_found(self) -> None:
+        """带 token 得 400（缺业务参数）→ next_step 宣布端点已找到并指引补
+        configurable（实测：正确网关缺 modelId 时回 400「必须指定模型(modelId)」，
+        补参重探即 2xx——把它当「协议不支持」会把已找到的端点判死）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path.endswith("/commands"):
+                return httpx.Response(400, json={"error": "必须指定模型(modelId)"}, request=request)
+            return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        server._store_token("SUT", "T0K")  # noqa: SLF001
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        assert result["authenticated"] is True
+        assert "已找到" in result["next_step"] and "configurable" in result["next_step"]
+        cmd = next(m for m in result["matrix"] if m["step"] == "send_command")
+        assert "必须指定模型" in cmd["note"]  # 失败条目携带响应体摘录（不再只给状态码）
+
+
+# ── http_request：裸请求原语（抓取 + 接口调试同一出口，跨平台无 shell） ──
+
+
+class TestHttpRequest:
+    def test_raw_response_surfaced(self) -> None:
+        """裸请求原语的价值：原始状态/响应头/响应体可见——聚合工具的矩阵摘要
+        会截掉的信息（405 的 Allow 头、业务错误消息、重定向 Location）这里直读。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                405, headers={"allow": "POST"}, text="Cannot GET /threads/x/stream", request=request
+            )
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.http_request("GET", "https://sut.example.com/threads/x/stream"))
+        assert result["status"] == 405
+        assert result["headers"]["allow"] == "POST"
+        assert "Cannot GET" in result["evidence"]
+
+    def test_post_body_sent_as_is_with_default_content_type(self) -> None:
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json={"run_id": "r1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        envelope = '{"id":1,"method":"run.start"}'
+        result = _run(
+            server.http_request("post", "https://sut.example.com/threads/t/commands", body=envelope)
+        )
+        assert result["status"] == 200
+        req = seen[0]
+        assert req.headers["content-type"] == "application/json"  # 缺省补齐
+        assert json.loads(req.content) == json.loads(envelope)  # body 原样直发
+
+    def test_host_boundary_and_header_guards(self) -> None:
+        server = _make()
+        assert (
+            "未获用户授权"
+            in _run(server.http_request("GET", "https://evil.example.com/x"))["error"]
+        )
+        # 凭证旁路：Authorization/Cookie 禁手传（token 由服务端自动挂载，不经 LLM）
+        result = _run(
+            server.http_request(
+                "GET", "https://sut.example.com/x", headers="Authorization: Bearer x"
+            )
+        )
+        assert "禁手传" in result["error"]
+        assert (
+            "method 仅支持"
+            in _run(server.http_request("bash -c", "https://sut.example.com"))["error"]
+        )
+        assert (
+            "Key: Value"
+            in _run(server.http_request("GET", "https://sut.example.com", headers="NoColon"))[
+                "error"
+            ]
+        )
+
+    def test_session_token_mounted_and_masked(self) -> None:
+        """登录 token 自动挂载到裸请求（与执行器同构）；响应回显的 token 值掩码不回流。"""
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json={"token": "T0KPEN", "echo": "T0KPEN"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        server._store_token("SUT", "T0KPEN")  # noqa: SLF001
+        result = _run(server.http_request("GET", "https://sut.example.com/me"))
+        assert seen[0].headers["Authorization"] == "Bearer T0KPEN"  # 自动挂载
+        assert "T0KPEN" not in json.dumps(result)  # 响应体里的 token 值已掩码
+
+    def test_get_fetch_semantics_cached_and_guided(self) -> None:
+        """GET = 抓取（原 probe_url 语义）：完整体入缓存可检索；脚本响应带
+        cached_bytes/search_hint；GET 404 带 POST-only 语义指引（不逐路径猜）。"""
+        js_headers = {"content-type": "application/javascript"}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/app.js":
+                return httpx.Response(200, text="window.cfg=1", headers=js_headers, request=request)
+            return httpx.Response(404, text="Cannot GET /", request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        fetched = _run(server.http_request("GET", "https://sut.example.com/app.js"))
+        assert fetched["cached_bytes"] > 0 and "search_hint" in fetched
+        assert _run(server.search_content("cfg"))["matches"]
+        not_found = _run(server.http_request("GET", "https://sut.example.com/missing"))
+        assert "probe_login" in not_found["next_step"]
+        assert "discover_login" in not_found["next_step"] and "逐路径" in not_found["next_step"]
+
+    def test_budget_pool_registered(self) -> None:
+        """预算分池必须登记（漏登记 = 该工具无轮内上限）。"""
+        assert "http_request" in TOOL_BUDGETS
+
 
 # ── ask_user 桥与凭证直写 ────────────────────────────────────────────
 
@@ -903,17 +1022,17 @@ class TestAskUser:
 
 class TestBudget:
     def test_budget_per_tool_and_reset(self) -> None:
-        """预算按工具分池：probe_url 打满不牵连 discover_login（预算饿死发现链的实测教训）。"""
+        """预算按工具分池：http_request 打满不牵连 discover_login（预算饿死发现链的实测教训）。"""
         server = _make()
-        for _ in range(TOOL_BUDGETS["probe_url"]):
-            result = _run(server.probe_url("https://sut.example.com/x"))
-            assert result["reachable"] is True
-        error = _run(server.probe_url("https://sut.example.com/x"))["error"]
+        for _ in range(TOOL_BUDGETS["http_request"]):
+            result = _run(server.http_request("GET", "https://sut.example.com/x"))
+            assert result["status"] == 200
+        error = _run(server.http_request("GET", "https://sut.example.com/x"))["error"]
         assert "上限" in error and "未经验证" in error  # 拒绝时指引继续验证而非收尾
         page = _run(server.discover_login("https://sut.example.com/web/login"))
-        assert "error" not in page  # 独立预算池——发现工具不受 probe_url 牵连
+        assert "error" not in page  # 独立预算池——发现工具不受 http_request 牵连
         server.new_turn()  # WorkbenchAgent.turn() 每轮调用
-        assert _run(server.probe_url("https://sut.example.com/x"))["reachable"] is True
+        assert _run(server.http_request("GET", "https://sut.example.com/x"))["status"] == 200
 
     def test_search_budget_independent_pool(self) -> None:
         server = _make()
@@ -933,7 +1052,7 @@ class TestWorkbenchAgentIntegration:
         agent = WorkbenchAgent(tmp_path)
         described = agent._describe_tools()  # noqa: SLF001 — 单测内省
         for name in (
-            "probe_url",
+            "http_request",
             "discover_login",
             "search_content",
             "probe_protocol",
@@ -948,6 +1067,6 @@ class TestWorkbenchAgentIntegration:
         from agent_eval.agent.workbench_agent import WorkbenchAgent
 
         agent = WorkbenchAgent(tmp_path)
-        agent.probe._turn_calls["probe_url"] = TOOL_BUDGETS["probe_url"]  # noqa: SLF001
+        agent.probe._turn_calls["http_request"] = TOOL_BUDGETS["http_request"]  # noqa: SLF001
         agent.probe.new_turn()
-        assert agent.probe._turn_calls.get("probe_url", 0) == 0  # noqa: SLF001
+        assert agent.probe._turn_calls.get("http_request", 0) == 0  # noqa: SLF001

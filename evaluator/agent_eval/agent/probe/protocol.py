@@ -106,7 +106,7 @@ class ProtocolMixin:
                             note = (
                                 truncate(response.text, 200)
                                 if ok
-                                else f"HTTP {response.status_code}"
+                                else f"HTTP {response.status_code}（{truncate(response.text, 160)}）"
                             )
                         if name == "create_thread" and ok:
                             # 服务端建线程形态（langgraph 平台风格）：采信服务端 tid
@@ -187,6 +187,7 @@ class ProtocolMixin:
         next_step = ""
         if not core_ok:
             auth_rejected = any(m.get("status") in (401, 403) for m in matrix)
+            param_rejected = any(m.get("status") in (400, 422) for m in matrix)
             if not authenticated:
                 next_step = (
                     "本次探测未携带鉴权（本会话尚无登录实测成功的 token）——协议端点"
@@ -197,6 +198,17 @@ class ProtocolMixin:
                 next_step = (
                     "已携带登录 token 但核心端点被拒绝（401/403）——确认该账号对 agent "
                     "接口是否有权限，或重新录入凭证登录后再探"
+                )
+            elif param_rejected:
+                # 400/422 = 路由已命中、业务校验未过——协议端点已找到（实测：正确的
+                # 网关上缺 configurable.modelId 时回 400「必须指定模型(modelId)」，
+                # 补参重探即 2xx；把它当「协议不支持」会把已找到的端点判死）
+                next_step = (
+                    "核心端点已命中但被业务校验拒绝（400/422，见矩阵 note 的错误消息）"
+                    "——协议端点已找到，不是协议不支持：按错误消息补齐业务参数"
+                    "（通常写进 sut_config 的 configurable，执行器作为 run 请求的 "
+                    "config.configurable 下发），带参重探后核心端点 2xx 才算验证通过；"
+                    "参数取值属环境业务配置，可向用户索取"
                 )
             else:
                 next_step = (

@@ -38,7 +38,8 @@ PROBE_TIMEOUT_S = 10.0
 # 猜接口烧光共享预算后，discover_login 被拒、页面分析整段跳过）。额度从宽——
 # 只兜住失控循环，不卡正常调试（候选跨域验证、用户纠正后重试都有余量）
 TOOL_BUDGETS: dict[str, int] = {
-    "probe_url": 20,  # 可达性抽检 + 前端包/分块抓取入缓存；逐路径猜接口是反模式
+    "http_request": 20,  # 裸请求/抓取（原 probe_url 并入）：前端主包与分块抓取是分析
+    # 主循环——从宽只兜逐路径扫描式空转；GET 与接口调试同一池，防双池绕限
     "discover_login": 5,  # 页面发现内含多条子请求，独立小池
     "search_content": 30,  # 分析主循环：真实会话中含噪检索词（post/user/token 命中
     # axios 库代码）与 js/css 双 hash 表分辨都要烧次数——额度从宽只兜空转
@@ -52,13 +53,19 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
 
     TOOL_SPECS: ClassVar[list[ToolSpec]] = [
         ToolSpec(
-            name="probe_url",
+            name="http_request",
             description=(
-                "抓取 URL（GET，只读）：状态码/耗时/重定向链/响应头与内容摘要；"
-                "完整响应体自动进缓存（不占对话上下文），供 search_content 检索。"
-                "新 host 首访会经用户确认"
+                "通用 HTTP 请求原语（探测面的裸请求工具）：method/url/headers/body"
+                ' 自由构造（headers 用 "Key: Value"、多项以 | 分隔），返回状态码 +'
+                " 响应头 + 响应体摘录。GET 即「抓取」：完整响应体自动入缓存供"
+                " search_content 检索（前端主包/页面分块分析用它，返回含 cached_bytes"
+                " 与 search_hint）；非 GET 即接口调试——要看原始响应（405 的 Allow 头、"
+                " 400/422 的业务错误消息、重定向 Location）用它。协议结论以"
+                " probe_protocol 矩阵为准、登录结论以 probe_login 为准（两者的证据账本"
+                " 是落盘对账门禁的事实源）。Authorization/Cookie 头禁传：会话登录 token"
+                " 自动挂载；新 host 首访会经用户确认"
             ),
-            method="probe_url",
+            method="http_request",
         ),
         ToolSpec(
             name="discover_login",
@@ -74,7 +81,7 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
             name="search_content",
             description=(
                 "在已抓取的页面/脚本内容中检索子串（大小写不敏感，非正则），返回带上下文"
-                "的摘录（≤12 条）——前端包分析的主用工具。先 probe_url 抓取目标再检索；"
+                "的摘录（≤12 条）——前端包分析的主用工具。先 http_request 抓取目标再检索；"
                 "一次没命中就换更短的词（业务词、请求构造痕迹、分包机制痕迹）"
             ),
             method="search_content",

@@ -1473,9 +1473,9 @@ class TestAgentConfig:
 
     def test_probe_domain_injection(self, tmp_path: Path) -> None:
         # 探测域档位（预算/超时）经 config 注入 SUTProbeToolServer
-        cfg = WorkbenchAgentConfig(probe_budgets={"probe_url": 1}, probe_timeout_s=2.5)
+        cfg = WorkbenchAgentConfig(probe_budgets={"http_request": 1}, probe_timeout_s=2.5)
         agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
-        assert agent.probe.budgets == {"probe_url": 1}
+        assert agent.probe.budgets == {"http_request": 1}
         assert agent.probe.timeout_s == 2.5
 
     def test_resume_truncation_uses_config(self, tmp_path: Path) -> None:
@@ -1498,9 +1498,9 @@ class TestAgentConfig:
 
     def test_config_injects_probe_domain(self, tmp_path: Path) -> None:
         # 探测域档位默认随 config 注入 SUTProbeToolServer（预算/超时可调）
-        cfg = WorkbenchAgentConfig(probe_budgets={"probe_url": 1}, probe_timeout_s=2.5)
+        cfg = WorkbenchAgentConfig(probe_budgets={"http_request": 1}, probe_timeout_s=2.5)
         agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
-        assert agent.probe.budgets == {"probe_url": 1}
+        assert agent.probe.budgets == {"http_request": 1}
         assert agent.probe.timeout_s == 2.5
 
     def test_resume_injection_respects_config(self, tmp_path: Path) -> None:
@@ -1631,7 +1631,9 @@ class TestSessionMachine:
         exc = self._recursion_exc()
         half_way = [
             SimpleNamespace(type="human", content="生成包"),
-            SimpleNamespace(type="ai", content="", tool_calls=[{"id": "c9", "name": "probe_url"}]),
+            SimpleNamespace(
+                type="ai", content="", tool_calls=[{"id": "c9", "name": "http_request"}]
+            ),
         ]
 
         class _FakeGraph:
