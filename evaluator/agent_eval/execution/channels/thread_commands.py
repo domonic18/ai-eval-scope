@@ -133,7 +133,9 @@ async def commands_run(
     response = await channel.request(
         "POST",
         f"/threads/{tid}/commands",
-        json_body=run_start_envelope(input, configurable=channel.sut.configurable, metadata=metadata),
+        json_body=run_start_envelope(
+            input, configurable=channel.sut.configurable, metadata=metadata
+        ),
         headers=conversation_headers(tid),
     )
     payload = channel._json(response)
@@ -235,7 +237,9 @@ async def commands_stream(
     response = await channel.request(
         "POST",
         f"/threads/{tid}/commands",
-        json_body=run_start_envelope(input, configurable=channel.sut.configurable, metadata=metadata),
+        json_body=run_start_envelope(
+            input, configurable=channel.sut.configurable, metadata=metadata
+        ),
         headers=conversation_headers(tid),
     )
     payload = channel._json(response)
