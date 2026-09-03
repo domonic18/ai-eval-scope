@@ -763,6 +763,47 @@ class TestProbeProtocol:
         assert cmd.headers["Authorization"] == "Bearer T0KPEN"
         assert "T0KPEN" not in json.dumps(result)
 
+    def test_unauthenticated_failure_next_step_requests_login_first(self) -> None:
+        """未鉴权探测失败 → next_step 指向先登录再重探（实测会话：Agent 在登录
+        完成前探测协议，对 auth-gated 网关得到静默 404 假阴性后判死两域、放弃
+        转抄示例）。矩阵条目须携带 HTTP 状态码。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        assert result["authenticated"] is False
+        assert "probe_login" in result["next_step"] and "重探" in result["next_step"]
+        assert all("status" in m for m in result["matrix"][:3])  # 主步骤携带状态码
+
+    def test_authenticated_failure_next_step_hunts_frontend_evidence(self) -> None:
+        """已带 token 仍不通 → next_step 指向前端 JS 真实请求构造，禁止按示例臆造。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        server._store_token("SUT", "T0K")  # noqa: SLF001
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        assert result["authenticated"] is True
+        assert "search_content" in result["next_step"]
+        assert "示例" in result["next_step"]
+
+    def test_auth_rejected_next_step_points_to_credential(self) -> None:
+        """携带 token 被拒（401/403）→ next_step 指向账号权限/重新录入凭证。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path.endswith("/commands"):
+                return httpx.Response(403, json={"detail": "forbidden"}, request=request)
+            return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        server._store_token("SUT", "T0K")  # noqa: SLF001
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        assert result["authenticated"] is True
+        assert "权限" in result["next_step"] and "凭证" in result["next_step"]
+
 
 # ── ask_user 桥与凭证直写 ────────────────────────────────────────────
 

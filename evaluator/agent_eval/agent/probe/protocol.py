@@ -55,7 +55,12 @@ class ProtocolMixin:
         # (步骤名, 端点模板, body, 附加头)——线程级请求带会话路由头（执行器同款）
         if flavor == "commands":
             steps: list[tuple[str, str, dict[str, Any] | None, dict[str, str]]] = [
-                ("create_thread", "POST /threads", {"metadata": {"source": "agent-eval-probe"}}, {}),
+                (
+                    "create_thread",
+                    "POST /threads",
+                    {"metadata": {"source": "agent-eval-probe"}},
+                    {},
+                ),
                 (
                     "send_command",
                     "POST /threads/{tid}/commands",
@@ -83,10 +88,12 @@ class ProtocolMixin:
                     kwargs: dict[str, Any] = (
                         {"json": body} if body is not None and method == "POST" else {}
                     )
+                    status = 0
                     try:
                         response = await client.request(
                             method, f"{base}{path}", headers={**auth, **extra_headers}, **kwargs
                         )
+                        status = response.status_code
                         ok = 200 <= response.status_code < 300
                         if 300 <= response.status_code < 400:
                             # 重定向 ≠ 端点存在：catch-all/页面服务的回退不是协议证据
@@ -114,6 +121,7 @@ class ProtocolMixin:
                             "step": name,
                             "endpoint": endpoint.replace("{tid}", tid[:8]),
                             "ok": ok,
+                            "status": status,
                             "note": note,
                         }
                     )
@@ -128,7 +136,9 @@ class ProtocolMixin:
                     for spath in (f"/threads/{tid}/stream/events", f"/threads/{tid}/stream"):
                         try:
                             async with client.stream(
-                                "GET", f"{base}{spath}", headers={**auth, **conversation_headers(tid)}
+                                "GET",
+                                f"{base}{spath}",
+                                headers={**auth, **conversation_headers(tid)},
                             ) as s:
                                 matrix.append(
                                     {
@@ -151,7 +161,9 @@ class ProtocolMixin:
                 if tid:  # 收尾清理（尽力而为）
                     try:
                         await client.request(
-                            "DELETE", f"{base}/threads/{tid}", headers={**auth, **conversation_headers(tid)}
+                            "DELETE",
+                            f"{base}/threads/{tid}",
+                            headers={**auth, **conversation_headers(tid)},
                         )
                         matrix.append(
                             {
@@ -165,6 +177,34 @@ class ProtocolMixin:
                         pass
         except Exception as e:  # noqa: BLE001
             return {"error": f"探测失败: {e}"}
+        # 鉴权状态与失败模式化指引：协议端点若需认证，未鉴权请求可能 401/403
+        # 也可能被网关静默 404——「未登录先探测」会产出假阴性（实测会话里 Agent
+        # 在登录完成前探测协议、判死两域后放弃转抄示例）。authenticated 必须随
+        # 结果显式呈现，失败分支各给单一权威 next_step（工具指引会被 LLM 当指令）
+        authenticated = bool(auth)
+        core = CORE_STEP.get(flavor, "run_wait")
+        core_ok = any(m["step"] == core and m["ok"] for m in matrix)
+        next_step = ""
+        if not core_ok:
+            auth_rejected = any(m.get("status") in (401, 403) for m in matrix)
+            if not authenticated:
+                next_step = (
+                    "本次探测未携带鉴权（本会话尚无登录实测成功的 token）——协议端点"
+                    "若需认证，未鉴权请求可能被拒（401/403）也可能被网关静默 404："
+                    "先完成 probe_login 登录实测（成功后 token 自动挂载），再重探本工具"
+                )
+            elif auth_rejected:
+                next_step = (
+                    "已携带登录 token 但核心端点被拒绝（401/403）——确认该账号对 agent "
+                    "接口是否有权限，或重新录入凭证登录后再探"
+                )
+            else:
+                next_step = (
+                    "携带登录 token 核心端点仍不通——接口域很可能不在该主机：用 "
+                    "search_content 在已缓存的前端 JS 里找聊天/Agent 页面分块的真实"
+                    "请求构造（URL 与载荷形态），或对会话内候选域逐一重探；全部落空"
+                    "把证据呈报用户确认，勿按参照包示例臆造端点落盘"
+                )
         if host := _host_of(base_url):
             self._record_protocol(
                 host,
@@ -172,8 +212,9 @@ class ProtocolMixin:
                 {m["step"]: m["ok"] for m in matrix if m["step"] != "skipped"},
             )
         self._log("probe_protocol", base_url=base_url, steps=len(matrix))
-        return {
+        result: dict[str, Any] = {
             "matrix": matrix,
+            "authenticated": authenticated,
             "note": (
                 "逐端点事实记录，非二值判定；矩阵与执行器契约同构（线程 ID 客户端生成、"
                 "run.start 信封、会话路由头与鉴权头自动挂载）——协议判定以 send_command/"
@@ -181,3 +222,6 @@ class ProtocolMixin:
                 " 不是证据"
             ),
         }
+        if next_step:
+            result["next_step"] = next_step
+        return result

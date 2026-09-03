@@ -204,7 +204,9 @@ class LoginMixin:
                 guidance = (
                     "成功→把返回的 sut_config_auth_snippet **原样**写进 sut_configs"
                     " 的 auth: 段（勿拆分 URL、勿增删字段；凭证仅 credential_ref 引用）；"
-                    "落盘对账门禁会用执行器同款逻辑与实测证据逐字段比对"
+                    "落盘对账门禁会用执行器同款逻辑与实测证据逐字段比对；若协议探测曾在"
+                    "本登录成功前失败（authenticated: false），现在重探 probe_protocol"
+                    "（token 已自动挂载）"
                 )
             else:
                 guidance = (
