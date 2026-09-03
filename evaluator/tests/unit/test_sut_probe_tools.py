@@ -458,6 +458,39 @@ class TestProbeLogin:
         assert _run(server.probe_login(guessed, "SUT"))["error"]  # 同路径同模板才防锁
         assert calls == ["/api/auth/login", "/users/login"]
 
+    def test_404_not_locked_allows_path_probing(self) -> None:
+        """失败语义分层（防锁不误伤探索）：404 = 请求未到认证层不入锁——同组合与
+        换路径均可继续实测；防锁只拦认证层已介入（4xx）失败的同组合自动重试。"""
+        calls: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls.append(request.url.path)
+            return httpx.Response(404, json={"detail": "Not Found"}, request=request)
+
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
+        first = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert first["ok"] is False and calls == ["/api/login"]
+        assert "不计入防锁" in first["next_step"]
+        second = _run(server.probe_login(_LOGIN_CFG, "SUT"))  # 同组合 404 后仍可再发
+        assert "防锁" not in second.get("error", "")
+        assert calls == ["/api/login", "/api/login"]
+        other = {**_LOGIN_CFG, "url": "https://sut.example.com/users/login"}
+        _run(server.probe_login(other, "SUT"))
+        assert calls[-1] == "/users/login"  # 换路径探索放行
+
+    def test_network_error_not_locked(self) -> None:
+        """请求未达服务端（网络失败）无撞锁风险不入锁——同组合经确认后可重发。"""
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            raise httpx.ConnectError("connection refused", request=request)
+
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
+        assert "登录请求失败" in _run(server.probe_login(_LOGIN_CFG, "SUT"))["error"]
+        assert "防锁" not in _run(server.probe_login(_LOGIN_CFG, "SUT")).get("error", "")
+        assert calls["n"] == 2
+
     def test_unrendered_placeholder_rejected_not_sent(self) -> None:
         """模板占位符语法错误（${var} 等非 Jinja 形态）→ 拒发并纠正语法。
 

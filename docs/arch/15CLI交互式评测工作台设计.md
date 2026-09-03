@@ -455,8 +455,11 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 3. **探测内容注入防护（评审新增）**：probe_url/discover_login 抓回的 HTML/JS/响应头一律视为
    **data 而非 instructions**——分隔标记包裹 + 截断 + 剥离指令样文本；最终防线仍是 staging→diff→
    用户确认门禁（劫持指令无法绕过确认直接落盘）
-4. **登录防锁**：真实凭证打真实接口，每（ref, host, body_template）组合只试一次，失败即停交
-   用户——防试错锁死账号；用户纠正接口/字段后模板变化视为新组合，允许再试一次
+4. **登录防锁（v3.5 修订：失败语义分层）**：真实凭证打真实接口，每（ref, host, body_template）
+   组合只试一次——防试错锁死账号；用户纠正接口/字段后模板变化视为新组合，允许再试一次。
+   **分层**：仅「认证层已介入」的失败（4xx/5xx，字段/凭证已被校验）入锁；**404（路径不存在）
+   与网络失败未到认证层、无撞锁风险，不入锁**——换候选路径继续实测是正当探索（依据
+   discover_login 返回与前端包分析结论，受轮内预算约束），防锁红线不误伤路径探索
 5. **总量约束**：单探测 10s 超时、轮内预算**按工具分池**（probe_url 15 / discover_login 5 /
    probe_protocol 3 / probe_login 6——额度从宽只兜失控循环，单工具暴力试探不得饿死发现链，
    达上限指引继续验证而非收尾）；阶梯③路径清单固定 ≤10 条（对用户自报 host 的定向检查，非扫描行为）
@@ -919,3 +922,4 @@ class WorkbenchAgentConfig:
 | **v3.2** | 2026-09-02 | **§6.11 代码质量与开源规范优化，方案稿**（开源前置 review：①结构知识 hardcode ②常量散落）。**§6.11.1 结构知识外置**：新资产 `assets/guides/scenario-package-format.md`（随包发布、与 arch/13 §四同步）+ `read_guide(topic)` 工具 + prompts 瘦身（「内容规范」段退役、参照指引收敛到工具返回、结构字段表全部移出）+ 真相源分层（validate 门禁=硬真相，guide 漂移最坏多一轮回改不产生坏包）；**§6.11.2 常量归集与命名**：按可变性分层（tunables → `WorkbenchAgentConfig` frozen dataclass，与 §6.7 P2 CLI 旗标同载体合流；固定阈值就近具名统一 `_MAX_*`）+ 常量盘点表 + `PACKAGE_ROOT` 违规修正 + `scenario_agent.py` 拆分（流式渲染迁 `console/agent_stream.py`）+ `sut_probe_tools.py` 拆分（P1）+ ToolSpec 描述漂移修正。随 §6.7/§6.8 切换实施；PACKAGE_ROOT / 描述修正可独立先行 |
 | **v3.3** | 2026-09-03 | **v3.0–v3.2 全案落地收官**（feat/agent-sut-debug，9 提交，单测 735 → 777 绿）：**①§6.8 组织迁移**——`package_agent.py→workbench_agent.py`、`package_tools.py→workbench_tools.py`、`cli/cmds/scenario_agent.py→cmds/workbench_agent.py`、prompts 资产更名 `workbench_agent_prompts.yaml`（D-CLI-6 一次性切换，无兼容层）；**②D-WB-2 分段装配**——prompts 拆 `system_prompt_base`（会话机段零域语义）+ `domain_segments` + `domain_labels`，`_build_system_prompt` 统一字面 replace，未装配域报错，凭证明文红线升格域无关泛化表述；**③§6.7 会话机 P0–P3**——MemorySaver salvage + 孤儿 tool_call 修复（D-WB-4/5）、撞线自动分段续跑 + checkpoint 事件（P1）、BudgetGuard 预算缰绳 + `WorkbenchAgentConfig` tunables 单点 + `--max-turns/--max-segments/--budget-usd`（P2）、prompts 进度即写盘规约（P3）、REPL「继续/放弃」处置闭环（落地注记见 §6.7）；**④§6.10 横幅**——intro 资产五要素 + rich Panel + `--json`/非 TTY 静默 + §3.5 一级入口/`--domain agent`/preflight 阻断；**⑤§6.11 质量**——结构知识外置 `assets/guides/scenario-package-format.md` + 泛化 `read_file/list_files` 分级授权（read_guide 专用工具否决，泛化为 Claude Code 式读写机制）、流式渲染拆 `console/agent_stream.py`、**P1 probe 拆分** `agent/probe/` 包五模块（fetch/discovery/protocol/login mixin + server 组装壳，D-WB-7 一域一 server 不变）、ToolSpec 描述修正。langgraph 缺席优雅降级；需求侧同步待办（req/04 通用域条目）仍开放 |
 | **v3.4** | 2026-09-03 | **§3.5/§6.10 实测反馈修订：入口直入对话，横幅先于输入**（用户反馈：①横幅在需求输入之后才显示，顺序反了；②「工作台 Agent」入口不应再有「新建/改包」菜单——这些能力应在对话中实现，介绍时说明能力并给样例即可）。①`agent_workbench_entry` 去前置菜单：`_guard_llm_ready` → 横幅（能力+示例四条）→ 直入 REPL；默认任务对象 = 新包草稿（归位提示保留），会话结束按清单 id 归位 `cwd/<id>-package/`、空会话退出清理草稿、中断保留草稿（`--output` 指回续作）；②改已有项目包为会话内能力——prompts 域段新增「改造已有项目包」规约（read_file 读入→草稿改造→归位冲突不覆盖交用户处置）；③`_session(show_intro=False)` 抑制重复横幅，`scenario new/edit --mode agent` 直连命令仍自带横幅；④`_render_intro` Panel 定宽 ≤100 列（超宽终端防 CJK 双宽渲染截断——实测贴图丢行即此因，内容本体三档宽度渲染零缺失）；⑤样例改写：创建+探测主轴 / 改 `./study-trip-package` / 参照 chat 新建 / 执行报错排查。`scenario new/edit` 命令与域内快捷方式保留为显式直达 |
+| **v3.5** | 2026-09-03 | **§6.6 防锁红线修订：失败语义分层，不误伤路径探索**（用户实测反馈：提供了正确登录 API 地址与凭证后，Agent 对 404 候选路径的连续探索被防锁拦截，「实际真正的探索请求被拦截了」）。根因：防锁键（ref+URL+模板）的入锁不分失败语义——404（路径不存在，请求未到认证层，无凭证校验即无撞锁风险）与 401/422（认证层已介入）同等入锁，把「路径探索」误判为「试错撞锁」。修复（probe/login.py）：①入锁时机从发送前移到响应后，仅认证层已介入的失败（非 404）入锁——404 与网络失败不入锁，同组合/换路径均可继续实测（受 probe_login 轮内预算约束）；②404 guidance 改探索指引（候选依据 discover_login 返回与前端包分析结论，openapi/form 优先，勿凭空拼凑路径清单）；③防锁拒绝文案言明「换路径探测不受此限」；④prompts 域段防锁条目改分层表述。红线本意保留：4xx 同组合仍只试一次，解锁通道不变（用户核对后改模板=新组合 / 重新录入凭证）。测试 783 → 785（404 探索放行 / 网络失败不入锁；既有 401 防锁四测全部不动仍绿） |
