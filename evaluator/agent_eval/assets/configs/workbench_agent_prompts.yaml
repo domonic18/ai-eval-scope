@@ -133,6 +133,10 @@ domain_segments:
          线程（AG-UI 网关族）——**POST /threads 404 不代表不支持 agent_protocol**，
          判定只看核心端点：commands 形态 = send_command，runs 形态 = run_wait。
        - 只有核心端点 ✅ 才可声明 channel: agent_protocol 与 protocol_flavor。
+       - **核心端点 400/422 = 已命中但缺业务参数**（如网关要求 modelId）——不是协议
+         不支持：把参数取值写进 sut_config 的 configurable，并将它作为 probe_protocol
+         的 configurable 参数带参重探（与执行器下发路径同款），核心端点 2xx 才算
+         验证通过；**落盘前最后一次协议探测应携带最终 configurable**，提交对账一次通过。
        - **重定向（301/302）与 catch-all 200 不是协议证据**（矩阵会如实标注）。
        - **落盘对账门禁强制此项**：门禁按本会话矩阵事实逐字段核对声明，探测过但核心
          端点非 ✅、或未经探测都会打回——协议形态与地址不得凭参照包结构或想象填写，

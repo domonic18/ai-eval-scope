@@ -826,6 +826,55 @@ class TestProbeProtocol:
         cmd = next(m for m in result["matrix"] if m["step"] == "send_command")
         assert "必须指定模型" in cmd["note"]  # 失败条目携带响应体摘录（不再只给状态码）
 
+    def test_configurable_replay_passes_gate(self) -> None:
+        """带 configurable 重探（v3.13，修复落盘门禁死锁）：网关要求业务参数
+        （实测 bj33 必须指定 modelId）时，裸探测 send_command 永 400 → 账本永远
+        记不到核心端点 ✅ → 配置完全正确也会被对账门禁打回。probe_protocol 接受
+        configurable 后，「写配置 → 带参探测一次通过」成为可能——信封参数走
+        params.config.configurable（执行器同款下发路径）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path.endswith("/commands"):
+                body = json.loads(request.content)
+                if body["params"].get("config", {}).get("configurable", {}).get("modelId"):
+                    return httpx.Response(200, json={"run_id": "r1"}, request=request)
+                return httpx.Response(400, json={"error": "必须指定模型(modelId)"}, request=request)
+            return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        server._store_token("SUT", "T0K")  # noqa: SLF001
+
+        bare = _run(server.probe_protocol("https://sut.example.com"))
+        bare_cmd = next(m for m in bare["matrix"] if m["step"] == "send_command")
+        assert bare_cmd["ok"] is False  # 裸探被拒：账本记不到 ✅（死锁面）
+        assert "configurable" in bare["next_step"]
+
+        replay = _run(
+            server.probe_protocol(
+                "https://sut.example.com", configurable={"modelId": "19"}
+            )
+        )
+        replay_cmd = next(m for m in replay["matrix"] if m["step"] == "send_command")
+        assert replay_cmd["ok"] is True and replay_cmd["status"] == 200
+        steps = server.verified_protocol("sut.example.com")["steps"]
+        assert steps["send_command"] is True  # 核心端点 ✅ 入账本 → 对账门禁可过
+
+    def test_configurable_reaches_envelope(self) -> None:
+        """configurable 下发位置与执行器一致：params.config.configurable（单源
+        run_start_envelope——探测与执行同构造，永不漂移）。"""
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        _run(server.probe_protocol("https://sut.example.com", configurable={"modelId": "19"}))
+        cmd = next(r for r in seen if r.url.path.endswith("/commands"))
+        body = json.loads(cmd.content)
+        assert body["params"]["config"]["configurable"] == {"modelId": "19"}
+        assert body["method"] == "run.start"
+
 
 # ── http_request：裸请求原语（抓取 + 接口调试同一出口，跨平台无 shell） ──
 

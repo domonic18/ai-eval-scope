@@ -42,7 +42,16 @@ class ProtocolMixin:
         """已实测过协议矩阵的 host（小写）——证据账本的 host 集合视图。"""
         return set(self._verified_protocols)
 
-    async def probe_protocol(self, base_url: str, flavor: str = "commands") -> dict[str, Any]:
+    async def probe_protocol(
+        self, base_url: str, flavor: str = "commands", configurable: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """configurable：与 sut_config.configurable 同形的业务参数（如 {"modelId": "19"}）。
+
+        带参探测（v3.13）：执行器以 ``config.configurable`` 下发这些参数（单源
+        ``run_start_envelope``），网关缺参数时对裸请求回 400/422——若探测不能带参，
+        账本永远记不到核心端点 ✅，**配置完全正确也会被落盘门禁死锁打回**（实测：
+        bj33 网关必须 modelId，裸探测 400 → 门禁拒判 agent_protocol → 包无法创建）。
+        """
         if budget_err := self._budget("probe_protocol"):
             return budget_err
         if host_err := await self._ensure_host(base_url):
@@ -64,7 +73,7 @@ class ProtocolMixin:
                 (
                     "send_command",
                     "POST /threads/{tid}/commands",
-                    run_start_envelope(_PROBE_INPUT),
+                    run_start_envelope(_PROBE_INPUT, configurable=configurable),
                     conversation_headers(tid),
                 ),
                 ("get_state", "GET /threads/{tid}/state", None, conversation_headers(tid)),
@@ -75,7 +84,7 @@ class ProtocolMixin:
                 (
                     "run_wait",
                     "POST /threads/{tid}/runs/wait",
-                    run_start_envelope(_PROBE_INPUT),
+                    run_start_envelope(_PROBE_INPUT, configurable=configurable),
                     conversation_headers(tid),
                 ),
             ]
@@ -205,10 +214,10 @@ class ProtocolMixin:
                 # 补参重探即 2xx；把它当「协议不支持」会把已找到的端点判死）
                 next_step = (
                     "核心端点已命中但被业务校验拒绝（400/422，见矩阵 note 的错误消息）"
-                    "——协议端点已找到，不是协议不支持：按错误消息补齐业务参数"
-                    "（通常写进 sut_config 的 configurable，执行器作为 run 请求的 "
-                    "config.configurable 下发），带参重探后核心端点 2xx 才算验证通过；"
-                    "参数取值属环境业务配置，可向用户索取"
+                    "——协议端点已找到，不是协议不支持：确定参数取值（可向用户索取）后"
+                    "写进 sut_config 的 configurable，并把它作为本工具的 configurable "
+                    "参数带参重探（执行器同款：config 作为 run 请求的 config.configurable"
+                    " 下发），核心端点 2xx 才算验证通过"
                 )
             else:
                 next_step = (
