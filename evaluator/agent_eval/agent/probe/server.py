@@ -81,7 +81,13 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         ),
         ToolSpec(
             name="probe_protocol",
-            description="agent-protocol 符合性矩阵：建临时线程 → commands → state → stream 逐端点 ✅/❌（含写操作，收尾清理线程）",
+            description=(
+                "agent-protocol 符合性矩阵（与执行器契约同构）：POST /threads →"
+                " commands（run.start 信封 + 会话路由头 + 登录 Bearer 自动挂载）→"
+                " state → stream 逐端点 ✅/❌（含写操作，收尾清理线程）。POST /threads"
+                " 404 不影响判定——AG-UI 网关族由客户端生成线程 ID、首个 run.start"
+                " 隐式建线程，协议判定以 send_command/run_wait 为准"
+            ),
             method="probe_protocol",
         ),
         ToolSpec(
@@ -140,6 +146,10 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         # 「原样即可、变形必被打回」
         self._verified_logins: dict[str, dict[str, str]] = {}  # ref(小写) → 实测事实
         self._verified_protocols: dict[str, dict[str, Any]] = {}  # host → 矩阵事实
+        # 登录成功提取的 token 服务端持有（v3.9）：协议探测请求自动挂 Bearer
+        # （与执行器 mount_headers 同构——鉴权后的端点裸探会得到假阴性）；
+        # 值不出现在任何工具返回里，不回流 LLM 上下文
+        self._session_tokens: dict[str, str] = {}  # ref(小写) → token
 
     # ── 会话挂点与共享设施（mixin 协作契约的实现侧） ───────────────
 
@@ -188,6 +198,17 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
             if host := _host_of(fact.get("url", "")):
                 hosts.add(host.lower())
         return hosts
+
+    def _store_token(self, ref: str, token: str) -> None:
+        """登录实测成功提取的 token 服务端持有（仅内部使用，不进任何返回值）。"""
+        self._session_tokens[ref.lower()] = token
+
+    @property
+    def auth_headers(self) -> dict[str, str]:
+        """最近一次登录成功提取的 Bearer 头（无则空）——探测请求与执行器同构挂鉴权。"""
+        if not self._session_tokens:
+            return {}
+        return {"Authorization": f"Bearer {list(self._session_tokens.values())[-1]}"}
 
     def _budget(self, tool: str) -> dict[str, str] | None:
         limit = self.budgets.get(tool)

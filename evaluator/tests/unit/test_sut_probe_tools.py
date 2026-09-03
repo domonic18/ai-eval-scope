@@ -696,9 +696,11 @@ class TestProbeProtocol:
         assert cmd["ok"] is False and "重定向" in cmd["note"]
         assert server.verified_protocol("sut.example.com")["steps"]["send_command"] is False
 
-    def test_no_thread_id_skips_downstream_steps(self) -> None:
-        """建线程失败即停：不对空 tid 畸形路径（/threads//…）发请求——catch-all
-        会把它记成假 ✅（bj33 页面域「commands ✅」假证据的来源）；失败矩阵入账本。"""
+    def test_create_thread_404_continues_with_client_uuid(self) -> None:
+        """建线程端点失败 ≠ 协议不支持（v3.9 同构）：执行器契约由客户端生成线程
+        UUID、首个 run.start 隐式建线程（POST /threads 不在执行路径上）——旧实现
+        因 POST /threads 404 直接跳过后续端点，把兼容执行器契约的服务误判为
+        「不能声明 agent_protocol」（bj33 探测失败的根因）。"""
         calls: list[str] = []
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -707,11 +709,59 @@ class TestProbeProtocol:
 
         server = _make(http_client_factory=_transport(handler))
         result = _run(server.probe_protocol("https://sut.example.com"))
-        assert [m["step"] for m in result["matrix"]] == ["create_thread", "skipped"]
-        assert "未获得 thread_id" in result["matrix"][1]["note"]
-        assert all("//commands" not in c for c in calls)  # 畸形路径请求未发出
+        assert [m["step"] for m in result["matrix"]] == [
+            "create_thread",
+            "send_command",
+            "get_state",
+            "stream",
+            "cleanup",
+        ]
+        assert "隐式建线程" in result["matrix"][0]["note"]
+        assert "客户端生成" in result["matrix"][0]["note"]
+        assert any(
+            c.startswith("POST /threads/") and c.endswith("/commands") for c in calls
+        )  # 客户端 UUID 继续实测 commands
+        assert not any("//" in c for c in calls)  # 不再对畸形路径发请求
         fact = server.verified_protocol("sut.example.com")
         assert fact["steps"]["create_thread"] is False  # 「探测过但未支持」也是事实
+        assert fact["steps"]["send_command"] is False  # 404 服务下的真实结论
+
+    def test_probe_speaks_executor_dialect(self) -> None:
+        """信封/消息形态/请求头与执行器单源同构（v3.9）：run.start 信封 +
+        LangChain `type: human` 消息（role: user 会被 AG-UI 网关静默丢弃）+
+        会话路由头。"""
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            if request.method == "POST" and request.url.path == "/threads":
+                return httpx.Response(404, request=request)
+            return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        _run(server.probe_protocol("https://sut.example.com"))
+        cmd = next(r for r in seen if r.url.path.endswith("/commands"))
+        body = json.loads(cmd.content)
+        assert body["method"] == "run.start"  # 执行器同款 JSON-RPC 信封
+        msg = body["params"]["input"]["messages"][0]
+        assert msg["type"] == "human" and msg["content"] == "agent-eval-probe"
+        assert cmd.headers["makers-conversation-id"] == cmd.url.path.split("/")[2]
+
+    def test_probe_attaches_bearer_from_verified_login(self) -> None:
+        """探测请求挂登录实测提取的 Bearer（与执行器 mount_headers 同构——鉴权后
+        端点裸探会假阴性）；token 值不回流工具输出。"""
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        server._store_token("SUT", "T0KPEN")  # noqa: SLF001 — 模拟 probe_login 成功登记
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        cmd = next(r for r in seen if r.url.path.endswith("/commands"))
+        assert cmd.headers["Authorization"] == "Bearer T0KPEN"
+        assert "T0KPEN" not in json.dumps(result)
 
 
 # ── ask_user 桥与凭证直写 ────────────────────────────────────────────

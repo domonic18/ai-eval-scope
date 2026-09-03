@@ -133,7 +133,7 @@ async def commands_run(
     response = await channel.request(
         "POST",
         f"/threads/{tid}/commands",
-        json_body=run_start_envelope(channel, input, metadata),
+        json_body=run_start_envelope(input, configurable=channel.sut.configurable, metadata=metadata),
         headers=conversation_headers(tid),
     )
     payload = channel._json(response)
@@ -157,12 +157,19 @@ async def commands_run(
 
 
 def run_start_envelope(
-    channel: AgentProtocolChannel, input: Any, metadata: dict[str, Any] | None
+    input: Any,
+    *,
+    configurable: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """构造 run.start 命令信封；消息置于 params.input.messages（v4.6.4 契约）。"""
+    """构造 run.start 命令信封；消息置于 params.input.messages（v4.6.4 契约）。
+
+    执行器与协议探测共用同一构造（v3.9 同构：probe 说执行器的方言，
+    信封/消息形态/请求头永不漂移）。
+    """
     params: dict[str, Any] = {"input": {"messages": messages_from_input(input)}}
-    if channel.sut.configurable:
-        params["config"] = {"configurable": dict(channel.sut.configurable)}
+    if configurable:
+        params["config"] = {"configurable": dict(configurable)}
     if metadata:
         params["metadata"] = metadata
     return {"id": 1, "method": "run.start", "params": params}
@@ -228,7 +235,7 @@ async def commands_stream(
     response = await channel.request(
         "POST",
         f"/threads/{tid}/commands",
-        json_body=run_start_envelope(channel, input, metadata),
+        json_body=run_start_envelope(input, configurable=channel.sut.configurable, metadata=metadata),
         headers=conversation_headers(tid),
     )
     payload = channel._json(response)

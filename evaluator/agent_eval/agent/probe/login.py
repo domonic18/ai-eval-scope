@@ -184,6 +184,7 @@ class LoginMixin:
             if token_extracted:
                 # 证据账本 + 装配片段：事实在产生处机械转换一次（YAML 由工具渲染，
                 # 非经 LLM 转述）——落盘时原样使用即可，变形会被对账门禁打回
+                self._store_token(ref, token_value)  # 服务端持有，探测请求挂鉴权（不回流）
                 self._record_login(
                     {
                         "ref": ref,

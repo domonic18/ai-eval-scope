@@ -1,20 +1,34 @@
 """agent-protocol 符合性矩阵探测 — 含写操作，收尾清理（arch/15 §6.6）。
 
-逐端点事实记录（非二值判定）：建临时线程 → commands → state → stream，
+逐端点事实记录（非二值判定）：建线程 → commands → state → stream，
 ✅/❌ 矩阵交 Agent 写进 sut_configs 的 protocol_flavor 与端点形态依据；
-矩阵机械登记进证据账本（``_record_protocol``），作为落盘对账门禁的事实源。
+矩阵机械登记进证据账本（``_record_protocol``），作为落盘对账门禁的事实源
+（核心判据 = send_command）。
 
-事实质量（v3.6）：3xx 重定向**不是**端点存在的证据（页面服务/catch-all 常见，
-曾是假 ✅ 的来源）；建线程失败（无 tid）时跳过后续端点——对空 tid 畸形路径的
-请求落在 catch-all 上会产出「commands ✅」的假证据，把 Agent 引向错误结论。
+与执行器契约**同构**（v3.9）：AG-UI 网关族由客户端生成线程 UUID、首个
+run.start 隐式建线程——执行器从不调用 POST /threads。故建线程端点失败
+不再阻断矩阵（那曾是「探测失败 → 判定不支持 agent_protocol」假阴性的
+根因），继续以客户端 UUID 实测 commands/state；命令信封/消息形态/
+会话路由头/鉴权头全部复用执行器单源构造（thread_commands + 登录令牌），
+探测说的就是执行器说的方言——探测结论直接预测执行行为。
+
+事实质量（v3.6）：3xx 重定向**不是**端点存在的证据（页面服务/catch-all
+常见，曾是假 ✅ 的来源）。
 """
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from agent_eval.agent.probe.fetch import _host_of
 from agent_eval.agent.tools import truncate
+from agent_eval.execution.channels.thread_commands import (
+    conversation_headers,
+    run_start_envelope,
+)
+
+_PROBE_INPUT = "agent-eval-probe"  # 临时线程的探测输入（收尾即清理）
 
 
 class ProtocolMixin:
@@ -32,29 +46,44 @@ class ProtocolMixin:
             return {"error": host_err}
         base = base_url.rstrip("/")
         matrix: list[dict[str, Any]] = []
-        tid = ""
-        steps: list[tuple[str, str, dict[str, Any] | None]] = [
-            ("create_thread", "POST /threads", {"metadata": {"source": "agent-eval-probe"}}),
-        ]
+        # 执行器契约：线程 ID 客户端生成，首个 run.start 隐式建线程（v3.9 同构）
+        tid = str(uuid.uuid4())
+        auth = self.auth_headers
+        # (步骤名, 端点模板, body, 附加头)——线程级请求带会话路由头（执行器同款）
         if flavor == "commands":
-            steps += [
-                ("send_command", "POST /threads/{tid}/commands", {"input": "ping"}),
-                ("get_state", "GET /threads/{tid}/state", None),
+            steps: list[tuple[str, str, dict[str, Any] | None, dict[str, str]]] = [
+                ("create_thread", "POST /threads", {"metadata": {"source": "agent-eval-probe"}}, {}),
+                (
+                    "send_command",
+                    "POST /threads/{tid}/commands",
+                    run_start_envelope(_PROBE_INPUT),
+                    conversation_headers(tid),
+                ),
+                ("get_state", "GET /threads/{tid}/state", None, conversation_headers(tid)),
             ]
         else:  # runs 形态
-            steps += [
-                ("agents_search", "POST /agents/search", {}),
-                ("run_wait", "POST /threads/{tid}/runs/wait", {"input": "ping"}),
+            steps = [
+                ("agents_search", "POST /agents/search", {}, {}),
+                (
+                    "run_wait",
+                    "POST /threads/{tid}/runs/wait",
+                    run_start_envelope(_PROBE_INPUT),
+                    conversation_headers(tid),
+                ),
             ]
         try:
             client_cm = await self._client()
             async with client_cm as client:
-                for name, endpoint, body in steps:
+                for name, endpoint, body, extra_headers in steps:
                     method = endpoint.split(" ")[0]
                     path = endpoint.split(" ")[1].replace("{tid}", tid)
-                    kwargs = {"json": body} if body is not None and method == "POST" else {}
+                    kwargs: dict[str, Any] = (
+                        {"json": body} if body is not None and method == "POST" else {}
+                    )
                     try:
-                        response = await client.request(method, f"{base}{path}", **kwargs)
+                        response = await client.request(
+                            method, f"{base}{path}", headers={**auth, **extra_headers}, **kwargs
+                        )
                         ok = 200 <= response.status_code < 300
                         if 300 <= response.status_code < 400:
                             # 重定向 ≠ 端点存在：catch-all/页面服务的回退不是协议证据
@@ -70,40 +99,38 @@ class ProtocolMixin:
                                 else f"HTTP {response.status_code}"
                             )
                         if name == "create_thread" and ok:
-                            tid = str(response.json().get("thread_id", ""))
+                            # 服务端建线程形态（langgraph 平台风格）：采信服务端 tid
+                            try:
+                                tid = str(response.json().get("thread_id", "")) or tid
+                            except Exception:  # noqa: BLE001 — tid 解析失败保留客户端 UUID
+                                pass
                     except Exception as e:  # noqa: BLE001 — 单端点失败记入矩阵继续
                         ok, note = False, truncate(str(e), 200)
                     matrix.append(
                         {
                             "step": name,
-                            "endpoint": endpoint.replace("{tid}", tid or "…"),
+                            "endpoint": endpoint.replace("{tid}", tid[:8]),
                             "ok": ok,
                             "note": note,
                         }
                     )
-                    if name == "create_thread" and not tid:
-                        # 无 tid 时后续端点是对畸形路径（/threads//…）的请求——
-                        # 落在 catch-all 上会产出假 ✅；如实记录「未探测」
-                        matrix.append(
-                            {
-                                "step": "skipped",
-                                "endpoint": "后续端点",
-                                "ok": False,
-                                "note": (
-                                    "未获得 thread_id（建线程失败）——后续端点未探测；"
-                                    "该 host 不能声明 agent_protocol"
-                                ),
-                            }
-                        )
-                        break
+                if matrix and matrix[0]["step"] == "create_thread" and not matrix[0]["ok"]:
+                    # 建线程端点失败 ≠ 协议不支持：执行器从不调用 POST /threads
+                    matrix[0]["note"] = (
+                        f"{matrix[0]['note']}——AG-UI 网关族（执行器契约）由客户端生成"
+                        "线程 ID、首个 run.start 隐式建线程，已按该契约以客户端 UUID"
+                        "继续实测；协议判定以 send_command/get_state 为准"
+                    )
                 if tid:  # stream 端点（只读响应头即断）
                     for spath in (f"/threads/{tid}/stream/events", f"/threads/{tid}/stream"):
                         try:
-                            async with client.stream("GET", f"{base}{spath}") as s:
+                            async with client.stream(
+                                "GET", f"{base}{spath}", headers={**auth, **conversation_headers(tid)}
+                            ) as s:
                                 matrix.append(
                                     {
                                         "step": "stream",
-                                        "endpoint": spath,
+                                        "endpoint": spath.replace(tid, tid[:8]),
                                         "ok": s.status_code < 400,
                                         "note": f"HTTP {s.status_code}",
                                     }
@@ -113,18 +140,20 @@ class ProtocolMixin:
                             matrix.append(
                                 {
                                     "step": "stream",
-                                    "endpoint": spath,
+                                    "endpoint": spath.replace(tid, tid[:8]),
                                     "ok": False,
                                     "note": truncate(str(e), 120),
                                 }
                             )
                 if tid:  # 收尾清理（尽力而为）
                     try:
-                        await client.request("DELETE", f"{base}/threads/{tid}")
+                        await client.request(
+                            "DELETE", f"{base}/threads/{tid}", headers={**auth, **conversation_headers(tid)}
+                        )
                         matrix.append(
                             {
                                 "step": "cleanup",
-                                "endpoint": f"DELETE /threads/{tid}",
+                                "endpoint": f"DELETE /threads/{tid[:8]}…",
                                 "ok": True,
                                 "note": "临时线程已清理",
                             }
@@ -143,7 +172,9 @@ class ProtocolMixin:
         return {
             "matrix": matrix,
             "note": (
-                "逐端点事实记录，非二值判定；只有建线程与核心端点（commands/runs）"
-                "均为 ✅ 才能声明 agent_protocol——重定向与 catch-all 200 不是证据"
+                "逐端点事实记录，非二值判定；矩阵与执行器契约同构（线程 ID 客户端生成、"
+                "run.start 信封、会话路由头与鉴权头自动挂载）——协议判定以 send_command/"
+                "get_state 为准，POST /threads 是否存在不影响判定；重定向与 catch-all 200"
+                " 不是证据"
             ),
         }
