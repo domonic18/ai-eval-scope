@@ -601,6 +601,29 @@ class TestProbeLogin:
         _run(server.probe_login(_LOGIN_CFG, "SUT"))
         assert server.verified_login("SUT") is None
 
+    def test_token_path_fix_retry_not_locked(self) -> None:
+        """登录成功（2xx）不入锁：凭证已被认证层验证有效，更正 token_path 的重测
+        无撞锁风险（实测卡点：200 但 token_path 配错，重测被防锁拦截）。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
+
+        calls = {"n": 0}
+
+        def counting(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return ok_login(request)
+
+        server, _ = self._server(counting, ask=_ask(lambda q, **kw: "发送"))
+        wrong_path = {**_LOGIN_CFG, "token_path": "data.token"}
+        first = _run(server.probe_login(wrong_path, "SUT"))
+        assert first["ok"] is False and first["token_extracted"] is False
+        assert "不受" in first["next_step"] and "防锁" in first["next_step"]
+        second = _run(server.probe_login(_LOGIN_CFG, "SUT"))  # 同 URL 同模板，仅正 token_path
+        assert "防锁" not in second.get("error", "")
+        assert second["ok"] is True and calls["n"] == 2
+        assert server.verified_login("SUT")["token_path"] == "token"  # 成功事实入账本
+
     def test_status_guidance_distinguishes_404_from_auth_fail(self) -> None:
         """POST 判别语义：404=路径不存在交用户核对；401=接口存在，收集凭证重测。"""
 

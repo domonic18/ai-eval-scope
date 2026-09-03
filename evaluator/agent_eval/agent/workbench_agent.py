@@ -553,11 +553,22 @@ class WorkbenchAgent:
         host = _base_url_host(str(sut.get("base_url", "")))
         fact = self.probe.verified_protocol(host) if host else None
         if fact is None:
+            # 机械复用会话内证据：登录实测成功的接口域是协议探测的头号候选
+            # （接口域与登录域常同域）——先探测候选，全部落空再问用户，
+            # 不让用户重复提供本会话已解析出的信息
+            candidates = sorted(self.probe.login_hosts - {host})
+            hint = (
+                f"候选接口域（本会话登录实测成功）：{'、'.join(candidates)}"
+                "——先 probe_protocol 这些域，全部落空再向用户确认"
+                if candidates
+                else "请先调用 probe_protocol(base_url=…) 探测该主机；探测不通则"
+                "复用本会话已验证的接口域证据（登录域/检索到的 baseURL 域）形成候选"
+                "逐一实测，全部落空再向用户确认正确的接口域"
+            )
             return [
                 f"{rel} 声明 channel: agent_protocol，但 base_url 的主机 {host or '?'} "
                 "本会话未经 probe_protocol 实测（协议形态与地址必须是验证过的结论）。"
-                "请先调用 probe_protocol(base_url=…) 探测该主机并按 ✅ 端点写 "
-                "protocol_flavor；探测不通则与用户确认正确的接口域后再写配置"
+                f"{hint}"
             ]
         flavor = str(sut.get("protocol_flavor", "commands"))
         core = "send_command" if flavor == "commands" else "run_wait"

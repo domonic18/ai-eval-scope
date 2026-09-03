@@ -180,6 +180,15 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         """查协议矩阵事实（落盘对账门禁用）。"""
         return self._verified_protocols.get(host.lower())
 
+    @property
+    def login_hosts(self) -> set[str]:
+        """本会话登录实测成功过的接口域（小写）——协议探测的候选证据源。"""
+        hosts: set[str] = set()
+        for fact in self._verified_logins.values():
+            if host := _host_of(fact.get("url", "")):
+                hosts.add(host.lower())
+        return hosts
+
     def _budget(self, tool: str) -> dict[str, str] | None:
         limit = self.budgets.get(tool)
         if limit is None:

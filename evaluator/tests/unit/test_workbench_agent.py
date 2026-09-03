@@ -573,6 +573,44 @@ class TestAgentTurn:
 
         assert result.committed, result.validation_errors
 
+    def test_protocol_gate_error_carries_session_candidates(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """门禁打回时机械复用会话内证据：登录实测成功的域是协议探测的头号候选
+        （实测反馈：会话已解析出接口结构，打回后却又让用户重复提供）。"""
+
+        async def write_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file(
+                "sut_configs/web.yaml",
+                "sut:\n  name: web\n  channel: agent_protocol\n"
+                "  base_url: https://web.example.com\n",
+            )
+            return "把页面域写成了 agent_protocol"
+
+        fake, _ = _replay([write_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=1), log_dir=tmp_path / "log"
+        )
+        agent.probe._record_login(  # noqa: SLF001 — 模拟本会话已实测 sasan-server 域登录
+            {
+                "ref": "teacher-login",
+                "method": "POST",
+                "url": "https://sasan-server.example.com/users/login",
+                "body_template": '{"phone": "{{ username }}"}',
+                "token_path": "token",
+                "auth_snippet": "auth: {}",
+            }
+        )
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not result.committed
+        joined = "\n".join(result.validation_errors)
+        assert "候选接口域" in joined and "sasan-server.example.com" in joined
+        assert "先 probe_protocol" in joined  # 先探测候选，全部落空再问用户
+
     def test_evidence_gate_requires_login_probe_evidence(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -1,10 +1,10 @@
 """登录实测 — 预览确认 + 防锁 + 凭证旁路 + ask_user（arch/15 §6.6 红线域）。
 
 红线：凭证外发硬门禁（发送前必出脱敏预览并经用户确认，预览即凭证外发同意）、
-登录防锁（**失败语义分层**：仅认证层已介入的失败入锁——同 ref+URL+模板组合
-不自动重试，防真实系统撞锁；404 路径不存在 / 网络失败未到认证层不入锁，换路径
-探索合法，受轮内预算约束）、凭证值不回流 LLM 上下文（凭证直写密钥区，账密与
-响应 token 一并脱敏）。
+登录防锁（**失败语义分层**：仅认证层拒绝（4xx/5xx）入锁——同 ref+URL+模板组合
+不自动重试，防真实系统撞锁；404 未到认证层、网络失败、**登录成功（2xx，凭证已
+验证有效，更正 token_path 的重测无撞锁风险）** 均不入锁，受轮内预算约束）、
+凭证值不回流 LLM 上下文（凭证直写密钥区，账密与响应 token 一并脱敏）。
 """
 
 from __future__ import annotations
@@ -88,9 +88,10 @@ class LoginMixin:
         if key in self._login_tried:
             return {
                 "error": (
-                    "该接口与字段组合已实测过一次且失败（防锁红线：认证层已介入的失败不"
+                    "该接口与字段组合已被认证层拒绝过（防锁红线：4xx/5xx 拒绝的组合不"
                     "自动重试，防真实系统撞锁），同一配置不再发送。更新 body_template 或"
-                    "地址后即为新组合可再试；换路径探测不受此限（404 未到认证层不入锁）"
+                    "地址后即为新组合可再试；登录成功（2xx）与 404 的组合不入锁——"
+                    "更正 token_path 后可直接重测"
                 )
             }
         # 占位符语法校验：渲染后残留 ${var}/{{var}} 即模板写错——拒发（预览即最终
@@ -177,10 +178,10 @@ class LoginMixin:
                 "优先；勿凭空拼凑路径清单——catch-all 服务上 GET 200 不代表存在，以"
                 "实测为准）；或把证据呈现给用户核对地址。受轮内预算约束，勿单轮扫路径"
             )
-        else:
-            # 认证层已介入（含成功）：同组合不自动重试——防的是真实撞锁风险
-            self._login_tried.add(key)
-            if status < 400 and token_extracted:
+        elif status < 400:
+            # 登录成功（2xx）：凭证已被认证层验证有效——重测（如更正 token_path）
+            # 无撞锁风险，不入锁；重试受轮内预算 + 每次发送需预览确认约束
+            if token_extracted:
                 # 证据账本 + 装配片段：事实在产生处机械转换一次（YAML 由工具渲染，
                 # 非经 LLM 转述）——落盘时原样使用即可，变形会被对账门禁打回
                 self._record_login(
@@ -204,14 +205,21 @@ class LoginMixin:
                     " 的 auth: 段（勿拆分 URL、勿增删字段；凭证仅 credential_ref 引用）；"
                     "落盘对账门禁会用执行器同款逻辑与实测证据逐字段比对"
                 )
-            elif status < 400:
-                guidance = "请求成功但未提取到 token——核对 token_path 配置或把证据呈现给用户"
             else:
                 guidance = (
-                    f"HTTP {status}：接口存在（路由已匹配，校验/鉴权未过）——按证据核对字段名，"
-                    "逐字段 ask_user(kind=credential) 收集/更正凭证后重测（新凭证录入即解锁"
-                    "一次重试），或按证据更正 body_template（模板变化亦为新组合）"
+                    "登录成功但未提取到 token（token_path 与响应结构不符）——按响应证据"
+                    "更正 token_path 后重测即可：登录已成功、凭证已验证有效，重测不受"
+                    "防锁限制（无撞锁风险）；以最终实测通过的 sut_config_auth_snippet 落盘"
                 )
+        else:
+            # 认证层拒绝（4xx/5xx）：同组合不自动重试——防的是真实撞锁风险
+            # （2xx 成功与 404 均不入锁：前者凭证已验证有效，后者未到认证层）
+            self._login_tried.add(key)
+            guidance = (
+                f"HTTP {status}：接口存在（路由已匹配，校验/鉴权未过）——按证据核对字段名，"
+                "逐字段 ask_user(kind=credential) 收集/更正凭证后重测（新凭证录入即解锁"
+                "一次重试），或按证据更正 body_template（模板变化亦为新组合）"
+            )
         result: dict[str, Any] = {
             "ok": status < 400 and token_extracted,
             "status": status,
