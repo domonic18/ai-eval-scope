@@ -68,6 +68,44 @@ sut:
         registry.get("ghost")
 
 
+def test_get_falls_back_to_file_stem_when_name_drifts(tmp_path) -> None:
+    """stem 容错（实测两次复发：向导/CLI 按文件名列出并选择 SUT，Agent 生成包的
+    sut.name 与文件名漂移——精确名未命中按 stem 兜底，机械容错不设门禁）。"""
+    _write(
+        tmp_path,
+        "sasan-agent-security.yaml",  # 文件名 stem
+        """
+sut:
+  name: sasan-agent-staging  # 注册名（与文件名漂移）
+  channel: agent_protocol
+  base_url: https://sut.example.com
+""",
+    )
+    registry = SUTRegistry.load_dir(tmp_path)
+    by_stem = registry.get("sasan-agent-security")  # 向导传的是 stem
+    assert by_stem.name == "sasan-agent-staging"
+    assert registry.get("sasan-agent-staging") is by_stem  # 注册名照常精确命中
+
+
+def test_get_miss_reports_registered_names_and_file_stems(tmp_path) -> None:
+    """双不命中：报错同时携带注册名与文件名两份清单（用户可对照选对标识）。"""
+    _write(
+        tmp_path,
+        "some-file.yaml",
+        """
+sut:
+  name: registered-name
+  channel: agent_protocol
+  base_url: https://sut.example.com
+""",
+    )
+    registry = SUTRegistry.load_dir(tmp_path)
+    with pytest.raises(SUTChannelError) as err:
+        registry.get("ghost")
+    assert err.value.details["available"] == ["registered-name"]
+    assert err.value.details["file_names"] == ["some-file"]
+
+
 def test_missing_sut_section_raises(tmp_path) -> None:
     path = _write(tmp_path, "bad.yaml", "other: 1\n")
     with pytest.raises(SUTChannelError, match="缺少顶层 'sut:'"):

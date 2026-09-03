@@ -251,10 +251,21 @@ def validate_sut_config_document(data: Any) -> list[str]:
 
 
 class SUTRegistry:
-    """多系统注册表：加载 sut_configs（单文件或目录），按 sut.name 索引。"""
+    """多系统注册表：加载 sut_configs（单文件或目录），按 sut.name 索引。
 
-    def __init__(self, configs: dict[str, SUTSystemConfig]) -> None:
+    文件名 stem 作为**取用容错键**（实测两次：向导/CLI 以文件名列出并选择 SUT，
+    Agent 生成包的 ``sut.name`` 却与文件名漂移——get() 在注册名未命中时按 stem
+    兜底。机械容错而非门禁拦卡：一致性问题不拦 Agent（v3.12 评审裁决），执行侧
+    让 stem 与 name 等价可解析）。
+    """
+
+    def __init__(
+        self,
+        configs: dict[str, SUTSystemConfig],
+        stems: dict[str, str] | None = None,
+    ) -> None:
         self._configs = configs
+        self._stems = stems or {}  # 文件名 stem → 注册名（stem 与 name 漂移时的容错索引）
 
     @classmethod
     def load(cls, path: Path | str) -> SUTRegistry:
@@ -266,22 +277,28 @@ class SUTRegistry:
                 f"sut_config 缺少顶层 'sut:' 段: {path}", details={"path": str(path)}
             )
         config = SUTSystemConfig.model_validate(expand_env_refs(sut_data))
-        return cls({config.name: config})
+        return cls({config.name: config}, {Path(path).stem: config.name})
 
     @classmethod
     def load_dir(cls, directory: Path | str) -> SUTRegistry:
         """聚合加载目录下全部 *.yaml / *.yml（每份一个系统）。"""
         configs: dict[str, SUTSystemConfig] = {}
+        stems: dict[str, str] = {}
         for file in sorted(Path(directory).glob("*.y*ml")):
             registry = cls.load(file)
             configs.update(registry._configs)
-        return cls(configs)
+            stems.update(registry._stems)
+        return cls(configs, stems)
 
     def get(self, name: str) -> SUTSystemConfig:
-        """按系统名取配置；不存在抛 SUTChannelError。"""
+        """按系统名取配置；注册名未命中时按文件名 stem 兜底；都不存在抛 SUTChannelError。"""
         if name not in self._configs:
+            registered = self._stems.get(name)
+            if registered is not None:
+                return self._configs[registered]
             raise SUTChannelError(
-                f"未注册的被测系统: {name!r}", details={"available": sorted(self._configs)}
+                f"未注册的被测系统: {name!r}",
+                details={"available": sorted(self._configs), "file_names": sorted(self._stems)},
             )
         return self._configs[name]
 
