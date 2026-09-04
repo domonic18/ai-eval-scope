@@ -289,3 +289,21 @@ def test_session_store_unused_when_not_configured(tmp_path) -> None:
     channel = _channel(_sut(), handler)
     asyncio.run(channel.run("x"))
     assert not (tmp_path / "any").exists()
+
+
+def test_commands_flavor_local_tools_marked_simulated() -> None:
+    """commands 形态 create_thread / get_agent_info 为本地构造——必须带
+    local-simulated 标注（实测：执行 Agent 曾把该「成功」当服务端可达证据，
+    commands 端点 404 后反复重试不撒手）。"""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError(f"不应产生网络请求: {request.url}")
+
+    channel = _channel(_sut(protocol_flavor="commands"), handler)
+    thread = asyncio.run(channel.create_thread())
+    assert thread["source"] == "local-simulated"
+    assert thread["thread_id"]
+    assert "不能作为服务端可达的证据" in thread["note"]
+    info = asyncio.run(channel.get_agent_info())
+    assert info["source"] == "local-simulated"
+    assert info["endpoints"]["commands"] == "/threads/{thread_id}/commands"

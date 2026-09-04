@@ -76,6 +76,15 @@ def scenario_new(
     trust_agent: bool = typer.Option(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
+    max_turns: int = typer.Option(
+        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+    ),
+    max_segments: int = typer.Option(
+        3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"
+    ),
+    budget_usd: float | None = typer.Option(
+        None, "--budget-usd", help="Agent 会话预算上限（美元；缺省不启用）"
+    ),
 ) -> None:
     """创建场景包（skeleton 骨架 / agent 自然语言生成 / template 模板）。"""
     if mode == "skeleton":
@@ -90,7 +99,7 @@ def scenario_new(
         )
         return
     if mode == "agent":
-        from agent_eval.cli.cmds.scenario_agent import agent_new_package
+        from agent_eval.cli.cmds.workbench_agent import agent_new_package
 
         root = agent_new_package(
             ref=ref,
@@ -98,6 +107,9 @@ def scenario_new(
             instruction=instruction,
             yes=yes,
             trust_agent=trust_agent,
+            max_turns=max_turns,
+            max_segments=max_segments,
+            budget_usd=budget_usd,
         )
         rprint(
             f"[green]✅ 场景包已生成[/green] → {root}\n"
@@ -121,13 +133,30 @@ def scenario_edit(
     trust_agent: bool = typer.Option(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
+    max_turns: int = typer.Option(
+        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+    ),
+    max_segments: int = typer.Option(
+        3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"
+    ),
+    budget_usd: float | None = typer.Option(
+        None, "--budget-usd", help="Agent 会话预算上限（美元；缺省不启用）"
+    ),
 ) -> None:
     """Agent 会话改包：自然语言增删改查（沙盒 + diff 确认 + 校验门禁）。"""
-    from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+    from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
     if ref is None:
         ref = select_editable_ref()
-    agent_edit_package(ref=ref, instruction=instruction, yes=yes, trust_agent=trust_agent)
+    agent_edit_package(
+        ref=ref,
+        instruction=instruction,
+        yes=yes,
+        trust_agent=trust_agent,
+        max_turns=max_turns,
+        max_segments=max_segments,
+        budget_usd=budget_usd,
+    )
 
 
 def _resolve_root(ref: str) -> tuple[Path, PackageManifest]:
@@ -327,7 +356,13 @@ def scenario_validate(
         raise typer.Exit(code=1) from e
 
     problems: list[str] = []
-    for sub in ("rules", "prompts", "datasets"):
+    # 资源目录按包形态判定（运行时真相）：清单声明 default_task_set = 在线 SUT
+    # 形态，考卷来自 task_sets/、datasets 不参与（内置 chat 包即无 datasets/）；
+    # 未声明 = 离线文件形态，datasets/ 必需
+    required_dirs = ["rules", "prompts"]
+    if manifest.default_task_set is None:
+        required_dirs.append("datasets")
+    for sub in required_dirs:
         d = path / sub
         if not d.is_dir():
             problems.append(f"缺少资源目录: {sub}/")
@@ -343,6 +378,28 @@ def scenario_validate(
             yaml.safe_load(rf.read_text(encoding="utf-8"))
         except Exception as e:  # noqa: BLE001
             problems.append(f"规则 YAML 解析失败 {rf.name}: {e}")
+
+    # 规则引用对账（与 Agent staging validate_package 同源）——evaluator 未注册等
+    # 悬空引用在落盘/发布前打回，不等到运行时产出全 0 报告才发现
+    from agent_eval.evaluation.rule_refs import check_rule_references
+
+    problems += check_rule_references(path)
+
+    # sut_configs 走执行器同款 schema 校验（未知键显式打回——执行器运行时
+    # extra="allow" 会静默丢弃发明字段，如自造的 login.base_url）
+    from agent_eval.execution.registry import validate_sut_config_document
+
+    sut_dir = path / "sut_configs"
+    if sut_dir.is_dir():
+        for sf in sorted([*sut_dir.glob("*.yaml"), *sut_dir.glob("*.yml")]):
+            try:
+                doc = yaml.safe_load(sf.read_text(encoding="utf-8"))
+            except Exception as e:  # noqa: BLE001
+                problems.append(f"sut_config YAML 解析失败 {sf.name}: {e}")
+                continue
+            problems += [
+                f"sut_config 校验失败 {sf.name}: {msg}" for msg in validate_sut_config_document(doc)
+            ]
 
     if problems:
         rprint(f"[red]❌ 校验失败（{len(problems)} 项）:[/red]")

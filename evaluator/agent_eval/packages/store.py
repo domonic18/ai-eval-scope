@@ -5,7 +5,7 @@
 - **本地缓存**：用户包与 ``pull`` 产物，位于 ``AGENT_EVAL_PACKAGE_DIR`` 或
   ``~/.agent_eval/packages/``，按 ``<scenario>/<package>/<version>/`` 组织。
 - **项目包**：当前工作目录下的 ``*/agent_eval.yaml``（仅一级子目录）——
-  ``scenario new`` / PackageAgent 的默认落盘位置（``./<id>-package/``），
+  ``scenario new`` / WorkbenchAgent 的默认落盘位置（``./<id>-package/``），
   生成后无需注册即可被发现与执行（可由 ``AGENT_EVAL_PROJECT_DIR`` 覆盖）。
 
 清单（``agent_eval.yaml``）是唯一真相来源；缓存/内置目录约定为

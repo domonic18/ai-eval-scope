@@ -153,8 +153,16 @@ class AgentProtocolChannel(SUTChannel):
 
     async def create_thread(self, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
         if self.sut.protocol_flavor == "commands":
-            # commands 形态线程由客户端生成 UUID（首个 run.start 隐式建线程）
-            return {"thread_id": str(uuid.uuid4())}
+            # commands 形态线程由客户端生成 UUID（首个 run.start 隐式建线程）——
+            # 本地构造值须显式标注，防止被当作服务端可达的证据
+            return {
+                "thread_id": str(uuid.uuid4()),
+                "source": "local-simulated",
+                "note": (
+                    "线程 ID 由客户端生成（首个 run.start 隐式建线程）——"
+                    "本次未访问服务器，不能作为服务端可达的证据"
+                ),
+            }
         response = await self.request("POST", "/threads", json_body={"metadata": metadata or {}})
         thread_id = self._json(response).get("thread_id")
         if not thread_id:

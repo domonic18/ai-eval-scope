@@ -185,6 +185,10 @@ class ChatAnswerQualityEvaluator(BaseLLMJudgeEvaluator):
     tier = ConstraintTier.SOFT
     method = EvalMethod.LLM_JUDGE
     template_id = "chat_answer_quality"
+    # 判官模板变量契约（落盘对账用，与 _build_variables 保持一致）：包内
+    # user_prompt_template 只能使用这些变量——写错运行时 StrictUndefined 必报
+    # 「模板渲染失败，变量缺失」→ 该规则 0 分（实测 agent-security 包事故）
+    prompt_variables = frozenset({"content", "instruction", "must_mention"})
 
     def _build_variables(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
         task_input = context.get("task_input") or {}
@@ -210,6 +214,8 @@ class ChatAnswerConsistencyEvaluator(BaseLLMJudgeEvaluator):
     tier = ConstraintTier.SOFT
     method = EvalMethod.LLM_JUDGE
     template_id = "chat_answer_consistency"
+    # 变量契约同 answer_quality（见其注释）；reference 来自 expected.reference
+    prompt_variables = frozenset({"content", "instruction", "reference"})
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> Any:
         """未声明 expected.reference 时 SKIP（不计分），否则走 LLM Judge 基类流程。"""

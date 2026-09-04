@@ -47,6 +47,16 @@ def _isolate_sut_credentials(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setenv("AGENT_EVAL_SUT_CREDENTIALS", str(tmp_path / "no-sut-credentials.json"))
 
 
+@pytest.fixture(autouse=True)
+def _reset_cli_output_format() -> None:
+    """每例复位 CLI 输出形态（global rich console 挂载）：--output-format json 的
+    CliRunner 用例会把全局态置 json（stdout 代理到 stderr）且 CliRunner 不还原——
+    泄漏给同 worker 后续用例（test_cli_llm_check 断言 out 为空即此因，全量跑偶发）。"""
+    from agent_eval.cli.console.output import set_output_format
+
+    set_output_format("text")
+
+
 # ─── SampleResult fixtures ───
 
 

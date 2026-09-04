@@ -11,21 +11,30 @@ from agent_eval.cli.console.prompts import ask, select
 
 
 def main(session: Any) -> None:  # WorkbenchSession（避免循环导入用 duck type）
+    # Agent 两项为「档位快捷方式」（§3.5）：预载对象上下文的快捷入口——
+    # 语义从「Agent 的功能」改为「用 Agent 做某事」，通用对话式入口在主菜单一级
     action = select(
         "场景包动作",
-        ["查看包内容", "Agent 会话改包", "Agent 生成新包", "列出全部包", "校验项目包", "返回"],
+        [
+            "查看包内容",
+            "用 Agent 修改选中的包",
+            "用 Agent 创建场景包",
+            "列出全部包",
+            "校验项目包",
+            "返回",
+        ],
     )
     if action.startswith("查看包内容"):
         _view()
-    elif action.startswith("Agent 会话改包"):
+    elif action.startswith("用 Agent 修改"):
         from agent_eval.cli.cmds.scenario import select_editable_ref
-        from agent_eval.cli.cmds.scenario_agent import agent_edit_package
+        from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
         agent_edit_package(
             ref=select_editable_ref(), instruction=None, yes=False, trust_agent=False
         )
-    elif action.startswith("Agent 生成新包"):
-        from agent_eval.cli.cmds.scenario_agent import agent_new_package
+    elif action.startswith("用 Agent 创建"):
+        from agent_eval.cli.cmds.workbench_agent import agent_new_package
 
         # 包名不前置询问——Agent 按需求拟定，会话中自然语言可改（F-C-SCN-AGENT）
         agent_new_package(ref=None, output=None, instruction=None, yes=False, trust_agent=False)

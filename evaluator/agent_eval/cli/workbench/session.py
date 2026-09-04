@@ -14,6 +14,7 @@ from rich import print as rprint
 from agent_eval.cli.console.prompts import select
 
 _DOMAIN_LABELS = {
+    "agent": "工作台 Agent（对话式·推荐）",  # 一级入口（§3.5）：首选工作方式
     "scn": "场景包管理",
     "exec": "执行评测",
     "runs": "查看结果",
@@ -73,6 +74,7 @@ class WorkbenchSession:
             )
 
     def run(self, domain: str | None = None) -> None:
+        from agent_eval.cli.cmds.workbench_agent import agent_workbench_entry
         from agent_eval.cli.workbench.domains import (
             account,
             scn,
@@ -85,6 +87,7 @@ class WorkbenchSession:
         )
 
         handlers = {
+            "agent": lambda _session: agent_workbench_entry(_session),
             "scn": scn.main,
             "exec": exec_domain.main,
             "runs": runs_domain.main,

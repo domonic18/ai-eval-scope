@@ -16,7 +16,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from agent_eval.config.loader import ConfigLoader
 from agent_eval.core.exceptions import SUTChannelError
@@ -180,11 +180,92 @@ class SUTSystemConfig(BaseModel):
         return v
 
 
-class SUTRegistry:
-    """多系统注册表：加载 sut_configs（单文件或目录），按 sut.name 索引。"""
+def resolve_login_url(base_url: str, login_path: str) -> str:
+    """解析登录接口的最终请求 URL：绝对 path 直用，否则拼 sut.base_url。
 
-    def __init__(self, configs: dict[str, SUTSystemConfig]) -> None:
+    执行器登录（``provider._login_by_api``）与创建侧落盘对账门禁共用此函数——
+    「配置实际会打到哪个 URL」只有一处真相。实测教训：Agent 把已实测的跨域登录
+    接口拆成相对 path + 自造的 ``login.base_url`` 字段（执行器无此字段，静默
+    丢弃）后拼回页面域，登录 404。
+    """
+    if login_path.startswith(("http://", "https://")):
+        return login_path
+    return f"{base_url.rstrip('/')}/{login_path.lstrip('/')}"
+
+
+def _unknown_key_errors(data: dict[str, Any], model: type[BaseModel], path: str) -> list[str]:
+    """未知键 = 执行器将静默丢弃的配置——以模型字段为白名单显式打回。
+
+    白名单即 ``model_fields`` 本身，不引入第二份会漂移的字段清单。
+    """
+    hint = ""
+    if path == "sut.auth.login":
+        hint = "（跨域登录接口把完整 http(s):// URL 写进 path——没有 base_url 字段）"
+    known = set(model.model_fields)
+    return [
+        f"{path} 含未知字段 {k!r}，执行器会静默丢弃{hint}；合法字段: {sorted(known)}"
+        for k in sorted(set(data) - known)
+    ]
+
+
+def _brief_validation_errors(err: ValidationError) -> str:
+    parts = [
+        f"{'.'.join(str(loc) for loc in item['loc']) or 'sut'}: {item['msg']}"
+        for item in err.errors()[:5]
+    ]
+    more = f"（等共 {err.error_count()} 处）" if err.error_count() > 5 else ""
+    return "; ".join(parts) + more
+
+
+def validate_sut_config_document(data: Any) -> list[str]:
+    """校验单份 sut_config 文档（包校验层入口）：schema 必填/枚举 + 未知键拒绝。
+
+    执行器模型 ``extra="allow"``（运行时前向兼容），但未知键会被**静默丢弃**——
+    Agent 落盘时发明的字段不报错、不生效，配置与意图悄然背离（实测：登录 404）。
+    包校验层负责把「静默丢弃」变成「显式打回」；``${VAR}`` 展开语义与执行器
+    加载（``SUTRegistry.load``）完全一致。
+    """
+    if not isinstance(data, dict) or not isinstance(data.get("sut"), dict):
+        return ["sut_config 缺少顶层 'sut:' 段"]
+    sut = data["sut"]
+    errors = _unknown_key_errors(sut, SUTSystemConfig, "sut")
+    for section, model in (("auth", AuthConfig), ("output_paths", OutputPathsConfig)):
+        if isinstance(sut.get(section), dict):
+            errors += _unknown_key_errors(sut[section], model, f"sut.{section}")
+    auth = sut.get("auth")
+    if isinstance(auth, dict):
+        for name, model in (
+            ("login", AuthLoginConfig),
+            ("extract", AuthExtractConfig),
+            ("mount", AuthMountConfig),
+        ):
+            if isinstance(auth.get(name), dict):
+                errors += _unknown_key_errors(auth[name], model, f"sut.auth.{name}")
+    try:
+        SUTSystemConfig.model_validate(expand_env_refs(sut))
+    except ValidationError as e:
+        errors.append(f"sut 段校验失败: {_brief_validation_errors(e)}")
+    except SUTChannelError as e:
+        errors.append(str(e))
+    return errors
+
+
+class SUTRegistry:
+    """多系统注册表：加载 sut_configs（单文件或目录），按 sut.name 索引。
+
+    文件名 stem 作为**取用容错键**（实测两次：向导/CLI 以文件名列出并选择 SUT，
+    Agent 生成包的 ``sut.name`` 却与文件名漂移——get() 在注册名未命中时按 stem
+    兜底。机械容错而非门禁拦卡：一致性问题不拦 Agent（v3.12 评审裁决），执行侧
+    让 stem 与 name 等价可解析）。
+    """
+
+    def __init__(
+        self,
+        configs: dict[str, SUTSystemConfig],
+        stems: dict[str, str] | None = None,
+    ) -> None:
         self._configs = configs
+        self._stems = stems or {}  # 文件名 stem → 注册名（stem 与 name 漂移时的容错索引）
 
     @classmethod
     def load(cls, path: Path | str) -> SUTRegistry:
@@ -196,22 +277,28 @@ class SUTRegistry:
                 f"sut_config 缺少顶层 'sut:' 段: {path}", details={"path": str(path)}
             )
         config = SUTSystemConfig.model_validate(expand_env_refs(sut_data))
-        return cls({config.name: config})
+        return cls({config.name: config}, {Path(path).stem: config.name})
 
     @classmethod
     def load_dir(cls, directory: Path | str) -> SUTRegistry:
         """聚合加载目录下全部 *.yaml / *.yml（每份一个系统）。"""
         configs: dict[str, SUTSystemConfig] = {}
+        stems: dict[str, str] = {}
         for file in sorted(Path(directory).glob("*.y*ml")):
             registry = cls.load(file)
             configs.update(registry._configs)
-        return cls(configs)
+            stems.update(registry._stems)
+        return cls(configs, stems)
 
     def get(self, name: str) -> SUTSystemConfig:
-        """按系统名取配置；不存在抛 SUTChannelError。"""
+        """按系统名取配置；注册名未命中时按文件名 stem 兜底；都不存在抛 SUTChannelError。"""
         if name not in self._configs:
+            registered = self._stems.get(name)
+            if registered is not None:
+                return self._configs[registered]
             raise SUTChannelError(
-                f"未注册的被测系统: {name!r}", details={"available": sorted(self._configs)}
+                f"未注册的被测系统: {name!r}",
+                details={"available": sorted(self._configs), "file_names": sorted(self._stems)},
             )
         return self._configs[name]
 

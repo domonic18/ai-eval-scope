@@ -40,6 +40,8 @@ def commands_agent_info(
 
     /agents/search 是 runs 形态端点；AG-UI 网关族对未知路径回 SPA HTML，
     探测只会得到非 JSON，故 commands 形态以配置自描述替代网络发现。
+    本地构造值必须显式标注（local-simulated）：执行 Agent 曾把该「成功」当
+    服务端健康证据，在 commands 端点 404 后反复重试不撒手。
     """
     resolved = agent_id or channel.sut.agent_id or "default"
     return {
@@ -53,6 +55,11 @@ def commands_agent_info(
             "state": "/threads/{thread_id}/state",
             "stream": "/threads/{thread_id}/stream(/events)",
         },
+        "source": "local-simulated",
+        "note": (
+            "能力描述由本地配置构造（commands 形态无 /agents/search 端点）——"
+            "本次未访问服务器，不能作为服务端可达的证据"
+        ),
     }
 
 
@@ -126,7 +133,9 @@ async def commands_run(
     response = await channel.request(
         "POST",
         f"/threads/{tid}/commands",
-        json_body=run_start_envelope(channel, input, metadata),
+        json_body=run_start_envelope(
+            input, configurable=channel.sut.configurable, metadata=metadata
+        ),
         headers=conversation_headers(tid),
     )
     payload = channel._json(response)
@@ -150,12 +159,19 @@ async def commands_run(
 
 
 def run_start_envelope(
-    channel: AgentProtocolChannel, input: Any, metadata: dict[str, Any] | None
+    input: Any,
+    *,
+    configurable: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """构造 run.start 命令信封；消息置于 params.input.messages（v4.6.4 契约）。"""
+    """构造 run.start 命令信封；消息置于 params.input.messages（v4.6.4 契约）。
+
+    执行器与协议探测共用同一构造（v3.9 同构：probe 说执行器的方言，
+    信封/消息形态/请求头永不漂移）。
+    """
     params: dict[str, Any] = {"input": {"messages": messages_from_input(input)}}
-    if channel.sut.configurable:
-        params["config"] = {"configurable": dict(channel.sut.configurable)}
+    if configurable:
+        params["config"] = {"configurable": dict(configurable)}
     if metadata:
         params["metadata"] = metadata
     return {"id": 1, "method": "run.start", "params": params}
@@ -221,7 +237,9 @@ async def commands_stream(
     response = await channel.request(
         "POST",
         f"/threads/{tid}/commands",
-        json_body=run_start_envelope(channel, input, metadata),
+        json_body=run_start_envelope(
+            input, configurable=channel.sut.configurable, metadata=metadata
+        ),
         headers=conversation_headers(tid),
     )
     payload = channel._json(response)

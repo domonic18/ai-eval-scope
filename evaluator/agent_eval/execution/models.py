@@ -128,6 +128,11 @@ class SUTToolsConfig(BaseModel):
 
     # HTTP SUT 配置
     http_base_url: str | None = Field(default=None, description="默认 HTTP SUT 地址")
+    allowed_hosts: list[str] = Field(
+        default_factory=list,
+        description="invoke_http_sut 绝对 URL 的 host 白名单（空 = 不限制）；"
+        "执行侧 host 边界——LLM 只能访问被测系统配置域",
+    )
     http_default_headers: dict[str, str] = Field(
         default_factory=dict,
         description="默认请求头",

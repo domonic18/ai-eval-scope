@@ -81,5 +81,9 @@ web/backend/public/
 # 只反包含 *.py 源码——勿用 **（会把 __pycache__/.DS_Store 一并重新包含）
 !evaluator/agent_eval/datasets/
 !evaluator/agent_eval/datasets/*.py
+# 部分协作者 ~/.gitignore_global 含 `*.md` 全忽略，会误伤随包发布的资产文档
+# evaluator/agent_eval/assets/guides/（仓库规则优先级高于全局 excludesFile）
+!evaluator/agent_eval/assets/guides/
+!evaluator/agent_eval/assets/guides/*.md
 *.env.local
 

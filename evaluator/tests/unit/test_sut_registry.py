@@ -5,7 +5,12 @@ from __future__ import annotations
 import pytest
 
 from agent_eval.core.exceptions import SUTChannelError
-from agent_eval.execution.registry import SUTRegistry, SUTSystemConfig
+from agent_eval.execution.registry import (
+    SUTRegistry,
+    SUTSystemConfig,
+    resolve_login_url,
+    validate_sut_config_document,
+)
 
 AGENT_PROTOCOL_YAML = """
 sut:
@@ -61,6 +66,44 @@ sut:
     assert registry.get("travel-agent").base_url == "https://travel.example.com"
     with pytest.raises(SUTChannelError, match="未注册"):
         registry.get("ghost")
+
+
+def test_get_falls_back_to_file_stem_when_name_drifts(tmp_path) -> None:
+    """stem 容错（实测两次复发：向导/CLI 按文件名列出并选择 SUT，Agent 生成包的
+    sut.name 与文件名漂移——精确名未命中按 stem 兜底，机械容错不设门禁）。"""
+    _write(
+        tmp_path,
+        "sasan-agent-security.yaml",  # 文件名 stem
+        """
+sut:
+  name: sasan-agent-staging  # 注册名（与文件名漂移）
+  channel: agent_protocol
+  base_url: https://sut.example.com
+""",
+    )
+    registry = SUTRegistry.load_dir(tmp_path)
+    by_stem = registry.get("sasan-agent-security")  # 向导传的是 stem
+    assert by_stem.name == "sasan-agent-staging"
+    assert registry.get("sasan-agent-staging") is by_stem  # 注册名照常精确命中
+
+
+def test_get_miss_reports_registered_names_and_file_stems(tmp_path) -> None:
+    """双不命中：报错同时携带注册名与文件名两份清单（用户可对照选对标识）。"""
+    _write(
+        tmp_path,
+        "some-file.yaml",
+        """
+sut:
+  name: registered-name
+  channel: agent_protocol
+  base_url: https://sut.example.com
+""",
+    )
+    registry = SUTRegistry.load_dir(tmp_path)
+    with pytest.raises(SUTChannelError) as err:
+        registry.get("ghost")
+    assert err.value.details["available"] == ["registered-name"]
+    assert err.value.details["file_names"] == ["some-file"]
 
 
 def test_missing_sut_section_raises(tmp_path) -> None:
@@ -152,3 +195,71 @@ def test_builtin_chat_package_has_no_internal_domain(monkeypatch) -> None:
     assert sut.base_url == "https://agent-server.example.com"
     assert "bj33smarter" not in str(sut.model_dump())
     assert sut.configurable["modelId"] == "1"  # 展开结果为字符串
+
+
+# ── resolve_login_url：URL 解析单源（执行器登录与落盘对账门禁共用） ──────────
+
+
+def test_resolve_login_url_absolute_path_used_verbatim() -> None:
+    assert (
+        resolve_login_url("https://agent.example.com", "https://login.example.com/users/login")
+        == "https://login.example.com/users/login"
+    )
+
+
+def test_resolve_login_url_relative_joins_sut_base_url() -> None:
+    assert resolve_login_url("https://api.example.com/", "/users/login") == (
+        "https://api.example.com/users/login"
+    )
+
+
+# ── validate_sut_config_document：未知键显式拒绝（静默丢弃 → 显式打回） ──────
+
+
+def _minimal_sut() -> dict:
+    return {
+        "sut": {
+            "name": "s",
+            "channel": "agent_protocol",
+            "base_url": "https://s.example.com",
+        }
+    }
+
+
+def test_validate_document_accepts_minimal_config() -> None:
+    assert validate_sut_config_document(_minimal_sut()) == []
+
+
+def test_validate_document_rejects_invented_login_base_url() -> None:
+    """实测教训：Agent 自造 login.base_url 被执行器静默丢弃，登录拼回页面域 404。"""
+    doc = _minimal_sut()
+    doc["sut"]["auth"] = {
+        "type": "api_login",
+        "credential_ref": "r",
+        "login": {
+            "method": "POST",
+            "path": "/users/login",
+            "base_url": "https://login.example.com",  # 发明的字段
+            "body_template": '{"u": "{{ username }}"}',
+        },
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("未知字段 'base_url'" in e and "完整 http(s):// URL" in e for e in errors)
+
+
+def test_validate_document_reports_required_and_enum_errors() -> None:
+    doc = {"sut": {"name": "s", "channel": "nope"}}
+    errors = validate_sut_config_document(doc)
+    assert any("channel" in e for e in errors)
+    assert any("base_url" in e for e in errors)
+
+
+def test_validate_document_missing_sut_section() -> None:
+    assert validate_sut_config_document({"foo": 1}) == ["sut_config 缺少顶层 'sut:' 段"]
+
+
+def test_validate_document_undefined_env_ref_reported() -> None:
+    doc = _minimal_sut()
+    doc["sut"]["base_url"] = "${UNDEFINED_VAR_X}"
+    errors = validate_sut_config_document(doc)
+    assert any("UNDEFINED_VAR_X" in e for e in errors)

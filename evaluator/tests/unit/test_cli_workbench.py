@@ -173,6 +173,50 @@ class TestAccountDomain:
         assert result.exit_code == 0
         assert hit == ["auth"]  # --domain auth 别名直达账号域（arch/15 §13）
 
+    def test_start_domain_agent_entry(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # §3.5：--domain agent 直达工作台 Agent 一级入口；主菜单首项为推荐入口
+        from agent_eval.cli.cmds import workbench_agent as wb
+        from agent_eval.cli.main import app
+        from agent_eval.cli.workbench.session import _DOMAIN_LABELS
+
+        hit: list[str] = []
+        monkeypatch.setattr(wb, "agent_workbench_entry", lambda s=None: hit.append("agent"))
+        result = runner.invoke(app, ["start", "--domain", "agent"])
+        assert result.exit_code == 0
+        assert hit == ["agent"]
+        assert list(_DOMAIN_LABELS)[0] == "agent"  # 一级入口居首（首选工作方式）
+
+    def test_agent_entry_blocks_without_llm(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Agent 入口 preflight 阻断：LLM 未配置 → 指引 models set（区别于查看类只提示）
+        import typer
+
+        from agent_eval.cli.cmds import workbench_agent as wb
+        from agent_eval.cli.main import app
+
+        def boom() -> None:
+            raise typer.Exit(code=1)
+
+        monkeypatch.setattr(wb, "_guard_llm_ready", boom)
+        result = runner.invoke(app, ["start", "--domain", "agent"])
+        assert result.exit_code == 1
+
+    def test_scn_menu_labels_are_profile_shortcuts(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # §3.5：域内两项标签 = 档位快捷方式（「用 Agent …」）
+        import agent_eval.cli.workbench.domains.scn as scn_mod
+
+        picked: list[list[str]] = []
+
+        def fake_select(label: str, options: list[str], **kw: object) -> str:
+            picked.append(options)
+            return "返回"
+
+        monkeypatch.setattr(scn_mod, "select", fake_select)
+        scn_mod.main(session=None)
+        labels = picked[0]
+        assert "用 Agent 创建场景包" in labels
+        assert "用 Agent 修改选中的包" in labels
+        assert not any(label == "Agent 会话改包" for label in labels)
+
 
 # ── doctor ─────────────────────────────────────────────────────────────
 
@@ -431,8 +475,9 @@ class TestExecuteActionDirectCall:
         stubs = _WizardStubs(tmp_path)
         stubs.patch(monkeypatch)
 
-        # 2 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline → y 确认 → 5 退出
-        result = runner.invoke(app, ["start"], input="2\n1\n1\n1\n1\n1\ny\n5\n")
+        # 3 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline → y 确认 → 6 退出
+        # （主菜单首位是工作台 Agent 一级入口，arch/15 §3.5）
+        result = runner.invoke(app, ["start"], input="3\n1\n1\n1\n1\n1\ny\n6\n")
         assert result.exit_code == 0, result.output
         assert "等价命令" in result.output
         # 动作层被真实调用且未崩溃（此前在此处报 OptionInfo TypeError）
