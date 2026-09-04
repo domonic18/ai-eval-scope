@@ -1,7 +1,8 @@
 """LLM 配置文件与角色解析测试（arch/16 §6.2-四 CLI 形态）。
 
 覆盖：llm.json 存取与 0600 权限、文件→平台兜底→报错的解析顺序、
-agent 回退 text、指纹剔除密钥、models 命令交互（CliRunner）。
+agent 回退 text、指纹剔除密钥、models 命令交互（CliRunner）、
+提供商 × 协议预置矩阵与协议归一（厂商键 ≠ 线路协议）。
 """
 
 from __future__ import annotations
@@ -13,8 +14,14 @@ import pytest
 
 from agent_eval.config.llm import LLMConfig, ProviderConfig
 from agent_eval.config.llm_file import (
+    PROTOCOLS,
+    PROVIDER_DEFAULT_BASE_URLS,
+    PROVIDER_LABELS,
+    PROVIDER_MODEL_SUGGESTIONS,
+    PROVIDERS,
     LLMFileConfig,
     RoleConfig,
+    effective_protocol,
     llm_file_path,
     load_llm_file,
     save_llm_file,
@@ -76,6 +83,32 @@ def stat_mode(path: Path) -> int:
     return os.stat(path).st_mode & 0o777
 
 
+class TestProviderProtocolMatrix:
+    """提供商 × 协议预置矩阵与协议归一（厂商键与线路协议正交）。"""
+
+    def test_matrix_covers_every_vendor_protocol_pair(self) -> None:
+        assert tuple(PROVIDER_LABELS) == PROVIDERS
+        assert PROTOCOLS == ("anthropic", "openai")
+        for vendor in PROVIDERS:
+            for protocol in PROTOCOLS:
+                url = PROVIDER_DEFAULT_BASE_URLS[(vendor, protocol)]
+                assert url.startswith("https://"), f"{vendor}×{protocol} 预置端点须为 https"
+        assert set(PROVIDER_MODEL_SUGGESTIONS) == {*PROVIDERS, "custom"}
+
+    def test_effective_protocol_explicit_wins(self) -> None:
+        assert effective_protocol("kimi", "anthropic") == "anthropic"
+        assert effective_protocol("zhipu", "openai") == "openai"
+
+    def test_effective_protocol_legacy_file_inference(self) -> None:
+        """旧版文件（无 protocol 字段）按 provider 值推断：anthropic 之外均 OpenAI 兼容。"""
+        assert effective_protocol("anthropic", None) == "anthropic"
+        assert effective_protocol("openai", None) == "openai"
+        assert effective_protocol("deepseek", None) == "openai"
+        assert effective_protocol("custom", None) == "openai"
+        # 非法 protocol 值同样落回推断（容忍手改文件）
+        assert effective_protocol("kimi", "grpc") == "openai"
+
+
 class _StubPlatform:
     """平台拉取桩（禁联网）。"""
 
@@ -96,6 +129,32 @@ class TestResolve:
         assert config.default == "text"
         assert config.providers["text"].model == "t-1"
         assert config.providers["agent"].model == "t-1"  # agent 回退 text
+
+    def test_vendor_key_normalized_to_wire_protocol(self, _isolated_env: Path) -> None:
+        """厂商键（kimi/deepseek）在解析层归一为线路协议分发键，工厂不感知厂商。"""
+        save_llm_file(
+            LLMFileConfig(
+                roles={
+                    "text": RoleConfig(
+                        provider="kimi",
+                        protocol="anthropic",
+                        model="kimi-k3",
+                        api_key="sk-x",
+                        base_url="https://api.moonshot.cn/anthropic",
+                    ),
+                    "vision": RoleConfig(
+                        provider="deepseek",  # 旧文件形态：无 protocol，按 provider 推断
+                        model="deepseek-v4-pro",
+                        api_key="sk-y",
+                        base_url="https://api.deepseek.com/v1",
+                    ),
+                    "agent": None,
+                }
+            )
+        )
+        config = resolve_llm_config(platform=_StubPlatform(None))
+        assert config.providers["text"].provider == "anthropic"  # 显式 protocol
+        assert config.providers["vision"].provider == "openai"  # 旧文件推断
 
     def test_platform_fallback_when_no_file(self, _isolated_env: Path) -> None:
         roles = {
@@ -148,21 +207,104 @@ class TestModelsCommand:
         from agent_eval.cli.cmds.models import models_app
 
         runner = CliRunner()
-        # 提供商（默认1 anthropic）→ base_url（默认）→ api-key → text（默认y）→ 模型（默认）
-        # → vision（n）→ agent（n）
+        # 提供商（默认1 deepseek）→ 协议（默认1 anthropic，预置端点免输）→ api-key
+        # → text（默认y）→ 模型（默认 deepseek-v4-pro）→ vision（n）→ 立即测试（n）
         result = runner.invoke(models_app, ["set"], input="\n\nsk-test-1234567890\n\n\nn\nn\n")
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
         assert cfg is not None
         assert cfg.roles["text"] is not None
+        assert cfg.roles["text"].provider == "deepseek"
+        assert cfg.roles["text"].protocol == "anthropic"
+        assert cfg.roles["text"].base_url == "https://api.deepseek.com/anthropic"
         assert cfg.roles["text"].api_key == "sk-test-1234567890"
-        assert cfg.roles["text"].model == "moonshot-v1-128k"
+        assert cfg.roles["text"].model == "deepseek-v4-pro"
         assert cfg.roles["vision"] is None
+        assert cfg.roles["agent"] is None  # 未询问，且无既有配置可保留
         assert stat_mode(_isolated_env) == 0o600
 
         listing = runner.invoke(models_app, ["list"])
         assert listing.exit_code == 0, listing.output
         assert "sk-test-1234567890" not in listing.output  # 完整明文不回显（脱敏保留首尾 4 位）
+
+    def test_set_custom_vendor_requires_base_url(self, _isolated_env: Path) -> None:
+        """custom 厂商：无预置端点，必答 base_url；协议仍二选一。"""
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        runner = CliRunner()
+        # 提供商5 custom → 协议2 OpenAI 兼容 → base_url → api-key → text y → 模型自输
+        # → vision n → 立即测试 n
+        _input = "5\n2\nhttps://gw.example.com/v1\nsk-custom-123456789\n\nmy-model\nn\nn\n"
+        result = runner.invoke(models_app, ["set"], input=_input)
+        assert result.exit_code == 0, result.output
+        cfg = load_llm_file()
+        assert cfg is not None
+        rc = cfg.roles["text"]
+        assert rc is not None
+        assert rc.provider == "custom" and rc.protocol == "openai"
+        assert rc.base_url == "https://gw.example.com/v1"
+        assert rc.model == "my-model"
+
+    def test_set_custom_rejects_base_url_without_scheme(self, _isolated_env: Path) -> None:
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        result = CliRunner().invoke(models_app, ["set"], input="5\n2\nnotaurl\n")
+        assert result.exit_code == 1
+        assert "http" in result.output
+
+    def test_set_runs_connectivity_test_after_save(
+        self, _isolated_env: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """保存后默认立即测试连通性（替身注入，禁联网）；测试不打断返回调用菜单。"""
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds import models as models_mod
+        from agent_eval.cli.cmds.models import models_app
+
+        calls: list[int] = []
+        monkeypatch.setattr(
+            models_mod, "_test_configured_roles", lambda: (calls.append(1), False)[1]
+        )
+        # 全默认 → vision n → 立即测试 y
+        result = CliRunner().invoke(models_app, ["set"], input="\n\nsk-wire-123456789\n\n\nn\ny\n")
+        assert result.exit_code == 0, result.output
+        assert calls == [1]
+        assert "连通性测试全部通过" in result.output
+
+    def test_set_preserves_existing_agent_role(self, _isolated_env: Path) -> None:
+        """回归：agent 角色不进向导，但既有配置（手改 llm.json / 专用 Agent 模型）原样保留。"""
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        save_llm_file(
+            LLMFileConfig(
+                roles={
+                    "text": _role(),
+                    "vision": None,
+                    "agent": RoleConfig(
+                        provider="kimi",
+                        protocol="anthropic",
+                        model="kimi-k3",
+                        api_key="sk-agent",
+                        base_url="https://api.moonshot.cn/anthropic",
+                    ),
+                }
+            )
+        )
+        runner = CliRunner()
+        # 提供商/协议/api-key/text/vision 全默认，vision 否决，立即测试否决
+        result = runner.invoke(models_app, ["set"], input="\n\nsk-new-1234567890\n\n\nn\nn\n")
+        assert result.exit_code == 0, result.output
+        cfg = load_llm_file()
+        assert cfg is not None
+        assert cfg.roles["text"] is not None and cfg.roles["text"].api_key == "sk-new-1234567890"
+        agent = cfg.roles["agent"]
+        assert agent is not None and agent.model == "kimi-k3" and agent.api_key == "sk-agent"
 
     def test_list_without_config_exits_1(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner
