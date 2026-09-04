@@ -26,7 +26,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
 from agent_eval.config.paths import PACKAGE_ROOT
@@ -175,15 +175,15 @@ class PackageToolServer(ToolExporterMixin):
         except (OSError, UnicodeDecodeError):
             return None
 
-    def _view(self) -> dict[str, str | None]:
-        """磁盘视图 + 暂存覆盖（None = 已删除）的合并结果。"""
+    def _view(self) -> dict[str, str]:
+        """磁盘视图 + 暂存覆盖的合并结果（None = 已删除的文件被过滤）。"""
         view: dict[str, str | None] = {}
         if self.root.is_dir():
             for p in sorted(self.root.rglob("*")):
                 if p.is_file() and ".git" not in p.parts:
                     view[p.relative_to(self.root).as_posix()] = self._disk_text(p)
         view.update(self.staging)
-        return {k: v for k, v in view.items() if v is not None}
+        return cast(dict[str, str], {k: v for k, v in view.items() if v is not None})
 
     def view(self) -> dict[str, str]:
         """暂存视图（宿主门禁读取：如 agent_protocol 通道必须经 probe_protocol 实测）。"""

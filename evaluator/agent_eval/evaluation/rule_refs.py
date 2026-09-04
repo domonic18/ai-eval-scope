@@ -34,7 +34,7 @@ def _registry_ready(pkg_root: Path) -> Any:
 
 def _registered_evaluator_ids(pkg_root: Path) -> list[str]:
     """评估器注册 ID 快照（列表视图，``list_evaluators`` 工具与错误消息共用）。"""
-    return _registry_ready(pkg_root).list_registered()
+    return list(_registry_ready(pkg_root).list_registered())
 
 
 def _load_yaml(path: Path) -> Any:

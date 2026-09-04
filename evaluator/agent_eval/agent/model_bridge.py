@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from pydantic import SecretStr
+
 from agent_eval.config.llm import LLMConfig
 from agent_eval.config.llm_resolution import resolve_llm_config
 from agent_eval.core.exceptions import AgentError
@@ -63,10 +65,10 @@ def build_chat_model(
             base_url = _DEEPSEEK_DEFAULT_BASE_URL
         return ChatOpenAI(
             model=model_id,
-            api_key=api_key,
+            api_key=SecretStr(api_key),
             base_url=base_url,
             temperature=provider.temperature,
-            max_tokens=provider.max_tokens,
+            max_completion_tokens=provider.max_tokens,
         )
 
     if provider.provider == "anthropic":

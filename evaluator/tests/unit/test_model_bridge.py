@@ -45,7 +45,7 @@ def test_openai_protocol_bridge(monkeypatch) -> None:
     assert isinstance(model, fake)
     assert model.kwargs["model"] == "qwen-max"
     assert model.kwargs["base_url"] == "https://gw.example.com/v1"
-    assert model.kwargs["api_key"] == "sk-plain"
+    assert model.kwargs["api_key"].get_secret_value() == "sk-plain"
 
 
 def test_deepseek_alias_default_base_url(monkeypatch) -> None:

@@ -711,8 +711,8 @@ class WorkbenchAgent:
         intro = prompts.get("intro")
         if not intro:
             return ""
-        label = prompts.get("domain_labels", {}).get(self.domain, self.domain)
-        return intro.replace("{root}", str(self.server.root)).replace("{domains}", label)
+        label = str(prompts.get("domain_labels", {}).get(self.domain, self.domain))
+        return str(intro).replace("{root}", str(self.server.root)).replace("{domains}", label)
 
     # ─── 首轮模板 ─────────────────────────────────────────────────
 
