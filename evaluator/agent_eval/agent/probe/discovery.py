@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Awaitable, Callable
 from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urlparse
@@ -65,7 +66,20 @@ def _dig(data: Any, *keys: str) -> Any:
 
 
 class DiscoveryMixin:
-    """工具二：登录 API 发现（阶梯，不给凭证）。"""
+    """工具二：登录 API 发现（阶梯，不给凭证）。
+
+    协作契约注解（仅供类型检查，运行时不创建属性）：``_budget/_ensure_host/
+    _client/_log`` 由宿主提供，``_fetch_text/_cache_content/_fetched`` 由
+    FetchMixin 提供。
+    """
+
+    _budget: Callable[[str], dict[str, str] | None]
+    _ensure_host: Callable[[str], Awaitable[str | None]]
+    _client: Callable[[], Awaitable[Any]]
+    _log: Callable[..., None]
+    _fetch_text: Callable[[str], Awaitable[str | None]]
+    _cache_content: Callable[[str, str], None]
+    _fetched: dict[str, str]
 
     async def discover_login(self, page_url: str, paths: str = "") -> dict[str, Any]:
         """登录 API 快速通道：机械解析 + 定向探测，语义判断全部交 Agent。

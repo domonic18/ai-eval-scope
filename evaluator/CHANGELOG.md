@@ -1,3 +1,60 @@
+## v0.2.1 (2026-09-04)
+
+### Feat
+
+- **cli**: 模型配置向导重构——提供商×协议矩阵、角色精简、保存即测试
+
+### Fix
+
+- **types**: 清零 CI mypy 非阻塞告警——probe mixin 契约注解 + langchain-openai 1.x 正名
+
+## v0.2.0 (2026-09-04)
+
+### Feat
+
+- **agent**: 工作台工具面接入对账真相源与端到端复审修正（arch/15 v3.16、v3.18）
+- **evaluation**: 规则引用落盘对账门禁——evaluator/prompt/模板变量/采样数校验
+- **agent**: 裸请求原语 http_request——探测面对齐人工调试能力（arch/15 v3.12）
+- **agent**: 防锁收敛为认证层拒绝语义 + 门禁打回复用会话内证据（arch/15 v3.7）
+- **agent**: 证据账本与落盘对账——验证结果机械落到场景包文件（arch/15 v3.6）
+- **cli**: 工作台 Agent 入口直入对话——横幅先于输入，无前置菜单（arch/15 v3.4）
+- **cli**: v3.1 UI——start 一级入口「工作台 Agent」+ 启动自我介绍横幅（arch/15 §3.5/§6.10）
+- **agent**: 会话机失控防线 P0–P3——暂停保现场 + 自动分段续跑 + 预算缰绳（arch/15 §6.7）
+- **agent**: 结构知识外置 + 文件工具泛化为 Claude Code 式分级授权（arch/15 §6.11.1）
+- **agent**: SUT 接入调试工具面 P0——创建场景包时智能探测被测系统（arch/15 §6.6）
+
+### Fix
+
+- **cli**: REPL 归位时序——确认落盘后中断退出不再困住完整包（arch/15 v3.19）
+- **execution**: SUTRegistry 按文件名 stem 容错取用——修复向导选择与执行注册的标识漂移
+- **agent**: probe_login 对象模板机械归一化——修复「Can't compile non template nodes」类型错误导为语法错（arch/15 v3.14）
+- **agent**: probe_protocol 支持 configurable 带参探测——修复正确配置被门禁死锁打回（arch/15 v3.13）
+- **agent**: 协议探测鉴权状态感知——未鉴权失败不再当结论（arch/15 v3.11）
+- **agent**: 协议探测与执行器契约同构——POST /threads 不再是判据（arch/15 v3.9）
+- **agent**: probe_login 防锁失败语义分层——404 不入锁，路径探索不再被拦（arch/15 v3.5）
+- **cli**: 流式渲染回收正文段尾换行——工具行紧邻正文不留空隙
+- **agent**: 执行评测失败四修——协议门禁/假成功标注/异常兜底/host 边界
+- **agent**: 登录实测模板语法校验 + 防锁键补路径 + 探测预算放大
+- **agent**: 接口地址指引收敛为单一权威通道 + probe_login 存在性探测 + 凭证解锁重试
+- **agent**: POST-only 登录接口被 GET 探测误杀——404 语义修正 + 接口地址直通 probe_login
+- **agent**: 凭证录入断链修复 + 真实字段提取——credential 一次一字段 + JS field_hints
+- **agent**: 会话记忆两修——放弃轮保留对话上下文 + 跨进程续作注入历史
+- **agent**: 探测预算按工具分池 + 404 指引 discover_login + 跨域绝对 URL 发现
+- **agent**: 用户不知道字段名场景——OpenAPI 探测阶梯 + 字段名 Agent 拟定 + 防锁按模板签名
+- **agent**: ask_user 问答契约——一次一问 + kind 三态收敛 + 假单选降级
+- **agent**: 实测反馈三修——SUT 询问流程并入主链 + 参照清单直达 + 落点预告
+
+### Refactor
+
+- **agent**: v3.9 同构审计修正——门禁过时判据清除 + CORE_STEP 单源（arch/15 v3.10）
+- **agent**: workbench 提示词资产结构化重排——统一标记体系与层次（arch/15 v3.8）
+- **agent**: sut_probe_tools 按域拆分 agent/probe 包（arch/15 §6.11.2 P1）
+- **cli**: 流式渲染迁 console/agent_stream.py——表现层基础设施归位（arch/15 §6.11.2）
+- **prompts**: 提示词分段装配 + 定位升维为工作台 Agent（arch/15 §6.8 D-WB-2）
+- **agent**: WorkbenchAgentConfig 单点载体 + 常量按可变性归集（arch/15 §6.11.2）
+- **agent**: §6.8 组织迁移一次性切换——WorkbenchAgent 更名与文件归位
+- **agent**: SUT 探测面泛化重构——机械原语与 Agent 推理分层
+
 ## v0.1.6 (2026-09-02)
 
 ### Fix

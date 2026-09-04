@@ -19,7 +19,8 @@ run.start 隐式建线程——执行器从不调用 POST /threads。故建线�
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
 from agent_eval.agent.probe.fetch import _host_of
 from agent_eval.agent.tools import truncate
@@ -35,7 +36,25 @@ CORE_STEP: dict[str, str] = {"commands": "send_command", "runs": "run_wait"}
 
 
 class ProtocolMixin:
-    """工具三：协议符合性矩阵（含写操作，收尾清理）。"""
+    """工具三：协议符合性矩阵（含写操作，收尾清理）。
+
+    协作契约注解：宿主提供 ``_budget/_ensure_host/_client/_log``、登录 token 头
+    （``auth_headers``）与证据账本（``_verified_protocols/_record_protocol``）——
+    类级注解仅供类型检查，运行时不创建属性。
+    """
+
+    _budget: Callable[[str], dict[str, str] | None]
+    _ensure_host: Callable[[str], Awaitable[str | None]]
+    _client: Callable[[], Awaitable[Any]]
+    _log: Callable[..., None]
+    _verified_protocols: dict[str, dict[str, Any]]
+    _record_protocol: Callable[[str, str, dict[str, bool]], None]
+
+    if TYPE_CHECKING:
+        # 宿主只读 property（登录 token 自动挂载）——property 桩避免与
+        # 可写属性注解冲突
+        @property
+        def auth_headers(self) -> dict[str, str]: ...
 
     @property
     def protocol_hosts(self) -> set[str]:

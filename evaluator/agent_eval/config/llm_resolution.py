@@ -23,7 +23,13 @@ from typing import Any
 import httpx
 
 from agent_eval.config.llm import LLMConfig, ProviderConfig
-from agent_eval.config.llm_file import DEFAULT_ROLE, ROLES, LLMFileConfig, load_llm_file
+from agent_eval.config.llm_file import (
+    DEFAULT_ROLE,
+    ROLES,
+    LLMFileConfig,
+    effective_protocol,
+    load_llm_file,
+)
 from agent_eval.core.exceptions import ConfigError
 
 
@@ -102,10 +108,16 @@ def _finalize(providers: dict[str, ProviderConfig]) -> LLMConfig:
 
 
 def _from_file(cfg: LLMFileConfig) -> LLMConfig:
-    """llm.json → LLMConfig。"""
+    """llm.json → LLMConfig（provider 归一为线路协议分发键，厂商键存于文件展示层）。"""
     providers = {
         role: _build_provider(
-            rc.provider, rc.model, rc.api_key, rc.base_url, rc.max_tokens, rc.temperature, rc.seed
+            effective_protocol(rc.provider, rc.protocol),
+            rc.model,
+            rc.api_key,
+            rc.base_url,
+            rc.max_tokens,
+            rc.temperature,
+            rc.seed,
         )
         for role in ROLES
         if (rc := cfg.roles.get(role)) is not None

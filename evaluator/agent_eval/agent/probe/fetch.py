@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from agent_eval.agent.tools import truncate
@@ -53,9 +54,24 @@ def _mask(text: str, secrets: list[str]) -> str:
 
 
 class FetchMixin:
-    """裸请求/抓取原语与缓存检索：http_request（GET=抓取）/ search_content + 缓存设施。"""
+    """裸请求/抓取原语与缓存检索：http_request（GET=抓取）/ search_content + 缓存设施。
+
+    协作契约注解：宿主 ``SUTProbeToolServer``（server.py）提供下列设施——类级
+    注解仅供类型检查，运行时不创建属性。
+    """
 
     _fetched: dict[str, str]
+    _client: Callable[[], Awaitable[Any]]  # async 工厂：返回客户端上下文管理器
+    _budget: Callable[[str], dict[str, str] | None]
+    _log: Callable[..., None]
+    _ensure_host: Callable[[str], Awaitable[str | None]]
+    _session_tokens: dict[str, str]
+
+    if TYPE_CHECKING:
+        # 宿主只读 property（登录 token 自动挂载）——property 桩避免与
+        # 可写属性注解冲突
+        @property
+        def auth_headers(self) -> dict[str, str]: ...
 
     def _cache_content(self, url: str, content: str) -> None:
         """完整内容入缓存（单文件截断 + 条目数上限，淘汰最早抓取的）。"""

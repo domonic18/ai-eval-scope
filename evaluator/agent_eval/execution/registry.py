@@ -234,13 +234,13 @@ def validate_sut_config_document(data: Any) -> list[str]:
             errors += _unknown_key_errors(sut[section], model, f"sut.{section}")
     auth = sut.get("auth")
     if isinstance(auth, dict):
-        for name, model in (
+        for name, auth_model in (
             ("login", AuthLoginConfig),
             ("extract", AuthExtractConfig),
             ("mount", AuthMountConfig),
         ):
             if isinstance(auth.get(name), dict):
-                errors += _unknown_key_errors(auth[name], model, f"sut.auth.{name}")
+                errors += _unknown_key_errors(auth[name], auth_model, f"sut.auth.{name}")
     try:
         SUTSystemConfig.model_validate(expand_env_refs(sut))
     except ValidationError as e:

@@ -21,20 +21,58 @@ FILE_VERSION = 1
 ROLES = ("text", "vision", "agent")
 DEFAULT_ROLE = "text"
 
-#: 各提供商建议端点（login 向导默认值；团队统一走 Moonshot anthropic 兼容端点）
-PROVIDER_DEFAULT_BASE_URLS = {
-    "anthropic": "https://api.moonshot.cn/anthropic",
-    "openai": "https://api.openai.com/v1",
-    "deepseek": "https://api.deepseek.com/v1",
+#: 线路协议（分发键）——预置厂商均双协议提供，向导第二层选择
+PROTOCOLS = ("anthropic", "openai")
+
+#: 预置厂商（展示名与存储键分离；custom 之外免输 base_url）
+PROVIDER_LABELS = {
+    "deepseek": "DeepSeek",
+    "kimi": "Kimi",
+    "zhipu": "智谱",
+    "minimax": "MiniMax",
 }
-#: login 向导的模型建议值（agent 无建议=可跳过回退 text）
-ROLE_MODEL_SUGGESTIONS = {"text": "moonshot-v1-128k", "vision": "kimi-k2.6", "agent": ""}
+PROVIDERS = tuple(PROVIDER_LABELS)
+
+#: (厂商, 协议) → 预置端点（官方公开端点；向导直接采用并向用户展示）
+PROVIDER_DEFAULT_BASE_URLS: dict[tuple[str, str], str] = {
+    ("deepseek", "openai"): "https://api.deepseek.com/v1",
+    ("deepseek", "anthropic"): "https://api.deepseek.com/anthropic",
+    ("kimi", "openai"): "https://api.moonshot.cn/v1",
+    ("kimi", "anthropic"): "https://api.moonshot.cn/anthropic",
+    ("zhipu", "openai"): "https://open.bigmodel.cn/api/paas/v4",
+    ("zhipu", "anthropic"): "https://open.bigmodel.cn/api/anthropic",
+    ("minimax", "openai"): "https://api.minimaxi.com/v1",
+    ("minimax", "anthropic"): "https://api.minimaxi.com/anthropic",
+}
+
+#: 厂商 × 角色的模型建议值（向导默认值；留空 = 无建议，用户自输）。
+#: agent 角色不进向导（执行引擎/工作台 Agent 专用，未配置自动回退 text）。
+#: 建议值随厂商旗舰更新（2026-08 核对：deepseek-v4-pro / kimi-k3 / glm-5.3 / MiniMax-M3；
+#: moonshot-v1 系列已下线，勿再作为建议值）
+PROVIDER_MODEL_SUGGESTIONS: dict[str, dict[str, str]] = {
+    "deepseek": {"text": "deepseek-v4-pro", "vision": ""},
+    "kimi": {"text": "kimi-k3", "vision": "kimi-k2.6"},
+    "zhipu": {"text": "glm-5.3", "vision": "glm-5.3-flash"},
+    "minimax": {"text": "MiniMax-M3", "vision": "MiniMax-M3"},
+    "custom": {"text": "", "vision": ""},
+}
+
+
+def effective_protocol(provider: str, protocol: str | None) -> str:
+    """角色配置的线路协议归一（分发键）：新配置读显式 ``protocol``；旧文件（v1，
+    无 protocol 字段）按 provider 值推断——``anthropic`` 之外均按 OpenAI 兼容。"""
+    if protocol in PROTOCOLS:
+        return protocol
+    return "anthropic" if provider == "anthropic" else "openai"
 
 
 class RoleConfig(BaseModel):
     """单个角色的模型配置（api_key 与偏好同文件，整文件 0600 保护）。"""
 
-    provider: str
+    provider: str = Field(description="厂商: deepseek | kimi | zhipu | minimax | custom")
+    protocol: str | None = Field(
+        default=None, description="线路协议: anthropic | openai（缺省=旧版文件，按 provider 推断）"
+    )
     model: str
     api_key: str = Field(repr=False)
     base_url: str | None = None
@@ -95,11 +133,15 @@ def save_llm_file(cfg: LLMFileConfig, path: Path | None = None) -> Path:
 
 __all__ = [
     "DEFAULT_ROLE",
+    "PROTOCOLS",
+    "PROVIDERS",
     "PROVIDER_DEFAULT_BASE_URLS",
+    "PROVIDER_LABELS",
+    "PROVIDER_MODEL_SUGGESTIONS",
     "ROLES",
-    "ROLE_MODEL_SUGGESTIONS",
     "LLMFileConfig",
     "RoleConfig",
+    "effective_protocol",
     "llm_file_path",
     "load_llm_file",
     "save_llm_file",

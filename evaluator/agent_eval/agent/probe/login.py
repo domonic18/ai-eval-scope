@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from agent_eval.agent.probe.fetch import _mask, _wrap_evidence
@@ -45,7 +46,22 @@ def _render_auth_snippet(*, ref: str, method: str, url: str, template: str, toke
 
 
 class LoginMixin:
-    """工具四（登录实测）与工具五（ask_user：文本/单选/凭证，值不回流）。"""
+    """工具四（登录实测）与工具五（ask_user：文本/单选/凭证，值不回流）。
+
+    协作契约注解：宿主提供 ``_budget/_client/_log``、凭证库（``credentials``）、
+    交互桥（``ask_fn``）、防锁与证据账本设施——类级注解仅供类型检查，运行时
+    不创建属性。
+    """
+
+    _budget: Callable[[str], dict[str, str] | None]
+    _client: Callable[[], Awaitable[Any]]
+    _log: Callable[..., None]
+    credentials: Any  # CredentialStore（secrets 直写，值不回流）
+    ask_fn: Any  # async (question, *, options, secret) -> str | None
+    _login_tried: set[tuple[str, str, str]]
+    _store_token: Callable[[str, str], None]
+    _record_login: Callable[[dict[str, str]], None]
+    verified_login: Callable[[str], dict[str, str] | None]
 
     async def probe_login(self, login_cfg: dict[str, Any], ref: str) -> dict[str, Any]:
         if budget_err := self._budget("probe_login"):

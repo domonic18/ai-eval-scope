@@ -25,7 +25,9 @@ class ProviderConfig(BaseModel):
     两个层面的参数互相干扰。
     """
 
-    provider: str = Field(description="协议类型: deepseek | openai | anthropic")
+    provider: str = Field(
+        description="线路协议分发键: anthropic | openai（历史值 deepseek 同按 OpenAI 兼容分发）"
+    )
     model: str = Field(description="模型 ID")
     api_key: str = Field(description="API Key（支持 ${ENV_VAR} 引用）")
     base_url: str | None = Field(default=None, description="API base URL")
