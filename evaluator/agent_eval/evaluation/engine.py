@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from agent_eval.config import PIPELINE_DEFAULTS
+from agent_eval.core.exceptions import EvaluationError
 from agent_eval.core.types import ConstraintTier, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.models import MetricsReport, SampleResult, StageResult
@@ -136,6 +137,7 @@ class PipelineEngine:
 
     def _build_stages(self) -> None:
         """根据配置构建级联阶段。"""
+        failed_ids: list[str] = []
         for stage_conf in self.config.stages:
             evaluators: list[BaseEvaluator] = []
             for ev_conf in stage_conf.evaluators:
@@ -152,6 +154,8 @@ class PipelineEngine:
                         evaluator_id=ev_conf.name,
                         error=str(e),
                     )
+                    if ev_conf.name not in failed_ids:
+                        failed_ids.append(ev_conf.name)
 
             self.stages.append(
                 PipelineStage(
@@ -159,6 +163,20 @@ class PipelineEngine:
                     evaluators=evaluators,
                     short_circuit_policy=stage_conf.short_circuit_policy,
                 )
+            )
+
+        # 全失败守卫：尝试创建过的评估器全部失败时，继续评估只会产出全 0 报告仍报
+        # 「执行成功」（实测：evaluator 写成 method 枚举值 llm_judge，10 条规则全被
+        # 跳过，综合得分 0.00 以「质量严重不合格」收场）——宁可在评估开始前显式
+        # 失败，也不静默交出垃圾报告。条件含 failed_ids 非空：stage 本就无评估器的
+        # 直接构造形态（如缓存键单测）是合法空管线，不拦。部分失败不受影响
+        if failed_ids and not any(stage.evaluators for stage in self.stages):
+            raise EvaluationError(
+                f"全部评估器创建失败（{len(failed_ids)} 个: {failed_ids}）——继续评估只会"
+                "产出全 0 报告，已中止。请核对规则集 evaluator 字段：该字段是评估器注册 "
+                f"ID 而非 method 枚举值（如 llm_judge）；已注册: {self.registry.list_registered()}。"
+                "可用 agent-eval scenario validate <包根> 在运行前校验",
+                details={"failed": failed_ids, "available": self.registry.list_registered()},
             )
 
     def evaluate_sample(

@@ -15,7 +15,7 @@
 ├── agent_eval.yaml          # 必需：包清单
 ├── rules/                   # 必需：规则集（至少 1 个 .yaml）
 ├── prompts/                 # 必需：判官提示词（至少 1 个 .yaml）
-├── datasets/                # 必需：数据资产目录（可为占位 README，在线评测可空）
+├── datasets/                # 离线文件评测必需：数据资产；在线 SUT 形态不需要
 ├── task_sets/               # 在线被测系统需要：考卷
 ├── sut_configs/             # 在线被测系统需要：接入配置（不含凭证）
 └── metrics/                 # 可选：聚合策略 policy.yaml
@@ -23,7 +23,8 @@
 
 硬性约定（门禁强制）：
 - `rules/` 与 `prompts/` 中的资产必须是 **.yaml**（写成 .md 会被下游加载器静默忽略）；
-- 三个必需目录不可缺失或为空；
+- `rules/`、`prompts/` 不可缺失或为空；`datasets/` 仅离线文件形态必需（清单未声明
+  `default_task_set`）——在线 SUT 形态考卷来自 `task_sets/`，勿建占位 datasets；
 - `sut_configs/` 内严禁凭证明文——只允许 `credential_ref` 引用（见第 7 节）。
 
 权威样例：`read_reference("chat", "agent_eval.yaml")`（最小完整包）。
@@ -64,14 +65,24 @@ package:
 - `dimensions[]`：`{id, name, weight}` ——评估维度；
 - `cascade[]`：`{stage, name, stop_on_fail}` ——执行阶段级联；`rules[].stage` 必须引用
   这里声明的 stage id；`stop_on_fail: true` 的阶段是门控（失败即止）；
-- `rules[]` 公共字段：`id`、`name`、`dimension`（引用 dimensions id）、`stage`、
-  `description`、`weight`、`method`、`evaluator`。
+- `rules[]` 公共字段：`id`、`name`、`dimension`（引用 dimensions id）、`stage`（引用
+  cascade 的 stage id）、`description`、`weight`、`method`、`evaluator`。
+- `evaluator`：**评估器注册 ID**——不是 method。`llm_judge` 是 method 枚举值，写进
+  `evaluator` 字段运行时必报「未注册的评估器」（落盘校验也会打回）。内置 ID 全集：
+  `format.response_format` / `format.html_validity` / `format.content_completeness` /
+  `soft.teaching_logic` / `soft.content_diversity` / `pref.style_preference` /
+  `pref.depth_preference` / `pref.request_fulfillment` / `commonsense.info_accuracy` /
+  `commonsense.chronological_order` / `commonsense.logical_consistency` /
+  `vision.quality`；`chat.*` 三项（对话型 SUT 的精确匹配 / 语义一致性 / 回答质量）
+  需包清单声明 `entry_points.evaluators: "agent_eval.evaluation.evaluators.scenario.chat:register"`
+  （照抄 chat 包清单行）。不确定的 ID 先 `read_reference("chat", "rules/chat-quality.yaml")`
+  参照，不要臆造。
 
 按 `method` 区分的差异字段：
 - `method: format`（格式门控）：`format_type: extension` + `extensions: ["md"]`；
-- `method: llm`（LLM Judge）：`prompt_id` 引用 `prompts/` 的 `template_id`；
-- `method: rule_set`（程序化评估器）：仅 `evaluator`（内置或包 entry_points 注册的 ID，
-  不确定的 ID 先 `search_reference` 参照内置包，不要臆造）。
+- `method: llm`（LLM Judge）：`prompt_id` 引用 `prompts/` 的 `template_id` + `evaluator`
+  注册 ID（如 `chat.answer_quality`——判官提示词以本包 `prompt_id` 指向的为准）；
+- `method: rule_set`（程序化评估器）：仅 `evaluator`。
 
 最小示例：
 
@@ -88,7 +99,7 @@ rules:
   - {id: FMT_001, name: 产出文件存在, dimension: functional, stage: format,
      method: format, format_type: extension, extensions: ["md"], weight: 1.0}
   - {id: QUAL_001, name: 回答质量, dimension: functional, stage: quality,
-     method: llm, prompt_id: sec_quality, evaluator: llm_judge, weight: 1.0}
+     method: llm, prompt_id: sec_quality, evaluator: chat.answer_quality, weight: 1.0}
 ```
 
 权威样例：`read_reference("chat", "rules/chat-quality.yaml")`（三阶段 + 门控 + 三种 method 并用）。
@@ -97,12 +108,28 @@ rules:
 
 LLM 评估的判官提示词（`prompts/<名>.yaml`）。顶层字段：`template_id`（rules 里
 `prompt_id` 引用它）、`scenario`、`name`、`dimensions[]`、`system_prompt`、
-`user_prompt_template`。
+`user_prompt_template`、`num_samples`。
 
 - `dimensions[]`：`{dim_id, name, description, weight, score_range: [min, max]}` ——
   判官按维度打分；
 - `system_prompt`：判官角色 + 评分方法 + 各维度分档标准（要求证据可溯源、就低不就高）；
-- `user_prompt_template`：用户侧模板（Jinja2 风格变量注入任务与产出内容）。
+- `user_prompt_template`：用户侧模板（Jinja2 风格变量注入任务与产出内容）；
+- `num_samples`：判官对每条规则**独立采样几次**（各维度取中位数为最终分，标准差超阈值
+  标记低置信度）。缺省 3；设 1 则只调一次（省成本，chat/code 内置包即 1）——按评测
+  严格度与成本预算权衡，用户有配置选择权。非法值（0/负数/非整数）落盘校验会打回。
+
+**变量契约（勿自创变量名）**：`user_prompt_template` 只能使用评估器实际注入的变量——
+变量按引用的 `evaluator` 而定，写错运行时必报「模板渲染失败，变量缺失」且该规则直接
+0 分（落盘校验会提前对账打回）：
+
+| evaluator | 可用变量 |
+|-----------|---------|
+| `chat.answer_quality` | `{{ instruction }}`（任务指令）、`{{ content }}`（被测产出全文）、`{{ must_mention }}`（必含要点，来自 expected） |
+| `chat.answer_consistency` | `{{ instruction }}`、`{{ content }}`、`{{ reference }}`（参考答案，来自 expected） |
+
+被测产出全文的变量名是 **`content`**（不是 `response`/`output`/`answer`——常见臆造）。
+其他评估器的变量集以该评估器实现为准：写 rules 前先 `list_evaluators()` 确认可用 ID，
+再看权威样例里对应模板的真实写法。
 
 权威样例：`read_reference("chat", "prompts/chat_answer_quality.yaml")`
 （三维打分 + 分档标准的成熟写法）。

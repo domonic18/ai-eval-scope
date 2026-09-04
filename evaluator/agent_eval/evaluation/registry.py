@@ -51,6 +51,10 @@ class EvaluatorRegistry:
 
         return decorator
 
+    def class_of(self, evaluator_id: str) -> type[BaseEvaluator] | None:
+        """按 ID 取评估器类（未注册返回 None）——包校验层读取类级契约（如模板变量集）用。"""
+        return self._registry.get(evaluator_id)
+
     def create(self, evaluator_id: str, params: dict[str, Any] | None = None) -> BaseEvaluator:
         """工厂方法：根据 ID 创建评估器实例。
 
