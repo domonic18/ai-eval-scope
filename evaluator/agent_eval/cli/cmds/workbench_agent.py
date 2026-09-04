@@ -33,9 +33,13 @@ def _render_diff(diff: str) -> None:
         rprint(f"[{color}]{line}[/{color}]" if color else line)
 
 
-def _render_outcome(result: Any) -> None:  # noqa: ANN001 — TurnResult
+def _render_outcome(result: Any, landing: Path | None = None) -> None:  # noqa: ANN001 — TurnResult
     if result.committed:
         rprint(f"[green]✅ 已落盘[/green]（{len(result.committed_files)} 个文件变更）")
+        if landing is not None:
+            # 归位发生在会话结束而非此刻——落盘时刻说清时序（实测：用户确认后在
+            # 预告路径找不到包，以为落盘丢失）
+            rprint(f"[dim]会话结束（输入空行退出）后归位 → {landing}[/dim]")
     elif result.aborted_reason == "user_aborted":
         rprint("[yellow]↩️ 已放弃本轮（磁盘未受影响）[/yellow]")
     elif result.aborted_reason == "segment_limit":
@@ -90,8 +94,11 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     if not emit:
         _render_turn(result.reply, result)
         return
-    if result.diff:
-        _render_diff(result.diff)
+    if result.committed:
+        # 确认环节已展示过 diff，不再重画（实测：确认后再出一份完整 diff 被误读为
+        # 「还有一份未应用」）；已落盘时补归位时序提示
+        _render_outcome(result, _landing_hint(agent))
+        return
     _render_outcome(result)
 
 
@@ -101,7 +108,7 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
         _render_diff(diff)
     landing = _landing_hint(agent) if agent is not None else None
     if landing:
-        rprint(f"[green]确认后场景包将保存到 → {landing}[/green]")
+        rprint(f"[green]确认落盘后，会话结束（输入空行退出）即归位 → {landing}[/green]")
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 
@@ -120,7 +127,7 @@ def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
         slug = _re.sub(r"[^A-Za-z0-9._-]+", "-", pid).strip("-.") or "scenario"
         if root.name.startswith("agent-eval-pkg-"):  # 草稿区 → 会话后归位 cwd
             return Path.cwd() / f"{slug}-package"
-        return root if root.name == f"{slug}-package" else Path.cwd() / f"{slug}-package"
+        return root  # 非草稿区（edit / --output 定址）原地生效，落点就是 root
     if not (root / MANIFEST_FILENAME).is_file():
         return None
     return root
@@ -135,6 +142,7 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
     草稿中改造（prompts 域段规约）。LLM 未配置在此阻断（无模型 Agent 不可用）。
     """
     from agent_eval.agent.workbench_agent import WorkbenchAgent
+    from agent_eval.packages import MANIFEST_FILENAME
 
     _guard_llm_ready()
     root = _new_draft_root()
@@ -145,7 +153,11 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
     try:
         _session(agent, None, show_intro=False)
     except BaseException:
-        # 中断 ≠ 放弃：草稿保留，续作用 --output 指回（与 agent_new_package 同约定）
+        # 中断 ≠ 放弃：半途草稿保留（与 agent_new_package 同约定）；清单已落盘 =
+        # 成果已完整，照常归位不困在草稿区
+        if (root / MANIFEST_FILENAME).is_file():
+            _finalize_new_package(root, movable=True)
+            return
         rprint(f"[yellow]⚠ 会话中断，草稿已保留: {root}[/yellow]")
         rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {root}[/dim]")
         raise
@@ -378,7 +390,7 @@ def agent_new_package(
     草稿续作，非空目录放行）。
     """
     from agent_eval.agent.workbench_agent import WorkbenchAgent, WorkbenchAgentConfig
-    from agent_eval.packages import parse_ref
+    from agent_eval.packages import MANIFEST_FILENAME, parse_ref
 
     _guard_llm_ready()
     movable = ref is None and output is None  # 目录名后定 → 会话后归位
@@ -421,7 +433,12 @@ def agent_new_package(
         else:
             _session(agent, first_text)
     except BaseException:
-        # 中断 ≠ 放弃：草稿保留在 workspace/.staging（无论是否已落清单），续作用 --output 指回
+        # 中断 ≠ 放弃：半途草稿保留在 workspace/.staging（续作 --output 指回）。
+        # 但清单已落盘 = 至少完成过一次确认落盘、成果已完整——中断只是结束对话，
+        # 照常归位，不把完整包困在草稿区（实测：确认落盘后 Ctrl+C 退出会话，
+        # 归位预告的路径下找不到包）
+        if movable and (root / MANIFEST_FILENAME).is_file():
+            return _finalize_new_package(root, movable)
         if movable:
             rprint(f"[yellow]⚠ 会话中断，草稿已保留: {root}[/yellow]")
             rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {root}[/dim]")

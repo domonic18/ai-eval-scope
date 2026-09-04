@@ -25,7 +25,8 @@ from agent_eval.agent.workbench_tools import PackageToolServer
 from agent_eval.core.exceptions import AgentError
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
-RULES = "rules:\n  - id: r1\n    evaluator: llm_judge\n"
+# evaluator 须为注册 ID（llm_judge 是 method 枚举值——规则引用对账门禁会打回）
+RULES = "rules:\n  - id: r1\n    evaluator: format.response_format\n"
 
 
 def _seed_valid_package(root: Path) -> None:
@@ -169,6 +170,53 @@ class TestSandbox:
             result = await server.validate_package()
             assert not result["ok"]
             assert any("缺少 YAML" in e for e in result["errors"])
+
+        asyncio.run(run())
+
+    def test_validate_online_shape_without_datasets(self, tmp_path: Path) -> None:
+        """回归（内置 chat 包曾被误拦）：清单声明 default_task_set = 在线 SUT 形态，
+        考卷来自 task_sets/，datasets/ 不参与——不再硬性要求。"""
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await server.write_file("agent_eval.yaml", MANIFEST + "  default_task_set: default\n")
+            await server.write_file("rules/quality.yaml", RULES)
+            await server.write_file("prompts/judge.yaml", "template_id: j1\nsystem_prompt: x\n")
+            await server.write_file("task_sets/default.yaml", "id: t1\nname: 考卷\ntasks: []\n")
+            result = await server.validate_package()
+            assert result["ok"], result["errors"]
+            assert not any("datasets" in e for e in result["errors"])
+
+        asyncio.run(run())
+
+    def test_list_evaluators_returns_registered_ids(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            result = await server.list_evaluators()
+            assert "format.response_format" in result["evaluators"]
+            assert "原样复制" in result["note"]
+
+        asyncio.run(run())
+
+    def test_list_evaluators_includes_staged_entry_points(self, tmp_path: Path) -> None:
+        """草稿期暂存清单声明的 entry_points 同样装入快照（防「已声明却被告知不可用」假阴性）。"""
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await server.write_file(
+                "agent_eval.yaml",
+                MANIFEST
+                + '  entry_points:\n    evaluators: "agent_eval.evaluation.evaluators.scenario.chat:register"\n',
+            )
+            result = await server.list_evaluators()
+            assert "chat.answer_quality" in result["evaluators"]
+            # 变量契约同面返回（copy, don't recall：user_prompt_template 变量照抄）
+            assert result["prompt_variables"]["chat.answer_quality"] == [
+                "content",
+                "instruction",
+                "must_mention",
+            ]
 
         asyncio.run(run())
 
@@ -901,6 +949,53 @@ class TestCliEntries:
         # 中断 ≠ 放弃：草稿保留在 workspace/.staging，可 --output 指回续作
         drafts = list((tmp_path / "workspace" / ".staging").glob("agent-eval-pkg-*"))
         assert len(drafts) == 1 and drafts[0].is_dir()
+
+    def test_new_agent_interrupt_after_commit_still_finalizes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """回归（实测：确认落盘后 Ctrl+C 退出，归位预告路径下找不到包）——清单已
+        落盘 = 成果已完整，中断只是结束对话，照常归位不困在草稿区。"""
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        monkeypatch.chdir(tmp_path)
+
+        def fake_session(agent: Any, text: Any, *, show_intro: bool = True) -> None:
+            (agent.server.root / "agent_eval.yaml").write_text(
+                "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+            )
+            raise KeyboardInterrupt  # 用户在落盘完成后 Ctrl+C 退出
+
+        monkeypatch.setattr(sa, "_session", fake_session)
+        root = sa.agent_new_package(
+            ref=None, output=None, instruction="研学计划质检", yes=False, trust_agent=False
+        )
+        assert root == tmp_path / "study-trip-package"
+        assert (root / "agent_eval.yaml").is_file()
+        assert not any(p.name.startswith("agent-eval-pkg-") for p in tmp_path.rglob("*"))
+
+    def test_agent_entry_interrupt_after_commit_still_finalizes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """同上（start 一级入口形态）：中断时已落盘的包照常归位。"""
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "draft"
+        monkeypatch.setattr(sa, "_new_draft_root", lambda: draft)
+
+        def fake_session(agent: Any, text: Any, *, show_intro: bool = True) -> None:
+            (agent.server.root / "agent_eval.yaml").write_text(
+                "package:\n  id: sec-probe\n  scenario: security\n", encoding="utf-8"
+            )
+            raise KeyboardInterrupt
+
+        monkeypatch.setattr(sa, "_session", fake_session)
+        monkeypatch.setattr(sa, "_render_intro", lambda agent: None)
+        sa.agent_workbench_entry(None)  # 不上抛（成果已归位，中断到此为止）
+        assert (tmp_path / "sec-probe-package" / "agent_eval.yaml").is_file()
+        assert not draft.exists()
 
     def test_finalize_conflict_keeps_draft(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
