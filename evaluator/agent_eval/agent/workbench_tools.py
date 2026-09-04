@@ -121,7 +121,8 @@ class PackageToolServer(ToolExporterMixin):
         ),
         ToolSpec(
             "search_reference",
-            "检索内置包（chat/code/courseware）文件与场景扩展方法论要点",
+            "检索内置包（chat/code/courseware）按文件名匹配，返回命中文件与各包真实"
+            "文件清单（read_reference 的 path 以此为准）",
             "search_reference",
         ),
         ToolSpec(
@@ -129,6 +130,12 @@ class PackageToolServer(ToolExporterMixin):
             "只读内置包文件内容（ref 如 chat；path 为包内相对路径）——参照真实格式，"
             "read_file 仅限本包",
             "read_reference",
+        ),
+        ToolSpec(
+            "list_evaluators",
+            "列出当前可用的评估器注册 ID（注册表实时快照，含本包 entry_points 声明的）——"
+            "rules 的 evaluator 字段从此清单原样复制，勿凭记忆臆造",
+            "list_evaluators",
         ),
         ToolSpec(
             "preview_diff",
@@ -377,10 +384,17 @@ class PackageToolServer(ToolExporterMixin):
             if not (tmp_root / MANIFEST_FILENAME).is_file():
                 return {"ok": False, "errors": [f"缺少清单 {MANIFEST_FILENAME}"]}
             try:
-                load_manifest(tmp_root)
+                manifest = load_manifest(tmp_root)
             except Exception as e:  # noqa: BLE001 — 校验错误收集后交 Agent 自修复
                 errors.append(f"清单校验失败: {e}")
-            for sub in ("rules", "prompts", "datasets"):
+                manifest = None
+            # 资源目录按包形态判定（运行时真相，与 scenario validate 同源）：清单声明
+            # default_task_set = 在线 SUT 形态，考卷来自 task_sets/、datasets 不参与
+            # （内置 chat 包即无 datasets/）；未声明 = 离线文件形态，datasets/ 必需
+            required_dirs = ["rules", "prompts"]
+            if manifest is not None and manifest.default_task_set is None:
+                required_dirs.append("datasets")
+            for sub in required_dirs:
                 if not (tmp_root / sub).is_dir() or not any((tmp_root / sub).iterdir()):
                     errors.append(f"缺少资源目录或为空: {sub}/")
             # 约定：rules/ 与 prompts/ 的资产是 YAML（13 配置管理）——只写 .md 会被
@@ -393,6 +407,12 @@ class PackageToolServer(ToolExporterMixin):
                     yaml.safe_load(rf.read_text(encoding="utf-8"))
                 except yaml.YAMLError as e:
                     errors.append(f"规则 YAML 解析失败 {rf.name}: {e}")
+            # 规则引用对账（evaluator 注册态 / prompt_id / dimension / stage）——悬空
+            # 引用此前延迟到运行时才炸（实测：evaluator 写成 method 枚举值 llm_judge，
+            # 10 条规则全被跳过 → 全 0 报告），落盘前以运行时同源真相（注册表）拦截
+            from agent_eval.evaluation.rule_refs import check_rule_references
+
+            errors += check_rule_references(tmp_root)
             # sut_configs 走执行器同款 schema 校验（未知键显式打回——执行器运行时
             # extra="allow" 会静默丢弃发明字段，落盘前必须拦截）
             from agent_eval.execution.registry import validate_sut_config_document
@@ -451,6 +471,45 @@ class PackageToolServer(ToolExporterMixin):
             return {"error": str(e)}
         rel = target.relative_to(pkg.root.resolve()).as_posix()
         return {"package": pkg.manifest.ref, "path": rel, "content": truncate(content, max_chars)}
+
+    async def list_evaluators(self) -> dict[str, Any]:
+        """当前真实可用的评估器注册 ID 清单（rules 的 evaluator 从此原样复制）。
+
+        快照与运行时/落盘门禁**同一真相源**（rule_refs 的装载原语：内置注册 +
+        包 entry_points）；暂存清单已声明 entry_points 时一并装载——草稿期声明的
+        chat.* 等场景评估器同样可见，避免「清单已声明却被告知不可用」的假阴性
+        （与 v3.15 门禁同一教训：校验/工具的真相源必须与运行时同源）。
+        """
+        from agent_eval.evaluation.evaluators.plugins import load_package_entry_points
+        from agent_eval.evaluation.registry import registry
+        from agent_eval.evaluation.rule_refs import _registered_evaluator_ids
+
+        _registered_evaluator_ids(self.root)  # 内置 + 磁盘清单 entry_points（幂等）
+        if staged := self.staging.get(MANIFEST_FILENAME):
+            with tempfile.TemporaryDirectory() as tmp:
+                (Path(tmp) / MANIFEST_FILENAME).write_text(staged, encoding="utf-8")
+                load_package_entry_points(tmp)  # 草稿未落盘的 entry_points 同样装入
+        evaluators = sorted(registry.list_registered())
+        # 判官模板变量契约（copy, don't recall 的变量面）：评估器类级 prompt_variables
+        # 声明的实时快照——user_prompt_template 的变量从此原样复制，与落盘门禁同源
+        # （guide §4 的契约表是文档副本，真相源在这里与评估器类声明）
+        contracts = {
+            eid: sorted(contract)
+            for eid in evaluators
+            if (cls := registry.class_of(eid)) is not None
+            and (contract := getattr(cls, "prompt_variables", None)) is not None
+        }
+        note = (
+            "rules 的 evaluator 字段必须从此清单**原样复制**——它是评估器注册 ID，"
+            "不是 method 枚举值（llm_judge/llm 不是 ID）；清单含本包 entry_points "
+            "声明的场景评估器（如 chat.*）"
+        )
+        if contracts:
+            note += (
+                "；prompt_variables 是各评估器判官模板（user_prompt_template）可用的"
+                "变量清单，同样**原样复制**勿臆造（写错运行时报「模板渲染失败，变量缺失」）"
+            )
+        return {"evaluators": evaluators, "prompt_variables": contracts, "note": note}
 
     async def preview_diff(self) -> dict[str, Any]:
         """暂存 vs 磁盘的统一 diff（与宿主确认界面同源）。"""

@@ -43,7 +43,8 @@ TOOL_BUDGETS: dict[str, int] = {
     "discover_login": 5,  # 页面发现内含多条子请求，独立小池
     "search_content": 30,  # 分析主循环：真实会话中含噪检索词（post/user/token 命中
     # axios 库代码）与 js/css 双 hash 表分辨都要烧次数——额度从宽只兜空转
-    "probe_protocol": 4,  # 裸探 + 带 configurable 重探是两次调用（缺业务参数 400 后带参重探）
+    "probe_protocol": 8,  # 裸探 + 带 configurable 重探 + modelId 试参（503 试错）+ 登录后
+    # 带 token 重探——真机实测一轮正常调试即耗 4 次，用户纠正/换参后的重试都计于此
     "probe_login": 6,  # 预览确认后实测；跨域候选逐个验证、用户纠正字段后的重试都计于此
 }
 

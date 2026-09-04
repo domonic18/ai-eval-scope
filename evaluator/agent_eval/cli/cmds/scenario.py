@@ -356,7 +356,13 @@ def scenario_validate(
         raise typer.Exit(code=1) from e
 
     problems: list[str] = []
-    for sub in ("rules", "prompts", "datasets"):
+    # 资源目录按包形态判定（运行时真相）：清单声明 default_task_set = 在线 SUT
+    # 形态，考卷来自 task_sets/、datasets 不参与（内置 chat 包即无 datasets/）；
+    # 未声明 = 离线文件形态，datasets/ 必需
+    required_dirs = ["rules", "prompts"]
+    if manifest.default_task_set is None:
+        required_dirs.append("datasets")
+    for sub in required_dirs:
         d = path / sub
         if not d.is_dir():
             problems.append(f"缺少资源目录: {sub}/")
@@ -372,6 +378,12 @@ def scenario_validate(
             yaml.safe_load(rf.read_text(encoding="utf-8"))
         except Exception as e:  # noqa: BLE001
             problems.append(f"规则 YAML 解析失败 {rf.name}: {e}")
+
+    # 规则引用对账（与 Agent staging validate_package 同源）——evaluator 未注册等
+    # 悬空引用在落盘/发布前打回，不等到运行时产出全 0 报告才发现
+    from agent_eval.evaluation.rule_refs import check_rule_references
+
+    problems += check_rule_references(path)
 
     # sut_configs 走执行器同款 schema 校验（未知键显式打回——执行器运行时
     # extra="allow" 会静默丢弃发明字段，如自造的 login.base_url）

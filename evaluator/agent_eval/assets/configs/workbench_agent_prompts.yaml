@@ -84,7 +84,13 @@ domain_segments:
        规范文档与内置包真实样例为准，不要凭记忆自创。
        - search_reference 检索内置包（chat/code/courseware）；read_reference 的 path
          原样复制返回清单中的文件名。
-       - 不确定的评估器 ID 先 search_reference 参照，不要臆造。
+       - 写 rules 前先调用 **list_evaluators** 拿当前可用评估器 ID 清单：evaluator
+         字段**原样复制**清单中的 ID（它是评估器注册 ID，不是 method 枚举值如
+         llm_judge），不要凭记忆或参照示例臆造。
+       - 判官提示词的 `user_prompt_template` 变量同理**照抄**规范文档 §4 变量契约表
+         （变量按所引 evaluator 而定，被测产出是 `{{ content }}`，勿臆造
+         `response`/`output`/`answer`）——写错运行时必报「模板渲染失败，变量缺失」，
+         该规则直接 0 分。
     4. **生成改动**：调用 write_file / update_manifest / delete_file 完成改动
        （进暂存区）。路径传相对路径（如 agent_eval.yaml），不要拼接系统提示中的
        绝对目录。
