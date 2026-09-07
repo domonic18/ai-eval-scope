@@ -98,6 +98,20 @@ class TestSandbox:
         result = asyncio.run(PackageToolServer(tmp_path).write_file("run.sh", "x"))
         assert "白名单" in result["error"]
 
+    def test_list_files_file_path_message_accurate(self, tmp_path: Path) -> None:
+        """B9：传文件路径报「不是目录或不存在」（旧文案「目录不存在」对存在的文件
+        是误导——回显 target 虽可自诊，文案仍须精确）。"""
+        (tmp_path / "a.yaml").write_text("x: 1\n", encoding="utf-8")
+        server = PackageToolServer(tmp_path)
+        result = asyncio.run(server.list_files("a.yaml"))
+        assert "不是目录或不存在" in result["error"]
+
+    def test_preview_diff_empty_staging_gives_note(self, tmp_path: Path) -> None:
+        """B10：空暂存的 preview_diff 带 note（其余空结果分支均有指引，此处曾缺）。"""
+        server = PackageToolServer(tmp_path)
+        result = asyncio.run(server.preview_diff())
+        assert result["changed"] == 0 and "暂存区为空" in result["note"]
+
     def test_write_intercepts_credential_plaintext(self, tmp_path: Path) -> None:
         server = PackageToolServer(tmp_path)
 

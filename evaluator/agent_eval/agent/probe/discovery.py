@@ -77,7 +77,7 @@ class DiscoveryMixin:
     _ensure_host: Callable[[str], Awaitable[str | None]]
     _client: Callable[[], Awaitable[Any]]
     _log: Callable[..., None]
-    _fetch_text: Callable[[str], Awaitable[str | None]]
+    _fetch_text: Callable[[str], Awaitable[tuple[str | None, str]]]
     _cache_content: Callable[[str, str], None]
     _fetched: dict[str, str]
 
@@ -95,9 +95,18 @@ class DiscoveryMixin:
         if host_err := await self._ensure_host(page_url):
             return {"error": host_err}
         base = f"{urlparse(page_url).scheme}://{urlparse(page_url).netloc}"
-        page = await self._fetch_text(page_url)
+        page, fetch_err = await self._fetch_text(page_url)
         if page is None:
-            return {"error": f"页面不可达: {page_url}"}
+            # 失败原因原样呈现（DNS/超时/证书各不相同，吞成「不可达」无法自诊断）
+            self._log(
+                "discover_login", page_url=page_url, event="page_fetch_failed", error=fetch_err
+            )
+            return {
+                "error": (
+                    f"页面不可达: {page_url}（{fetch_err}）——核对地址与协议后重试；"
+                    "若用户给的是登录 API 而非页面，直接用 probe_login 实测"
+                )
+            }
         # 传入接口地址（响应非 HTML）的识别：用户直接给登录 API 时无需页面发现
         head = page[:1000].lower()
         looks_like_html = any(
@@ -130,7 +139,7 @@ class DiscoveryMixin:
         self._cache_content(page_url, page)
         for src in script_srcs:
             script_url = src if src.startswith("http") else f"{base}/{src.lstrip('/')}"
-            js = await self._fetch_text(script_url)
+            js, _ = await self._fetch_text(script_url)
             if js:
                 self._cache_content(script_url, js)
 
@@ -138,6 +147,7 @@ class DiscoveryMixin:
         probe_paths = [p for p in re.split(r"[|,，、\s]+", paths.strip()) if p][
             :_MAX_DISCOVER_PATHS
         ]
+        checked_paths: list[dict[str, Any]] = []  # 全量留痕：404/失败不静默消失（可核对清单）
         if probe_paths:
             client_cm = await self._client()
             async with client_cm as client:
@@ -145,8 +155,10 @@ class DiscoveryMixin:
                     target = path if path.startswith("/") else f"/{path}"
                     try:
                         response = await client.get(f"{base}{target}")
-                    except Exception:  # noqa: BLE001 — 单路径失败不阻断清单
+                    except Exception as e:  # noqa: BLE001 — 单路径失败不阻断清单，但留痕
+                        checked_paths.append({"path": target, "status": 0, "note": str(e)[:80]})
                         continue
+                    checked_paths.append({"path": target, "status": response.status_code})
                     if response.status_code != 404:
                         candidates.append(
                             {
@@ -203,6 +215,7 @@ class DiscoveryMixin:
         self._log("discover_login", page_url=page_url, candidates=len(candidates))
         result: dict[str, Any] = {
             "candidates": candidates[:8],
+            "checked_paths": checked_paths,
             "scripts": script_srcs,
             "cached": list(self._fetched),
             "page_evidence": _wrap_evidence(f"页面 {page_url}", page),
@@ -222,6 +235,9 @@ class DiscoveryMixin:
                 "probe_login 发送前的脱敏预览会让用户看到字段并可纠正"
             ),
         }
+        if len(candidates) > 8:  # 截断显式化（对比 list_files 的 truncated 约定）
+            result["candidates_truncated"] = True
+            result["candidates_total"] = len(candidates)
         if not looks_like_html:
             # 接口地址场景下覆盖兜底指引——两套指引并存方向相反时，Agent 会滑回
             # http_request 逐路径猜（实测教训）；单一权威指引

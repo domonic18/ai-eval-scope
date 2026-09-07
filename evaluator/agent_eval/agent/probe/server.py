@@ -140,6 +140,9 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         timeout_s: float = PROBE_TIMEOUT_S,
     ) -> None:
         self.allowed_hosts = {h.lower() for h in (allowed_hosts or {})}
+        # 拒绝拉黑账本（与 workbench_tools._ensure_grant 的 _denied 同款）：被拒
+        # host 不再反复弹授权确认（同一授权模式两处实现行为必须一致）
+        self._denied_hosts: set[str] = set()
         self.ask_fn = ask_fn
         self.credentials = credential_store
         self.log_path = log_path
@@ -245,7 +248,10 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         host = _host_of(url)
         if not host:
             return f"无法解析 host: {url}"
-        if host.lower() not in self.allowed_hosts:
+        host = host.lower()
+        if host in self._denied_hosts:
+            return f"该 host 此前已被用户拒绝，勿再试探: {host}——请与用户确认正确的地址"
+        if host not in self.allowed_hosts:
             return (
                 f"host {host} 未获用户授权（红线：仅可访问用户提供或确认过的 host）。"
                 f"请先 ask_user 征得用户对该 host 的确认后再试"
@@ -258,6 +264,10 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
         if err is None:
             return None
         host = _host_of(url)
+        if host.lower() in self._denied_hosts:
+            return err  # 拉黑账本命中：直接返回，不再重复打扰用户
+        if self.ask_fn is None:
+            return err
         if self.ask_fn is None:
             return err
         answer = await self.ask_fn(
@@ -269,6 +279,7 @@ class SUTProbeToolServer(FetchMixin, DiscoveryMixin, ProtocolMixin, LoginMixin, 
             self.allowed_hosts.add(host.lower())
             self._log("host_authorized", host=host)
             return None
+        self._denied_hosts.add(host.lower())
         self._log("host_denied", host=host)
         return f"用户拒绝访问 {host}，不得探测该 host；请与用户确认正确的地址"
 

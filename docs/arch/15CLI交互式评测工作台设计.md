@@ -752,3 +752,5 @@ review 检查项。
 | v3.15–v3.18 | 2026-09-03/04 | 对账门禁族：规则引用 + 判官变量 + 端到端复审 |
 | v3.19–v3.20 | 2026-09-04 | 归位时序修复 + num_samples 包内可配 |
 | v3.21 | 2026-09-07 | 移除设备码流接口约定（粘贴 Key 双通道已满足）+ §六精简去过程性内容 |
+| v3.22 | 2026-09-07 | 工具面返回值规范轮（实测排查驱动）：probe_login token_path 归一化/键路径树/失败模式三分 + 探测面静默分支治理（fetch 失败原因/auth_attached/checked_paths/stream 3xx/cleanup 留痕/host 拉黑）+ 归位横幅不预设门禁通过 |
+| v3.23 | 2026-09-07 | M1 值回流条件化（二轮实测事故驱动：裸 JWT 经 evidence 回流）：probe_login 2xx JSON 提取失败时 evidence 只回键路径树不回原文——「值要回流，前提是知道哪些值是凭证」，零格式假设；探测面 v4 重构设计立项（docs/plan/03 薄原语+厚思考，request/declare_token/链式变量，probe_login 拟退役） |

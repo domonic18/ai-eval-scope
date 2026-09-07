@@ -168,12 +168,17 @@ class ProtocolMixin:
                                 f"{base}{spath}",
                                 headers={**auth, **conversation_headers(tid)},
                             ) as s:
+                                # 2xx-only（与其余端点同红线：3xx 重定向不是端点存在的证据）
+                                ok = 200 <= s.status_code < 300
+                                note = f"HTTP {s.status_code}"
+                                if 300 <= s.status_code < 400:
+                                    note += "——重定向不是端点存在的证据"
                                 matrix.append(
                                     {
                                         "step": "stream",
                                         "endpoint": spath.replace(tid, tid[:8]),
-                                        "ok": s.status_code < 400,
-                                        "note": f"HTTP {s.status_code}",
+                                        "ok": ok,
+                                        "note": note,
                                     }
                                 )
                                 break
@@ -201,8 +206,15 @@ class ProtocolMixin:
                                 "note": "临时线程已清理",
                             }
                         )
-                    except Exception:  # noqa: BLE001 — 清理失败不影响结论
-                        pass
+                    except Exception as e:  # noqa: BLE001 — 不影响结论，但残留必须可见
+                        matrix.append(
+                            {
+                                "step": "cleanup",
+                                "endpoint": f"DELETE /threads/{tid[:8]}…",
+                                "ok": False,
+                                "note": f"临时线程清理失败（残留）：{truncate(str(e), 100)}",
+                            }
+                        )
         except Exception as e:  # noqa: BLE001
             return {"error": f"探测失败: {e}"}
         # 鉴权状态与失败模式化指引：协议端点若需认证，未鉴权请求可能 401/403

@@ -74,6 +74,22 @@ class TestHostBoundary:
         assert "用户拒绝" in result["error"]
         assert "new.example.com" not in server.allowed_hosts
 
+    def test_denied_host_blacklisted_no_repeat_prompt(self) -> None:
+        """B8：被拒 host 拉黑（与 workbench_tools._denied 同款）——反复试探不再
+        反复弹授权确认打扰用户。"""
+        calls = {"n": 0}
+
+        def deny(question: str, **kw: Any) -> str:
+            calls["n"] += 1
+            return "不允许"
+
+        server = _make(allowed_hosts=set(), ask_fn=_ask(deny))
+        first = _run(server.http_request("GET", "https://new.example.com/x"))
+        second = _run(server.http_request("GET", "https://new.example.com/y"))
+        assert "用户拒绝" in first["error"]
+        assert "勿再试探" in second["error"]
+        assert calls["n"] == 1  # 第二次直接短路，不再询问
+
 
 # ── 注入防护与可达性 ─────────────────────────────────────────────────
 
@@ -156,6 +172,56 @@ class TestDiscoverLogin:
         )
         cand = next(c for c in result["candidates"] if c["source"] == "probed_path")
         assert cand["path"] == "/api/auth/login"  # 405 ≠ 404：路径存在
+
+    def test_page_unreachable_error_keeps_reason(self) -> None:
+        """B1：页面不可达保留失败原因（DNS/超时/证书各异，吞成一句无法自诊断）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectError("[Errno -2] Name or service not known")
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        assert "页面不可达" in result["error"]
+        assert "Name or service not known" in result["error"]
+
+    def test_checked_paths_keep_404_and_failures(self) -> None:
+        """B3：定向检查全量留痕——404/失败的候选路径不静默消失（Agent 可核对
+        自己提交的 paths 清单各条实测结果）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/api/auth/login":
+                return httpx.Response(405, text="method not allowed", request=request)
+            if request.url.path == "/api/auth/boom":
+                raise httpx.ConnectError("reset")
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(
+            server.discover_login(
+                "https://sut.example.com/login",
+                paths="/api/auth/login|/api/auth/boom|/nope",
+            )
+        )
+        by_path = {c["path"]: c for c in result["checked_paths"]}
+        assert by_path["/api/auth/login"]["status"] == 405
+        assert by_path["/nope"]["status"] == 404
+        assert by_path["/api/auth/boom"]["status"] == 0
+        assert {c["path"] for c in result["candidates"] if c["source"] == "probed_path"} == {
+            "/api/auth/login"
+        }
+
+    def test_candidates_truncation_flagged(self) -> None:
+        """B3：候选截断显式化（truncated + total）——静默丢弃会让 Agent 以为看全了。"""
+        server = _make(
+            http_client_factory=_transport(
+                lambda request: httpx.Response(200, text="ok", request=request)
+            )
+        )
+        paths = "|".join(f"/p{i}" for i in range(10))
+        result = _run(server.discover_login("https://sut.example.com/login", paths=paths))
+        assert result["candidates_truncated"] is True
+        assert result["candidates_total"] == 10
+        assert len(result["candidates"]) == 8
 
     def test_page_and_scripts_cached_for_search(self) -> None:
         """页面与同域脚本入缓存——前端包分析的存储侧（search_content 消费）。"""
@@ -262,6 +328,13 @@ class TestSearchContent:
         assert 0 < len(capped["matches"]) <= 12
         assert "pattern 不能为空" in _run(server.search_content("  "))["error"]
         assert "过长" in _run(server.search_content("x" * 120))["error"]
+
+    def test_context_non_integer_rejected_with_guidance(self) -> None:
+        """B7：context 非整数转结构化错误（旧实现裸 int() 抛 ValueError，经导出层
+        兜底成无工具语境的通用 failed——丢失本工具其余分支都有的纠正指引）。"""
+        server = _make()
+        result = _run(server.search_content("token", context="abc"))
+        assert "context" in result["error"] and "整数" in result["error"]
 
     def test_no_match_guides_next_step(self) -> None:
         server = _make()
@@ -661,6 +734,141 @@ class TestProbeLogin:
         assert second["ok"] is True and calls["n"] == 2
         assert server.verified_login("SUT")["token_path"] == "token"  # 成功事实入账本
 
+    def test_token_path_absent_says_not_provided_with_key_tree(self) -> None:
+        """A1 修复①③：「未携带」≠「与响应结构不符」——明示未携带 + 键路径树 +
+        收到的字段清单（实测事故：参数嵌错层级静默变空，Agent 被误导反复猜格式）。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"data": {"token": "T0KPEN"}}, request=request)
+
+        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
+        cfg = {k: v for k, v in _LOGIN_CFG.items() if k != "token_path"}
+        result = _run(server.probe_login(cfg, "SUT"))
+        assert result["ok"] is False and result["token_extracted"] is False
+        assert result["token_path"] == ""  # 生效入参回显：空串 = 未携带
+        assert result["received_login_cfg_keys"] == sorted(cfg)
+        assert "未携带 token_path" in result["next_step"]
+        assert "与响应结构不符" not in result["next_step"]
+        tree = result["response_key_paths"]
+        assert "data.token" in tree
+        assert "T0KPEN" not in tree  # 键路径树只显类型，值不外显
+        assert server.verified_login("SUT") is None  # 未提取不入账本（门禁死锁根因即此）
+
+    def test_token_path_dollar_prefix_normalized_and_extracted(self) -> None:
+        """A1 修复④：``$.data.token`` 等价写法机械归一化（实测会话的变形形态）——
+        归一化值随返回回显，账本与 snippet 落归一化形态。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"data": {"token": "T0KPEN"}}, request=request)
+
+        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
+        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "$.data.token"}, "SUT"))
+        assert result["ok"] is True and result["token_path"] == "data.token"
+        assert "归一化" in result["note"]
+        assert server.verified_login("SUT")["token_path"] == "data.token"
+        assert "token_path: data.token" in result["sut_config_auth_snippet"]
+
+    def test_token_path_list_form_normalized(self) -> None:
+        """列表形态有唯一字符串形态：机械归一化优于类型报错（v3.14 先例）。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"data": {"token": "T"}}, request=request)
+
+        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
+        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": ["data", "token"]}, "SUT"))
+        assert result["ok"] is True and result["token_path"] == "data.token"
+        assert "归一化" in result["note"]
+
+    def test_token_path_mismatch_reports_value_and_tree(self) -> None:
+        """A1 修复②：路径不匹配时回显收到的路径值 + 响应键路径树（零字段名假设）。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"token": "T"}, request=request)
+
+        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
+        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "data.token"}, "SUT"))
+        assert result["ok"] is False
+        assert "token_path='data.token'" in result["next_step"]
+        assert "token: str" in result["response_key_paths"]
+
+    def test_failed_extraction_withholds_response_body(self) -> None:
+        """M1 值回流条件化：2xx JSON 提取失败时无法知道响应里哪个值是会话凭证——
+        原文不回流，只回结构树（实测事故中裸 JWT 即经 evidence 回流并被模型
+        试图绕过工具自带）。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"data": {"token": "T0KPEN"}}, request=request)
+
+        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
+        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "wrong.path"}, "SUT"))
+        assert result["ok"] is False
+        assert "T0KPEN" not in result["evidence"]  # 凭证值不回流（结构树只显类型）
+        assert "data.token" in result["evidence"]  # 结构树指路
+        assert "data.token" in result["response_key_paths"]
+
+    def test_successful_extraction_keeps_masked_body(self) -> None:
+        """值回流条件化的「已知」侧：提取成功时响应原文仍回——token 值已知名，
+        _mask 掩得住；业务字段照常可见供排错。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
+
+        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert result["ok"] is True
+        assert "T0KPEN" not in result["evidence"]  # token 值被掩
+        assert "•••" in result["evidence"]
+
+    def test_non_json_success_distinct_from_token_path_issues(self) -> None:
+        """A1 修复③：2xx 非 JSON 响应单独分层（旧实现与提取失败共用一条文案）。"""
+
+        def html_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                text="<html><body>ok</body></html>",
+                headers={"content-type": "text/html"},
+                request=request,
+            )
+
+        server, _ = self._server(html_login, ask=_ask(lambda q, **kw: "发送"))
+        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        assert result["ok"] is False and result["token_extracted"] is False
+        assert "不是 JSON" in result["next_step"] and "text/html" in result["next_step"]
+        assert "response_key_paths" not in result
+
+    def test_token_path_invalid_type_rejected_before_send(self) -> None:
+        """无法机械归一化的形态显式打回（静默丢弃是本次实测事故的根源类别）。"""
+        server, sent = self._server(
+            lambda r: httpx.Response(200, json={}), ask=_ask(lambda q, **kw: "发送")
+        )
+        result = _run(
+            server.probe_login({**_LOGIN_CFG, "token_path": {"path": "data.token"}}, "SUT")
+        )
+        assert "点分路径" in result["error"]
+        assert result["received_login_cfg_keys"] == sorted(_LOGIN_CFG)
+        assert sent == []  # 打回先于发送
+
+    def test_missing_url_checked_before_credentials(self) -> None:
+        """B6：URL 缺失先于凭证缺失——旧实现先引导跑完一轮凭证收集才告知缺地址。"""
+        server, _ = self._server(lambda r: httpx.Response(200, json={}))
+        result = _run(
+            server.probe_login(
+                {"method": "POST", "body_template": '{"u": "{{ username }}"}'}, "SUT"
+            )
+        )
+        assert "缺少 url/path" in result["error"]
+        assert "missing_fields" not in result
+
+    def test_token_path_supports_array_index(self) -> None:
+        """walker 与执行器 extract_by_path 同语义（点分 + 数字下标）。"""
+
+        def ok_login(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"tokens": ["T0KPEN"]}, request=request)
+
+        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
+        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "tokens.0"}, "SUT"))
+        assert result["ok"] is True
+
     def test_status_guidance_distinguishes_404_from_auth_fail(self) -> None:
         """POST 判别语义：404=路径不存在交用户核对；401=接口存在，收集凭证重测。"""
 
@@ -732,6 +940,35 @@ class TestProbeProtocol:
         cmd = next(m for m in result["matrix"] if m["step"] == "send_command")
         assert cmd["ok"] is False and "重定向" in cmd["note"]
         assert server.verified_protocol("sut.example.com")["steps"]["send_command"] is False
+
+    def test_stream_redirect_is_not_evidence(self) -> None:
+        """B4：stream 端点与其余端点同红线——3xx 重定向不记 ✅（旧实现
+        status<400 把重定向误计为存在，同一矩阵内自相矛盾）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "POST" and request.url.path == "/threads":
+                return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+            if "/stream" in request.url.path:
+                return httpx.Response(302, headers={"location": "/web/"}, request=request)
+            return httpx.Response(200, json={}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        stream = next(m for m in result["matrix"] if m["step"] == "stream")
+        assert stream["ok"] is False and "重定向" in stream["note"]
+
+    def test_cleanup_failure_visible_in_matrix(self) -> None:
+        """B5：写操作收尾失败留痕（临时线程残留被测系统，Agent/用户须可见）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "DELETE":
+                raise httpx.ConnectError("cleanup refused")
+            return httpx.Response(200, json={"thread_id": "t1"}, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.probe_protocol("https://sut.example.com"))
+        cleanup = next(m for m in result["matrix"] if m["step"] == "cleanup")
+        assert cleanup["ok"] is False and "残留" in cleanup["note"]
 
     def test_create_thread_404_continues_with_client_uuid(self) -> None:
         """建线程端点失败 ≠ 协议不支持（v3.9 同构）：执行器契约由客户端生成线程
@@ -980,6 +1217,23 @@ class TestHttpRequest:
         result = _run(server.http_request("GET", "https://sut.example.com/me"))
         assert seen[0].headers["Authorization"] == "Bearer T0KPEN"  # 自动挂载
         assert "T0KPEN" not in json.dumps(result)  # 响应体里的 token 值已掩码
+
+    def test_unauthenticated_401_distinguished_with_auth_attached(self) -> None:
+        """B2：401/403 回显 auth_attached——未挂鉴权的被拒不构成接口无效结论
+        （v3.11 教训在裸请求原语的同源补齐，两种失败 next_step 相反）。"""
+
+        def unauthorized(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(401, json={"detail": "auth"}, request=request)
+
+        server = _make(http_client_factory=_transport(unauthorized))
+        result = _run(server.http_request("POST", "https://sut.example.com/api/chat"))
+        assert result["auth_attached"] is False
+        assert "未携带鉴权" in result["next_step"] and "probe_login" in result["next_step"]
+
+        server._store_token("SUT", "T0KPEN")  # 登录成功后 token 服务端持有
+        result2 = _run(server.http_request("POST", "https://sut.example.com/api/chat"))
+        assert result2["auth_attached"] is True
+        assert "未携带鉴权" not in result2.get("next_step", "")
 
     def test_get_fetch_semantics_cached_and_guided(self) -> None:
         """GET = 抓取（原 probe_url 语义）：完整体入缓存可检索；脚本响应带

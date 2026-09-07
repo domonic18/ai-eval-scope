@@ -52,6 +52,8 @@ def _render_outcome(result: Any, landing: Path | None = None) -> None:  # noqa: 
         rprint("[red]❌ 校验未通过（未落盘）:[/red]")
         for e in result.validation_errors:
             rprint(f"  • {e}")
+        # 失败侧归位时序说清（v3.19 的补充）：未落盘 = 磁盘未动，包仍在暂存区
+        rprint("[dim]磁盘未做任何修改，变更仍在暂存区——继续对话修复上述错误后重新确认[/dim]")
     elif not result.staged:
         rprint("[yellow]（本轮无文件变更——可继续描述需求或换种说法）[/yellow]")
 
@@ -108,7 +110,12 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
         _render_diff(diff)
     landing = _landing_hint(agent) if agent is not None else None
     if landing:
-        rprint(f"[green]确认落盘后，会话结束（输入空行退出）即归位 → {landing}[/green]")
+        # 不预设门禁通过（实测：门禁打回后横幅仍称「确认落盘即归位」，用户误以为
+        # 已落盘）——归位是「确认 → 门禁通过 → 落盘 → 会话结束」的链，任何一环
+        # 失败都不归位
+        rprint(
+            f"[green]确认后经校验门禁，通过即落盘；会话结束（空行退出）后归位 → {landing}[/green]"
+        )
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 

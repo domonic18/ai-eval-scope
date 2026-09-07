@@ -81,14 +81,16 @@ class FetchMixin:
             self._fetched.pop(next(iter(self._fetched)))
         self._fetched[url] = content
 
-    async def _fetch_text(self, url: str) -> str | None:
+    async def _fetch_text(self, url: str) -> tuple[str | None, str]:
+        """抓取文本，返回（内容, 失败原因）——失败原因必须保留（R3：DNS/超时/证书
+        各不相同，吞成一句「不可达」会让 Agent 与用户失去自诊断依据）。"""
         try:
             client_cm = await self._client()
             async with client_cm as client:
                 response = await client.get(url)
-            return str(response.text)
-        except Exception:  # noqa: BLE001 — 抓取失败返回 None 由调用方决策
-            return None
+            return str(response.text), ""
+        except Exception as e:  # noqa: BLE001 — 失败原因交调用方呈现与决策
+            return None, str(e)[:200]
 
     async def http_request(
         self, method: str, url: str, headers: str = "", body: str = ""
@@ -140,6 +142,9 @@ class FetchMixin:
         result: dict[str, Any] = {
             "status": response.status_code,
             "elapsed_ms": round((time.monotonic() - started) * 1000),
+            # 本次请求是否自动挂载了会话 token（生效入参回显：401/403 时 Agent 需要
+            # 知道是「没带鉴权」还是「鉴权被拒」，二者 next_step 相反）
+            "auth_attached": bool(self.auth_headers),
             "headers": {
                 k: _mask(v, tokens)
                 for k, v in response.headers.items()
@@ -168,6 +173,14 @@ class FetchMixin:
                     "若在找登录页面：向用户要登录页面地址后用 discover_login 分析页面发现，"
                     "不要用本工具逐路径猜测"
                 )
+        if response.status_code in (401, 403) and not self.auth_headers:
+            # 未鉴权假阴性（v3.11 教训，与 probe_protocol 的 authenticated 分层同源）：
+            # 覆盖上面的 GET 404 指引——单一权威 next_step，二者矛盾时 Agent 会滑错向
+            result["next_step"] = (
+                "本次请求未携带鉴权（会话尚无登录实测成功的 token），401/403 不构成"
+                "接口无效的结论——先完成 probe_login 登录实测（成功后 token 自动挂载）"
+                "再重试"
+            )
         self._log("http_request", method=verb, url=url, status=response.status_code)
         return result
 
@@ -187,7 +200,15 @@ class FetchMixin:
             }
         if len(pattern) > _MAX_PATTERN:
             return {"error": f"pattern 过长（{len(pattern)} 字，上限 {_MAX_PATTERN}）：用更短的词"}
-        context = max(60, min(int(context), _MAX_CONTEXT))
+        try:
+            context = max(60, min(int(context), _MAX_CONTEXT))
+        except (TypeError, ValueError):
+            return {
+                "error": (
+                    f"context 需为整数（收到 {context!r}）——摘录上下文的字符数，"
+                    f"缺省 {_DEFAULT_CONTEXT}、上限 {_MAX_CONTEXT}"
+                )
+            }
         if not self._fetched:
             return {"error": "缓存为空：先用 http_request 或 discover_login 抓取页面/脚本再检索"}
         matches: list[dict[str, Any]] = []

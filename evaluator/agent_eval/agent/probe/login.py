@@ -45,6 +45,39 @@ def _render_auth_snippet(*, ref: str, method: str, url: str, template: str, toke
     return yaml.safe_dump(snippet, allow_unicode=True, sort_keys=False).strip()
 
 
+def _key_path_tree(payload: Any, *, max_depth: int = 3, max_nodes: int = 30) -> str:
+    """响应 JSON 的键路径树（只显类型、值一律不外显）——提取失败时的机械证据。
+
+    零字段名假设（不内置任何站点知识）：响应长什么样 Agent 看什么。路径语义与
+    执行器 ``extract_by_path`` 同源（点分 + 数字下标），树里给出的路径可直接作为
+    token_path 重测。
+    """
+    lines: list[str] = []
+
+    def walk(node: Any, prefix: str, depth: int) -> None:
+        if depth > max_depth or len(lines) >= max_nodes:
+            return
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if len(lines) >= max_nodes:
+                    return
+                path = f"{prefix}.{key}" if prefix else str(key)
+                lines.append(f"{path}: {type(value).__name__}")
+                if isinstance(value, (dict, list)):
+                    walk(value, path, depth + 1)
+        elif isinstance(node, list) and node:
+            path0 = f"{prefix}.0" if prefix else "0"
+            lines.append(f"{path0}: {type(node[0]).__name__}（数组共 {len(node)} 项，取首项展开）")
+            if isinstance(node[0], (dict, list)):
+                walk(node[0], path0, depth + 1)
+
+    walk(payload, "", 0)
+    body = "\n".join(f"  {line}" for line in lines)
+    if len(lines) >= max_nodes:
+        body += "\n  …（节点数达上限，已截断）"
+    return body or "  （空响应体）"
+
+
 class LoginMixin:
     """工具四（登录实测）与工具五（ask_user：文本/单选/凭证，值不回流）。
 
@@ -72,13 +105,58 @@ class LoginMixin:
         # path 承载完整 URL。不再接受 base_url 拼接：那正是「实测完整 URL 在
         # 探测工具里、落盘时拆成 path+base_url 被执行器静默丢弃」的变形源头
         url = str(login_cfg.get("path") or login_cfg.get("url") or "")
-        if url and not url.startswith(("http://", "https://")):
+        # URL 检查先于凭证缺失检查（失败模式分层）：否则会先跑完一轮逐字段凭证
+        # 收集、才被告知连地址都没有
+        if not url:
+            return {
+                "error": (
+                    "login_cfg 缺少 url/path（完整 http(s):// 地址，与 sut_configs 的 "
+                    "auth.login.path 同形）——本次收到的字段: "
+                    + (", ".join(sorted(login_cfg)) or "（空）")
+                )
+            }
+        if not url.startswith(("http://", "https://")):
             return {
                 "error": (
                     "login_cfg.path 需为完整 http(s):// URL（与 sut_configs 的 "
                     "auth.login.path 同形——跨域登录接口直接写完整地址）。本工具没有 "
                     "base_url 字段，不要把已发现的接口域拆成 path + base_url 两段"
                 )
+            }
+        # token_path 机械归一化（v3.14 body_template 先例：凡可机械传递的变形不经
+        # LLM 猜；无法归一化的形态显式打回）。实测事故根源即本参数静默变空：
+        # `$.` 前缀/嵌套层级变形 → 顶层 get 不到 → 误导报错「与响应结构不符」
+        raw_token_path = login_cfg.get("token_path")
+        token_path_note = ""
+        if raw_token_path is None or (
+            isinstance(raw_token_path, str) and not raw_token_path.strip()
+        ):
+            token_path = ""
+        elif isinstance(raw_token_path, str):
+            token_path = re.sub(r"^\$\.?", "", raw_token_path.strip())
+            if token_path != raw_token_path.strip():
+                token_path_note = (
+                    f"token_path 传的是 {raw_token_path!r}，已机械归一化为 {token_path!r}"
+                    "——重试与落盘以此形态为准"
+                )
+        elif (
+            isinstance(raw_token_path, list)
+            and raw_token_path
+            and all(isinstance(p, str) and p.strip() for p in raw_token_path)
+        ):
+            token_path = ".".join(p.strip() for p in raw_token_path)
+            token_path_note = (
+                f"token_path 传的是列表 {raw_token_path!r}，已机械归一化为 {token_path!r}"
+                "——重试与落盘以此形态为准"
+            )
+        else:
+            return {
+                "error": (
+                    f"token_path 需为点分路径字符串（收到 {type(raw_token_path).__name__}: "
+                    f'{str(raw_token_path)[:60]}）——相对登录响应 JSON 根，如 "data.token"；'
+                    "本次收到的字段: " + ", ".join(sorted(login_cfg))
+                ),
+                "received_login_cfg_keys": sorted(login_cfg),
             }
         template = login_cfg.get("body_template", "")
         # v3.14：LLM 会把 body_template 写成 JSON 对象（dict）而非字符串——
@@ -115,6 +193,7 @@ class LoginMixin:
         if missing:
             result: dict[str, Any] = {
                 "missing_fields": missing,
+                "received_login_cfg_keys": sorted(login_cfg),
                 "hint": (
                     f"凭证缺失：逐字段 ask_user(kind=credential, ref={ref!r}, field=<字段名>, "
                     "desc=<该字段实际要输入什么>) 收集——一次只录一个字段且 desc 必带"
@@ -123,11 +202,10 @@ class LoginMixin:
                     "备用通道）；收齐后重新调用本工具"
                 ),
             }
-            if template_note:
-                result["note"] = template_note
+            notes = [n for n in (template_note, token_path_note) if n]
+            if notes:
+                result["note"] = "；".join(notes)
             return result
-        if not url:
-            return {"error": "login_cfg 缺少 url/path"}
         # 防锁按（ref+完整 URL+模板）：同 host 不同路径是不同组合——实测曾因键缺
         # 路径，猜错路径的失败连坐了用户随后给出的正确地址
         key = (ref.lower(), url, str(template))
@@ -173,8 +251,9 @@ class LoginMixin:
                 "masked_body": body,
                 "note": "非交互环境不发送登录请求；请用户交互运行确认后重试",
             }
-            if template_note:
-                result["note"] = f"{template_note}；{result['note']}"
+            notes = [n for n in (template_note, token_path_note) if n]
+            if notes:
+                result["note"] = f"{'；'.join(notes)}；{result['note']}"
             return result
         answer = await self.ask_fn(preview, options=["发送", "取消"], secret=False)
         if not answer or "发送" not in answer:
@@ -193,26 +272,37 @@ class LoginMixin:
             # 请求未达服务端：无撞锁风险，不入锁（同组合可经用户确认后重发）
             self._log("probe_login", ref=ref, event="request_failed", error=str(e)[:200])
             return {"ok": False, "error": f"登录请求失败: {e}"}
-        token_path = login_cfg.get("token_path", "")
-        token_extracted = False
-        token_value = ""
-        payload: dict[str, Any] = {}
+        # 响应解析与提取失败分层（实测事故修复）：非 JSON / 未携带 token_path /
+        # 路径不匹配三种根因各自独立呈现——曾共用「token_path 与响应结构不符」
+        # 一条文案，没传时该断言不成立，Agent 只能带着错误假设猜格式空转
+        payload: Any = None
+        is_json = True
         try:
             payload = response.json()
-            if token_path:
-                node: Any = payload
-                for part in token_path.split("."):
-                    if not isinstance(node, dict):
-                        node = None
-                        break
+        except Exception:  # noqa: BLE001 — 非 JSON 单独分层，勿与提取失败共用文案
+            is_json = False
+        token_extracted = False
+        token_value = ""
+        if payload is not None and token_path:
+            node: Any = payload
+            for part in token_path.split("."):  # 与执行器 extract_by_path 同语义（点分+下标）
+                if isinstance(node, dict):
                     node = node.get(part)
-                if node is not None:
-                    token_extracted = True
-                    token_value = str(node)
-        except Exception:  # noqa: BLE001 — 非 JSON/提取失败记为未提取
-            pass
+                elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+                    node = node[int(part)]
+                else:
+                    node = None
+                    break
+            if node is not None:
+                token_extracted = True
+                token_value = str(node)
         self._log(
-            "probe_login", ref=ref, status=response.status_code, token_extracted=token_extracted
+            "probe_login",
+            ref=ref,
+            status=response.status_code,
+            token_path=token_path,
+            token_extracted=token_extracted,
+            login_cfg_keys=sorted(login_cfg),
         )
         # 凭证旁路：账密与响应 token 一并脱敏——值不得回流 LLM 上下文
         mask_values = [*values.values(), token_value] if token_value else list(values.values())
@@ -258,11 +348,29 @@ class LoginMixin:
                     "（token 已自动挂载）"
                 )
             else:
-                guidance = (
-                    "登录成功但未提取到 token（token_path 与响应结构不符）——按响应证据"
-                    "更正 token_path 后重测即可：登录已成功、凭证已验证有效，重测不受"
-                    "防锁限制（无撞锁风险）；以最终实测通过的 sut_config_auth_snippet 落盘"
-                )
+                # 失败模式三分（实测事故修复：四种根因曾共用一条文案）
+                if not is_json:
+                    guidance = (
+                        f"登录成功（2xx）但响应体不是 JSON（content-type: "
+                        f"{response.headers.get('content-type', '未知')}）——token 提取不适用"
+                        "于该响应：该地址可能不是登录 API 或返回了页面，对照 discover_login "
+                        "结论核对地址后再测"
+                    )
+                elif not token_path:
+                    guidance = (
+                        "登录成功但未提取到 token：**本次调用未携带 token_path**（login_cfg "
+                        "顶层无该键或为空——写进嵌套层级/键名变形同样收不到，对照 "
+                        "received_login_cfg_keys 核对）。按 response_key_paths 键路径树选择"
+                        "正确路径后重测：登录已成功、凭证已验证有效，重测不受防锁限制"
+                        "（无撞锁风险）；以最终实测通过的 sut_config_auth_snippet 落盘"
+                    )
+                else:
+                    guidance = (
+                        f"登录成功但 token_path={token_path!r} 未命中响应结构——按 "
+                        "response_key_paths 键路径树选择正确路径后重测：登录已成功、凭证已"
+                        "验证有效，重测不受防锁限制（无撞锁风险）；以最终实测通过的 "
+                        "sut_config_auth_snippet 落盘"
+                    )
         else:
             # 认证层拒绝（4xx/5xx）：同组合不自动重试——防的是真实撞锁风险
             # （2xx 成功与 404 均不入锁：前者凭证已验证有效，后者未到认证层）
@@ -272,16 +380,37 @@ class LoginMixin:
                 "逐字段 ask_user(kind=credential) 收集/更正凭证后重测（新凭证录入即解锁"
                 "一次重试），或按证据更正 body_template（模板变化亦为新组合）"
             )
+        # 值回流条件化（M1 红线收口）：值要回流，前提是知道哪些值是凭证——提取
+        # 成功时 _mask 已按已知凭证值（账密 + token）掩码；2xx JSON 提取失败时
+        # 无法知道响应里哪个值是会话凭证，原文不回传、只回结构树（实测事故：裸
+        # JWT 即经 evidence 回流并被模型试图绕过工具自带）；非 2xx 是失败响应
+        # （无会话凭证），原文保留供排错。该规则在探测面 v4 中延续（docs/plan/03 §3.6）
+        if status < 400 and is_json and not token_extracted:
+            evidence = _wrap_evidence(
+                "登录响应键路径结构（提取成功前不回传响应原文：响应可能含会话凭证，"
+                "值一律不回流）",
+                _key_path_tree(payload),
+            )
+        else:
+            evidence = _wrap_evidence("登录响应（已脱敏）", _mask(response.text, mask_values))
         result = {
             "ok": status < 400 and token_extracted,
             "status": status,
             "url": url,
+            # 生效入参回显（自诊断依据，v3.14 template_note 先例）：token_path 为
+            # 本次实际生效的归一化值，空串 = 未携带；received_login_cfg_keys 用于
+            # 发现参数嵌错层级/键名变形
+            "token_path": token_path,
             "token_extracted": token_extracted,
-            "evidence": _wrap_evidence("登录响应（已脱敏）", _mask(response.text, mask_values)),
+            "received_login_cfg_keys": sorted(login_cfg),
+            "evidence": evidence,
             "next_step": guidance,
         }
-        if template_note:
-            result["note"] = template_note
+        if status < 400 and not token_extracted and is_json:
+            result["response_key_paths"] = _key_path_tree(payload)
+        notes = [n for n in (template_note, token_path_note) if n]
+        if notes:
+            result["note"] = "；".join(notes)
         if status < 400 and token_extracted and (fact := self.verified_login(ref)):
             result["sut_config_auth_snippet"] = fact["auth_snippet"]
         return result

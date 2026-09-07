@@ -210,7 +210,7 @@ class PackageToolServer(ToolExporterMixin):
         if in_session and target == self.root:
             return self._list_session()
         if not target.is_dir():
-            return {"error": f"目录不存在: {target}"}
+            return {"error": f"不是目录或不存在: {target}"}
         files = sorted(
             p.relative_to(target).as_posix()
             for p in target.rglob("*")
@@ -513,6 +513,12 @@ class PackageToolServer(ToolExporterMixin):
 
     async def preview_diff(self) -> dict[str, Any]:
         """暂存 vs 磁盘的统一 diff（与宿主确认界面同源）。"""
+        if not self.staging:
+            return {
+                "diff": "",
+                "changed": 0,
+                "note": "暂存区为空：先用 write_file/delete_file 产生变更再预览",
+            }
         return {"diff": self.render_diff(), "changed": len(self.staging)}
 
     # ─── 宿主侧（不经 Agent） ─────────────────────────────────────
