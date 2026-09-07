@@ -1,4 +1,4 @@
-"""quality_evaluators details 组装契约（docs/arch/14 §五.3）。
+"""quality_evaluators details 组装契约。
 
 mock _invoke_judge 返回带 dim_details 的 record，断言 ConstraintResult.details.dimensions[]
 含 band（由分派生）+ 透传 reason/issues/highlights。

@@ -17,7 +17,7 @@ Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架。
 - **可观测平台**：仿 Langfuse 的多租户平台，可视化运行/趋势/指标/样本详情 + Webhook 回调
 - **第三方对接**：HTTP API + MCP 工具 + Webhook 推送，无需安装 Python SDK
 
-> 场景可插拔：新增场景只需写包（manifest + policy + rules + prompts + 可选专属评估器），无需改代码，见 [场景扩展指南](./docs/arch/14场景扩展指南.md)。CLI 的完整用法见 [CLI 使用教程](./docs/guide/CLI使用教程.md)。
+> 场景可插拔：新增场景只需写包（manifest + policy + rules + prompts + 可选专属评估器），无需改代码，以内置场景包为参照。CLI 的完整用法见 [CLI 使用教程](./docs/guide/CLI使用教程.md)。
 
 ## 架构概览
 
@@ -49,7 +49,7 @@ Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架。
 | **code** | 代码生成质量评估（.py） | delivery_rate / correctness / style / reward |
 | **chat** | 对话 Agent 评测（任务集 + SUT 在线驱动） | delivery_rate / quality（answer_exact + answer_quality）/ reward / avg_turns |
 
-新增自己的场景（RAG / 自定义）见 [场景扩展指南](./docs/arch/14场景扩展指南.md)。
+新增自己的场景（RAG / 自定义）参照内置场景包（`evaluator/agent_eval/assets/packages/`）编写即可。
 
 ## 安装
 

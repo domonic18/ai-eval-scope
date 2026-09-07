@@ -150,7 +150,7 @@ git push origin <发布分支> --tags
 
 ## 新增评估场景（最快上手）
 
-系统是**场景无关 + 数据驱动**的——新增场景是纯配置（写场景包 + 导入），无需改代码。详见 [场景扩展指南](./docs/arch/14场景扩展指南.md)，以内置的 code（代码生成）场景为完整范例。
+系统是**场景无关 + 数据驱动**的——新增场景是纯配置（写场景包 + 导入），无需改代码。以内置的 code（代码生成）场景为完整范例，各内置场景包（`evaluator/agent_eval/assets/packages/`）均可作参照。
 
 ## 开发环境
 
@@ -185,4 +185,3 @@ git push origin <发布分支> --tags
 | [docs/arch/04评估引擎设计](./docs/arch/04评估引擎设计.md) | 评估引擎（场景抽象 + 指标 + 聚合） |
 | [docs/arch/09Web可观测平台架构设计](./docs/arch/09Web可观测平台架构设计.md) | Web 平台架构 |
 | [docs/arch/12第三方系统对接方案](./docs/arch/12第三方系统对接方案.md) | 第三方接入（HTTP + MCP + Webhook） |
-| [docs/arch/14场景扩展指南](./docs/arch/14场景扩展指南.md) | 如何新增一个评估场景（含 entry_points 可插拔评估器） |
