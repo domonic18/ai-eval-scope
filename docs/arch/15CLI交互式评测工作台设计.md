@@ -93,9 +93,9 @@ agent_eval/cli/
     └── secrets.py / suite.py / dataset.py / knowledge.py / rule_set.py   # 既有迁入
 
 agent_eval/agent/
-├── workbench_agent.py # 工作台 Agent 会话机（turn/流式/预算/分段/salvage，§6.1/§6.6）
-├── workbench_tools.py # 暂存沙盒原语 + 包域工具面（§6.2；read 分级授权）
-├── probe/             # SUT 接入调试域工具面（§6.5）——fetch/discovery/protocol/login + server 组装壳
+├── core/              # 共享内核：tools 基座 / budget / session_log / callbacks / model_bridge / session
+├── executor/          # 评估执行域：agent（ExecutionAgent）+ sut_tools + protocol_tools
+├── workbench/         # 评测工作台域：agent 会话机（§6.1/§6.6）+ tools 暂存沙盒（§6.2）+ sut_probe 探测面（§6.5）
 └── assets/configs/workbench_agent_prompts.yaml # 提示词资产：base + domain_segments 分段装配（§6.7/§6.8）
 ```
 
@@ -114,7 +114,7 @@ agent_eval/agent/
 |---|------|------|
 | D-CLI-1 | **双前端同内核**：向导动作最终组装与命令行相同的参数对象，直接调 `_stages` 阶段函数；向导内不出现第二份业务逻辑 | 一份业务逻辑两处复用；等价命令显示天然成立（argv 即真相） |
 | D-CLI-2 | **交互原语收口 `console/prompts.py`：以编号选择落地（gcloud 同款，零新依赖）；questionary 键盘导航为可选升级**（分页/搜索需求出现时） | 零依赖先行 + 升级路径保留；原语签名不变，替换不动调用方 |
-| D-CLI-3 | **包域独立工具面**（`workbench_tools.py`），不复用执行侧 SUT 通道 | 两域工具语义无关（文件编辑 vs SUT 交互）；沙盒约束不同（会话根 vs workspace） |
+| D-CLI-3 | **包域独立工具面**（`workbench/tools.py`），不复用执行侧 SUT 通道 | 两域工具语义无关（文件编辑 vs SUT 交互）；沙盒约束不同（会话根 vs workspace） |
 | D-CLI-4 | **平台身份落密钥区 `~/.agent_eval/platform.json`**（host/api_key/project，0600），CLI 启动注入 env **仅补缺**——env 直供（CI/云函数/executor/`.env`）优先；`.env` 归用户手工管理，残留旧值检测提示不代删 | 三域三文件与 `models`（llm.json）/`secrets`（sut_credentials.json）对齐（06 §4.7）；「登录 A 实际上报 B」的静默错乱由 env 优先 + 提示兜底 |
 | D-CLI-5 | **浏览器打开统一走 `cmds/open_url.py`**：`webbrowser.open`（`$BROWSER` 可指定浏览器）+ 无浏览器环境（SSH/未设 `$BROWSER`）降级打印 URL | gh `pkg/browser` 同款行为；单一出口便于 mock 测试（NF-C-05） |
 | D-CLI-6 | **命令命名不设兼容层**：`scenario` / `models set|clear` 等新命名直接生效，无旧名别名 | 名字即语义（场景包 ≠ 打包执行包；配置模型 ≠ 登录模型），别名层只会延续误用 |
@@ -319,7 +319,7 @@ agent = WorkbenchAgent(
 )
 ```
 
-装配要点（`agent/workbench_agent.py`）：
+装配要点（`agent/workbench/agent.py`）：
 
 - **模型**：`build_chat_model(llm_role="agent")`（回退 text）；底座 `create_deep_agent`（03 §3.2 同源）。
 - **双工具面**：`PackageToolServer`（文件沙盒，§6.2）+ `SUTProbeToolServer`（受控网络探测，§6.5）
@@ -487,9 +487,9 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 
 | 环 | 机制 | 落点 |
 |---|---|---|
-| ① 同构词汇（消除转换需求） | `declare_token` 渲染的 `auth` 段与执行器词汇同构：`token_source` 三态（`Bearer / header:<X> / cookie`）即执行器 `SUTSession.token_type`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态（执行器靠共享 client 的 cookie jar 承载登录态，语义 1:1）；凭证仅 `credential_ref` 引用 | `probe/login.py` |
-| ② 工具返回即产物（装配在证据产生处完成一次） | 声明成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责收缩为「原样粘贴」 | `probe/login.py::_render_auth_snippet` |
-| ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path/token_source/expires_in_path；协议核心端点 ✅）——不一致打回并携带权威片段 | `workbench_agent.py::_sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
+| ① 同构词汇（消除转换需求） | `declare_token` 渲染的 `auth` 段与执行器词汇同构：`token_source` 三态（`Bearer / header:<X> / cookie`）即执行器 `SUTSession.token_type`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态（执行器靠共享 client 的 cookie jar 承载登录态，语义 1:1）；凭证仅 `credential_ref` 引用 | `workbench/sut_probe/tokens.py` |
+| ② 工具返回即产物（装配在证据产生处完成一次） | 声明成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责收缩为「原样粘贴」 | `workbench/sut_probe/tokens.py::_render_auth_snippet` |
+| ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path/token_source/expires_in_path；协议核心端点 ✅）——不一致打回并携带权威片段 | `workbench/gates.py::sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
 
 配套修正：
 
@@ -573,9 +573,9 @@ prompt 段 + 档位登记，**不改会话机**。
 
 | 模块 | 职责 |
 |---|---|
-| `agent/workbench_agent.py` | 会话机：turn/流式/预算/分段/salvage/对话持久化/门禁编排（门禁策略由档位注入）；包域语义全部下沉 |
-| `agent/workbench_tools.py` | 暂存沙盒原语（staging/view/commit/diff、路径与扩展名守卫）+ 包域工具（validate/manifest/reference）；原语/域的文件拆分留待第二域落地时按需切开（YAGNI） |
-| `agent/probe/` 包 | SUT 接入调试域：`fetch.py`（抓取缓存 + 证据包裹）/ `discovery.py`（发现阶梯）/ `protocol.py`（协议矩阵）/ `login.py`（防锁 + 凭证旁路）四个域 mixin + `server.py` 组装壳（共享状态 + 红线设施 `_budget/_ensure_host/_client/_log`）；mixin 组装，协作契约由壳提供、mixin 顶部注解声明；「一域一 server」形态不变，拆的是实现不是边界 |
+| `agent/workbench/agent.py` | 会话机：turn/流式/预算/分段/salvage/对话持久化/门禁编排（门禁策略由档位注入）；包域语义全部下沉 |
+| `agent/workbench/tools.py` | 暂存沙盒原语（staging/view/commit/diff、路径与扩展名守卫）+ 包域工具（validate/manifest/reference）；原语/域的文件拆分留待第二域落地时按需切开（YAGNI） |
+| `agent/workbench/sut_probe/` 包 | SUT 接入调试域：ProbeContext 共享状态 + 域工具类 request/response/search/discovery/protocol/tokens/ask_user（helpers/specs 设施）+ `server.py` 薄委托壳；组合模式，协作契约由 context 承载；「一域一 server」形态不变，拆的是实现不是边界 |
 | `cli/cmds/workbench_agent.py` | REPL 宿主：流式渲染挂接 / ask 桥 / 中断提示 / 落盘归位 |
 | `cli/console/agent_stream.py` | 流式事件渲染（表现层基础设施，与 prompts/render 同层） |
 | `assets/configs/workbench_agent_prompts.yaml` | 提示词资产（分段装配，见下）+ `intro` 自我介绍段（§6.8） |
@@ -740,8 +740,8 @@ review 检查项。
 | `cli/console/{prompts,render,agent_stream,output,equiv}.py` | 表现层基础设施（原语/渲染/Agent 流式/JSON+退出码/等价命令） |
 | `cli/workbench/session.py` + `workbench/domains/*` | 向导框架与四域动作 |
 | `cli/cmds/`（scenario/workbench_agent/models/auth/runs/open_url/doctor + 既有五组） | 子命令组（typer 绑定 + 纯函数动作）与 Agent REPL 宿主 |
-| `agent/workbench_agent.py` / `agent/workbench_tools.py` | 工作台 Agent 会话机（turn/流式/预算/分段/salvage）与暂存沙盒工具面（§6.1/§6.2） |
-| `agent/probe/`（fetch/discovery/protocol/login/server） | SUT 接入调试域工具面：域 mixin 实现 + `server.py` 组装壳（§6.5/§6.7） |
+| `agent/workbench/agent.py` / `agent/workbench/tools.py` | 工作台 Agent 会话机（turn/流式/预算/分段/salvage）与暂存沙盒工具面（§6.1/§6.2） |
+| `agent/workbench/sut_probe/`（context + 域工具类 + server 薄委托壳） | SUT 接入调试域工具面：组合式工具面（§6.5/§6.7） |
 | `agent_eval/assets/configs/workbench_agent_prompts.yaml` | 提示词资产：`system_prompt_base` + `domain_segments` 分段装配（§6.7）；`intro` 自我介绍段（§6.8） |
 | `agent_eval/assets/guides/scenario-package-format.md` | 随包发布的包结构规范——Agent 经 `read_file` 直读（assets 自动授权域，§6.9.1） |
 | 平台侧 `/cli-auth` 授权页（通道 B） | 09 侧，交互流程见 §5.1 |
