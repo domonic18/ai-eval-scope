@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 
-from agent_eval.agent.protocol_tools import AgentProtocolToolServer
+from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 from agent_eval.execution.registry import OutputPathsConfig, SUTSystemConfig
 

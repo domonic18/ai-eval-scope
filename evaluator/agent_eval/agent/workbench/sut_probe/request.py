@@ -12,9 +12,9 @@ import re
 import time
 from typing import Any
 
-from agent_eval.agent.probe.context import ProbeContext
-from agent_eval.agent.probe.helpers import host_of, mask_secrets
-from agent_eval.agent.probe.response import structure_response
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.helpers import host_of, mask_secrets
+from agent_eval.agent.workbench.sut_probe.response import structure_response
 
 # request：跨平台无 shell（httpx 直发，Windows/mac/linux 一致）；
 # 鉴权头禁手传——会话凭证由服务端自动挂载，凭证不经 LLM 上下文

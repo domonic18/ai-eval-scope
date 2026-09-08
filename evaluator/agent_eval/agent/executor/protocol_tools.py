@@ -12,7 +12,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec, truncate
 from agent_eval.core.exceptions import AgentEvalError
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 

@@ -17,15 +17,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, ClassVar
 
-from agent_eval.agent.probe.ask_user import AskUserTool
-from agent_eval.agent.probe.context import ProbeContext
-from agent_eval.agent.probe.discovery import DiscoveryTool
-from agent_eval.agent.probe.protocol import ProtocolTool
-from agent_eval.agent.probe.request import RequestTool
-from agent_eval.agent.probe.search import _DEFAULT_CONTEXT, SearchTool
-from agent_eval.agent.probe.specs import PROBE_TIMEOUT_S, PROBE_TOOL_SPECS
-from agent_eval.agent.probe.tokens import TokenTool
-from agent_eval.agent.tools import ToolExporterMixin, ToolSpec
+from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec
+from agent_eval.agent.workbench.sut_probe.ask_user import AskUserTool
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.discovery import DiscoveryTool
+from agent_eval.agent.workbench.sut_probe.protocol import ProtocolTool
+from agent_eval.agent.workbench.sut_probe.request import RequestTool
+from agent_eval.agent.workbench.sut_probe.search import _DEFAULT_CONTEXT, SearchTool
+from agent_eval.agent.workbench.sut_probe.specs import PROBE_TIMEOUT_S, PROBE_TOOL_SPECS
+from agent_eval.agent.workbench.sut_probe.tokens import TokenTool
 
 
 class SUTProbeToolServer(ToolExporterMixin):

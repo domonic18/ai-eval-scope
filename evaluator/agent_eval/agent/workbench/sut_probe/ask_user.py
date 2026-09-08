@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent_eval.agent.probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
 
 _MAX_QUESTION_CHARS = 200  # ask_user 单问上限：多问打包会让用户不知从何答起
 

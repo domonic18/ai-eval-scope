@@ -19,8 +19,8 @@ from urllib.parse import urlparse
 
 import yaml
 
-from agent_eval.agent.probe import CORE_STEP, SUTProbeToolServer
-from agent_eval.agent.workbench_tools import PackageToolServer
+from agent_eval.agent.workbench.sut_probe import CORE_STEP, SUTProbeToolServer
+from agent_eval.agent.workbench.tools import PackageToolServer
 from agent_eval.execution.registry import expand_env_refs, resolve_login_url
 
 

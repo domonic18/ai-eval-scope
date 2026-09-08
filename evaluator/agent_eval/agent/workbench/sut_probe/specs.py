@@ -5,7 +5,7 @@ description 文案随 prompt 发给 LLM，是行为面：改文案即改工具�
 
 from __future__ import annotations
 
-from agent_eval.agent.tools import ToolSpec
+from agent_eval.agent.core.tools import ToolSpec
 
 PROBE_TIMEOUT_S = 10.0
 # 轮内预算按工具分池：单工具的暴力试探不得饿死发现链（真机实测 probe_url 逐路径

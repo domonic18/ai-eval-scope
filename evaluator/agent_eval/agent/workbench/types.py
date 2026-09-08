@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from agent_eval.agent.probe import PROBE_TIMEOUT_S, TOOL_BUDGETS
+from agent_eval.agent.workbench.sut_probe import PROBE_TIMEOUT_S, TOOL_BUDGETS
 
 
 @dataclass(frozen=True, slots=True)

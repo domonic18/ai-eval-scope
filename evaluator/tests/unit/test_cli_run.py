@@ -33,7 +33,7 @@ class FakeExecutionAgent:
 
     def __init__(self, config, sut_tools=None, extra_tool_servers=None):
         self.config = config
-        from agent_eval.agent.sut_tools import SUTToolServer
+        from agent_eval.agent.executor.sut_tools import SUTToolServer
         from agent_eval.storage.package import ExecutionPackage
 
         self._sut_tools = SUTToolServer(workspace_dir=self.config.workspace_dir)
@@ -62,7 +62,7 @@ def test_run_command_produces_packages(tmp_path, monkeypatch) -> None:
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
     sut_cfg.write_text(SUT_YAML, encoding="utf-8")
 
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
 
     monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)
 
@@ -111,7 +111,7 @@ def test_run_command_fills_missing_credentials_before_progress(tmp_path, monkeyp
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
     sut_cfg.write_text(SUT_AUTH_YAML, encoding="utf-8")
 
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
 
     monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)
     monkeypatch.setattr("agent_eval.cli.console.prompts.confirm", lambda *a, **k: True)
@@ -214,7 +214,7 @@ def test_run_command_closes_channel_same_loop(tmp_path, monkeypatch) -> None:
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
     sut_cfg.write_text(SUT_YAML, encoding="utf-8")
 
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
     from agent_eval.execution.channels import base as channels_base
 
     monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)

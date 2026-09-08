@@ -338,7 +338,7 @@ class TestScenarioShow:
         def _fail(role: str, *args: object, **kwargs: object) -> None:
             raise AgentError(f"角色 {role} 未配置")
 
-        monkeypatch.setattr("agent_eval.agent.model_bridge.build_chat_model", _fail)
+        monkeypatch.setattr("agent_eval.agent.core.model_bridge.build_chat_model", _fail)
         result = runner.invoke(
             scenario_app, ["new", "x/y", "--mode", "agent", "--output", str(tmp_path / "p")]
         )

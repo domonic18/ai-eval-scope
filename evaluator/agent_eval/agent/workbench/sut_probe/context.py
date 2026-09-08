@@ -22,8 +22,8 @@ import time
 from pathlib import Path
 from typing import Any
 
-from agent_eval.agent.probe.helpers import host_of
-from agent_eval.agent.probe.specs import PROBE_TIMEOUT_S, TOOL_BUDGETS
+from agent_eval.agent.workbench.sut_probe.helpers import host_of
+from agent_eval.agent.workbench.sut_probe.specs import PROBE_TIMEOUT_S, TOOL_BUDGETS
 
 # 抓取缓存（前端包分析原语的存储侧）：完整内容只进缓存不进 LLM 上下文，
 # 检索摘录按需取回——1.7MB 级前端主包因此可分析而不爆上下文

@@ -12,8 +12,8 @@ from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urlparse
 
-from agent_eval.agent.probe.context import ProbeContext
-from agent_eval.agent.probe.helpers import host_of, wrap_evidence
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.helpers import host_of, wrap_evidence
 
 # 语义判断一律不上移到代码：候选登录路径由 Agent 经 discover_login(paths=…) 自拟
 # （其世界知识远多于写死清单）；请求构造/分包机制的识别由 Agent 用 search_content

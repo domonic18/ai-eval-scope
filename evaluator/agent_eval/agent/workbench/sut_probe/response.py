@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent_eval.agent.probe.context import ProbeContext
-from agent_eval.agent.probe.helpers import key_path_tree, mask_secrets, wrap_evidence
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.helpers import key_path_tree, mask_secrets, wrap_evidence
 
 
 def structure_response(

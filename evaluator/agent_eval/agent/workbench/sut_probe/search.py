@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from agent_eval.agent.probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
 
 _MAX_MATCHES = 12  # search_content 单次摘录上限
 _MAX_PATTERN = 100  # 检索模式长度上限（子串，非正则——防 ReDoS 且够用）

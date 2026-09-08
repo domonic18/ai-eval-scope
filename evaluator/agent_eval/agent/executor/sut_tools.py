@@ -24,8 +24,8 @@ from urllib.parse import urlparse
 import httpx
 from jinja2 import Template as JinjaTemplate
 
-from agent_eval.agent.tools import TEMPLATE_SYNTAX_HINT, ToolExporterMixin, ToolSpec
-from agent_eval.agent.tools import truncate as _truncate
+from agent_eval.agent.core.tools import TEMPLATE_SYNTAX_HINT, ToolExporterMixin, ToolSpec
+from agent_eval.agent.core.tools import truncate as _truncate
 from agent_eval.core.exceptions import CollectionError, ToolExecutionError
 from agent_eval.execution.models import SUTToolsConfig
 from agent_eval.execution.utils import extract_by_path as _extract_by_path

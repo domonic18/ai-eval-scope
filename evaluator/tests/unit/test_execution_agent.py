@@ -11,8 +11,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent_eval.agent import execution_agent as execution_agent_mod
-from agent_eval.agent.execution_agent import ExecutionAgent
+from agent_eval.agent.executor import agent as execution_agent_mod
+from agent_eval.agent.executor.agent import ExecutionAgent
 from agent_eval.core.exceptions import AgentError, AgentTimeoutError, BudgetExceededError
 from agent_eval.execution.models import AgentConfig, Task, TaskSet
 
@@ -245,7 +245,7 @@ def test_prompt_contents(tmp_path) -> None:
 
 def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
     """提示词由 YAML 资产承载（不 hardcode）：结构完整 + 变量替换正确。"""
-    from agent_eval.agent.execution_agent import _load_prompts
+    from agent_eval.agent.executor.agent import _load_prompts
 
     prompts = _load_prompts()
     assert set(prompts["task_prompt"]) == {

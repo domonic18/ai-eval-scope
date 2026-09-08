@@ -78,7 +78,7 @@ def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]
 
 def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """执行并渲染一轮：流式直播（回复不重复打印）或非流式兜底。"""
-    from agent_eval.agent.workbench_agent import run_turn
+    from agent_eval.agent.workbench.agent import run_turn
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
@@ -148,7 +148,7 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
     ``cwd/<id>-package/``）；改已有项目包由 Agent 经 read_file 读入现有内容后在
     草稿中改造（prompts 域段规约）。LLM 未配置在此阻断（无模型 Agent 不可用）。
     """
-    from agent_eval.agent.workbench_agent import WorkbenchAgent
+    from agent_eval.agent.workbench.agent import WorkbenchAgent
     from agent_eval.packages import MANIFEST_FILENAME
 
     _guard_llm_ready()
@@ -251,7 +251,7 @@ def _guard_llm_ready() -> None:
     from agent_eval.core.exceptions import AgentError
 
     try:
-        from agent_eval.agent.model_bridge import build_chat_model
+        from agent_eval.agent.core.model_bridge import build_chat_model
 
         build_chat_model("agent")
     except AgentError as e:
@@ -262,7 +262,7 @@ def _guard_llm_ready() -> None:
 
 def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """--yes --trust-agent 单轮执行（流式进度 + 自动确认；未落盘退出码 1）。"""
-    from agent_eval.agent.workbench_agent import run_turn
+    from agent_eval.agent.workbench.agent import run_turn
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
@@ -396,7 +396,7 @@ def agent_new_package(
     给了 ref 默认落 ``cwd/<id>-package/``，给了 --output 则原地生成（支持指回
     草稿续作，非空目录放行）。
     """
-    from agent_eval.agent.workbench_agent import WorkbenchAgent, WorkbenchAgentConfig
+    from agent_eval.agent.workbench.agent import WorkbenchAgent, WorkbenchAgentConfig
     from agent_eval.packages import MANIFEST_FILENAME, parse_ref
 
     _guard_llm_ready()
@@ -464,7 +464,7 @@ def agent_edit_package(
     budget_usd: float | None = None,
 ) -> None:
     """``scenario edit``：对项目包做自然语言增删改查（REPL 会话）。"""
-    from agent_eval.agent.workbench_agent import WorkbenchAgent, WorkbenchAgentConfig
+    from agent_eval.agent.workbench.agent import WorkbenchAgent, WorkbenchAgentConfig
     from agent_eval.packages import MANIFEST_FILENAME, PackageManager
 
     _guard_llm_ready()

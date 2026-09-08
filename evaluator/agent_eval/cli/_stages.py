@@ -217,9 +217,9 @@ def execute_stage(
     max_turns: int | None = None,
 ) -> list[Any]:
     """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。"""
-    from agent_eval.agent.execution_agent import ExecutionAgent
-    from agent_eval.agent.protocol_tools import AgentProtocolToolServer
-    from agent_eval.agent.sut_tools import SUTToolServer
+    from agent_eval.agent.executor.agent import ExecutionAgent
+    from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
+    from agent_eval.agent.executor.sut_tools import SUTToolServer
     from agent_eval.execution.auth.credentials import preflight_sut_credentials
     from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
     from agent_eval.execution.channels.base import create_channel

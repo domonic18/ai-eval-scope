@@ -34,36 +34,36 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from agent_eval.agent.callbacks import BudgetGuard
-from agent_eval.agent.probe import SUTProbeToolServer
-from agent_eval.agent.workbench_gates import sut_evidence_gate
-from agent_eval.agent.workbench_memory import (
+from agent_eval.agent.core.callbacks import BudgetGuard
+from agent_eval.agent.workbench.gates import sut_evidence_gate
+from agent_eval.agent.workbench.memory import (
     SessionStore,
     session_key,
 )
-from agent_eval.agent.workbench_memory import (
+from agent_eval.agent.workbench.memory import (
     resume_messages as _resume_messages,
 )
-from agent_eval.agent.workbench_messages import (
+from agent_eval.agent.workbench.messages import (
     is_recursion_limit as _is_recursion_limit,
 )
-from agent_eval.agent.workbench_messages import (
+from agent_eval.agent.workbench.messages import (
     last_ai_text as _last_ai_text,
 )
-from agent_eval.agent.workbench_messages import (
+from agent_eval.agent.workbench.messages import (
     repair_orphan_tool_calls,
     salvage_state,
     stream_collect,
 )
-from agent_eval.agent.workbench_prompts import (
+from agent_eval.agent.workbench.prompts import (
     load_prompts as _load_prompts,
 )
-from agent_eval.agent.workbench_prompts import (
+from agent_eval.agent.workbench.prompts import (
     render_first_turn,
     render_intro,
 )
-from agent_eval.agent.workbench_tools import PackageToolServer
-from agent_eval.agent.workbench_types import TurnResult, WorkbenchAgentConfig
+from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
+from agent_eval.agent.workbench.tools import PackageToolServer
+from agent_eval.agent.workbench.types import TurnResult, WorkbenchAgentConfig
 from agent_eval.config.paths import paths
 from agent_eval.core.exceptions import AgentError, BudgetExceededError
 from agent_eval.execution.auth.credentials import CredentialStore
@@ -180,7 +180,7 @@ class WorkbenchAgent:
             ) from None
         from langgraph.checkpoint.memory import MemorySaver
 
-        from agent_eval.agent.model_bridge import build_chat_model
+        from agent_eval.agent.core.model_bridge import build_chat_model
 
         # 内存检查点无 IO、实例销毁即释放（不用文件版检查器：全量读写空转）
         self._checkpointer = MemorySaver()

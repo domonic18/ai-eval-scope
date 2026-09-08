@@ -17,7 +17,7 @@ from typing import Any
 
 import httpx
 
-from agent_eval.agent.probe import (
+from agent_eval.agent.workbench.sut_probe import (
     TOOL_BUDGETS,
     SUTProbeToolServer,
 )
@@ -1416,7 +1416,7 @@ class TestBudget:
 
 class TestWorkbenchAgentIntegration:
     def test_probe_tools_registered(self, tmp_path: Path) -> None:
-        from agent_eval.agent.workbench_agent import WorkbenchAgent
+        from agent_eval.agent.workbench.agent import WorkbenchAgent
 
         agent = WorkbenchAgent(tmp_path)
         described = agent._describe_tools()  # noqa: SLF001 — 单测内省
@@ -1433,7 +1433,7 @@ class TestWorkbenchAgentIntegration:
         assert agent.probe.log_path == agent._log_path  # noqa: SLF001 — 证据随会话日志
 
     def test_turn_resets_probe_budget(self, tmp_path: Path) -> None:
-        from agent_eval.agent.workbench_agent import WorkbenchAgent
+        from agent_eval.agent.workbench.agent import WorkbenchAgent
 
         agent = WorkbenchAgent(tmp_path)
         agent.probe._turn_calls["request"] = TOOL_BUDGETS["request"]  # noqa: SLF001
@@ -1446,8 +1446,8 @@ class TestDelegationSurface:
         """委托面守护：外部 API 与测试兼容面在本壳上必须全存在（组合模式回归网）。"""
         import inspect
 
-        from agent_eval.agent import probe
-        from agent_eval.agent.probe import SUTProbeToolServer
+        from agent_eval.agent.workbench import sut_probe as probe
+        from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
 
         assert set(probe.__all__) == {
             "CORE_STEP",

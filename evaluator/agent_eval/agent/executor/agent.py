@@ -16,11 +16,11 @@ from typing import Any
 
 import yaml
 
-from agent_eval.agent.callbacks import BudgetGuard, SessionLogCallback
-from agent_eval.agent.model_bridge import build_chat_model
-from agent_eval.agent.session import AgentSession
-from agent_eval.agent.session_log import SessionLogger
-from agent_eval.agent.sut_tools import SUTToolServer
+from agent_eval.agent.core.callbacks import BudgetGuard, SessionLogCallback
+from agent_eval.agent.core.model_bridge import build_chat_model
+from agent_eval.agent.core.session import AgentSession
+from agent_eval.agent.core.session_log import SessionLogger
+from agent_eval.agent.executor.sut_tools import SUTToolServer
 from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.core.exceptions import (
     AgentError,

@@ -6,7 +6,7 @@ import json
 import time
 from pathlib import Path
 
-from agent_eval.agent.workbench_types import WorkbenchAgentConfig
+from agent_eval.agent.workbench.types import WorkbenchAgentConfig
 
 
 def session_key(pkg_root: Path) -> str:

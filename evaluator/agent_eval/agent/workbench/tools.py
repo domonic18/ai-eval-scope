@@ -28,7 +28,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, ClassVar, cast
 
-from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec, truncate
 from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.packages import MANIFEST_FILENAME
 

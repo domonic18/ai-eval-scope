@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import urlparse
 
-from agent_eval.agent.tools import truncate
+from agent_eval.agent.core.tools import truncate
 
 _MAX_EVIDENCE = 600
 

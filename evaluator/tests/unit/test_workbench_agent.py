@@ -14,14 +14,14 @@ from typing import Any
 import pytest
 import typer
 
-from agent_eval.agent.workbench_agent import (
+from agent_eval.agent.workbench.agent import (
     TurnResult,
     WorkbenchAgent,
     WorkbenchAgentConfig,
     _resume_messages,
     repair_orphan_tool_calls,
 )
-from agent_eval.agent.workbench_tools import PackageToolServer
+from agent_eval.agent.workbench.tools import PackageToolServer
 from agent_eval.core.exceptions import AgentError
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
@@ -764,7 +764,7 @@ class TestAgentTurn:
         assert not (tmp_path / "rules").exists()
 
     def test_emit_tool_events_from_updates(self) -> None:
-        from agent_eval.agent.workbench_messages import emit_tool_events as _emit_tool_events
+        from agent_eval.agent.workbench.messages import emit_tool_events as _emit_tool_events
 
         events: list[dict[str, Any]] = []
         updates = {
@@ -801,7 +801,7 @@ class TestAgentTurn:
     ) -> None:
         # KIMI/Claude 系模型 content 为 blocks（thinking/text）——真机冒烟实测曾因
         # isinstance(str) 过滤导致 token 零输出
-        from agent_eval.agent.workbench_messages import text_from_content as _text_from_content
+        from agent_eval.agent.workbench.messages import text_from_content as _text_from_content
 
         assert _text_from_content("纯文本") == "纯文本"
         assert (
@@ -908,7 +908,7 @@ class TestCliEntries:
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             ),
@@ -936,7 +936,7 @@ class TestCliEntries:
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             )
 
-        monkeypatch.setattr("agent_eval.agent.workbench_agent.run_turn", fake_run_turn)
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
         root = sa.agent_new_package(
             ref=None, output=None, instruction="研学计划质检", yes=True, trust_agent=True
         )
@@ -953,7 +953,7 @@ class TestCliEntries:
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: (_ for _ in ()).throw(typer.Exit(1)),
         )
         with pytest.raises(typer.Exit):
@@ -1036,7 +1036,7 @@ class TestCliEntries:
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             ),
@@ -1111,7 +1111,7 @@ class TestCliEntries:
         inputs = iter(["加一条规则", ""])  # 首轮需求 + 空行退出（勿按 seen 取值：
         # run_turn 每轮异常会让 seen 永不增长 → REPL 无限循环吃满 CPU，实测教训）
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: (
                 seen.append(text) or TurnResult(reply="ok", diff="", staged=False)
             ),
@@ -1128,7 +1128,7 @@ class TestCliEntries:
 
         _seed_valid_package(tmp_path)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("peer closed")),
         )
         monkeypatch.setattr(sa, "ask", lambda prompt: "")
@@ -1153,7 +1153,7 @@ class TestCliEntries:
         async def stage_secret() -> None:
             await agent.server.write_file("rules/a.yaml", RULES)
 
-        monkeypatch.setattr("agent_eval.agent.workbench_agent.run_turn", fake_run_turn)
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
         inputs = iter(["继续", "放弃", ""])
         monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
         asyncio.run(stage_secret())  # 预置暂存（模拟暂停轮遗留）
@@ -1207,7 +1207,7 @@ class TestCliEntries:
 
         monkeypatch.setattr(sa.sys, "stdout", _Tty(_sys.stdout))
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="", staged=False
             ),
@@ -1294,7 +1294,7 @@ class TestCliEntries:
         calls: list[bool] = []
         monkeypatch.setattr(sa, "_render_intro", lambda agent: calls.append(True))
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="", staged=False
             ),
@@ -1626,7 +1626,7 @@ class TestSessionMachine:
 
     @staticmethod
     def _recursion_exc() -> type[BaseException]:
-        from agent_eval.agent.workbench_messages import _GraphRecursionError
+        from agent_eval.agent.workbench.messages import _GraphRecursionError
 
         if _GraphRecursionError is None:  # langgraph 缺席（纯单测 CI）
             pytest.skip("langgraph 未安装（[agent] extra 缺席）")

@@ -21,9 +21,9 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from agent_eval.agent.probe.context import ProbeContext
-from agent_eval.agent.probe.helpers import host_of
-from agent_eval.agent.tools import truncate
+from agent_eval.agent.core.tools import truncate
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.helpers import host_of
 from agent_eval.execution.channels.thread_commands import (
     conversation_headers,
     run_start_envelope,
