@@ -147,6 +147,15 @@ domain_segments:
        - **落盘对账门禁强制此项**：门禁按本会话矩阵事实逐字段核对声明，探测过但核心
          端点非 ✅、或未经探测都会打回——协议形态与地址不得凭参照包结构或想象填写，
          base_url 也不得默认用入口页面域（接口域与页面域常分离）。
+       - **channel 可执行取值只有 agent_protocol 与 generic_http**（browser 预留未排期，
+         落盘门禁直接打回）。判定「不支持 agent-protocol」前，runs / commands **两形态**
+         须都已带凭证实测且核心端点均非 ✅，否则结论只是「未验证」（只探一种形态就下
+         「不支持」结论是错误归因）。未验证或确不支持时把矩阵证据如实呈报用户定夺：
+         换 protocol_flavor、换候选接口域、带 configurable 带凭证重探，或经用户确认后
+         改走 generic_http——**改通道必须先经用户确认，不得自行降级改写**。
+       - **改走 generic_http 须先实测模板**：用 request 工具按拟写的 request_template
+         同形请求实测（同 method/路径/参数形态），响应 2xx 后用返回的键路径结构树核对
+         response_mapping 提取路径，再落盘配置——模板不得凭想象编写。
     4. **登录实测与凭证声明**（两步分工）：
        - **第一步 request 实测**：method/url/body 自由构造；body 是 Jinja2 模板
          （如 '{"phone": "{{ username }}", "pwd": "{{ password }}"}'），凭证变量

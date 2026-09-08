@@ -396,6 +396,7 @@ agent = WorkbenchAgent(
 | 规则引用对账（`evaluation/rule_refs.py`） | 四类引用可解析：evaluator 注册态 / prompt_id / dimension / stage；注册表快照经 `load_package_entry_points` **运行时同源装载**（少装包会把「清单已声明、运行时可用」的 ID 误判未注册） | guide 示例把 method 枚举值写进 `evaluator` 字段被照抄 → 运行时规则全跳过仍产出全 0 报告 |
 | 判官模板变量契约 | `user_prompt_template` 只能用所引评估器实际注入的变量——评估器以类级 `prompt_variables` 声明契约（渐进声明：未声明的不参与对账）；jinja2 `meta.find_undeclared_variables` 对账，越界随可用清单打回 | `{{ response }}` vs `content` 注入集错位 → StrictUndefined 渲染失败 → 规则全 0 分 |
 | SUT 未知键拒绝（`registry.validate_sut_config_document`） | 以执行器模型 `model_fields` 为白名单（运行时 `extra="allow"` 前向兼容意味着发明字段被**静默丢弃**），并复用 `SUTSystemConfig` 校验必填/枚举/`${VAR}` 展开 | 自造 `login.base_url` 字段被静默丢弃 → 执行时拼回页面域 404 |
+| 通道排期校验（v4.7.3 起） | `channel` ∈ `SCHEDULED_CHANNELS`（`agent_protocol`/`generic_http`，与执行工厂同源单点）；预留通道（如 `browser`）落盘即打回，错误文案自带「探测受挫不是换通道的理由……**不得静默降级改写落盘**」行动指引；generic_http 免协议端点对账（无协议语义），登录对账照走 | 协议探测受挫后 Agent 静默降级写预留通道 → 落盘成功、答完 5 个交互到执行工厂才报「预留未排期」 |
 
 引擎侧配套守卫：评估器**尝试创建且全部失败即中止**（部分失败跳过语义保留）——防
 「垃圾报告静默产出」。
@@ -405,6 +406,7 @@ agent = WorkbenchAgent(
 - sut_config 内容扫描：出现 `password/token/api_key` 值字段且非 `credential_ref` 引用 → 拒绝写入并提示 `secrets set`（启发式 + System Prompt 双保险）。
 - `scenario new/edit --instruction ... --yes --trust-agent`：非交互模式必须双重显式旗标；默认关闭。
 - 会话日志 `workspace/agent_logs/workbench_agent_<ts>.jsonl`：消息、工具调用与参数（凭证字段脱敏）、token、耗时；SUT 探测证据随会话日志同文件落盘（时间线完整）。
+- 传输层日志降噪：httpx/httpcore/openai/anthropic 的 INFO 级「HTTP Request: …」在非 DEBUG 模式压到 WARNING（`core/logging.py` 单点）——root 日志是进程级全局态，工作台里执行域先跑过一次评测，噪声就会混进之后所有 Agent 流式直播会话；`--verbose`（DEBUG）诊断模式全量放行。
 
 ### 6.5 SUT 接入调试
 
@@ -432,6 +434,13 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 `sut_config_auth_snippet`）→ **只把验证过的结论**写进 `sut_configs/`（protocol_flavor、auth 段 snippet 原样粘贴）→
 缺凭证字段经 `ask_user(kind=credential)` 会话内直录 → 全绿才视为 SUT 段完成。探测证据落 `workspace/agent_logs/`
 （包内只落最终 YAML）。
+
+**通道纪律（v4.7.3 起，与门禁/提示词三面对齐）**：可执行通道只有 `agent_protocol` 与
+`generic_http`（排期单源 `SCHEDULED_CHANNELS`，`browser` 预留落盘即打回）。判定「不支持
+agent-protocol」前，runs/commands 两形态都须带凭证实测且核心端点均非 ✅（单形态受挫只
+是「未验证」，401/403 矩阵更不构成证据）；改走 generic_http 是**用户可见的决策**——须
+呈报探测结论并经用户确认，且 request_template/response_mapping 先用 request 实测同形
+请求核对后才可落盘。**不得静默降级改写通道**。
 
 #### 安全红线增量（§6.4 之外新增，工程难点所在）
 
@@ -765,3 +774,5 @@ review 检查项。
 | v3.22 | 2026-09-07 | 工具面返回值规范轮（实测排查驱动）：probe_login token_path 归一化/键路径树/失败模式三分 + 探测面静默分支治理（fetch 失败原因/auth_attached/checked_paths/stream 3xx/cleanup 留痕/host 拉黑）+ 归位横幅不预设门禁通过 |
 | v3.23 | 2026-09-07 | M1 值回流条件化（二轮实测事故驱动：裸 JWT 经 evidence 回流）：probe_login 2xx JSON 提取失败时 evidence 只回键路径树不回原文——「值要回流，前提是知道哪些值是凭证」，零格式假设；探测面 v4 重构设计立项（docs/plan/03 薄原语+厚思考，request/declare_token/链式变量，probe_login 拟退役） |
 | v4.0 | 2026-09-08 | 探测面 v4 落地（薄原语+厚思考，docs/plan/03 M1+M2）：`request` 门控请求原语（抓取/调试/登录实测同一出口；凭证模板服务端注入 + (host,ref) 组合级外发授权 + 防锁 + 值回流条件化 + 链式变量 `{{ stepN.* }}` 探索）与 `declare_token` 事后声明式提取（token_source 三态同构执行器、snippet 机械渲染、不重发请求无撞锁、执行器宽度守卫拒绝超宽形态落盘）替代 probe_login（退役）；共享 AsyncClient 会话级持有（cookie jar 跨请求）；预算重定 request 25 / declare_token 10 |
+| v4.1 | 2026-09-08 | 通道排期防线前移：落盘门禁打回未排期通道（§6.3 门禁族新行，单源 `SCHEDULED_CHANNELS`）+ 执行域 SUT 选择即预检（只答 2 个交互即见错）；§6.5 通道纪律（两形态实测才可下「不支持」结论、改通道须用户确认、不得静默降级） |
+| v4.2 | 2026-09-08 | 交互会话日志降噪（§6.4）：传输层日志器（httpx/httpcore/openai/anthropic）非 DEBUG 模式压到 WARNING——修执行域 setup_logging 进程级污染后续 Agent 流式直播的噪声混流 |

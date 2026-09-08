@@ -194,11 +194,35 @@ sut:
       token_type: Bearer
 ```
 
+generic_http 通道示例（面向未实现 agent-protocol 的 HTTP 服务；**须经用户确认
+改走此通道**，且 request_template/response_mapping 须先用 request 工具实测同形
+请求后再落盘）：
+
+```yaml
+sut:
+  name: plain-api
+  channel: generic_http
+  base_url: ${MY_API_URL:-https://api.example.com}
+  request_template:
+    method: POST
+    path: /v1/chat
+    headers:
+      X-Trace: "{{ metadata.task_id }}"   # 值支持 Jinja2（变量空间 input/metadata）
+    body:
+      query: "{{ input }}"                # dict 直发 JSON；str 须为合法 JSON 文本
+  response_mapping:
+    text: data.answer                     # 回答文本点分路径（未配置时整个响应体兜底）
+    files: data.files                     # 产物文件列表（可选）
+    success: data.ok                      # 成功标志（可选，falsy 判 failed）
+  auth: …                                 # 与 agent-protocol 通道同构（见下）
+```
+
 关键约束：
+- `channel` 可执行取值只有 `agent_protocol` 与 `generic_http`（`browser` 预留未
+  排期，落盘门禁直接打回）；探测受挫时继续排查或呈报用户，**不得降级改写通道**；
 - `base_url` 与 `protocol_flavor` 必须来自本会话 `probe_protocol` 的实测结论
   （落盘门禁强制：未实测主机、或核心端点非 ✅ 的 agent_protocol 配置会被打回）；
   接口域与页面域常分离，base_url 不得默认填入口页面域；
-- `auth.login` 段原样使用 `probe_login` 成功时返回的 `sut_config_auth_snippet`
   （落盘门禁会与实测证据逐字段对账）：`path` 写**完整 URL**（登录域可与 API 域
   分离）——没有 `login.base_url` 字段，拆成相对路径会被拼回页面域；
 - `body_template` 是 Jinja2：变量写 `{{ username }}`（`$var`、`%s` 等风格不会被渲染），
