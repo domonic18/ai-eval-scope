@@ -1,4 +1,4 @@
-"""LangGraph 回调 — 预算护栏与会话日志注入（arch/03 §7a.6 v4.6）。
+"""LangGraph 回调 — 预算护栏与会话日志注入。
 
 BudgetGuard / SessionLogCallback 实现 LangChain 回调协议的
 on_llm_end / on_tool_start / on_tool_end 方法，经
@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent_eval.agent.hooks import BudgetController, SessionLogger
+from agent_eval.agent.budget import BudgetController
+from agent_eval.agent.session_log import SessionLogger
 from agent_eval.agent.sut_tools import HTTP_RAW_MAX_CHARS
 from agent_eval.core.exceptions import BudgetExceededError
 

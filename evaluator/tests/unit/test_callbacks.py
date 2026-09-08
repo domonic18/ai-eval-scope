@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from agent_eval.agent.callbacks import BudgetGuard, SessionLogCallback
-from agent_eval.agent.hooks import SessionLogger
+from agent_eval.agent.session_log import SessionLogger
 from agent_eval.core.exceptions import BudgetExceededError
 
 
