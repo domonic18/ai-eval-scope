@@ -535,3 +535,99 @@ class TestNoArgInteractiveSelect:
         monkeypatch.setenv("AGENT_EVAL_RUN_ID", "20260831_093012")
         result = runner.invoke(runs.runs_app, ["show"])
         assert result.exit_code == 0, result.output
+
+
+# ── 执行评测域：通道排期前置预检 ────────────────────────────────────────
+
+
+class TestExecDomain:
+    @staticmethod
+    def _make_pkg(tmp_path: Path, channel: str) -> None:
+        (tmp_path / "task_sets").mkdir(parents=True)
+        (tmp_path / "sut_configs").mkdir()
+        (tmp_path / "rules").mkdir()
+        (tmp_path / "task_sets" / "basic.yaml").write_text("tasks:\n  - id: a\n", encoding="utf-8")
+        (tmp_path / "sut_configs" / "api.yaml").write_text(
+            f"sut:\n  name: api\n  channel: {channel}\n  base_url: https://api.example.com\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "rules" / "quality.yaml").write_text("rules: []\n", encoding="utf-8")
+
+    @staticmethod
+    def _patch_pkgs(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
+        from types import SimpleNamespace
+
+        pkg = SimpleNamespace(
+            manifest=SimpleNamespace(ref="t/api", default_task_set="basic", default_rule_set=None),
+            source="project",
+            root=root,
+        )
+        monkeypatch.setattr("agent_eval.packages.PackageManager.list", lambda self: [pkg])
+
+    @staticmethod
+    def _session() -> object:
+        from types import SimpleNamespace
+
+        class _Session:
+            ctx = SimpleNamespace(active_package=None, active_task_set=None, active_sut=None)
+
+        return _Session()
+
+    def test_exec_prescreens_unscheduled_channel(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """选 SUT 后即预检通道排期：未排期立即报错返回，不进执行摘要与执行器
+        （旧链路答完 5 个交互才在 create_channel 工厂报错）。"""
+        import agent_eval.cli.cmds.execute as execute_mod
+        import agent_eval.cli.workbench.domains.exec as exec_mod
+
+        self._make_pkg(tmp_path, "browser")
+        self._patch_pkgs(monkeypatch, tmp_path)
+        picks = iter(["t/api  (project)", "basic（1 任务）", "api（browser）"])
+        monkeypatch.setattr(exec_mod, "select", lambda label, options, **kw: next(picks))
+        called: list[str] = []
+        monkeypatch.setattr(execute_mod, "execute_pipeline", lambda **kw: called.append("pipeline"))
+        monkeypatch.setattr(execute_mod, "execute_run", lambda **kw: called.append("run"))
+
+        exec_mod.main(self._session())
+        assert "预留未排期" in capsys.readouterr().out
+        assert called == []
+        assert self._session().ctx.active_sut is None
+
+    def test_exec_annotates_channel_and_passes_prescreen(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """SUT 选项带通道标注；排期通道放行并按 stem 正确传参。"""
+        import agent_eval.cli.cmds.execute as execute_mod
+        import agent_eval.cli.workbench.domains.exec as exec_mod
+
+        self._make_pkg(tmp_path, "agent_protocol")
+        self._patch_pkgs(monkeypatch, tmp_path)
+        picks = iter(
+            [
+                "t/api  (project)",
+                "basic（1 任务）",
+                "api（agent_protocol）",
+                "quality",
+                "pipeline（执行 + 评估 + 报告）",
+            ]
+        )
+        seen_options: dict[str, list[str]] = {}
+        monkeypatch.setattr(
+            exec_mod,
+            "select",
+            lambda label, options, **kw: (
+                seen_options.update({label: options}),
+                next(picks),
+            )[1],
+        )
+        monkeypatch.setattr(exec_mod, "confirm", lambda label, **kw: True)
+        called: dict = {}
+        monkeypatch.setattr(execute_mod, "execute_pipeline", lambda **kw: called.update(kw))
+
+        session = self._session()
+        exec_mod.main(session)
+        assert "api（agent_protocol）" in seen_options["选择 SUT"]  # 选项带通道标注
+        assert called["sut_name"] == "api"  # stem 从「api（agent_protocol）」正确解析回取
+        assert called["package"] == "t/api"
+        assert session.ctx.active_sut == "api"

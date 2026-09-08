@@ -21,7 +21,11 @@ import yaml
 
 from agent_eval.agent.workbench.sut_probe import CORE_STEP, SUTProbeToolServer
 from agent_eval.agent.workbench.tools import PackageToolServer
-from agent_eval.execution.registry import expand_env_refs, resolve_login_url
+from agent_eval.execution.registry import (
+    SCHEDULED_CHANNELS,
+    expand_env_refs,
+    resolve_login_url,
+)
 
 
 def base_url_host(base_url: str) -> str:
@@ -57,8 +61,22 @@ def sut_evidence_gate(server: PackageToolServer, probe: SUTProbeToolServer) -> l
 
 
 def _reconcile_protocol(rel: str, sut: dict[str, Any], probe: SUTProbeToolServer) -> list[str]:
-    """协议声明 vs 协议账本：host 须实测过，且矩阵核心端点为 ✅。"""
-    if str(sut.get("channel", "")).lower() != "agent_protocol":
+    """通道排期 + 协议声明 vs 协议账本：未排期通道打回；agent_protocol 须 host
+    实测过，且矩阵核心端点为 ✅。"""
+    channel = str(sut.get("channel", "")).lower()
+    if not channel:
+        return []  # 缺 channel 由 validate_package 的 schema 校验上报，门禁不重复
+    if channel not in SCHEDULED_CHANNELS:
+        # 实测教训：协议探测受挫后 Agent 自行降级写预留通道——创建侧当时全放行，
+        # 执行期工厂才报错，用户答完 5 个交互才见失败。拦截前移到落盘前
+        return [
+            f"{rel} 声明 channel: {channel}，该通道预留未排期（本期排期通道 "
+            f"{'、'.join(SCHEDULED_CHANNELS)}）。探测受挫不是换通道的理由——须把证据"
+            "如实呈报用户并继续排查（换 protocol_flavor / 换候选接口域 / 带凭证重探）；"
+            "改走其他通道属用户可见的决策，**不得静默降级改写落盘**"
+        ]
+    if channel == "generic_http":
+        # 无协议端点语义，协议账本对账不适用（登录对账仍由 _reconcile_login 覆盖）
         return []
     host = base_url_host(str(sut.get("base_url", "")))
     fact = probe.verified_protocol(host) if host else None

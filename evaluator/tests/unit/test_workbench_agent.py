@@ -457,16 +457,48 @@ class TestAgentTurn:
         retry = asyncio.run(agent.turn("已按提示探测，重写", confirm_fn=lambda r, d: True))
         assert retry.committed
 
-    def test_protocol_gate_skips_non_agent_protocol_channel(
+    def test_protocol_gate_rejects_unscheduled_channel(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """门禁只针对 agent_protocol 通道：http 等通道不受 probe_protocol 约束。"""
+        """通道排期门禁：browser 预留未排期，落盘即打回。
+
+        实测教训：协议探测受挫后 Agent 自行降级写预留通道——创建侧当时全放行、
+        执行期工厂才报错，用户答完 5 个交互才见失败。拦截前移到落盘前。
+        """
+
+        async def write_browser_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file(
+                "sut_configs/ui.yaml",
+                "sut:\n  name: ui\n  channel: browser\n  base_url: https://ui.example.com\n",
+            )
+            return "写了 browser 通道配置"
+
+        fake, _ = _replay([write_browser_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=1), log_dir=tmp_path / "log"
+        )
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not result.committed  # 未排期通道 → 门禁打回
+        assert any("预留未排期" in e for e in result.validation_errors)
+        assert any("不得静默降级" in e for e in result.validation_errors)
+        assert not (tmp_path / "sut_configs" / "ui.yaml").exists()  # 门禁未过不落盘
+
+    def test_generic_http_channel_passes_without_protocol_ledger(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """generic_http 已排期（v4.7 落地）且无协议端点语义：不需 probe_protocol
+        账本即可落盘（登录对账仍由 _reconcile_login 覆盖）。"""
 
         async def write_http_sut(server: PackageToolServer) -> str:
             await _write_valid(server)
             await server.write_file(
                 "sut_configs/api.yaml",
-                "sut:\n  name: api\n  channel: generic_http\n  base_url: https://api.example.com\n",
+                "sut:\n  name: api\n  channel: generic_http\n  base_url: https://api.example.com\n"
+                '  request_template:\n    method: POST\n    path: /chat\n    body: \'{"q": "{{ input }}"}\'\n',
             )
             return "写了 http 通道配置"
 
@@ -476,7 +508,8 @@ class TestAgentTurn:
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
-        assert result.committed  # 非 agent_protocol 通道不触发门禁
+        assert result.committed  # 已排期通道，协议对账不适用 → 放行
+        assert (tmp_path / "sut_configs" / "api.yaml").exists()
 
     def test_protocol_gate_rejects_core_step_not_ok(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
