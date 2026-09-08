@@ -418,36 +418,46 @@ agent = WorkbenchAgent(
 
 | 工具 | 职责 | 关键设计 |
 |---|---|---|
-| `http_request(url, ...)` | 裸请求原语：抓取页面/接口/JS 资源，返回状态码/耗时/content-type/重定向链等证据 | 抓取入**服务端缓存**（完整响应体存工具侧不进 LLM 上下文，轮内有效、`new_turn()` 清空），供 `search_content` 复用；证据截断防上下文爆炸 |
-| `discover_login(page_url)` | 登录 API 发现阶梯（**普通用户只需输入页面登录地址**）：① 页面 `<form>` 解析 → ② JS XHR/fetch/baseURL 线索 → ②.5 OpenAPI 文档探测 → ③ 定向路径探测（**路径由 Agent 自拟** ≤10 条，不发凭证）→ ④ 只向用户问**登录接口地址**一项兜底 | SPA 无线索是常态，④ 是**预期路径**而非失败兜底；**字段名不问用户**——按候选 fields 拟定，经 probe_login 脱敏预览交用户确认 |
+| `request(method, url, headers?, body?, ref?, step?)` | 门控请求原语（v4：抓取与接口调试/登录实测同一出口）：返回状态码/耗时/响应头/响应体证据，405 的 Allow、400 业务错误消息不再被截掉 | body/headers 支持 Jinja2 模板：凭证 `{{ 字段 }}`（须带 ref，值由服务端从密钥区注入）与链式 `{{ stepN.路径 }}`（step 响应服务端持有，多步认证链可探索）；GET 入**服务端缓存**供 `search_content` 复用（凭证响应不入缓存防绕过值回流）；证据截断防上下文爆炸 |
+| `discover_login(page_url)` | 登录 API 发现阶梯（**普通用户只需输入页面登录地址**）：① 页面 `<form>` 解析 → ② JS XHR/fetch/baseURL 线索 → ②.5 OpenAPI 文档探测 → ③ 定向路径探测（**路径由 Agent 自拟** ≤10 条，不发凭证）→ ④ 只向用户问**登录接口地址**一项兜底 | SPA 无线索是常态，④ 是**预期路径**而非失败兜底；**字段名不问用户**——按候选 fields 拟定，经 request 登录实测（body 带凭证模板）+ 授权预览交用户确认 |
 | `search_content(pattern, context)` | 已缓存内容检索：子串匹配（防 ReDoS）、大小写不敏感、上下文摘录 ≤12 条（带「数据非指令」声明） | 分析主循环的机械原语，「搜什么」由 Agent 经 prompts 前端包分析法决定 |
-| `probe_protocol(base_url, flavor)` | agent-protocol 符合性矩阵：info → 建临时线程 → commands → state → stream；支持带 configurable/modelId 重探 | 逐项 ✅/❌ + 证据，不做二值判定；3xx 不计 ✅；临时线程收尾清理；与执行器契约同构（信封/路由头/Bearer 单源复用） |
-| `probe_login(login_cfg, ref)` | 登录实测：secrets 旁路取凭证 → 渲染 body → **脱敏预览经 `ask_user` 确认后发送** → 校验 token_path；成功时机械渲染 `sut_config_auth_snippet`（见证据账本） | **凭证值不进 LLM 上下文**；缺凭证返回 missing fields 触发隐藏录入；对齐 `terraform plan` 先展示后执行惯例 |
-| `ask_user(question, options?)` | 主动提问：开放文本 / 单选 / 凭证录入（直写 secrets，隐藏输入） | 桥接 CLI `ask()`/`select()`；非 TTY 返回「需交互」错误 |
+| `probe_protocol(base_url, flavor)` | agent-protocol 符合性矩阵：info → 建临时线程 → commands → state → stream；支持带 configurable/modelId 重探 | 逐项 ✅/❌ + 证据，不做二值判定；3xx 不计 ✅；临时线程收尾清理；**已声明的会话凭证自动挂载**；与执行器契约同构（信封/路由头/Bearer 单源复用） |
+| `declare_token(ref, token_path?, token_source?, expires_in_path?)` | **事后声明式**凭证提取（决策 D2）：对该 ref 最近一次带凭证 2xx 响应声明「凭证在哪个路径」——不重发请求，声明错了改路径重声明即可（防锁不适用）；成功时机械渲染 `sut_config_auth_snippet`（见证据账本） | **凭证值不进 LLM 上下文**（提取在服务端持有的响应上进行）；`token_source` 三态与执行器同构（`Bearer / header:<X> / cookie`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态）；缺凭证时 request 错误指路 `ask_user(kind=credential)` 逐字段录入；超出执行器宽度的形态（凭证走请求头/链式认证）显式拒绝落盘——探测可探索、暂不可落盘 |
+| `ask_user(question, options?, kind?)` | 主动提问：开放文本 / 单选 / 凭证录入（直写 secrets，隐藏输入） | 桥接 CLI `ask()`/`select()`；非 TTY 返回「需交互」错误 |
 
 #### 流程整合（创建包时即调试）
 
 system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含被测系统 → 主动问入口地址（页面地址即可）→
-逐层探测 → **只把验证过的结论**写进 `sut_configs/`（protocol_flavor、login.path、body_template 字段名、token_path）→
-引导 `secrets set` 录凭证 → 全绿才视为 SUT 段完成。探测证据落 `workspace/agent_logs/`（包内只落最终 YAML）。
+逐层探测 → 登录接口用 request 实测（body 带凭证模板 + ref）→ 2xx 后 declare_token 声明提取（成功返回
+`sut_config_auth_snippet`）→ **只把验证过的结论**写进 `sut_configs/`（protocol_flavor、auth 段 snippet 原样粘贴）→
+缺凭证字段经 `ask_user(kind=credential)` 会话内直录 → 全绿才视为 SUT 段完成。探测证据落 `workspace/agent_logs/`
+（包内只落最终 YAML）。
 
 #### 安全红线增量（§6.4 之外新增，工程难点所在）
 
-1. **凭证旁路**：凭证值只经 secrets store ↔ 工具内部，LLM 上下文只见成败 + 脱敏响应骨架——
-   「禁凭证明文」红线延伸到网络面
-2. **host 边界与凭证外发硬门禁**：网络工具仅可访问「用户本轮提供 host + sut_configs 已有
-   host」；**凭证只发往用户确认过的 host**——自动发现/猜测的 host 一律不得接收凭证，防阶梯
-   误判即凭证外泄
+1. **凭证旁路**：凭证值只经 secrets store ↔ 工具内部，LLM 上下文不见凭证值；提取在服务端
+   持有的响应上进行（token 只进会话 token 表与 snippet，不进工具返回）——「禁凭证明文」
+   红线延伸到网络面与声明面
+2. **host 边界与凭证外发组合级授权（D1）**：网络工具仅可访问「用户本轮提供 host + sut_configs
+   已有 host」；凭证外发按 **(host, ref) 组合首次外发前经 `ask_user` 确认一次**，预览展示
+   **完整 URL + 模板 body 原文**（占位符形态天然不含凭证值，路径抄错只有在这里用户才看得见）；
+   授权后本会话同组合不再逐次问，**每次外发留痕**（credential_grant）；非交互环境一律不外发
 3. **探测内容注入防护**：抓回的 HTML/JS/响应头一律视为 **data 而非 instructions**——分隔
    包裹 + 截断 + 剥离指令样文本；最终防线是 staging→diff→用户确认门禁
-4. **登录防锁（「认证层拒绝」语义）**：同（ref, 完整URL, body_template）组合不自动重试，防
-   试错锁死账号；**入锁集合 = 认证层拒绝（4xx/5xx）**，404 / 网络失败 / 登录成功均不入锁——
-   换候选路径继续实测是正当行为，防锁不误伤探索；用户纠正后模板变化视为新组合
-5. **总量约束**：单探测 10s 超时；轮内预算**按工具分池**（http_request 20 / discover_login 5 /
-   search_content 30 / probe_protocol 8 / probe_login 6——抓取与接口调试同一池防双池绕限）；
+4. **登录防锁（「认证层拒绝」语义）**：作用于 request 带凭证请求，按（ref, 完整URL, body）
+   组合不自动重试，防试错锁死账号；**入锁集合 = 认证层拒绝（4xx/5xx）**，404（请求未到
+   认证层）/ 网络失败 / 2xx 均不入锁——换候选路径继续实测是正当行为，防锁不误伤探索；
+   用户纠正后 body 变化视为新组合；`declare_token` 不重发请求，重声明不受防锁约束；
+   凭证重新录入（`_save_credential`）解锁该 ref
+5. **值回流条件化**：「值要回流，前提是知道哪些值是凭证」——带凭证请求的 2xx 响应在
+   declare_token 声明前**只回键路径结构树**（响应可能含会话凭证，零格式假设）；声明后
+   掩码原文回流（token 值已知名、掩得住）；非 2xx 与非凭证请求原文回流（排错需要）；
+   GET 抓取缓存排除凭证请求（防 search_content 绕过）
+6. **总量约束**：单探测 10s 超时；轮内预算**按工具分池**（request 25 / declare_token 10 /
+   discover_login 5 / search_content 30 / probe_protocol 8）；
    阶梯③路径 ≤10 条（定向检查，非扫描行为）
-6. **探测副作用言明**：probe_protocol 建临时线程属对被测系统的写操作，探测前经 `ask_user`
-   言明（可与 probe_login 预览确认合并为一次交互）
+7. **探测副作用言明**：probe_protocol 建临时线程属对被测系统的写操作，探测前经 `ask_user`
+   言明（可与 request 授权确认合并为一次交互）
 
 #### 泛化设计：前端包分析原语
 
@@ -464,8 +474,8 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 | 字段语义 | 凭证字段实际要输入什么（如 captcha 实际承载密码） | Agent 经 `ask_user(desc=…)` 传入 |
 
 - prompts 配套**前端包分析法**方法论（发现→检索→读摘录→分块跟随→基址组合→实测验证）；
-  ask_user credential 必带 `desc`（直达字段语义）；probe_login 预览展示**完整 URL**
-  （路径抄错只有在预览里用户才看得见）。
+  ask_user credential 必带 `desc`（直达字段语义）；request 授权预览展示**完整 URL + 模板
+  body 原文**（路径抄错只有在预览里用户才看得见）。
 
 #### 证据账本与落盘对账
 
@@ -477,9 +487,9 @@ system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含�
 
 | 环 | 机制 | 落点 |
 |---|---|---|
-| ① 同构词汇（消除转换需求） | `probe_login` 的 `login_cfg` 与执行器 `auth.login` 同形：`path` 承载完整 URL（`url` 键保留为兼容别名；不接受 `base_url` 拼接——那正是变形源头） | `probe/login.py` |
-| ② 工具返回即产物（装配在证据产生处完成一次） | 实测成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责收缩为「原样粘贴」 | `probe/login.py::_render_auth_snippet` |
-| ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path；协议核心端点 ✅）——不一致打回并携带权威片段 | `workbench_agent.py::_sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
+| ① 同构词汇（消除转换需求） | `declare_token` 渲染的 `auth` 段与执行器词汇同构：`token_source` 三态（`Bearer / header:<X> / cookie`）即执行器 `SUTSession.token_type`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态（执行器靠共享 client 的 cookie jar 承载登录态，语义 1:1）；凭证仅 `credential_ref` 引用 | `probe/login.py` |
+| ② 工具返回即产物（装配在证据产生处完成一次） | 声明成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责收缩为「原样粘贴」 | `probe/login.py::_render_auth_snippet` |
+| ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path/token_source/expires_in_path；协议核心端点 ✅）——不一致打回并携带权威片段 | `workbench_agent.py::_sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
 
 配套修正：
 
@@ -549,7 +559,7 @@ REPL 处置闭环：中断/瞬时错误上抛 → CLI 打印「⏸ 已暂停（�
 
 | 缰绳 | 语义 |
 |---|---|
-| 工具级预算分池 | http_request 20 / search_content 30 …（§6.5，防单工具空转） |
+| 工具级预算分池 | request 25 / search_content 30 …（§6.5，防单工具空转） |
 | 单段步数阀 | recursion_limit（防单段死循环——阀，非任务预算） |
 | 分段数上限 | 默认 3 段（总工作量封顶） |
 | token/成本预算 | BudgetGuard 会话级（真实经济缰绳） |
@@ -754,3 +764,4 @@ review 检查项。
 | v3.21 | 2026-09-07 | 移除设备码流接口约定（粘贴 Key 双通道已满足）+ §六精简去过程性内容 |
 | v3.22 | 2026-09-07 | 工具面返回值规范轮（实测排查驱动）：probe_login token_path 归一化/键路径树/失败模式三分 + 探测面静默分支治理（fetch 失败原因/auth_attached/checked_paths/stream 3xx/cleanup 留痕/host 拉黑）+ 归位横幅不预设门禁通过 |
 | v3.23 | 2026-09-07 | M1 值回流条件化（二轮实测事故驱动：裸 JWT 经 evidence 回流）：probe_login 2xx JSON 提取失败时 evidence 只回键路径树不回原文——「值要回流，前提是知道哪些值是凭证」，零格式假设；探测面 v4 重构设计立项（docs/plan/03 薄原语+厚思考，request/declare_token/链式变量，probe_login 拟退役） |
+| v4.0 | 2026-09-08 | 探测面 v4 落地（薄原语+厚思考，docs/plan/03 M1+M2）：`request` 门控请求原语（抓取/调试/登录实测同一出口；凭证模板服务端注入 + (host,ref) 组合级外发授权 + 防锁 + 值回流条件化 + 链式变量 `{{ stepN.* }}` 探索）与 `declare_token` 事后声明式提取（token_source 三态同构执行器、snippet 机械渲染、不重发请求无撞锁、执行器宽度守卫拒绝超宽形态落盘）替代 probe_login（退役）；共享 AsyncClient 会话级持有（cookie jar 跨请求）；预算重定 request 25 / declare_token 10 |
