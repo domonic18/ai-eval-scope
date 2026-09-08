@@ -160,10 +160,11 @@ def test_run_command_declined_fill_exits_clean_without_run(tmp_path, monkeypatch
 
 
 def test_run_command_rejects_unscheduled_channel(tmp_path) -> None:
+    """browser 仍未排期（v4.7 起 generic_http 已落地，SCHEDULED_CHANNELS=协议+HTTP）。"""
     task_set = tmp_path / "task_set.yaml"
     sut_cfg = tmp_path / "sut.yaml"
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
-    sut_cfg.write_text(SUT_YAML.replace("agent_protocol", "generic_http"), encoding="utf-8")
+    sut_cfg.write_text(SUT_YAML.replace("agent_protocol", "browser"), encoding="utf-8")
     result = runner.invoke(app, ["run", "--task-set", str(task_set), "--sut-config", str(sut_cfg)])
     assert result.exit_code == 1
     assert "预留未排期" in result.output

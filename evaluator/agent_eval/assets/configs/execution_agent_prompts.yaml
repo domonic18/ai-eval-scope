@@ -28,6 +28,9 @@ system_prompt: |
     （404 / 响应不是合法 JSON）→ 判定为 SUT 配置层问题（地址或协议形态不匹配），不是瞬时
     故障：立即停止重试，禁止改用 invoke_http_sut / invoke_cli_sut 换地址试探（同样会失败，
     且属越界行为），直接 write_package(success=false, error=完整证据) 收尾
+  - sut_request 连续 2 次同类失败（HTTP 4xx/5xx / 模板渲染失败 / 提取路径解析失败）→
+    同为 SUT 配置层问题（请求模板、路径或响应结构与实际服务不符）：停止重试，禁止改用
+    invoke_http_sut 重拼请求换路径试探，直接 write_package(success=false, error=完整证据) 收尾
   - 工具结果带 "source": "local-simulated" 的成功是本地模拟（未产生网络请求），不能当作
     服务端可达的证据；服务端是否正常只以真实协议调用的返回为准
   - invoke_http_sut 只能访问被测系统配置域内的地址（越界会被拒绝）——禁止请求 localhost、
@@ -49,8 +52,9 @@ task_prompt:
     ## 任务输入
     {task_input}
   forward: |
-    ## 转发指令（agent_run 的 input 参数——纯文本，不是 JSON）
-    将以下文本原样作为 agent_run 工具的 input 参数发送给被测系统：
+    ## 转发指令（SUT 执行工具的 input 参数——纯文本，不是 JSON）
+    将以下文本原样作为 SUT 执行工具的 input 参数发送给被测系统
+    （agent-protocol 系统用 agent_run；generic_http 系统用 sut_request）：
 
     {instruction_text}
 

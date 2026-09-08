@@ -223,6 +223,7 @@ def execute_stage(
     from agent_eval.execution.auth.credentials import preflight_sut_credentials
     from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
     from agent_eval.execution.channels.base import create_channel
+    from agent_eval.execution.channels.generic_http import GenericHttpChannel
     from agent_eval.execution.models import AgentConfig, SUTToolsConfig
 
     sut = run_inputs.sut
@@ -231,11 +232,21 @@ def execute_stage(
     # 放这里会被 stage_progress 转轮刷掉输入提示行（实测反馈）
     preflight_sut_credentials(sut)
     channel = create_channel(sut)
-    protocol_tools = AgentProtocolToolServer(
-        # create_channel 静态返回基类；本路径由 agent_protocol 模式进入，恒为该子类
-        cast(AgentProtocolChannel, channel),
-        default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
-    )
+    # 语义工具面按通道分支：agent_protocol 走 agent_run 族；generic_http 走
+    # sut_request（模板渲染/响应提取在通道内完成，last_run 契约两者同构）
+    if sut.channel == "generic_http":
+        from agent_eval.agent.executor.http_tools import GenericHttpToolServer
+
+        sut_tools = GenericHttpToolServer(
+            cast(GenericHttpChannel, channel),
+            default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
+        )
+    else:
+        sut_tools = AgentProtocolToolServer(
+            # create_channel 静态返回基类；非 generic_http 恒为该子类
+            cast(AgentProtocolChannel, channel),
+            default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
+        )
     # invoke_http_sut 的 host 边界收敛到被测系统配置域（实测：协议通道 404 后
     # LLM 曾臆测 localhost:8000/8080 乱试）；base_url 缺失时留空 = 不限制
     sut_host = urlparse(sut.base_url).hostname if sut.base_url else None
@@ -249,7 +260,7 @@ def execute_stage(
             SUTToolsConfig(allowed_hosts=[sut_host] if sut_host else []),
             workspace_dir=workspace_root,
         ),
-        extra_tool_servers=[protocol_tools],
+        extra_tool_servers=[sut_tools],
     )
 
     async def _run_and_close() -> tuple[str, list[Any]]:

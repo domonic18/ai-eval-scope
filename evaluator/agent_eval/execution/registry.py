@@ -21,8 +21,15 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from agent_eval.config.loader import ConfigLoader
 from agent_eval.core.exceptions import SUTChannelError
 
-# 支持的通道（v4.5 裁决：本期唯一排期 agent_protocol；其余预留）
+# 支持的通道（schema 合法值，含预留项）
 CHANNEL_TYPES = ("agent_protocol", "generic_http", "browser")
+# 本期已排期可执行通道（执行工厂/落盘门禁/执行域预检三处共用；排期变更只改这里，
+# 与 CHANNEL_TYPES 互为补充）。v4.7 裁决：generic_http 落地（arch/03 §4.2），browser 仍预留
+SCHEDULED_CHANNELS = ("agent_protocol", "generic_http")
+# generic_http 请求模板允许的 HTTP 方法
+HTTP_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")
+# generic_http 响应提取的合法键（值=响应 JSON 的点分路径）
+RESPONSE_MAPPING_KEYS = ("text", "files", "success")
 EXEC_MODES = ("wait", "background", "stream")
 STREAM_MODES = ("values", "messages", "updates", "custom")
 AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
@@ -121,11 +128,35 @@ class OutputPathsConfig(BaseModel):
     )
 
 
+class RequestTemplateConfig(BaseModel):
+    """generic_http 通道的请求模板（arch/03 §4.2）。
+
+    body/headers 的字符串值支持 Jinja2 模板（变量空间 ``input``/``metadata``，
+    由通道渲染）；凭证字段不得写在模板里——由 auth 会话自动挂载。
+    """
+
+    method: str = Field(default="POST", description=f"HTTP 方法，{HTTP_METHODS} 之一")
+    path: str = Field(description="请求路径（相对 base_url；跨域接口可填完整 http(s):// URL）")
+    headers: dict[str, str] = Field(default_factory=dict, description="附加请求头（值支持模板）")
+    body: Any = Field(
+        default=None,
+        description="请求体：dict 直发 JSON；str 须为合法 JSON 文本；字符串值支持模板",
+    )
+
+    @field_validator("method")
+    @classmethod
+    def _normalize_method(cls, v: str) -> str:
+        upper = v.strip().upper()
+        if upper not in HTTP_METHODS:
+            raise ValueError(f"request_template.method 必须为 {HTTP_METHODS} 之一，得到: {v!r}")
+        return upper
+
+
 class SUTSystemConfig(BaseModel):
     """单个被测系统配置（sut_config v2，顶层键 sut:）。"""
 
     name: str = Field(description="系统标识（SUTRegistry 索引键，全局唯一）")
-    channel: str = Field(description="agent_protocol | generic_http（预留）| browser（预留）")
+    channel: str = Field(description="agent_protocol | generic_http | browser（预留）")
     base_url: str = Field(description="服务根地址")
     timeout: float = Field(default=120.0, description="默认超时（秒）")
     protocol_version: str | None = Field(
@@ -146,8 +177,13 @@ class SUTSystemConfig(BaseModel):
     auth: AuthConfig = Field(default_factory=AuthConfig)
     output_paths: OutputPathsConfig = Field(default_factory=OutputPathsConfig)
     on_completion: str | None = Field(default=None, description="如 delete（临时线程用完即删）")
-    request_template: dict[str, Any] = Field(default_factory=dict, description="generic_http 预留")
-    response_mapping: dict[str, str] = Field(default_factory=dict, description="generic_http 预留")
+    request_template: RequestTemplateConfig | None = Field(
+        default=None, description="generic_http 请求模板（channel=generic_http 必填）"
+    )
+    response_mapping: dict[str, str] = Field(
+        default_factory=dict,
+        description="generic_http 响应提取：键 text/files/success，值为响应 JSON 的点分路径",
+    )
 
     model_config = ConfigDict(extra="allow")
 
@@ -229,7 +265,11 @@ def validate_sut_config_document(data: Any) -> list[str]:
         return ["sut_config 缺少顶层 'sut:' 段"]
     sut = data["sut"]
     errors = _unknown_key_errors(sut, SUTSystemConfig, "sut")
-    for section, model in (("auth", AuthConfig), ("output_paths", OutputPathsConfig)):
+    for section, model in (
+        ("auth", AuthConfig),
+        ("output_paths", OutputPathsConfig),
+        ("request_template", RequestTemplateConfig),
+    ):
         if isinstance(sut.get(section), dict):
             errors += _unknown_key_errors(sut[section], model, f"sut.{section}")
     auth = sut.get("auth")
@@ -241,6 +281,19 @@ def validate_sut_config_document(data: Any) -> list[str]:
         ):
             if isinstance(auth.get(name), dict):
                 errors += _unknown_key_errors(auth[name], auth_model, f"sut.auth.{name}")
+    if str(sut.get("channel", "")).lower() == "generic_http":
+        # 通道必需段前置报缺（模型层 request_template 可空——agent_protocol 包不该被迫填它）
+        if not isinstance(sut.get("request_template"), dict):
+            errors.append(
+                "channel=generic_http 需配置 request_template（method/path，可选 headers/body；"
+                "body 与 headers 值支持 Jinja2 模板，变量空间 input/metadata）"
+            )
+        bad_keys = sorted(set(sut.get("response_mapping") or {}) - set(RESPONSE_MAPPING_KEYS))
+        if bad_keys:
+            errors.append(
+                f"sut.response_mapping 含未知键 {bad_keys}（合法键: "
+                f"{list(RESPONSE_MAPPING_KEYS)}——值为响应 JSON 的点分路径）"
+            )
     try:
         SUTSystemConfig.model_validate(expand_env_refs(sut))
     except ValidationError as e:
@@ -327,6 +380,8 @@ __all__ = [
     "AuthLoginConfig",
     "AuthMountConfig",
     "OutputPathsConfig",
+    "RequestTemplateConfig",
+    "SCHEDULED_CHANNELS",
     "SUTRegistry",
     "SUTSystemConfig",
     "expand_env_refs",

@@ -124,7 +124,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             input, exec_mode=exec_mode, metadata=self._merge_metadata(metadata)
         )
         self._record_last_run(result)
-        return _bounded_result(result)
+        return bounded_result(result)
 
     @tool_guard
     async def agent_run_stream(
@@ -147,7 +147,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             }
             for e in result.get("events", [])[:MAX_STREAM_EVENTS]
         ]
-        return _bounded_result(result)
+        return bounded_result(result)
 
     @tool_guard
     async def create_thread(self, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -166,7 +166,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             thread_id, input, metadata=self._merge_metadata(metadata)
         )
         self._record_last_run(result)
-        return _bounded_result(result)
+        return bounded_result(result)
 
     @tool_guard
     async def cancel_run(self, run_id: str, action: str = "interrupt") -> dict[str, Any]:
@@ -182,7 +182,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         return {**self.default_metadata, **(metadata or {})}
 
 
-def _bounded_result(result: dict[str, Any]) -> dict[str, Any]:
+def bounded_result(result: dict[str, Any]) -> dict[str, Any]:
     """截断大体量字段（values/messages/events 文本化），保留状态与产出物结构。"""
     bounded = dict(result)
     for field in ("values", "messages", "text"):
