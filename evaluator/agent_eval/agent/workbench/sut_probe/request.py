@@ -13,7 +13,7 @@ import time
 from typing import Any
 
 from agent_eval.agent.workbench.sut_probe.context import ProbeContext
-from agent_eval.agent.workbench.sut_probe.helpers import host_of, mask_secrets
+from agent_eval.agent.workbench.sut_probe.helpers import host_of, mask_secrets, net_err
 from agent_eval.agent.workbench.sut_probe.response import structure_response
 
 # request：跨平台无 shell（httpx 直发，Windows/mac/linux 一致）；
@@ -217,8 +217,8 @@ class RequestTool:
                 content=rendered_body.encode() if rendered_body else None,
             )
         except Exception as e:  # noqa: BLE001 — 网络面异常统一转错误数据
-            self.ctx.log("request", method=verb, url=url, event="failed", error=str(e)[:200])
-            return {"status": 0, "error": f"请求失败: {e}"}
+            self.ctx.log("request", method=verb, url=url, event="failed", error=net_err(e)[:200])
+            return {"status": 0, "error": f"请求失败: {net_err(e)}"}
         elapsed_ms = round((time.monotonic() - started) * 1000)
         status = response.status_code
         # 防锁红线（认证层拒绝语义）：带凭证组合被 4xx/5xx 拒绝即入锁不自动重发；

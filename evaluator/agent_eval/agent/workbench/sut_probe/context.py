@@ -22,7 +22,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from agent_eval.agent.workbench.sut_probe.helpers import host_of
+from agent_eval.agent.workbench.sut_probe.helpers import host_of, net_err
 from agent_eval.agent.workbench.sut_probe.specs import PROBE_TIMEOUT_S, TOOL_BUDGETS
 
 # 抓取缓存（前端包分析原语的存储侧）：完整内容只进缓存不进 LLM 上下文，
@@ -228,13 +228,14 @@ class ProbeContext:
 
     async def fetch_text(self, url: str) -> tuple[str | None, str]:
         """抓取文本，返回（内容, 失败原因）——失败原因必须保留（DNS/超时/证书
-        各不相同，吞成一句「不可达」会让 Agent 与用户失去自诊断依据）。"""
+        各不相同，吞成一句「不可达」会让 Agent 与用户失去自诊断依据；
+        net_err 兜底裸异常的空文案）。"""
         try:
             client = await self.client()
             response = await client.get(url)
             return str(response.text), ""
         except Exception as e:  # noqa: BLE001 — 失败原因交调用方呈现与决策
-            return None, str(e)[:200]
+            return None, net_err(e)[:200]
 
     # ── 会话级共享 client ────────────────────────────────────────
 

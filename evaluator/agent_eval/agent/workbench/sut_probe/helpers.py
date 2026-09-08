@@ -1,4 +1,4 @@
-"""探测共享纯函数 — host 解析 / 证据包裹 / 掩码 / 键路径树 / 路径取值。"""
+"""探测共享纯函数 — host 解析 / 网络异常归因 / 证据包裹 / 掩码 / 键路径树 / 路径取值。"""
 
 from __future__ import annotations
 
@@ -12,6 +12,18 @@ _MAX_EVIDENCE = 600
 
 def host_of(url: str) -> str:
     return urlparse(url if "//" in url else f"https://{url}").hostname or ""
+
+
+def net_err(e: Exception) -> str:
+    """网络异常归因格式 ``类型名: 详情``——详情为空退回类型名。
+
+    httpcore 对连接超时等异常是裸抛（异常类无默认文案，str(e) 为空串），
+    只取 str(e) 会把「连接超时」渲染成空话，Agent 与用户失去自诊断依据
+    （超时/DNS/拒绝各不相同）。
+    """
+    name = type(e).__name__
+    detail = str(e).strip()
+    return f"{name}: {detail}" if detail else name
 
 
 def wrap_evidence(title: str, text: str, max_chars: int = _MAX_EVIDENCE) -> str:

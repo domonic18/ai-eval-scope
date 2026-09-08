@@ -118,6 +118,20 @@ class TestEvidenceWrap:
         assert result["status"] == 0  # 不可达：status 0 + 错误数据
         assert "refused" in result["error"]
 
+    def test_bare_timeout_keeps_type_name(self) -> None:
+        """连接超时的异常链裸抛（httpcore 无文案，str 为空）——错误必须保留
+        异常类型名，不得渲染成空话「请求失败: 」（事故：首连超时只回空详情，
+        Agent 与用户无从归因是超时/DNS/拒绝）。"""
+
+        def slow(request: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectTimeout("")  # 复刻事故形态：httpcore 裸抛经 httpx 透传空文案
+
+        server = _make(http_client_factory=_transport(slow))
+        result = _run(server.request("GET", "https://sut.example.com/x"))
+        assert result["status"] == 0
+        assert "请求失败" in result["error"]
+        assert "ConnectTimeout" in result["error"]  # 类型名兜底，非空话
+
     def test_404_guides_to_post_probe_and_discovery(self) -> None:
         """404 ≠ 不可达：POST-only 接口 GET 即 404——指引带字段 POST 实测或 discover_login 发现。"""
 
@@ -185,6 +199,17 @@ class TestDiscoverLogin:
         result = _run(server.discover_login("https://sut.example.com/login"))
         assert "页面不可达" in result["error"]
         assert "Name or service not known" in result["error"]
+
+    def test_page_unreachable_bare_exception_keeps_type_name(self) -> None:
+        """页面不可达遇裸抛异常（str 为空）时以类型名兜底，不留空原因。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise httpx.ReadTimeout("")  # str 为空串：net_err 应以类型名兜底
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        assert "页面不可达" in result["error"]
+        assert "ReadTimeout" in result["error"]
 
     def test_checked_paths_keep_404_and_failures(self) -> None:
         """B3：定向检查全量留痕——404/失败的候选路径不静默消失（Agent 可核对
