@@ -1,8 +1,8 @@
-"""SUT Tools — SUT 交互工具集（arch/03 §四 v4.6）。
+"""SUT Tools — SUT 交互工具集。
 
 提供 invoke_http_sut、invoke_cli_sut、scan_directory、read_file、
-collect_results、write_package、list_files 七个工具。v4.6 起 SUTToolServer
-演进为**工具注册表**：工具实现为普通异步方法（可直接调用与测试，不依赖任何
+collect_results、write_package、list_files 七个工具。SUTToolServer 是
+**工具注册表**：工具实现为普通异步方法（可直接调用与测试，不依赖任何
 Agent 框架），ToolExporterMixin（agent/tools.py）惰性导出 LangChain Tool
 显式绑定给 DeepAgents；MCP 封装为可选能力（未在本期排期）。
 """
@@ -101,8 +101,8 @@ class SUTToolServer(ToolExporterMixin):
         Args:
             config: SUT Tools 配置（超时/默认请求头/文件模式等）。
             workspace_dir: workspace 根目录（collect_results/write_package 落盘位置）。
-                目的地路径属执行器基础设施，不由 LLM 决定——v4.6.3 实测 LLM 会
-                幻觉绝对路径（/workspace/...）导致 OS 错误击穿图执行。
+                目的地路径属执行器基础设施，不由 LLM 决定——实测 LLM 会幻觉
+                绝对路径（/workspace/...）导致 OS 错误击穿图执行。
             http_client_factory: 注入自定义 httpx.AsyncClient（测试用 MockTransport）。
         """
         self.config = config or SUTToolsConfig()
@@ -331,8 +331,8 @@ class SUTToolServer(ToolExporterMixin):
             sut_config_id="agent",
             status=PackageStatus.SUCCESS if success else PackageStatus.FAILED,
         )
-        # W8（arch/13 §6.2）：执行包内容指纹——先写内容文件再算 hash 回填 manifest，
-        # 评估缓存键恢复内容维度（此前恒 null，包内容变化仍命中旧缓存）
+        # 执行包内容指纹——先写内容文件再算 hash 回填 manifest，评估缓存键
+        # 恢复内容维度（此前恒 null，包内容变化仍命中旧缓存）
         (package_dir / "manifest.json").write_text(
             manifest.model_dump_json(indent=2), encoding="utf-8"
         )

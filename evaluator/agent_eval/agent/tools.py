@@ -1,4 +1,4 @@
-"""Agent 工具服务器公共基座 — 工具规格与 LangChain 导出（v4.6）。
+"""Agent 工具服务器公共基座 — 工具规格与 LangChain 导出。
 
 SUTToolServer / AgentProtocolToolServer 共用：工具实现为普通异步方法
 （可直接调用与测试，零框架依赖），经 ToolExporterMixin 惰性导出为
