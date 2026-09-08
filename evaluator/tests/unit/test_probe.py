@@ -1439,3 +1439,66 @@ class TestWorkbenchAgentIntegration:
         agent.probe._turn_calls["request"] = TOOL_BUDGETS["request"]  # noqa: SLF001
         agent.probe.new_turn()
         assert agent.probe._turn_calls.get("request", 0) == 0  # noqa: SLF001
+
+
+class TestDelegationSurface:
+    def test_probe_server_delegation_surface(self) -> None:
+        """委托面守护：外部 API 与测试兼容面在本壳上必须全存在（组合模式回归网）。"""
+        import inspect
+
+        from agent_eval.agent import probe
+        from agent_eval.agent.probe import SUTProbeToolServer
+
+        assert set(probe.__all__) == {
+            "CORE_STEP",
+            "PROBE_TIMEOUT_S",
+            "SUTProbeToolServer",
+            "TOOL_BUDGETS",
+        }
+        assert [s.name for s in SUTProbeToolServer.TOOL_SPECS] == [
+            "request",
+            "discover_login",
+            "search_content",
+            "probe_protocol",
+            "declare_token",
+            "ask_user",
+        ]
+        server = SUTProbeToolServer(allowed_hosts={"example.com"})
+        for name in (
+            # 工具委托 ×6
+            "request",
+            "discover_login",
+            "search_content",
+            "probe_protocol",
+            "declare_token",
+            "ask_user",
+            # 设施
+            "new_turn",
+            "aclose",
+            "verified_login",
+            "verified_protocol",
+            # 兼容别名（测试/门禁专用）
+            "_record_login",
+            "_record_protocol",
+            "_store_token",
+            "_cache_content",
+            "_borrow_client",
+        ):
+            assert callable(getattr(server, name)), name
+        for name in (
+            "allowed_hosts",
+            "credentials",
+            "budgets",
+            "timeout_s",
+            "auth_headers",
+            "login_hosts",
+            "protocol_hosts",
+            "_turn_calls",
+            "log_path",
+            "ask_fn",
+        ):
+            assert isinstance(getattr(SUTProbeToolServer, name), property), name
+        # 状态透传必须返回本体（测试/门禁原地改语义）：allowed_hosts 同一对象
+        assert server.allowed_hosts == {"example.com"}
+        assert inspect.iscoroutinefunction(server.request)
+        assert inspect.iscoroutinefunction(server.ask_user)

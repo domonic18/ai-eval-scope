@@ -1,27 +1,22 @@
-"""会话凭证声明式提取 + ask_user — 探测面 v4 的提取原语（arch/15 §6.6 / docs/plan/03 §3.3）。
+"""TokenTool — 会话凭证声明式提取（事后声明，不重发请求）。
 
-v4 拆解：probe_login 退役——请求面（凭证模板渲染 / 外发授权 / 防锁）归 request
-（fetch.py），本模块只剩两件事：
-- declare_token：在服务端缓存的「该 ref 最近一次带凭证请求」上做**事后声明式**
-  提取（决策 D2：不重发请求就无撞锁风险，声明错了改路径重声明即可）。提取词汇
-  与执行器 SUTSession.mount_headers 三态（Bearer | header:<X> | cookie）同构，
-  snippet 由工具机械渲染（token_type 按声明——修掉 v3.x 硬编码 Bearer 的宽度裂缝）；
-- ask_user：文本/单选/凭证三态交互桥（凭证直写密钥区，值不回流）。
+在服务端缓存的「该 ref 最近一次带凭证请求」上做**事后声明式**提取（不重发请求
+就无撞锁风险，声明错了改路径重声明即可）。提取词汇与执行器 SUTSession.mount_headers
+三态（Bearer | header:<X> | cookie）同构，snippet 由工具机械渲染（token_type 按
+声明——修掉硬编码 Bearer 的宽度裂缝）。
 
 红线：凭证值不回流 LLM 上下文（提取在服务端持有的响应上进行，值只进
-_session_tokens 与 snippet，不进工具返回）；声明超出执行器宽度的形态（凭证走
-请求头、链式认证）显式拒绝——探测可探索、暂不可落盘，不产生假验证（§6）。
+session_tokens 与 snippet，不进工具返回）；声明超出执行器宽度的形态（凭证走
+请求头、链式认证）显式拒绝——探测可探索、暂不可落盘，不产生假验证。
 """
 
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable
 from typing import Any
 
-from agent_eval.agent.probe.fetch import _key_path_tree
-
-_MAX_QUESTION_CHARS = 200  # ask_user 单问上限：多问打包会让用户不知从何答起
+from agent_eval.agent.probe.context import ProbeContext
+from agent_eval.agent.probe.helpers import key_path_tree, walk_path
 
 
 def _normalize_source(raw: str) -> tuple[str, str]:
@@ -41,21 +36,6 @@ def _normalize_source(raw: str) -> tuple[str, str]:
         name = s.split(":", 1)[1].strip() if ":" in s else ""
         return "cookie", name
     return "", ""
-
-
-def _walk_path(payload: Any, path: str) -> tuple[Any, bool]:
-    """点分 + 数字下标路径取值（与执行器 extract_by_path 同语义）。"""
-    node = payload
-    for part in path.split("."):
-        if isinstance(node, dict):
-            node = node.get(part)
-        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
-            node = node[int(part)]
-        else:
-            return None, False
-        if node is None:
-            return None, False
-    return node, True
 
 
 def _render_auth_snippet(
@@ -96,25 +76,11 @@ def _render_auth_snippet(
     return yaml.safe_dump(snippet, allow_unicode=True, sort_keys=False).strip()
 
 
-class LoginMixin:
-    """工具：declare_token（事后声明式凭证提取）与 ask_user（三态交互桥）。
+class TokenTool:
+    """工具：declare_token——事后声明式会话凭证提取。"""
 
-    协作契约注解：宿主提供 ``_budget/_client/_log``、凭证库（``credentials``）、
-    交互桥（``ask_fn``）、防锁与证据账本设施、最近带凭证请求事实
-    （``_last_credential_request``）——类级注解仅供类型检查，运行时不创建属性。
-    """
-
-    _budget: Callable[[str], dict[str, str] | None]
-    _client: Callable[[], Awaitable[Any]]
-    _log: Callable[..., None]
-    credentials: Any  # CredentialStore（secrets 直写，值不回流）
-    ask_fn: Any  # async (question, *, options, secret) -> str | None
-    _login_tried: set[tuple[str, str, str]]
-    _store_token: Callable[[str, str, str], None]
-    _record_login: Callable[[dict[str, str]], None]
-    verified_login: Callable[[str], dict[str, str] | None]
-    _last_credential_request: dict[str, dict[str, Any]]
-    _step_responses: dict[str, Any]
+    def __init__(self, ctx: ProbeContext) -> None:
+        self.ctx = ctx
 
     async def declare_token(
         self,
@@ -129,7 +95,7 @@ class LoginMixin:
         token_path 点分路径（cookie 型为 Set-Cookie 名）。不重发请求——声明错了
         改路径重声明即可（防锁不适用；受轮内预算约束）。
         """
-        if budget_err := self._budget("declare_token"):
+        if budget_err := self.ctx.budget("declare_token"):
             return budget_err
         ref = ref.strip()
         source, cookie_name = _normalize_source(token_source)
@@ -140,7 +106,7 @@ class LoginMixin:
                     f"cookie[:名字]（收到 {token_source!r}）"
                 )
             }
-        fact = self._last_credential_request.get(ref.lower())
+        fact = self.ctx.last_credential_request.get(ref.lower())
         if fact is None:
             return {
                 "error": (
@@ -157,7 +123,7 @@ class LoginMixin:
                     "重新 request（防锁：被拒组合不自动重发，新 body 即新组合）"
                 )
             }
-        # 执行器宽度守卫（§6）：探测可探索、暂不可落盘的形态显式拒绝
+        # 执行器宽度守卫：探测可探索、暂不可落盘的形态显式拒绝
         if fact.get("credential_in_headers"):
             return {
                 "error": (
@@ -181,7 +147,7 @@ class LoginMixin:
         expires_note = ""
         if expires_in_path:
             value, hit = (
-                _walk_path(payload, expires_in_path) if payload is not None else (None, False)
+                walk_path(payload, expires_in_path) if payload is not None else (None, False)
             )
             if not hit or not isinstance(value, (int, float)):
                 return {
@@ -189,7 +155,7 @@ class LoginMixin:
                         f"expires_in_path={expires_in_path!r} 未命中数值型字段——可选参数，"
                         "可去掉或按 response_key_paths 修正"
                     ),
-                    "response_key_paths": _key_path_tree(payload) if payload is not None else "",
+                    "response_key_paths": key_path_tree(payload) if payload is not None else "",
                 }
             expires_note = "expires_in_path 已声明（对齐执行器 AuthExtractConfig）"
         # 提取：cookie 型优先 Set-Cookie（token_path 即 cookie 名），其余走响应 JSON
@@ -200,7 +166,7 @@ class LoginMixin:
             if extract_err:
                 err: dict[str, Any] = {"error": extract_err}
                 if payload is not None:
-                    err["response_key_paths"] = _key_path_tree(payload)
+                    err["response_key_paths"] = key_path_tree(payload)
                 return err
         else:
             if payload is None:
@@ -217,7 +183,7 @@ class LoginMixin:
                             "缺少 token_path：点分路径从登录响应 JSON 中取凭证"
                             "（数组用数字下标，如 data.0.token）——按 response_key_paths 选择"
                         ),
-                        "response_key_paths": _key_path_tree(payload),
+                        "response_key_paths": key_path_tree(payload),
                     }
                 return {
                     "error": (
@@ -226,7 +192,7 @@ class LoginMixin:
                     )
                 }
             token_value, hit = (
-                _walk_path(payload, token_path) if payload is not None else (None, False)
+                walk_path(payload, token_path) if payload is not None else (None, False)
             )
             effective_path = token_path
             if not hit:
@@ -235,13 +201,13 @@ class LoginMixin:
                         f"token_path={token_path!r} 未命中响应结构——声明错了改路径重声明"
                         "即可（不重发请求）；以 response_key_paths 键路径树为准"
                     ),
-                    "response_key_paths": _key_path_tree(payload) if payload is not None else "",
+                    "response_key_paths": key_path_tree(payload) if payload is not None else "",
                 }
         # 成功：token 服务端持有（自动挂载）；cookie 型落共享 client 的 jar
         # （Set-Cookie 场景登录请求本就发自此 client，jar 已持有——显式 set 幂等）
-        self._store_token(ref, str(token_value), source)
+        self.ctx.store_token(ref, str(token_value), source)
         if source == "cookie":
-            client = await self._client()
+            client = await self.ctx.client()
             client.cookies.set(cookie_key, str(token_value))
         snippet = _render_auth_snippet(
             ref=ref,
@@ -253,7 +219,7 @@ class LoginMixin:
             expires_in_path=expires_in_path,
         )
         # 证据账本（机械登记，不经 LLM 转述）：落盘对账门禁的事实源
-        self._record_login(
+        self.ctx.record_login(
             {
                 "ref": ref,
                 "method": fact["method"],
@@ -265,7 +231,7 @@ class LoginMixin:
                 "auth_snippet": snippet,
             }
         )
-        self._log(
+        self.ctx.log(
             "declare_token",
             ref=ref,
             source=source,
@@ -304,7 +270,7 @@ class LoginMixin:
             return set_cookies[name], name, "", ""
         # 不在 Set-Cookie：尝试响应体（token_path 为点分路径；cookie 名须显式）
         if cookie_name and token_path and payload is not None:
-            value, hit = _walk_path(payload, token_path)
+            value, hit = walk_path(payload, token_path)
             if hit:
                 return str(value), cookie_name, token_path, ""
         available = (
@@ -323,84 +289,3 @@ class LoginMixin:
             "用 token_source=cookie:<名字> 显式命名并给 token_path"
         )
         return "", "", "", hint
-
-    async def ask_user(
-        self,
-        question: str,
-        options: str = "",
-        kind: str = "text",
-        ref: str = "",
-        field: str = "",
-        desc: str = "",
-    ) -> dict[str, Any]:
-        if self.ask_fn is None:
-            return {
-                "error": "非交互环境（--yes/CI），ask_user 不可用；请引导用户在交互终端运行或预先 secrets set"
-            }
-        if len(question) > _MAX_QUESTION_CHARS:
-            return {
-                "error": (
-                    f"问题过长（{len(question)} 字，上限 {_MAX_QUESTION_CHARS}）：一次只问一个问题，"
-                    "需要多项信息请拆成多次 ask_user 逐个询问"
-                )
-            }
-        try:
-            opts = [o.strip() for o in options.split("|") if o.strip()] if options else None
-            if kind == "credential":
-                if not (ref and field):
-                    return {"error": "kind=credential 需要 ref 与 field 参数"}
-                # 一次只录一个字段：多字段打包会整串存成一个键名，request 渲染时
-                # 逐字段查不到（实测 Agent 曾传 field="username,password"）
-                if len(field.split()) != 1 or any(c in field for c in ",，、;；/"):
-                    return {
-                        "error": (
-                            f"field 一次只接受一个字段名（收到 {field!r}）；"
-                            "请逐字段分别调用 ask_user(kind=credential)，每次录一个字段"
-                        )
-                    }
-                # 字段实际含义由 Agent 经 desc 传入（分析完前端包后它最清楚该字段
-                # 承载的是密码还是验证码——逐站点知识不写死在代码里）；缺失会让
-                # 用户面对「不知道该输入什么」的提示
-                if not desc.strip():
-                    return {
-                        "error": (
-                            "kind=credential 需要 desc：用一句话向用户说明该字段实际要输入什么"
-                            "（从你的检索摘录/接口语义得出，如该字段实际承载的是密码还是验证码）"
-                        )
-                    }
-                value = await self.ask_fn(
-                    f"【录入 {ref} 的凭证字段 {field}】\n"
-                    f"该字段是什么：{desc.strip()}\n"
-                    "用途：向登录接口发送实测请求需要它；输入内容不会回显，输入后回车提交",
-                    options=None,
-                    secret=True,
-                )
-                if not value:
-                    return {"aborted": True, "note": "用户未输入，凭证未保存"}
-                return self._save_credential(ref, field, value)
-            # 单选项无选择意义：降级为文本输入（防「假单选」困惑）
-            if opts is not None and len(opts) < 2:
-                opts = None
-            answer = await self.ask_fn(question, options=opts, secret=False)
-            return {"answer": answer or ""}
-        except Exception as e:  # noqa: BLE001 — 交互桥异常转错误数据
-            return {"error": f"ask_user 失败: {e}"}
-
-    def _save_credential(self, ref: str, field: str, value: str) -> dict[str, Any]:
-        """凭证直写密钥区（合并保存，0600）；值只进 secrets store 不进返回值。"""
-        from agent_eval.execution.auth.secrets_store import load_secrets_file, save_secrets_file
-
-        secrets = load_secrets_file(None)
-        bucket = next((k for k in secrets if k.upper() == ref.upper()), ref)
-        secrets.setdefault(bucket, {})[field.lower()] = value
-        save_secrets_file(secrets, None)
-        # 新凭证录入解锁该 ref 的防锁：一次录入换一次实测
-        # （重试循环被「必须经用户录入」天然限流）
-        self._login_tried = {k for k in self._login_tried if k[0] != ref.lower()}
-        self._log("ask_user", event="credential_saved", ref=ref, field=field)
-        return {
-            "saved": True,
-            "ref": ref,
-            "field": field.lower(),
-            "note": "凭证已入密钥区，不会出现在对话中",
-        }

@@ -1,4 +1,4 @@
-"""登录 API 发现 — 机械解析 + 定向探测阶梯，语义判断全部交 Agent（arch/15 §6.6）。
+"""DiscoveryTool — 登录 API 发现：机械解析 + 定向探测阶梯，语义判断全部交 Agent。
 
 阶梯：①页面结构机械解析（全部 form 原样返回，不判断哪个是登录表单）→
 ②Agent 自拟候选路径定向检查（GET 只读，不发凭证）→ ③OpenAPI/身份文档探测
@@ -8,12 +8,12 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable
 from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urlparse
 
-from agent_eval.agent.probe.fetch import _host_of, _wrap_evidence
+from agent_eval.agent.probe.context import ProbeContext
+from agent_eval.agent.probe.helpers import host_of, wrap_evidence
 
 # 语义判断一律不上移到代码：候选登录路径由 Agent 经 discover_login(paths=…) 自拟
 # （其世界知识远多于写死清单）；请求构造/分包机制的识别由 Agent 用 search_content
@@ -65,21 +65,11 @@ def _dig(data: Any, *keys: str) -> Any:
     return data
 
 
-class DiscoveryMixin:
-    """工具二：登录 API 发现（阶梯，不给凭证）。
+class DiscoveryTool:
+    """工具：登录 API 发现（阶梯，不给凭证）。"""
 
-    协作契约注解（仅供类型检查，运行时不创建属性）：``_budget/_ensure_host/
-    _client/_log`` 由宿主提供，``_fetch_text/_cache_content/_fetched`` 由
-    FetchMixin 提供。
-    """
-
-    _budget: Callable[[str], dict[str, str] | None]
-    _ensure_host: Callable[[str], Awaitable[str | None]]
-    _client: Callable[[], Awaitable[Any]]
-    _log: Callable[..., None]
-    _fetch_text: Callable[[str], Awaitable[tuple[str | None, str]]]
-    _cache_content: Callable[[str, str], None]
-    _fetched: dict[str, str]
+    def __init__(self, ctx: ProbeContext) -> None:
+        self.ctx = ctx
 
     async def discover_login(self, page_url: str, paths: str = "") -> dict[str, Any]:
         """登录 API 快速通道：机械解析 + 定向探测，语义判断全部交 Agent。
@@ -90,15 +80,15 @@ class DiscoveryMixin:
         - OpenAPI/Swagger 文档挂载点是工具规范约定（与 HTML 规范同类），命中后
           POST 端点原样列出（不做 login 关键字过滤），文档原文入缓存可检索。
         """
-        if budget_err := self._budget("discover_login"):
+        if budget_err := self.ctx.budget("discover_login"):
             return budget_err
-        if host_err := await self._ensure_host(page_url):
+        if host_err := await self.ctx.ensure_host(page_url):
             return {"error": host_err}
         base = f"{urlparse(page_url).scheme}://{urlparse(page_url).netloc}"
-        page, fetch_err = await self._fetch_text(page_url)
+        page, fetch_err = await self.ctx.fetch_text(page_url)
         if page is None:
             # 失败原因原样呈现（DNS/超时/证书各不相同，吞成「不可达」无法自诊断）
-            self._log(
+            self.ctx.log(
                 "discover_login", page_url=page_url, event="page_fetch_failed", error=fetch_err
             )
             return {
@@ -134,14 +124,14 @@ class DiscoveryMixin:
         script_srcs = [
             src
             for src in parser.script_srcs[:5]
-            if not src.startswith(("http", "//")) or _host_of(src) == urlparse(page_url).netloc
+            if not src.startswith(("http", "//")) or host_of(src) == urlparse(page_url).netloc
         ]
-        self._cache_content(page_url, page)
+        self.ctx.cache_content(page_url, page)
         for src in script_srcs:
             script_url = src if src.startswith("http") else f"{base}/{src.lstrip('/')}"
-            js, _ = await self._fetch_text(script_url)
+            js, _ = await self.ctx.fetch_text(script_url)
             if js:
-                self._cache_content(script_url, js)
+                self.ctx.cache_content(script_url, js)
 
         # 阶梯②：Agent 自拟候选路径的定向检查（≤10 条，GET 只读，非 404 记为存在）
         probe_paths = [p for p in re.split(r"[|,，、\s]+", paths.strip()) if p][
@@ -149,7 +139,7 @@ class DiscoveryMixin:
         ]
         checked_paths: list[dict[str, Any]] = []  # 全量留痕：404/失败不静默消失（可核对清单）
         if probe_paths:
-            client_cm = self._borrow_client()
+            client_cm = self.ctx.borrow_client()
             async with client_cm as client:
                 for path in probe_paths:
                     target = path if path.startswith("/") else f"/{path}"
@@ -172,7 +162,7 @@ class DiscoveryMixin:
         # 阶梯③：OpenAPI/身份文档探测（挂载点为工具规范约定；POST 端点原样列出，
         # 哪个是登录由 Agent 判读，文档原文已入缓存可 search_content 检索）
         if not candidates:
-            client_cm = self._borrow_client()
+            client_cm = self.ctx.borrow_client()
             async with client_cm as client:
                 for doc_path in (
                     "/openapi.json",
@@ -190,7 +180,7 @@ class DiscoveryMixin:
                         continue
                     if not isinstance(spec, dict):
                         continue
-                    self._cache_content(f"{base}{doc_path}", response.text)
+                    self.ctx.cache_content(f"{base}{doc_path}", response.text)
                     for pathname, methods in (spec.get("paths") or {}).items():
                         if not isinstance(methods, dict) or "post" not in methods:
                             continue
@@ -212,13 +202,13 @@ class DiscoveryMixin:
                         )
                     if candidates:
                         break  # 命中一份文档即止
-        self._log("discover_login", page_url=page_url, candidates=len(candidates))
+        self.ctx.log("discover_login", page_url=page_url, candidates=len(candidates))
         result: dict[str, Any] = {
             "candidates": candidates[:8],
             "checked_paths": checked_paths,
             "scripts": script_srcs,
-            "cached": list(self._fetched),
-            "page_evidence": _wrap_evidence(f"页面 {page_url}", page),
+            "cached": list(self.ctx.fetched),
+            "page_evidence": wrap_evidence(f"页面 {page_url}", page),
             "next_step": (
                 "有候选→判读哪个是真正的登录端点（form 可能是搜索框等非登录表单），"
                 "用 request 实测验证（body 传凭证模板变量 {{ 字段 }} 并带 ref；"

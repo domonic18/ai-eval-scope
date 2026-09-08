@@ -1,15 +1,12 @@
-"""SUT 探测工具面包 — 按域拆分的 mixin 实现 + 组装壳（arch/15 §6.11.2）。
+"""SUT 探测工具面包 — 组合模式（context + 每域工具类 + 薄委托组装壳）。
 
-对外入口保持单一：``SUTProbeToolServer``（一域一 server 形态，D-WB-7）。
+对外入口保持单一：``SUTProbeToolServer``（一域一 server 形态）。
 """
 
 from __future__ import annotations
 
 from agent_eval.agent.probe.protocol import CORE_STEP
-from agent_eval.agent.probe.server import (
-    PROBE_TIMEOUT_S,
-    TOOL_BUDGETS,
-    SUTProbeToolServer,
-)
+from agent_eval.agent.probe.server import SUTProbeToolServer
+from agent_eval.agent.probe.specs import PROBE_TIMEOUT_S, TOOL_BUDGETS
 
 __all__ = ["CORE_STEP", "PROBE_TIMEOUT_S", "SUTProbeToolServer", "TOOL_BUDGETS"]
