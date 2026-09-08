@@ -519,8 +519,8 @@ class WorkbenchAgent:
         「实际会打到哪个 URL / 声明了什么形态」，与账本逐字段对账——不一致即
         打回，错误信息携带账本中的权威片段。
 
-        实测教训：Agent 实测的是 sasan-server 域登录接口（probe_login 200+token），
-        落盘时拆成相对 path + 自造 login.base_url（执行器静默丢弃）拼回页面域，
+        实测教训：Agent 实测的是 sasan-server 域登录接口（request 200 + declare_token
+        提取成功），落盘时拆成相对 path + 自造 login.base_url（执行器静默丢弃）拼回页面域，
         且在「POST /threads 404」的矩阵结论上仍声明 agent_protocol——验证结论
         在「LLM 转述落盘」一步变形。凡可机械传递的事实不经转述；必须转述处，
         由机械对账兜底。
@@ -595,8 +595,8 @@ class WorkbenchAgent:
         if not isinstance(login, dict) or not str(login.get("path", "")):
             return [
                 f"{rel} 声明 auth.type: {auth.get('type')} 但缺 auth.login.path——"
-                "登录接口必须出自本会话 probe_login 实测（成功时返回 "
-                "sut_config_auth_snippet，原样写入即可）"
+                "登录接口必须出自本会话 request+declare_token 实测（declare_token 成功时"
+                "返回 sut_config_auth_snippet，原样写入即可）"
             ]
         ref = str(auth.get("credential_ref") or sut.get("name") or "")
         fact = self.probe.verified_login(ref)
@@ -604,11 +604,20 @@ class WorkbenchAgent:
         if fact is None:
             return [
                 f"{rel} 的登录配置（将请求 {actual_url}，凭证 ref={ref}）未经本会话 "
-                "probe_login 实测——对账门禁拒绝未验证的登录落盘。请先 probe_login "
-                f"实测该接口（成功时返回 sut_config_auth_snippet 原样写入）；"
+                "request+declare_token 实测——对账门禁拒绝未验证的登录落盘。请先 "
+                f"request 实测该接口（body 带凭证模板 + ref），2xx 后 declare_token 声明"
+                f"提取（成功时返回 sut_config_auth_snippet 原样写入）；"
                 "若已实测但 ref 不同，请用实测时的 credential_ref"
             ]
         extract = auth.get("extract") or {}
+        configured_type = (
+            str(extract.get("token_type") or "Bearer") if isinstance(extract, dict) else "Bearer"
+        )
+        configured_expires = (
+            str(extract.get("expires_in_path") or "") if isinstance(extract, dict) else ""
+        )
+        if str(auth.get("type")) == "session_cookie":
+            configured_type = "cookie"  # 执行器同款归一（provider：session_cookie 强制 cookie）
         diffs: list[str] = []
         if fact["url"] != actual_url:
             diffs.append(
@@ -625,11 +634,22 @@ class WorkbenchAgent:
         token_path = str(extract.get("token_path") or "") if isinstance(extract, dict) else ""
         if token_path != fact["token_path"]:
             diffs.append(f"extract.token_path：配置 {token_path!r}，实测 {fact['token_path']!r}")
+        if configured_type.lower() != str(fact.get("token_source", "Bearer")).lower():
+            diffs.append(
+                f"extract.token_type：配置 {configured_type!r}，实测声明 "
+                f"{fact.get('token_source')!r}（执行器三态 Bearer | header:<X> | cookie，"
+                "以 declare_token 成功返回的 sut_config_auth_snippet 为准）"
+            )
+        if configured_expires != str(fact.get("expires_in_path") or ""):
+            diffs.append(
+                f"extract.expires_in_path：配置 {configured_expires!r}，实测声明 "
+                f"{str(fact.get('expires_in_path') or '')!r}"
+            )
         if not diffs:
             return []
         return [
             f"{rel} 的登录配置与本会话实测证据不一致：{'；'.join(diffs)}。"
-            "请把 probe_login 成功时返回的 sut_config_auth_snippet **原样**写入"
+            "请把 declare_token 成功时返回的 sut_config_auth_snippet **原样**写入"
             " auth: 段（勿拆分 URL、勿发明字段——执行器没有 login.base_url）。"
             f"权威片段：\n{fact['auth_snippet']}"
         ]

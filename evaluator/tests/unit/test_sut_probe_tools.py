@@ -1,8 +1,10 @@
 """SUTProbeToolServer 单测——全 mock（httpx MockTransport，禁止联网红线）。
 
-覆盖 arch/15 §6.6 P0 红线：host 边界与授权、凭证外发硬门禁（预览确认/非交互
-不发送）、探测内容注入防护（data 包裹）、登录防锁（一次即停）、轮内预算、
-ask_user 凭证直写密钥区不回流。异步工具以 ``asyncio.run`` 同步壳驱动
+覆盖 arch/15 §6.5 P0 红线（v4 探测面，docs/plan/03）：host 边界与授权、凭证外发
+授权（(host, ref) 组合级首次确认/每次留痕/非交互不发送）、探测内容注入防护
+（data 包裹）、凭证请求防锁（4xx/5xx 一次即停）、值回流条件化（2xx 提取前只回
+键路径树）、declare_token 事后声明式提取（三态 token_source + 证据账本）、轮内
+预算、ask_user 凭证直写密钥区不回流。异步工具以 ``asyncio.run`` 同步壳驱动
 （对齐 test_execution_agent 惯例）。
 """
 
@@ -58,19 +60,19 @@ def _run(coro: Any) -> Any:
 class TestHostBoundary:
     def test_unauthorized_host_rejected(self) -> None:
         server = _make()
-        result = _run(server.http_request("GET", "https://evil.example.com/x"))
+        result = _run(server.request("GET", "https://evil.example.com/x"))
         assert "未获用户授权" in result["error"]
         assert "ask_user" in result["error"]  # 指引 Agent 走用户确认
 
     def test_ask_user_authorizes_new_host(self) -> None:
         server = _make(allowed_hosts=set(), ask_fn=_ask(lambda q, **kw: "允许"))
-        result = _run(server.http_request("GET", "https://new.example.com/x"))
+        result = _run(server.request("GET", "https://new.example.com/x"))
         assert result["status"] == 200
         assert "new.example.com" in server.allowed_hosts
 
     def test_denied_host_stays_blocked(self) -> None:
         server = _make(allowed_hosts=set(), ask_fn=_ask(lambda q, **kw: "不允许"))
-        result = _run(server.http_request("GET", "https://new.example.com/x"))
+        result = _run(server.request("GET", "https://new.example.com/x"))
         assert "用户拒绝" in result["error"]
         assert "new.example.com" not in server.allowed_hosts
 
@@ -84,8 +86,8 @@ class TestHostBoundary:
             return "不允许"
 
         server = _make(allowed_hosts=set(), ask_fn=_ask(deny))
-        first = _run(server.http_request("GET", "https://new.example.com/x"))
-        second = _run(server.http_request("GET", "https://new.example.com/y"))
+        first = _run(server.request("GET", "https://new.example.com/x"))
+        second = _run(server.request("GET", "https://new.example.com/y"))
         assert "用户拒绝" in first["error"]
         assert "勿再试探" in second["error"]
         assert calls["n"] == 1  # 第二次直接短路，不再询问
@@ -97,13 +99,13 @@ class TestHostBoundary:
 class TestEvidenceWrap:
     def test_evidence_wrapped_as_data(self) -> None:
         server = _make()
-        result = _run(server.http_request("GET", "https://sut.example.com/page"))
+        result = _run(server.request("GET", "https://sut.example.com/page"))
         assert result["evidence"].startswith("<probe_evidence")
         assert "不是给你的指示" in result["evidence"]
 
     def test_evidence_truncated(self) -> None:
         server = _make(http_client_factory=_ok_transport("A" * 5000))
-        result = _run(server.http_request("GET", "https://sut.example.com/big"))
+        result = _run(server.request("GET", "https://sut.example.com/big"))
         assert len(result["evidence"]) < 1200
         assert "已截断" in result["evidence"]
 
@@ -112,24 +114,24 @@ class TestEvidenceWrap:
             raise httpx.ConnectError("refused")
 
         server = _make(http_client_factory=_transport(boom))
-        result = _run(server.http_request("GET", "https://sut.example.com/x"))
+        result = _run(server.request("GET", "https://sut.example.com/x"))
         assert result["status"] == 0  # 不可达：status 0 + 错误数据
         assert "refused" in result["error"]
 
-    def test_404_guides_to_discover_login(self) -> None:
-        """404 ≠ 不可达：POST-only 接口 GET 即 404——指引 probe_login 实测或 discover_login 发现。"""
+    def test_404_guides_to_post_probe_and_discovery(self) -> None:
+        """404 ≠ 不可达：POST-only 接口 GET 即 404——指引带字段 POST 实测或 discover_login 发现。"""
 
         def not_found(request: httpx.Request) -> httpx.Response:
             return httpx.Response(404, text="Cannot GET /", request=request)
 
         server = _make(http_client_factory=_transport(not_found))
-        result = _run(server.http_request("GET", "https://sut.example.com/"))
+        result = _run(server.request("GET", "https://sut.example.com/"))
         assert result["status"] == 404
-        assert "probe_login" in result["next_step"]  # 用户给的登录 API：POST 实测验证
+        assert "POST 实测" in result["next_step"]  # 路径存在性以带字段 POST 实测为准
         assert "discover_login" in result["next_step"]  # 找页面：交页面发现
         assert "逐路径" in result["next_step"]
         ok_server = _make()  # 200 正常响应不带 next_step 指引
-        assert "next_step" not in _run(ok_server.http_request("GET", "https://sut.example.com/ok"))
+        assert "next_step" not in _run(ok_server.request("GET", "https://sut.example.com/ok"))
 
 
 # ── discover_login 阶梯 ──────────────────────────────────────────────
@@ -286,8 +288,8 @@ class TestDiscoverLogin:
         assert "登录接口地址" in result["next_step"]
         assert "字段名不要问用户" in result["next_step"]
 
-    def test_api_endpoint_input_notes_direct_probe_login(self) -> None:
-        """传入接口地址（响应非 HTML）→ next_step 覆盖为直通 probe_login（单一权威指引）。"""
+    def test_api_endpoint_input_notes_direct_probe(self) -> None:
+        """传入接口地址（响应非 HTML）→ next_step 覆盖为直通登录实测（单一权威指引）。"""
 
         def not_found(request: httpx.Request) -> httpx.Response:
             return httpx.Response(404, text="Cannot GET /users/login", request=request)
@@ -296,8 +298,8 @@ class TestDiscoverLogin:
         result = _run(server.discover_login("https://sut.example.com/users/login"))
         # next_step 直接覆盖（不与兜底指引并存——两套指引方向相反时 Agent 会滑回猜路径）
         assert "权威输入" in result["next_step"]
-        assert "probe_login" in result["next_step"]
-        assert "不要再用 http_request" in result["next_step"]
+        assert "登录实测" in result["next_step"]
+        assert "不要再用 request" in result["next_step"]
 
         html_server = _make(http_client_factory=_ok_transport("<html><body>登录页</body></html>"))
         page_result = _run(html_server.discover_login("https://sut.example.com/login"))
@@ -389,7 +391,7 @@ class TestFrontendAnalysis:
 
     def test_bundle_cached_and_chunk_map_readable(self) -> None:
         server = self._server()
-        result = _run(server.http_request("GET", "https://sut.example.com/umi.js"))
+        result = _run(server.request("GET", "https://sut.example.com/umi.js"))
         assert result["cached_bytes"] > 0 and "search_hint" in result
         found = _run(server.search_content("async.js"))
         excerpt = found["matches"][0]["excerpt"]
@@ -398,13 +400,11 @@ class TestFrontendAnalysis:
 
     def test_login_contract_found_via_agent_chosen_patterns(self) -> None:
         server = self._server()
-        _run(server.http_request("GET", "https://sut.example.com/login"))
-        _run(server.http_request("GET", "https://sut.example.com/umi.js"))
+        _run(server.request("GET", "https://sut.example.com/login"))
+        _run(server.request("GET", "https://sut.example.com/umi.js"))
         assert _run(server.search_content("post("))["matches"] == []  # 主包无登录请求字面量
         _run(
-            server.http_request(
-                "GET", "https://sut.example.com/login__teacher__index.826c0f38.async.js"
-            )
+            server.request("GET", "https://sut.example.com/login__teacher__index.826c0f38.async.js")
         )
         hit = _run(server.search_content("post("))["matches"][0]["excerpt"]
         assert "/users/login" in hit and "captcha" in hit  # 契约在页面分块里
@@ -412,49 +412,51 @@ class TestFrontendAnalysis:
         assert "https://api.sut.example.com" in base  # 接口域可检索、与路径组合交 Agent
 
 
-# ── probe_login：凭证门禁 / 预览确认 / 防锁 ──────────────────────────
+# ── request 登录实测：凭证模板 / 外发授权 / 防锁 ─────────────────────
 
 
-_LOGIN_CFG = {
-    "path": "https://sut.example.com/api/login",
-    "method": "POST",
-    "body_template": '{"username": "{{ username }}", "password": "{{ password }}"}',
-    "token_path": "token",
-}
-
+_LOGIN_URL = "https://sut.example.com/api/login"
+_LOGIN_BODY = '{"username": "{{ username }}", "password": "{{ password }}"}'
 _CREDS = {"AGENT_EVAL_SUT__SUT__USERNAME": "u1", "AGENT_EVAL_SUT__SUT__PASSWORD": "p1"}
 
 
-class TestProbeLogin:
-    def _server(self, handler: Any, ask: Any = None) -> tuple[SUTProbeToolServer, list[str]]:
-        sent: list[str] = []
+class TestRequestLoginFlow:
+    """登录实测走 request 原语（v4）：凭证模板服务端注入、组合级外发授权、防锁。"""
+
+    def _server(
+        self, handler: Any, ask: Any = None, creds: Any = None
+    ) -> tuple[SUTProbeToolServer, list[httpx.Request]]:
+        sent: list[httpx.Request] = []
 
         def wrapping(request: httpx.Request) -> httpx.Response:
-            sent.append(str(request.url))
+            sent.append(request)
             return handler(request)
 
         server = _make(
-            credential_store=CredentialStore(env=_CREDS),
+            credential_store=creds if creds is not None else CredentialStore(env=_CREDS),
             ask_fn=ask,
             http_client_factory=_transport(wrapping),
         )
         return server, sent
 
-    def test_missing_fields_no_send(self) -> None:
+    def test_missing_credential_field_rejected_no_send(self) -> None:
         server, sent = self._server(lambda r: httpx.Response(200, json={}))
-        result = _run(
-            server.probe_login({**_LOGIN_CFG, "body_template": '{"k": "{{ otp }}"}'}, "SUT")
-        )
-        assert result["missing_fields"] == ["otp"]
-        # hint 单通道指引：会话内 ask_user 直接收集，勿让用户另开终端跑命令
-        assert "ask_user" in result["hint"] and "一次只录一个字段" in result["hint"]
-        assert "secrets set" not in result["hint"]
+        result = _run(server.request("POST", _LOGIN_URL, body='{"k": "{{ otp }}"}', ref="SUT"))
+        assert "otp" in result["error"] and "不在密钥区" in result["error"]
+        assert "ask_user" in result["error"]  # 单通道指引：会话内直接录入
+        assert "secrets set" not in result["error"]
         assert sent == []
 
-    def test_credential_roundtrip_feeds_probe_login(self) -> None:
-        """ask_user 录入 → probe_login 立即可读（会话内闭环，实测曾误引向终端命令）。"""
-        seq = iter(["u-name", "p-word", "取消"])
-        server = _make(ask_fn=_ask(lambda q, **kw: next(seq)), credential_store=CredentialStore())
+    def test_ask_user_roundtrip_feeds_request(self) -> None:
+        """ask_user 录入 → request 立即可读（会话内闭环，实测曾误引向终端命令）。"""
+        seq = iter(["u-name", "p-word", "允许"])
+        server, sent = self._server(
+            lambda r: httpx.Response(200, json={"token": "T"}),
+            ask=_ask(lambda q, **kw: next(seq)),
+            creds=CredentialStore(),
+        )
+        miss = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert "不在密钥区" in miss["error"]  # 先按提示录入
         _run(
             server.ask_user(
                 "录入用户名", kind="credential", ref="SUT", field="username", desc="登录账号"
@@ -465,228 +467,281 @@ class TestProbeLogin:
                 "录入密码", kind="credential", ref="SUT", field="password", desc="登录密码"
             )
         )
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert "missing_fields" not in result  # 会话内录入的凭证立即可读
-        assert result["aborted"] is True  # 已走到脱敏预览确认（桩选取消）
+        ok = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert ok["status"] == 200 and len(sent) == 1
 
-    def test_preview_shows_full_url_for_user_verification(self) -> None:
-        """预览必须显示完整 URL——路径抄错只有在这里用户才看得见（只显 host 等于没校对）。"""
-        seen: dict[str, Any] = {}
+    def test_grant_preview_shows_full_url_and_template(self) -> None:
+        """授权预览必须显示完整 URL 与模板 body——路径抄错只有在这里用户才看得见；
+        预览是模板原文（占位符形态天然不含凭证值，值在服务端注入）。"""
+        seen: dict[str, str] = {}
 
         def spy(question: str, *, options=None, secret=False):
             seen["q"] = question
             return "取消"
 
         server, sent = self._server(lambda r: httpx.Response(200, json={}), ask=_ask(spy))
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        result = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
         assert "https://sut.example.com/api/login" in seen["q"]
         assert "POST" in seen["q"]
+        assert "{{ username }}" in seen["q"] and "u1" not in seen["q"]  # 模板原文，无凭证值
         assert result["aborted"] is True and sent == []
 
-    def test_result_carries_verified_url(self) -> None:
-        server, _ = self._server(
-            lambda r: httpx.Response(200, json={"token": "T"}), ask=_ask(lambda q, **kw: "发送")
+    def test_grant_once_per_host_and_ref(self) -> None:
+        """组合级授权：同 (host, ref) 首次确认后本会话不再逐次问（每次外发留痕）。"""
+        asks = {"n": 0}
+
+        def ask(question: str, *, options=None, secret=False):
+            asks["n"] += 1
+            return "允许"
+
+        server, sent = self._server(
+            lambda r: httpx.Response(200, json={"token": "T"}), ask=_ask(ask)
         )
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert result["url"] == "https://sut.example.com/api/login"
+        first = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        second = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert first["status"] == 200 and second["status"] == 200
+        assert asks["n"] == 1 and len(sent) == 2
 
-    def test_body_template_object_normalized(self) -> None:
-        """LLM 把 body_template 写成 JSON 对象而非字符串（实测会话报「Can't compile
-        non template nodes」，旧文案套语法纠正话术、Agent 空转一轮才悟出类型问题）：
-        dict 机械序列化为字符串（凡可机械传递的事实不经 LLM 转述），生效模板随
-        结果回显、snippet 落字符串形态——零轮次自愈。"""
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
-
-        server = _make(
-            credential_store=CredentialStore(env=_CREDS),
-            ask_fn=_ask(lambda q, **kw: "发送"),
-            http_client_factory=_transport(handler),
-        )
-        result = _run(
-            server.probe_login(
-                {**_LOGIN_CFG, "body_template": {"phone": "{{ username }}", "platform": "fs"}},
-                "SUT",
-            )
-        )
-        assert result["ok"] is True and result["token_extracted"] is True
-        assert "已机械序列化" in result["note"]
-        assert result["status"] == 200  # 渲染生效：对象模板不再击穿 jinja2
-        snippet = result["sut_config_auth_snippet"]
-        assert '{"phone": "{{ username }}", "platform": "fs"}' in snippet
-
-    def test_body_template_non_string_rejected_with_type_guidance(self) -> None:
-        server, sent = self._server(lambda r: httpx.Response(200, json={"token": "T"}))
-        result = _run(server.probe_login({**_LOGIN_CFG, "body_template": 123}, "SUT"))
-        assert "需为 JSON 文本字符串" in result["error"]
-        assert "int" in result["error"]
-        assert sent == []  # 类型错误不发送
-
-    def test_non_interactive_never_sends(self) -> None:
-        server, sent = self._server(lambda r: httpx.Response(200, json={"token": "T"}), ask=None)
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert result["need_confirm"] is True
-        assert "•••" in result["masked_body"]  # 凭证已脱敏
+    def test_non_interactive_never_sends_credentials(self) -> None:
+        server, sent = self._server(lambda r: httpx.Response(200, json={}), ask=None)
+        result = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert "非交互环境不外发凭证" in result["error"]
         assert sent == []  # 凭证外发硬门禁：无确认不发送
 
-    def test_confirm_then_send_masks_token(self) -> None:
+    def test_credential_values_injected_server_side_only(self) -> None:
+        """凭证值只出现在发出去的请求里，不回流工具返回（值回流条件化：2xx 未声明
+        只回键路径树）。"""
         server, sent = self._server(
             lambda r: httpx.Response(200, json={"token": "T0KPEN"}),
-            ask=_ask(lambda q, **kw: "发送"),
+            ask=_ask(lambda q, **kw: "允许"),
         )
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert result["ok"] is True and result["token_extracted"] is True
-        assert len(sent) == 1
-        assert "T0KPEN" not in json.dumps(result)  # token 值不回流 LLM 上下文
+        result = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert result["status"] == 200
+        body = sent[0].content.decode()
+        assert '"u1"' in body and '"p1"' in body  # 服务端注入生效
+        assert "{{" not in body
+        assert "u1" not in json.dumps(result) and "p1" not in json.dumps(result)
+        assert "T0KPEN" not in json.dumps(result)  # 未声明，token 值不回流
 
-    def test_cancel_aborts(self) -> None:
-        server, sent = self._server(
-            lambda r: httpx.Response(200, json={}), ask=_ask(lambda q, **kw: "取消")
+    def test_typo_variable_rejected_not_sent_as_empty(self) -> None:
+        """StrictUndefined（V3 验证：jinja2 默认 Undefined 渲染空串——拼错变量发出
+        空参请求是必须消灭的静默失败）。v4 机械三分类下拼错变量落凭证字段类，
+        被「不在密钥区」拦下并给出可用字段纠错。"""
+        server, sent = self._server(lambda r: httpx.Response(200, json={}))
+        result = _run(
+            server.request("POST", _LOGIN_URL, body='{"username": "{{ usrename }}"}', ref="SUT")
         )
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert result["aborted"] is True
+        assert "usrename" in result["error"] and sent == []
+
+    def test_unrendered_placeholder_rejected_not_sent(self) -> None:
+        """${var} 等 shell 风格占位符渲染后残留 → 拒发（实测：${phone} 原样发出，
+        服务端报「格式不是手机号」被误归因用户输入）。"""
+        server, sent = self._server(lambda r: httpx.Response(200, json={}))
+        result = _run(
+            server.request(
+                "POST", _LOGIN_URL, body='{"phone": "${phone}", "captcha": "${captcha}"}'
+            )
+        )
+        assert "残留占位符" in result["error"] and "未发送" in result["error"]
         assert sent == []
 
-    def test_lockout_key_distinguishes_endpoints(self) -> None:
-        """防锁按（ref+完整 URL+模板）：同 host 不同路径是不同组合。
+    def test_body_dict_mechanically_serialized(self) -> None:
+        """LLM 把 body 写成 JSON 对象而非字符串（v3.14 实测：jinja2 对 dict 源
+        parse 兼容 render 才炸）——dict 机械序列化，凡可机械传递的变形不经 LLM 转述。"""
+        server, sent = self._server(
+            lambda r: httpx.Response(200, json={"token": "T0KPEN"}),
+            ask=_ask(lambda q, **kw: "允许"),
+        )
+        result = _run(
+            server.request(
+                "POST",
+                _LOGIN_URL,
+                body={"phone": "{{ username }}", "platform": "fs"},
+                ref="SUT",
+            )
+        )
+        assert result["status"] == 200
+        assert json.loads(sent[0].content) == {"phone": "u1", "platform": "fs"}
 
-        实测教训：键缺路径时，猜错路径（/api/auth/login）的失败连坐了用户随后
-        给出的正确地址（/users/login），只能靠录入凭证旁路解锁。
-        """
+    def test_lockout_key_distinguishes_endpoints(self) -> None:
+        """防锁按 (ref, 完整 URL, body) 组合：同 host 不同路径是不同组合（实测教训：
+        键缺路径时，猜错路径的失败连坐了用户随后给出的正确地址）。"""
         calls: list[str] = []
 
         def handler(request: httpx.Request) -> httpx.Response:
             calls.append(request.url.path)
             return httpx.Response(401, json={"error": "bad"}, request=request)
 
-        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
-        guessed = {**_LOGIN_CFG, "path": "https://sut.example.com/api/auth/login"}
-        correct = {**_LOGIN_CFG, "path": "https://sut.example.com/users/login"}
-        assert _run(server.probe_login(guessed, "SUT"))["ok"] is False
-        assert _run(server.probe_login(correct, "SUT"))["ok"] is False  # 不同路径放行
-        assert _run(server.probe_login(guessed, "SUT"))["error"]  # 同路径同模板才防锁
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "允许"))
+        guessed = "https://sut.example.com/api/auth/login"
+        correct = "https://sut.example.com/users/login"
+        r1 = _run(server.request("POST", guessed, body=_LOGIN_BODY, ref="SUT"))
+        r2 = _run(server.request("POST", correct, body=_LOGIN_BODY, ref="SUT"))
+        r3 = _run(server.request("POST", guessed, body=_LOGIN_BODY, ref="SUT"))
+        assert r1["status"] == 401 and r2["status"] == 401  # 不同路径放行
+        assert "防锁" in r3["error"]
         assert calls == ["/api/auth/login", "/users/login"]
 
+    def test_one_attempt_only_after_auth_rejection(self) -> None:
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(401, json={"error": "bad"}, request=request)
+
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "允许"))
+        first = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        second = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert first["status"] == 401 and calls["n"] == 1
+        assert "防锁" in second["error"] and calls["n"] == 1  # 不再自动重试
+
+    def test_renamed_body_counts_as_new_combination(self) -> None:
+        """防锁按（接口+字段组合）：用户纠正字段更新 body 后允许再实测一次。"""
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(401, json={"error": "bad"}, request=request)
+
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "允许"))
+        first = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        renamed = '{"user": "{{ username }}", "pwd": "{{ password }}"}'
+        second = _run(server.request("POST", _LOGIN_URL, body=renamed, ref="SUT"))
+        assert first["status"] == 401 and second["status"] == 401 and calls["n"] == 2  # 新组合放行
+
     def test_404_not_locked_allows_path_probing(self) -> None:
-        """失败语义分层（防锁不误伤探索）：404 = 请求未到认证层不入锁——同组合与
-        换路径均可继续实测；防锁只拦认证层已介入（4xx）失败的同组合自动重试。"""
+        """失败语义分层：404 = 请求未到认证层不入锁——同组合可继续实测（探索不误伤）；
+        防锁只拦认证层已介入（4xx/5xx 非 404）失败的同组合自动重试。"""
         calls: list[str] = []
 
         def handler(request: httpx.Request) -> httpx.Response:
             calls.append(request.url.path)
             return httpx.Response(404, json={"detail": "Not Found"}, request=request)
 
-        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
-        first = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert first["ok"] is False and calls == ["/api/login"]
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "允许"))
+        first = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert first["status"] == 404
         assert "不计入防锁" in first["next_step"]
-        second = _run(server.probe_login(_LOGIN_CFG, "SUT"))  # 同组合 404 后仍可再发
-        assert "防锁" not in second.get("error", "")
+        second = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert second["status"] == 404  # 同组合 404 后仍可再发
         assert calls == ["/api/login", "/api/login"]
-        other = {**_LOGIN_CFG, "path": "https://sut.example.com/users/login"}
-        _run(server.probe_login(other, "SUT"))
-        assert calls[-1] == "/users/login"  # 换路径探索放行
 
     def test_network_error_not_locked(self) -> None:
-        """请求未达服务端（网络失败）无撞锁风险不入锁——同组合经确认后可重发。"""
+        """请求未达服务端（网络失败）无撞锁风险不入锁——同组合可重发。"""
         calls = {"n": 0}
 
         def handler(request: httpx.Request) -> httpx.Response:
             calls["n"] += 1
             raise httpx.ConnectError("connection refused", request=request)
 
-        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
-        assert "登录请求失败" in _run(server.probe_login(_LOGIN_CFG, "SUT"))["error"]
-        assert "防锁" not in _run(server.probe_login(_LOGIN_CFG, "SUT")).get("error", "")
-        assert calls["n"] == 2
-
-    def test_unrendered_placeholder_rejected_not_sent(self) -> None:
-        """模板占位符语法错误（${var} 等非 Jinja 形态）→ 拒发并纠正语法。
-
-        实测：${phone} 原样发出，服务端报「格式不是手机号」，Agent 误归因用户输入。
-        """
-        server, sent = self._server(lambda r: httpx.Response(200, json={}), ask=None)
-        bad = {**_LOGIN_CFG, "body_template": '{"phone": "${phone}", "captcha": "${captcha}"}'}
-        result = _run(server.probe_login(bad, "SUT"))
-        assert "error" in result
-        assert "Jinja2" in result["error"] and "未发送" in result["error"]
-        assert sent == []  # 请求未发出
-
-    def test_one_attempt_only_after_failure(self) -> None:
-        calls = {"n": 0}
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            calls["n"] += 1
-            return httpx.Response(401, json={"error": "bad"}, request=request)
-
-        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
-        first = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        second = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert first["ok"] is False and calls["n"] == 1
-        assert "防锁" in second["error"] and calls["n"] == 1  # 不再自动重试
-
-    def test_renamed_template_counts_as_new_combination(self) -> None:
-        """防锁按（接口+字段组合）：用户纠正字段更新 body_template 后允许再实测一次。"""
-        calls = {"n": 0}
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            calls["n"] += 1
-            return httpx.Response(401, json={"error": "bad"}, request=request)
-
-        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "发送"))
-        assert _run(server.probe_login(_LOGIN_CFG, "SUT"))["ok"] is False
-        renamed = {
-            **_LOGIN_CFG,
-            "body_template": '{"user": "{{ username }}", "pwd": "{{ password }}"}',
-        }
-        second = _run(server.probe_login(renamed, "SUT"))
-        assert "error" not in second and calls["n"] == 2  # 新组合放行而非防锁拒绝
+        server, _ = self._server(handler, ask=_ask(lambda q, **kw: "允许"))
+        first = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert "请求失败" in first["error"] and calls["n"] == 1
+        second = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert "请求失败" in second["error"] and calls["n"] == 2
 
     def test_credential_save_unlocks_login_retry(self) -> None:
-        """防锁解锁：失败后重新录入凭证（同模板）允许再实测——循环由录入交互限流。"""
+        """防锁解锁：失败后重新录入凭证（同模板）允许再实测——重试循环由录入交互限流。"""
         calls = {"n": 0}
 
         def handler(request: httpx.Request) -> httpx.Response:
             calls["n"] += 1
             return httpx.Response(401, json={"error": "bad"}, request=request)
 
-        seq = iter(["发送", "new-pass", "发送"])
+        seq = iter(["允许", "new-pass"])
         server, _ = self._server(handler, ask=_ask(lambda q, **kw: next(seq)))
-        assert _run(server.probe_login(_LOGIN_CFG, "SUT"))["ok"] is False
-        assert "防锁" in _run(server.probe_login(_LOGIN_CFG, "SUT"))["error"]
+        first = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert first["status"] == 401
+        locked = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert "防锁" in locked["error"]
         _run(
             server.ask_user(
                 "更正密码", kind="credential", ref="SUT", field="password", desc="登录密码"
             )
         )
-        third = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert "error" not in third and calls["n"] == 2  # 解锁放行而非拒绝
+        third = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert third["status"] == 401 and calls["n"] == 2  # 解锁放行而非拒绝
 
-    def test_relative_path_rejected_no_base_url_join(self) -> None:
-        """词汇同构（v3.6）：path 需完整 URL，不再接受 base_url 拼接——那正是
-        「实测的完整 URL 落盘时被拆段」的变形源头。"""
-        server, sent = self._server(lambda r: httpx.Response(200, json={}), ask=None)
-        split_cfg = {**_LOGIN_CFG, "path": "/users/login", "base_url": "https://sut.example.com"}
-        result = _run(server.probe_login(split_cfg, "SUT"))
-        assert "完整 http(s):// URL" in result["error"]
-        assert "base_url" in result["error"]  # 点明没有该字段
+    def test_chain_variables_render_from_step_responses(self) -> None:
+        """多步认证链探索：step 响应服务端持有，{{ stepN.路径 }} 链式渲染（值全程
+        服务端流动，不经返回回流）。"""
+        calls: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls.append(request)
+            if request.url.path == "/api/csrf":
+                return httpx.Response(200, json={"t": "CSRFTOK"}, request=request)
+            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
+
+        server, sent = self._server(handler, ask=_ask(lambda q, **kw: "允许"))
+        s1 = _run(server.request("GET", "https://sut.example.com/api/csrf", step="step1"))
+        assert s1["status"] == 200
+        req = _run(
+            server.request(
+                "POST",
+                _LOGIN_URL,
+                body='{"csrf": "{{ step1.t }}", "u": "{{ username }}"}',
+                ref="SUT",
+            )
+        )
+        assert req["status"] == 200
+        assert json.loads(sent[1].content) == {"csrf": "CSRFTOK", "u": "u1"}
+
+
+class TestDeclareToken:
+    """declare_token：事后声明式提取（D2：不重发请求就无撞锁风险）。"""
+
+    def _server(
+        self, handler: Any, ask: Any = None
+    ) -> tuple[SUTProbeToolServer, list[httpx.Request]]:
+        sent: list[httpx.Request] = []
+
+        def wrapping(request: httpx.Request) -> httpx.Response:
+            sent.append(request)
+            return handler(request)
+
+        server = _make(
+            credential_store=CredentialStore(env=_CREDS),
+            ask_fn=ask if ask is not None else _ask(lambda q, **kw: "允许"),
+            http_client_factory=_transport(wrapping),
+        )
+        return server, sent
+
+    def _did_login(self, handler: Any) -> tuple[SUTProbeToolServer, list[httpx.Request]]:
+        """先走一次成功的登录实测（grant 默认放行），返回 (server, sent)。"""
+        server, sent = self._server(handler)
+        result = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert result["status"] == 200
+        return server, sent
+
+    def test_without_prior_request_directed_to_request_first(self) -> None:
+        server, sent = self._server(lambda r: httpx.Response(200, json={}))
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert "request" in result["error"] and "ask_user" in result["error"]
         assert sent == []
 
-    def test_success_returns_snippet_and_records_ledger(self) -> None:
-        """工具返回即产物：成功时机械渲染可照抄的 auth 段，并把事实登记进
-        证据账本（落盘对账门禁的事实源）。"""
-        server, _ = self._server(
-            lambda r: httpx.Response(200, json={"token": "T"}), ask=_ask(lambda q, **kw: "发送")
-        )
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+    def test_after_401_rejected(self) -> None:
+        server, _ = self._server(lambda r: httpx.Response(401, json={"error": "bad"}))
+        _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert "401" in result["error"] and "2xx" in result["error"]
+
+    def test_success_snippet_ledger_and_mounting(self) -> None:
+        """声明成功三件事：token 服务端持有（自动挂载）、机械渲染可照抄 auth 段、
+        事实登记证据账本（落盘对账门禁的事实源）。"""
+        server, _ = self._did_login(lambda r: httpx.Response(200, json={"token": "T0KPEN"}))
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert result["ok"] is True
+        assert "T0KPEN" not in json.dumps(result)  # token 值不回流 LLM 上下文
         snippet = result["sut_config_auth_snippet"]
-        assert "path: https://sut.example.com/api/login" in snippet  # 完整 URL 原样
-        assert "credential_ref: SUT" in snippet
+        assert "token_path: token" in snippet and "credential_ref: SUT" in snippet
+        assert "token_type: Bearer" in snippet
+        assert server.auth_headers == {"Authorization": "Bearer T0KPEN"}
         fact = server.verified_login("SUT")
-        assert fact is not None and fact["url"] == _LOGIN_CFG["path"]
-        assert fact["body_template"] == _LOGIN_CFG["body_template"]
-        # 同构的直接证明：片段并入 sut_config 后通过执行器 schema 校验（零修改）
+        assert fact is not None
+        assert fact["url"] == _LOGIN_URL and fact["body_template"] == _LOGIN_BODY
+        assert fact["token_path"] == "token" and fact["token_source"] == "Bearer"
+        # 同构直接证明：片段并入 sut_config 后通过执行器 schema 校验（零修改）
         import yaml
 
         from agent_eval.execution.registry import validate_sut_config_document
@@ -701,189 +756,173 @@ class TestProbeLogin:
         }
         assert validate_sut_config_document(doc) == []
 
-    def test_failed_login_not_recorded_in_ledger(self) -> None:
+    def test_failed_declare_not_recorded_in_ledger(self) -> None:
         """账本只记成功事实：401 失败不构成「验证过的登录配置」。"""
-
-        def unauthorized(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(401, json={"error": "bad"}, request=request)
-
-        server, _ = self._server(unauthorized, ask=_ask(lambda q, **kw: "发送"))
-        _run(server.probe_login(_LOGIN_CFG, "SUT"))
+        server, _ = self._server(lambda r: httpx.Response(401, json={"error": "bad"}))
+        _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        _run(server.declare_token("SUT", token_path="token"))
         assert server.verified_login("SUT") is None
 
-    def test_token_path_fix_retry_not_locked(self) -> None:
-        """登录成功（2xx）不入锁：凭证已被认证层验证有效，更正 token_path 的重测
-        无撞锁风险（实测卡点：200 但 token_path 配错，重测被防锁拦截）。"""
+    def test_wrong_path_returns_tree_and_retry_needs_no_new_request(self) -> None:
+        """路径不命中回键路径树（值不外显）；改路径重声明不重发请求（D2：无撞锁
+        风险，防锁不适用）。"""
+        server, sent = self._did_login(
+            lambda r: httpx.Response(200, json={"data": {"token": "T0KPEN"}})
+        )
+        miss = _run(server.declare_token("SUT", token_path="wrong.path"))
+        assert "wrong.path" in miss["error"]
+        assert "T0KPEN" not in json.dumps(miss)
+        assert "data.token" in miss["response_key_paths"]
+        assert server.verified_login("SUT") is None  # 未声明成功不入账本
+        ok = _run(server.declare_token("SUT", token_path="data.token"))
+        assert ok["ok"] is True
+        assert len(sent) == 1  # 声明阶段零请求
 
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
-
-        calls = {"n": 0}
-
-        def counting(request: httpx.Request) -> httpx.Response:
-            calls["n"] += 1
-            return ok_login(request)
-
-        server, _ = self._server(counting, ask=_ask(lambda q, **kw: "发送"))
-        wrong_path = {**_LOGIN_CFG, "token_path": "data.token"}
-        first = _run(server.probe_login(wrong_path, "SUT"))
-        assert first["ok"] is False and first["token_extracted"] is False
-        assert "不受" in first["next_step"] and "防锁" in first["next_step"]
-        second = _run(server.probe_login(_LOGIN_CFG, "SUT"))  # 同 URL 同模板，仅正 token_path
-        assert "防锁" not in second.get("error", "")
-        assert second["ok"] is True and calls["n"] == 2
-        assert server.verified_login("SUT")["token_path"] == "token"  # 成功事实入账本
-
-    def test_token_path_absent_says_not_provided_with_key_tree(self) -> None:
-        """A1 修复①③：「未携带」≠「与响应结构不符」——明示未携带 + 键路径树 +
-        收到的字段清单（实测事故：参数嵌错层级静默变空，Agent 被误导反复猜格式）。"""
-
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"data": {"token": "T0KPEN"}}, request=request)
-
-        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
-        cfg = {k: v for k, v in _LOGIN_CFG.items() if k != "token_path"}
-        result = _run(server.probe_login(cfg, "SUT"))
-        assert result["ok"] is False and result["token_extracted"] is False
-        assert result["token_path"] == ""  # 生效入参回显：空串 = 未携带
-        assert result["received_login_cfg_keys"] == sorted(cfg)
-        assert "未携带 token_path" in result["next_step"]
-        assert "与响应结构不符" not in result["next_step"]
-        tree = result["response_key_paths"]
-        assert "data.token" in tree
-        assert "T0KPEN" not in tree  # 键路径树只显类型，值不外显
-        assert server.verified_login("SUT") is None  # 未提取不入账本（门禁死锁根因即此）
-
-    def test_token_path_dollar_prefix_normalized_and_extracted(self) -> None:
-        """A1 修复④：``$.data.token`` 等价写法机械归一化（实测会话的变形形态）——
-        归一化值随返回回显，账本与 snippet 落归一化形态。"""
-
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"data": {"token": "T0KPEN"}}, request=request)
-
-        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
-        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "$.data.token"}, "SUT"))
+    def test_dollar_prefix_normalized(self) -> None:
+        """``$.data.token`` 等价写法机械归一化——归一化值落 snippet 与账本。"""
+        server, _ = self._did_login(
+            lambda r: httpx.Response(200, json={"data": {"token": "T0KPEN"}})
+        )
+        result = _run(server.declare_token("SUT", token_path="$.data.token"))
         assert result["ok"] is True and result["token_path"] == "data.token"
-        assert "归一化" in result["note"]
-        assert server.verified_login("SUT")["token_path"] == "data.token"
         assert "token_path: data.token" in result["sut_config_auth_snippet"]
+        assert server.verified_login("SUT")["token_path"] == "data.token"  # noqa: SLF001
 
-    def test_token_path_list_form_normalized(self) -> None:
-        """列表形态有唯一字符串形态：机械归一化优于类型报错（v3.14 先例）。"""
-
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"data": {"token": "T"}}, request=request)
-
-        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
-        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": ["data", "token"]}, "SUT"))
-        assert result["ok"] is True and result["token_path"] == "data.token"
-        assert "归一化" in result["note"]
-
-    def test_token_path_mismatch_reports_value_and_tree(self) -> None:
-        """A1 修复②：路径不匹配时回显收到的路径值 + 响应键路径树（零字段名假设）。"""
-
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"token": "T"}, request=request)
-
-        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
-        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "data.token"}, "SUT"))
-        assert result["ok"] is False
-        assert "token_path='data.token'" in result["next_step"]
-        assert "token: str" in result["response_key_paths"]
-
-    def test_failed_extraction_withholds_response_body(self) -> None:
-        """M1 值回流条件化：2xx JSON 提取失败时无法知道响应里哪个值是会话凭证——
-        原文不回流，只回结构树（实测事故中裸 JWT 即经 evidence 回流并被模型
-        试图绕过工具自带）。"""
-
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"data": {"token": "T0KPEN"}}, request=request)
-
-        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
-        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "wrong.path"}, "SUT"))
-        assert result["ok"] is False
-        assert "T0KPEN" not in result["evidence"]  # 凭证值不回流（结构树只显类型）
-        assert "data.token" in result["evidence"]  # 结构树指路
-        assert "data.token" in result["response_key_paths"]
-
-    def test_successful_extraction_keeps_masked_body(self) -> None:
-        """值回流条件化的「已知」侧：提取成功时响应原文仍回——token 值已知名，
-        _mask 掩得住；业务字段照常可见供排错。"""
-
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
-
-        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
+    def test_array_index_path(self) -> None:
+        """walker 与执行器 extract_by_path 同语义（点分 + 数字下标）。"""
+        server, _ = self._did_login(lambda r: httpx.Response(200, json={"tokens": ["T0KPEN"]}))
+        result = _run(server.declare_token("SUT", token_path="tokens.0"))
         assert result["ok"] is True
-        assert "T0KPEN" not in result["evidence"]  # token 值被掩
-        assert "•••" in result["evidence"]
 
-    def test_non_json_success_distinct_from_token_path_issues(self) -> None:
-        """A1 修复③：2xx 非 JSON 响应单独分层（旧实现与提取失败共用一条文案）。"""
+    def test_missing_token_path_returns_tree(self) -> None:
+        server, _ = self._did_login(
+            lambda r: httpx.Response(200, json={"data": {"token": "T0KPEN"}})
+        )
+        result = _run(server.declare_token("SUT"))
+        assert "token_path" in result["error"]
+        assert "data.token" in result["response_key_paths"]
+        assert "T0KPEN" not in json.dumps(result)
 
-        def html_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(
-                200,
-                text="<html><body>ok</body></html>",
-                headers={"content-type": "text/html"},
-                request=request,
+    def test_non_json_response_distinct_error(self) -> None:
+        """2xx 非 JSON 响应单独分层（旧实现与提取失败共用一条文案）。"""
+        server, _ = self._did_login(
+            lambda r: httpx.Response(
+                200, text="<html><body>ok</body></html>", headers={"content-type": "text/html"}
             )
-
-        server, _ = self._server(html_login, ask=_ask(lambda q, **kw: "发送"))
-        result = _run(server.probe_login(_LOGIN_CFG, "SUT"))
-        assert result["ok"] is False and result["token_extracted"] is False
-        assert "不是 JSON" in result["next_step"] and "text/html" in result["next_step"]
+        )
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert "不是 JSON" in result["error"]
         assert "response_key_paths" not in result
 
-    def test_token_path_invalid_type_rejected_before_send(self) -> None:
-        """无法机械归一化的形态显式打回（静默丢弃是本次实测事故的根源类别）。"""
-        server, sent = self._server(
-            lambda r: httpx.Response(200, json={}), ask=_ask(lambda q, **kw: "发送")
-        )
-        result = _run(
-            server.probe_login({**_LOGIN_CFG, "token_path": {"path": "data.token"}}, "SUT")
-        )
-        assert "点分路径" in result["error"]
-        assert result["received_login_cfg_keys"] == sorted(_LOGIN_CFG)
-        assert sent == []  # 打回先于发送
+    def test_credential_in_headers_rejected_before_ledger(self) -> None:
+        """执行器宽度守卫（§6）：凭证走请求头的形态探测可探索、暂不可声明落盘——
+        不产生假验证。"""
+        server, _ = self._did_login(lambda r: httpx.Response(200, json={"token": "T0KPEN"}))
+        # 重放一个 header 携带凭证的请求覆盖事实
+        _run(server.request("POST", _LOGIN_URL, headers="X-API-Key: {{ username }}", ref="SUT"))
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert "请求头" in result["error"]
+        assert server.verified_login("SUT") is None
 
-    def test_missing_url_checked_before_credentials(self) -> None:
-        """B6：URL 缺失先于凭证缺失——旧实现先引导跑完一轮凭证收集才告知缺地址。"""
-        server, _ = self._server(lambda r: httpx.Response(200, json={}))
-        result = _run(
-            server.probe_login(
-                {"method": "POST", "body_template": '{"u": "{{ username }}"}'}, "SUT"
+    def test_chain_variable_request_rejected(self) -> None:
+        """执行器宽度守卫（§6）：链式认证链的落盘形态（auth_chain）未落地前
+        显式拒绝声明。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/api/csrf":
+                return httpx.Response(200, json={"t": "CSRFTOK"}, request=request)
+            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
+
+        server, _ = self._server(handler)
+        _run(server.request("GET", "https://sut.example.com/api/csrf", step="step1"))
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert "request" in result["error"]  # 登录请求尚未发生
+
+        _run(
+            server.request(
+                "POST",
+                _LOGIN_URL,
+                body='{"csrf": "{{ step1.t }}", "u": "{{ username }}"}',
+                ref="SUT",
             )
         )
-        assert "缺少 url/path" in result["error"]
-        assert "missing_fields" not in result
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert "链式" in result["error"]
+        assert server.verified_login("SUT") is None
 
-    def test_token_path_supports_array_index(self) -> None:
-        """walker 与执行器 extract_by_path 同语义（点分 + 数字下标）。"""
+    def test_cookie_from_set_cookie_yields_session_cookie_snippet(self) -> None:
+        """自 Set-Cookie 提取落 session_cookie 形态——执行器靠共享 client 的 cookie
+        jar 承载登录态，与探测侧同一机制（词汇 1:1）；jar 持有后后续请求自动带 Cookie。"""
+        server, sent = self._did_login(
+            lambda r: httpx.Response(
+                200,
+                json={"ok": True},
+                headers=[("set-cookie", "session_id=ABC123; Path=/; HttpOnly")],
+            )
+        )
+        result = _run(server.declare_token("SUT", token_source="cookie"))
+        assert result["ok"] is True and result["token_path"] == ""  # 唯一 cookie 机械取用
+        snippet = result["sut_config_auth_snippet"]
+        assert "type: session_cookie" in snippet and "credential_ref: SUT" in snippet
+        assert "ABC123" not in json.dumps(result)  # 值不回流
+        assert server.auth_headers == {}  # cookie 型不挂 Authorization 头
+        _run(server.request("GET", "https://sut.example.com/api/me"))
+        assert "session_id=ABC123" in sent[1].headers.get("cookie", "")
 
-        def ok_login(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, json={"tokens": ["T0KPEN"]}, request=request)
+    def test_cookie_from_body_requires_explicit_name(self) -> None:
+        """响应体提取须 cookie:<名字> 显式命名——零字段名假设由声明参数承担。"""
+        server, _ = self._did_login(lambda r: httpx.Response(200, json={"sid": "ABC123"}))
+        miss = _run(server.declare_token("SUT", token_source="cookie", token_path="sid"))
+        assert "cookie" in miss["error"] and "Set-Cookie" in miss["error"]
+        ok = _run(server.declare_token("SUT", token_source="cookie:sid", token_path="sid"))
+        assert ok["ok"] is True
+        snippet = ok["sut_config_auth_snippet"]
+        assert "type: api_login" in snippet
+        assert "token_type: cookie" in snippet and "token_path: sid" in snippet
+        assert server.auth_headers == {}
 
-        server, _ = self._server(ok_login, ask=_ask(lambda q, **kw: "发送"))
-        result = _run(server.probe_login({**_LOGIN_CFG, "token_path": "tokens.0"}, "SUT"))
-        assert result["ok"] is True
+    def test_header_source_mounts_named_header(self) -> None:
+        """header:X 三态：token 挂到指定头（与执行器 mount_headers 同构）。"""
+        server, _ = self._did_login(lambda r: httpx.Response(200, json={"access_token": "T0KPEN"}))
+        result = _run(
+            server.declare_token(
+                "SUT", token_path="access_token", token_source="header:X-Auth-Token"
+            )
+        )
+        assert result["ok"] is True and result["token_source"] == "header:X-Auth-Token"
+        assert server.auth_headers == {"X-Auth-Token": "T0KPEN"}
+        assert "token_type: header:X-Auth-Token" in result["sut_config_auth_snippet"]
 
-    def test_status_guidance_distinguishes_404_from_auth_fail(self) -> None:
-        """POST 判别语义：404=路径不存在交用户核对；401=接口存在，收集凭证重测。"""
+    def test_expires_in_path_number_required(self) -> None:
+        server, _ = self._did_login(
+            lambda r: httpx.Response(200, json={"token": "T0KPEN", "expires_in": 3600})
+        )
+        ok = _run(server.declare_token("SUT", token_path="token", expires_in_path="expires_in"))
+        assert ok["ok"] is True
+        assert "expires_in_path: expires_in" in ok["sut_config_auth_snippet"]
+        bad = _run(server.declare_token("SUT", token_path="token", expires_in_path="token"))
+        assert "未命中数值型字段" in bad["error"]
 
-        def gone(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(404, text="Not Found", request=request)
+    def test_unknown_source_rejected(self) -> None:
+        server, _ = self._did_login(lambda r: httpx.Response(200, json={"token": "T"}))
+        result = _run(server.declare_token("SUT", token_path="token", token_source="session"))
+        assert "Bearer" in result["error"] and "cookie" in result["error"]
 
-        server, _ = self._server(gone, ask=_ask(lambda q, **kw: "发送"))
-        assert "不存在" in _run(server.probe_login(_LOGIN_CFG, "SUT"))["next_step"]
-
-        def unauthorized(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(401, json={"error": "bad creds"}, request=request)
-
-        auth_server, _ = self._server(unauthorized, ask=_ask(lambda q, **kw: "发送"))
-        auth_result = _run(auth_server.probe_login(_LOGIN_CFG, "SUT"))
-        assert "接口存在" in auth_result["next_step"]
+    def test_declared_ref_request_returns_masked_raw(self) -> None:
+        """值回流条件化双态闭环：声明前只回结构树；声明后重测同接口，原文回流
+        （token 值已知名、掩得住），业务字段照常可见。"""
+        server, _ = self._server(
+            lambda r: httpx.Response(200, json={"token": "T0KPEN", "user": "someone"})
+        )
+        first = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert "T0KPEN" not in json.dumps(first)  # 未声明：值不回流
+        assert "token" in first["evidence"]  # 结构树指路
+        declared = _run(server.declare_token("SUT", token_path="token"))
+        assert declared["ok"] is True
+        second = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert second["status"] == 200  # 2xx 组合不入锁
+        assert "T0KPEN" not in second["evidence"] and "•••" in second["evidence"]  # 掩码回流
+        assert "someone" in second["evidence"]  # 业务字段照常可见
 
 
 # ── probe_protocol：矩阵 + 清理 ──────────────────────────────────────
@@ -1031,7 +1070,7 @@ class TestProbeProtocol:
             return httpx.Response(200, json={"thread_id": "t1"}, request=request)
 
         server = _make(http_client_factory=_transport(handler))
-        server._store_token("SUT", "T0KPEN")  # noqa: SLF001 — 模拟 probe_login 成功登记
+        server._store_token("SUT", "T0KPEN")  # noqa: SLF001 — 模拟 declare_token 成功登记
         result = _run(server.probe_protocol("https://sut.example.com"))
         cmd = next(r for r in seen if r.url.path.endswith("/commands"))
         assert cmd.headers["Authorization"] == "Bearer T0KPEN"
@@ -1048,7 +1087,7 @@ class TestProbeProtocol:
         server = _make(http_client_factory=_transport(handler))
         result = _run(server.probe_protocol("https://sut.example.com"))
         assert result["authenticated"] is False
-        assert "probe_login" in result["next_step"] and "重探" in result["next_step"]
+        assert "declare_token" in result["next_step"] and "重探" in result["next_step"]
         assert all("status" in m for m in result["matrix"][:3])  # 主步骤携带状态码
 
     def test_authenticated_failure_next_step_hunts_frontend_evidence(self) -> None:
@@ -1144,10 +1183,10 @@ class TestProbeProtocol:
         assert body["method"] == "run.start"
 
 
-# ── http_request：裸请求原语（抓取 + 接口调试同一出口，跨平台无 shell） ──
+# ── request：门控请求原语（抓取 + 接口调试同一出口，跨平台无 shell） ──
 
 
-class TestHttpRequest:
+class TestRequestPrimitives:
     def test_raw_response_surfaced(self) -> None:
         """裸请求原语的价值：原始状态/响应头/响应体可见——聚合工具的矩阵摘要
         会截掉的信息（405 的 Allow 头、业务错误消息、重定向 Location）这里直读。"""
@@ -1158,7 +1197,7 @@ class TestHttpRequest:
             )
 
         server = _make(http_client_factory=_transport(handler))
-        result = _run(server.http_request("GET", "https://sut.example.com/threads/x/stream"))
+        result = _run(server.request("GET", "https://sut.example.com/threads/x/stream"))
         assert result["status"] == 405
         assert result["headers"]["allow"] == "POST"
         assert "Cannot GET" in result["evidence"]
@@ -1173,7 +1212,7 @@ class TestHttpRequest:
         server = _make(http_client_factory=_transport(handler))
         envelope = '{"id":1,"method":"run.start"}'
         result = _run(
-            server.http_request("post", "https://sut.example.com/threads/t/commands", body=envelope)
+            server.request("post", "https://sut.example.com/threads/t/commands", body=envelope)
         )
         assert result["status"] == 200
         req = seen[0]
@@ -1182,26 +1221,18 @@ class TestHttpRequest:
 
     def test_host_boundary_and_header_guards(self) -> None:
         server = _make()
-        assert (
-            "未获用户授权"
-            in _run(server.http_request("GET", "https://evil.example.com/x"))["error"]
-        )
+        assert "未获用户授权" in _run(server.request("GET", "https://evil.example.com/x"))["error"]
         # 凭证旁路：Authorization/Cookie 禁手传（token 由服务端自动挂载，不经 LLM）
         result = _run(
-            server.http_request(
-                "GET", "https://sut.example.com/x", headers="Authorization: Bearer x"
-            )
+            server.request("GET", "https://sut.example.com/x", headers="Authorization: Bearer x")
         )
         assert "禁手传" in result["error"]
         assert (
-            "method 仅支持"
-            in _run(server.http_request("bash -c", "https://sut.example.com"))["error"]
+            "method 仅支持" in _run(server.request("bash -c", "https://sut.example.com"))["error"]
         )
         assert (
             "Key: Value"
-            in _run(server.http_request("GET", "https://sut.example.com", headers="NoColon"))[
-                "error"
-            ]
+            in _run(server.request("GET", "https://sut.example.com", headers="NoColon"))["error"]
         )
 
     def test_session_token_mounted_and_masked(self) -> None:
@@ -1214,7 +1245,7 @@ class TestHttpRequest:
 
         server = _make(http_client_factory=_transport(handler))
         server._store_token("SUT", "T0KPEN")  # noqa: SLF001
-        result = _run(server.http_request("GET", "https://sut.example.com/me"))
+        result = _run(server.request("GET", "https://sut.example.com/me"))
         assert seen[0].headers["Authorization"] == "Bearer T0KPEN"  # 自动挂载
         assert "T0KPEN" not in json.dumps(result)  # 响应体里的 token 值已掩码
 
@@ -1226,12 +1257,16 @@ class TestHttpRequest:
             return httpx.Response(401, json={"detail": "auth"}, request=request)
 
         server = _make(http_client_factory=_transport(unauthorized))
-        result = _run(server.http_request("POST", "https://sut.example.com/api/chat"))
+        result = _run(server.request("POST", "https://sut.example.com/api/chat"))
         assert result["auth_attached"] is False
-        assert "未携带鉴权" in result["next_step"] and "probe_login" in result["next_step"]
+        assert (
+            "未携带鉴权" in result["next_step"]
+            and "declare_token" in result["next_step"]
+            and "request(ref" in result["next_step"]
+        )
 
         server._store_token("SUT", "T0KPEN")  # 登录成功后 token 服务端持有
-        result2 = _run(server.http_request("POST", "https://sut.example.com/api/chat"))
+        result2 = _run(server.request("POST", "https://sut.example.com/api/chat"))
         assert result2["auth_attached"] is True
         assert "未携带鉴权" not in result2.get("next_step", "")
 
@@ -1246,16 +1281,16 @@ class TestHttpRequest:
             return httpx.Response(404, text="Cannot GET /", request=request)
 
         server = _make(http_client_factory=_transport(handler))
-        fetched = _run(server.http_request("GET", "https://sut.example.com/app.js"))
+        fetched = _run(server.request("GET", "https://sut.example.com/app.js"))
         assert fetched["cached_bytes"] > 0 and "search_hint" in fetched
         assert _run(server.search_content("cfg"))["matches"]
-        not_found = _run(server.http_request("GET", "https://sut.example.com/missing"))
-        assert "probe_login" in not_found["next_step"]
+        not_found = _run(server.request("GET", "https://sut.example.com/missing"))
+        assert "POST 实测" in not_found["next_step"]
         assert "discover_login" in not_found["next_step"] and "逐路径" in not_found["next_step"]
 
     def test_budget_pool_registered(self) -> None:
         """预算分池必须登记（漏登记 = 该工具无轮内上限）。"""
-        assert "http_request" in TOOL_BUDGETS
+        assert "request" in TOOL_BUDGETS
 
 
 # ── ask_user 桥与凭证直写 ────────────────────────────────────────────
@@ -1356,17 +1391,17 @@ class TestAskUser:
 
 class TestBudget:
     def test_budget_per_tool_and_reset(self) -> None:
-        """预算按工具分池：http_request 打满不牵连 discover_login（预算饿死发现链的实测教训）。"""
+        """预算按工具分池：request 打满不牵连 discover_login（预算饿死发现链的实测教训）。"""
         server = _make()
-        for _ in range(TOOL_BUDGETS["http_request"]):
-            result = _run(server.http_request("GET", "https://sut.example.com/x"))
+        for _ in range(TOOL_BUDGETS["request"]):
+            result = _run(server.request("GET", "https://sut.example.com/x"))
             assert result["status"] == 200
-        error = _run(server.http_request("GET", "https://sut.example.com/x"))["error"]
+        error = _run(server.request("GET", "https://sut.example.com/x"))["error"]
         assert "上限" in error and "未经验证" in error  # 拒绝时指引继续验证而非收尾
         page = _run(server.discover_login("https://sut.example.com/web/login"))
-        assert "error" not in page  # 独立预算池——发现工具不受 http_request 牵连
+        assert "error" not in page  # 独立预算池——发现工具不受 request 牵连
         server.new_turn()  # WorkbenchAgent.turn() 每轮调用
-        assert _run(server.http_request("GET", "https://sut.example.com/x"))["status"] == 200
+        assert _run(server.request("GET", "https://sut.example.com/x"))["status"] == 200
 
     def test_search_budget_independent_pool(self) -> None:
         server = _make()
@@ -1386,11 +1421,11 @@ class TestWorkbenchAgentIntegration:
         agent = WorkbenchAgent(tmp_path)
         described = agent._describe_tools()  # noqa: SLF001 — 单测内省
         for name in (
-            "http_request",
+            "request",
             "discover_login",
             "search_content",
             "probe_protocol",
-            "probe_login",
+            "declare_token",
             "ask_user",
         ):
             assert name in described
@@ -1401,6 +1436,6 @@ class TestWorkbenchAgentIntegration:
         from agent_eval.agent.workbench_agent import WorkbenchAgent
 
         agent = WorkbenchAgent(tmp_path)
-        agent.probe._turn_calls["http_request"] = TOOL_BUDGETS["http_request"]  # noqa: SLF001
+        agent.probe._turn_calls["request"] = TOOL_BUDGETS["request"]  # noqa: SLF001
         agent.probe.new_turn()
-        assert agent.probe._turn_calls.get("http_request", 0) == 0  # noqa: SLF001
+        assert agent.probe._turn_calls.get("request", 0) == 0  # noqa: SLF001

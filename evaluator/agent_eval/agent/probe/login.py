@@ -1,89 +1,107 @@
-"""登录实测 — 预览确认 + 防锁 + 凭证旁路 + ask_user（arch/15 §6.6 红线域）。
+"""会话凭证声明式提取 + ask_user — 探测面 v4 的提取原语（arch/15 §6.6 / docs/plan/03 §3.3）。
 
-红线：凭证外发硬门禁（发送前必出脱敏预览并经用户确认，预览即凭证外发同意）、
-登录防锁（**失败语义分层**：仅认证层拒绝（4xx/5xx）入锁——同 ref+URL+模板组合
-不自动重试，防真实系统撞锁；404 未到认证层、网络失败、**登录成功（2xx，凭证已
-验证有效，更正 token_path 的重测无撞锁风险）** 均不入锁，受轮内预算约束）、
-凭证值不回流 LLM 上下文（凭证直写密钥区，账密与响应 token 一并脱敏）。
+v4 拆解：probe_login 退役——请求面（凭证模板渲染 / 外发授权 / 防锁）归 request
+（fetch.py），本模块只剩两件事：
+- declare_token：在服务端缓存的「该 ref 最近一次带凭证请求」上做**事后声明式**
+  提取（决策 D2：不重发请求就无撞锁风险，声明错了改路径重声明即可）。提取词汇
+  与执行器 SUTSession.mount_headers 三态（Bearer | header:<X> | cookie）同构，
+  snippet 由工具机械渲染（token_type 按声明——修掉 v3.x 硬编码 Bearer 的宽度裂缝）；
+- ask_user：文本/单选/凭证三态交互桥（凭证直写密钥区，值不回流）。
+
+红线：凭证值不回流 LLM 上下文（提取在服务端持有的响应上进行，值只进
+_session_tokens 与 snippet，不进工具返回）；声明超出执行器宽度的形态（凭证走
+请求头、链式认证）显式拒绝——探测可探索、暂不可落盘，不产生假验证（§6）。
 """
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from agent_eval.agent.probe.fetch import _mask, _wrap_evidence
-from agent_eval.agent.tools import TEMPLATE_SYNTAX_HINT
+from agent_eval.agent.probe.fetch import _key_path_tree
 
-# 登录模板语法纠偏：probe_login 用 Jinja2 渲染 body_template，实测曾出现 shell 风格
-# ${var} 占位符原样发出（服务端报「格式不是手机号」被误读为用户输入错误）——
-# 渲染后残留占位符一律拒发
-_TEMPLATE_SYNTAX_HINT = TEMPLATE_SYNTAX_HINT
-_UNRENDERED_PLACEHOLDER_RE = re.compile(r"\$\{[^}]*\}|\{\{[^}]*?\}\}|\{%[^%]*?%\}")
 _MAX_QUESTION_CHARS = 200  # ask_user 单问上限：多问打包会让用户不知从何答起
 
 
-def _render_auth_snippet(*, ref: str, method: str, url: str, template: str, token_path: str) -> str:
-    """把实测成功的登录事实渲染为可照抄的 ``auth:`` 段 YAML。
+def _normalize_source(raw: str) -> tuple[str, str]:
+    """token_source 归一化为执行器形态，返回 (source, cookie_name)。
 
-    装配在证据产生处完成一次（工具机械渲染，非经 LLM 转述）——这是「验证结果
-    正确落到场景包文件」的第一环：词汇与执行器 ``auth.login`` 同构，落盘时
-    原样粘贴即可，无需任何字段翻译。
+    接受 bearer（默认）/ header:<X> / cookie 或 cookie:<名字>；输出与执行器
+    SUTSession.token_type 同词汇（"Bearer" | "header:<X>" | "cookie"）。
+    无法归一化的形态返回空 source（调用方转纠正错误）。
+    """
+    s = (raw or "").strip()
+    if not s or s.lower() == "bearer":
+        return "Bearer", ""
+    if s.lower().startswith("header:"):
+        name = s.split(":", 1)[1].strip()
+        return (f"header:{name}" if name else ""), ""
+    if s.lower().startswith("cookie"):
+        name = s.split(":", 1)[1].strip() if ":" in s else ""
+        return "cookie", name
+    return "", ""
+
+
+def _walk_path(payload: Any, path: str) -> tuple[Any, bool]:
+    """点分 + 数字下标路径取值（与执行器 extract_by_path 同语义）。"""
+    node = payload
+    for part in path.split("."):
+        if isinstance(node, dict):
+            node = node.get(part)
+        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+            node = node[int(part)]
+        else:
+            return None, False
+        if node is None:
+            return None, False
+    return node, True
+
+
+def _render_auth_snippet(
+    *,
+    ref: str,
+    method: str,
+    url: str,
+    template: str,
+    token_type: str,
+    token_path: str = "",
+    expires_in_path: str = "",
+) -> str:
+    """把声明成功的提取事实渲染为可照抄的 ``auth:`` 段 YAML（词汇与执行器同构）。
+
+    token_type 按声明渲染（Bearer / header:<X> / cookie）；cookie 型自 Set-Cookie
+    提取（响应体无路径可指）时落 ``type: session_cookie``——执行器靠共享 client
+    的 cookie jar 承载登录态，与探测侧同一机制，语义 1:1。
     """
     import yaml
 
-    snippet = {
-        "auth": {
-            "type": "api_login",
-            "credential_ref": ref,
-            "login": {"method": method, "path": url, "body_template": template},
-            "extract": {"token_path": token_path, "token_type": "Bearer"},
+    login = {"method": method, "path": url, "body_template": template}
+    if token_type == "cookie" and not token_path:
+        snippet: dict[str, Any] = {
+            "auth": {"type": "session_cookie", "credential_ref": ref, "login": login}
         }
-    }
+    else:
+        extract: dict[str, str] = {"token_path": token_path, "token_type": token_type}
+        if expires_in_path:
+            extract["expires_in_path"] = expires_in_path
+        snippet = {
+            "auth": {
+                "type": "api_login",
+                "credential_ref": ref,
+                "login": login,
+                "extract": extract,
+            }
+        }
     return yaml.safe_dump(snippet, allow_unicode=True, sort_keys=False).strip()
 
 
-def _key_path_tree(payload: Any, *, max_depth: int = 3, max_nodes: int = 30) -> str:
-    """响应 JSON 的键路径树（只显类型、值一律不外显）——提取失败时的机械证据。
-
-    零字段名假设（不内置任何站点知识）：响应长什么样 Agent 看什么。路径语义与
-    执行器 ``extract_by_path`` 同源（点分 + 数字下标），树里给出的路径可直接作为
-    token_path 重测。
-    """
-    lines: list[str] = []
-
-    def walk(node: Any, prefix: str, depth: int) -> None:
-        if depth > max_depth or len(lines) >= max_nodes:
-            return
-        if isinstance(node, dict):
-            for key, value in node.items():
-                if len(lines) >= max_nodes:
-                    return
-                path = f"{prefix}.{key}" if prefix else str(key)
-                lines.append(f"{path}: {type(value).__name__}")
-                if isinstance(value, (dict, list)):
-                    walk(value, path, depth + 1)
-        elif isinstance(node, list) and node:
-            path0 = f"{prefix}.0" if prefix else "0"
-            lines.append(f"{path0}: {type(node[0]).__name__}（数组共 {len(node)} 项，取首项展开）")
-            if isinstance(node[0], (dict, list)):
-                walk(node[0], path0, depth + 1)
-
-    walk(payload, "", 0)
-    body = "\n".join(f"  {line}" for line in lines)
-    if len(lines) >= max_nodes:
-        body += "\n  …（节点数达上限，已截断）"
-    return body or "  （空响应体）"
-
-
 class LoginMixin:
-    """工具四（登录实测）与工具五（ask_user：文本/单选/凭证，值不回流）。
+    """工具：declare_token（事后声明式凭证提取）与 ask_user（三态交互桥）。
 
     协作契约注解：宿主提供 ``_budget/_client/_log``、凭证库（``credentials``）、
-    交互桥（``ask_fn``）、防锁与证据账本设施——类级注解仅供类型检查，运行时
-    不创建属性。
+    交互桥（``ask_fn``）、防锁与证据账本设施、最近带凭证请求事实
+    （``_last_credential_request``）——类级注解仅供类型检查，运行时不创建属性。
     """
 
     _budget: Callable[[str], dict[str, str] | None]
@@ -92,328 +110,219 @@ class LoginMixin:
     credentials: Any  # CredentialStore（secrets 直写，值不回流）
     ask_fn: Any  # async (question, *, options, secret) -> str | None
     _login_tried: set[tuple[str, str, str]]
-    _store_token: Callable[[str, str], None]
+    _store_token: Callable[[str, str, str], None]
     _record_login: Callable[[dict[str, str]], None]
     verified_login: Callable[[str], dict[str, str] | None]
+    _last_credential_request: dict[str, dict[str, Any]]
+    _step_responses: dict[str, Any]
 
-    async def probe_login(self, login_cfg: dict[str, Any], ref: str) -> dict[str, Any]:
-        if budget_err := self._budget("probe_login"):
+    async def declare_token(
+        self,
+        ref: str,
+        token_path: str = "",
+        token_source: str = "Bearer",
+        expires_in_path: str = "",
+    ) -> dict[str, Any]:
+        """事后声明式会话凭证提取：在该 ref 最近一次带凭证 2xx 响应上提取。
+
+        入参词汇与执行器同构：token_source 三态（Bearer | header:<X> | cookie）、
+        token_path 点分路径（cookie 型为 Set-Cookie 名）。不重发请求——声明错了
+        改路径重声明即可（防锁不适用；受轮内预算约束）。
+        """
+        if budget_err := self._budget("declare_token"):
             return budget_err
-        from jinja2 import Environment, Template, meta
-
-        # 词汇同构（v3.6）：login_cfg 与执行器 sut_configs 的 auth.login 同形——
-        # path 承载完整 URL。不再接受 base_url 拼接：那正是「实测完整 URL 在
-        # 探测工具里、落盘时拆成 path+base_url 被执行器静默丢弃」的变形源头
-        url = str(login_cfg.get("path") or login_cfg.get("url") or "")
-        # URL 检查先于凭证缺失检查（失败模式分层）：否则会先跑完一轮逐字段凭证
-        # 收集、才被告知连地址都没有
-        if not url:
+        ref = ref.strip()
+        source, cookie_name = _normalize_source(token_source)
+        if not source:
             return {
                 "error": (
-                    "login_cfg 缺少 url/path（完整 http(s):// 地址，与 sut_configs 的 "
-                    "auth.login.path 同形）——本次收到的字段: "
-                    + (", ".join(sorted(login_cfg)) or "（空）")
+                    "token_source 需为执行器三态之一：Bearer | header:<HeaderName> | "
+                    f"cookie[:名字]（收到 {token_source!r}）"
                 )
             }
-        if not url.startswith(("http://", "https://")):
+        fact = self._last_credential_request.get(ref.lower())
+        if fact is None:
             return {
                 "error": (
-                    "login_cfg.path 需为完整 http(s):// URL（与 sut_configs 的 "
-                    "auth.login.path 同形——跨域登录接口直接写完整地址）。本工具没有 "
-                    "base_url 字段，不要把已发现的接口域拆成 path + base_url 两段"
+                    f"ref={ref!r} 没有已登记的带凭证请求——先用 request(ref={ref!r}, "
+                    "body=…) 实测登录接口；缺凭证字段时按错误提示先 ask_user"
+                    "(kind=credential) 逐字段录入"
                 )
             }
-        # token_path 机械归一化（v3.14 body_template 先例：凡可机械传递的变形不经
-        # LLM 猜；无法归一化的形态显式打回）。实测事故根源即本参数静默变空：
-        # `$.` 前缀/嵌套层级变形 → 顶层 get 不到 → 误导报错「与响应结构不符」
-        raw_token_path = login_cfg.get("token_path")
-        token_path_note = ""
-        if raw_token_path is None or (
-            isinstance(raw_token_path, str) and not raw_token_path.strip()
-        ):
-            token_path = ""
-        elif isinstance(raw_token_path, str):
-            token_path = re.sub(r"^\$\.?", "", raw_token_path.strip())
-            if token_path != raw_token_path.strip():
-                token_path_note = (
-                    f"token_path 传的是 {raw_token_path!r}，已机械归一化为 {token_path!r}"
-                    "——重试与落盘以此形态为准"
+        if fact["status"] >= 400:
+            return {
+                "error": (
+                    f"ref={ref!r} 最近一次带凭证请求是 HTTP {fact['status']}（未成功）"
+                    "——declare 只对 2xx 响应声明提取。按请求返回的证据修正 body/地址后"
+                    "重新 request（防锁：被拒组合不自动重发，新 body 即新组合）"
                 )
-        elif (
-            isinstance(raw_token_path, list)
-            and raw_token_path
-            and all(isinstance(p, str) and p.strip() for p in raw_token_path)
-        ):
-            token_path = ".".join(p.strip() for p in raw_token_path)
-            token_path_note = (
-                f"token_path 传的是列表 {raw_token_path!r}，已机械归一化为 {token_path!r}"
-                "——重试与落盘以此形态为准"
+            }
+        # 执行器宽度守卫（§6）：探测可探索、暂不可落盘的形态显式拒绝
+        if fact.get("credential_in_headers"):
+            return {
+                "error": (
+                    "该请求把凭证放在请求头（headers 模板变量）——执行器 api_login 当前"
+                    "只支持 body 携带凭证，该形态暂不可声明落盘（auth_chain 多步能力"
+                    "落地前）。可继续探索，但勿把它写成 auth: 段；或与用户确认改用"
+                    " body 携带凭证的登录接口"
+                )
+            }
+        if fact.get("used_chain"):
+            return {
+                "error": (
+                    "该请求引用了链式变量（{{ stepN.… }}）——多步认证链的落盘形态"
+                    "（auth_chain）尚未落地，暂不可声明落盘。单步登录接口请直接"
+                    " request(body=带凭证模板) 实测后声明"
+                )
+            }
+        payload = fact.get("response_json")
+        token_path = re.sub(r"^\$\.?", "", str(token_path or "").strip())
+        expires_in_path = re.sub(r"^\$\.?", "", str(expires_in_path or "").strip())
+        expires_note = ""
+        if expires_in_path:
+            value, hit = (
+                _walk_path(payload, expires_in_path) if payload is not None else (None, False)
             )
+            if not hit or not isinstance(value, (int, float)):
+                return {
+                    "error": (
+                        f"expires_in_path={expires_in_path!r} 未命中数值型字段——可选参数，"
+                        "可去掉或按 response_key_paths 修正"
+                    ),
+                    "response_key_paths": _key_path_tree(payload) if payload is not None else "",
+                }
+            expires_note = "expires_in_path 已声明（对齐执行器 AuthExtractConfig）"
+        # 提取：cookie 型优先 Set-Cookie（token_path 即 cookie 名），其余走响应 JSON
+        if source == "cookie":
+            token_value, cookie_key, effective_path, extract_err = self._extract_cookie(
+                fact, cookie_name, token_path, payload
+            )
+            if extract_err:
+                err: dict[str, Any] = {"error": extract_err}
+                if payload is not None:
+                    err["response_key_paths"] = _key_path_tree(payload)
+                return err
         else:
-            return {
-                "error": (
-                    f"token_path 需为点分路径字符串（收到 {type(raw_token_path).__name__}: "
-                    f'{str(raw_token_path)[:60]}）——相对登录响应 JSON 根，如 "data.token"；'
-                    "本次收到的字段: " + ", ".join(sorted(login_cfg))
-                ),
-                "received_login_cfg_keys": sorted(login_cfg),
-            }
-        template = login_cfg.get("body_template", "")
-        # v3.14：LLM 会把 body_template 写成 JSON 对象（dict）而非字符串——
-        # jinja2 对非字符串源抛 TypeError「Can't compile non template nodes」，
-        # 旧错误文案套「Jinja2 语法纠正」话术，误导 Agent 去修「语法」而实际是
-        # 「类型」（实测会话空转一轮才悟出「应该是 JSON 字符串」）。dict/list 是
-        # 唯一有明确字符串形态的输入：机械序列化（凡可机械传递的事实不经 LLM
-        # 转述），生效模板随结果回显，落盘以工具渲染的 sut_config_auth_snippet 为准
-        template_note = ""
-        if isinstance(template, (dict, list)):
-            try:
-                template = json.dumps(template, ensure_ascii=False)
-            except (TypeError, ValueError) as e:
-                return {"error": f"body_template 无法序列化为模板字符串（{e}）——请传 JSON 文本"}
-            template_note = (
-                "body_template 传的是对象，已机械序列化为字符串："
-                + template
-                + " ——重试与落盘以此字符串形态传参（成功返回的 sut_config_auth_snippet"
-                " 已是该形态）"
-            )
-        elif not isinstance(template, str):
-            return {
-                "error": (
-                    f"body_template 需为 JSON 文本字符串（收到 {type(template).__name__}）："
-                    '模板是字符串不是对象，如 \'{"phone": "{{ username }}"}\'——'
-                    "对象内的变量按 Jinja2 语法写 {{ 字段名 }}，常量字段写字面值"
-                )
-            }
-        fields = sorted(meta.find_undeclared_variables(Environment().parse(template)))
-        values: dict[str, str] = {}
-        if self.credentials is not None:
-            values = {f: self.credentials.get(ref, f) or "" for f in fields}
-        missing = [f for f in fields if not values.get(f)]
-        if missing:
-            result: dict[str, Any] = {
-                "missing_fields": missing,
-                "received_login_cfg_keys": sorted(login_cfg),
-                "hint": (
-                    f"凭证缺失：逐字段 ask_user(kind=credential, ref={ref!r}, field=<字段名>, "
-                    "desc=<该字段实际要输入什么>) 收集——一次只录一个字段且 desc 必带"
-                    "（用户据此知道输入什么，从你的检索摘录/接口语义得出）；"
-                    "会话内隐藏输入直接完成（勿让用户另开终端执行命令，那是非交互/CI 的"
-                    "备用通道）；收齐后重新调用本工具"
-                ),
-            }
-            notes = [n for n in (template_note, token_path_note) if n]
-            if notes:
-                result["note"] = "；".join(notes)
-            return result
-        # 防锁按（ref+完整 URL+模板）：同 host 不同路径是不同组合——实测曾因键缺
-        # 路径，猜错路径的失败连坐了用户随后给出的正确地址
-        key = (ref.lower(), url, str(template))
-        if key in self._login_tried:
-            return {
-                "error": (
-                    "该接口与字段组合已被认证层拒绝过（防锁红线：4xx/5xx 拒绝的组合不"
-                    "自动重试，防真实系统撞锁），同一配置不再发送。更新 body_template 或"
-                    "地址后即为新组合可再试；登录成功（2xx）与 404 的组合不入锁——"
-                    "更正 token_path 后可直接重测"
-                )
-            }
-        # 占位符语法校验：渲染后残留 ${var}/{{var}} 即模板写错——拒发（预览即最终
-        # 报文的核对由工具兜底，不依赖人眼发现占位符没被替换）
-        try:
-            rendered = Template(template).render(**values)
-        except Exception as e:  # noqa: BLE001 — 模板语法错误转纠正提示
-            return {"error": f"body_template 渲染失败（{e}）。{_TEMPLATE_SYNTAX_HINT}"}
-        if residual := _UNRENDERED_PLACEHOLDER_RE.findall(rendered):
-            return {
-                "error": (
-                    f"body_template 渲染后仍残留占位符 {residual[:3]}——请求未发送。"
-                    f"{_TEMPLATE_SYNTAX_HINT}"
-                )
-            }
-
-        body = _mask(rendered, list(values.values()))
-        method = login_cfg.get("method", "POST").upper()
-        # 脱敏预览 + 凭证外发同意（红线 2/预览即同意）：非交互形态一律不发送。
-        # 预览必须显示完整 URL——路径抄错只有在这里用户才看得见（只显 host 等于没校对）
-        preview = (
-            "即将发送登录实测请求（发送前请核对接口地址与字段，凭证已脱敏）：\n"
-            f"  方法: {method}\n"
-            f"  URL: {url}\n"
-            f"  body: {body}\n"
-            "确认发送？"
-        )
-        if self.ask_fn is None:
-            result = {
-                "need_confirm": True,
-                "url": url,
-                "method": method,
-                "masked_body": body,
-                "note": "非交互环境不发送登录请求；请用户交互运行确认后重试",
-            }
-            notes = [n for n in (template_note, token_path_note) if n]
-            if notes:
-                result["note"] = f"{'；'.join(notes)}；{result['note']}"
-            return result
-        answer = await self.ask_fn(preview, options=["发送", "取消"], secret=False)
-        if not answer or "发送" not in answer:
-            self._log("probe_login", ref=ref, event="user_aborted")
-            return {"aborted": True, "note": "用户取消，未发送"}
-        try:
-            client_cm = await self._client()
-            async with client_cm as client:
-                response = await client.request(
-                    method,
-                    url,
-                    content=rendered,
-                    headers={"Content-Type": "application/json"},
-                )
-        except Exception as e:  # noqa: BLE001
-            # 请求未达服务端：无撞锁风险，不入锁（同组合可经用户确认后重发）
-            self._log("probe_login", ref=ref, event="request_failed", error=str(e)[:200])
-            return {"ok": False, "error": f"登录请求失败: {e}"}
-        # 响应解析与提取失败分层（实测事故修复）：非 JSON / 未携带 token_path /
-        # 路径不匹配三种根因各自独立呈现——曾共用「token_path 与响应结构不符」
-        # 一条文案，没传时该断言不成立，Agent 只能带着错误假设猜格式空转
-        payload: Any = None
-        is_json = True
-        try:
-            payload = response.json()
-        except Exception:  # noqa: BLE001 — 非 JSON 单独分层，勿与提取失败共用文案
-            is_json = False
-        token_extracted = False
-        token_value = ""
-        if payload is not None and token_path:
-            node: Any = payload
-            for part in token_path.split("."):  # 与执行器 extract_by_path 同语义（点分+下标）
-                if isinstance(node, dict):
-                    node = node.get(part)
-                elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
-                    node = node[int(part)]
-                else:
-                    node = None
-                    break
-            if node is not None:
-                token_extracted = True
-                token_value = str(node)
-        self._log(
-            "probe_login",
-            ref=ref,
-            status=response.status_code,
-            token_path=token_path,
-            token_extracted=token_extracted,
-            login_cfg_keys=sorted(login_cfg),
-        )
-        # 凭证旁路：账密与响应 token 一并脱敏——值不得回流 LLM 上下文
-        mask_values = [*values.values(), token_value] if token_value else list(values.values())
-        status = response.status_code
-        if status == 404:
-            # 失败语义分层（防锁不误伤探索）：404 = 请求未到认证层（无凭证校验即无
-            # 撞锁风险）——不入锁，换路径探索是正当行为；防锁只拦「已到认证层的失败」
-            # （4xx/5xx）的同组合自动重试
-            guidance = (
-                "404：该路径不存在（请求未到认证层，不计入防锁）——换下一候选路径继续"
-                "实测（候选依据 discover_login 返回与前端包分析结论，openapi/form 候选"
-                "优先；勿凭空拼凑路径清单——catch-all 服务上 GET 200 不代表存在，以"
-                "实测为准）；或把证据呈现给用户核对地址。受轮内预算约束，勿单轮扫路径"
-            )
-        elif status < 400:
-            # 登录成功（2xx）：凭证已被认证层验证有效——重测（如更正 token_path）
-            # 无撞锁风险，不入锁；重试受轮内预算 + 每次发送需预览确认约束
-            if token_extracted:
-                # 证据账本 + 装配片段：事实在产生处机械转换一次（YAML 由工具渲染，
-                # 非经 LLM 转述）——落盘时原样使用即可，变形会被对账门禁打回
-                self._store_token(ref, token_value)  # 服务端持有，探测请求挂鉴权（不回流）
-                self._record_login(
-                    {
-                        "ref": ref,
-                        "method": method,
-                        "url": url,
-                        "body_template": template,
-                        "token_path": token_path,
-                        "auth_snippet": _render_auth_snippet(
-                            ref=ref,
-                            method=method,
-                            url=url,
-                            template=template,
-                            token_path=token_path,
+            if payload is None:
+                return {
+                    "error": (
+                        "该响应不是 JSON，无法按路径提取——若凭证在 Set-Cookie 里，"
+                        "改用 token_source=cookie:<名字>"
+                    )
+                }
+            if not token_path:
+                if payload is not None:
+                    return {
+                        "error": (
+                            "缺少 token_path：点分路径从登录响应 JSON 中取凭证"
+                            "（数组用数字下标，如 data.0.token）——按 response_key_paths 选择"
                         ),
+                        "response_key_paths": _key_path_tree(payload),
                     }
-                )
-                guidance = (
-                    "成功→把返回的 sut_config_auth_snippet **原样**写进 sut_configs"
-                    " 的 auth: 段（勿拆分 URL、勿增删字段；凭证仅 credential_ref 引用）；"
-                    "落盘对账门禁会用执行器同款逻辑与实测证据逐字段比对；若协议探测曾在"
-                    "本登录成功前失败（authenticated: false），现在重探 probe_protocol"
-                    "（token 已自动挂载）"
-                )
-            else:
-                # 失败模式三分（实测事故修复：四种根因曾共用一条文案）
-                if not is_json:
-                    guidance = (
-                        f"登录成功（2xx）但响应体不是 JSON（content-type: "
-                        f"{response.headers.get('content-type', '未知')}）——token 提取不适用"
-                        "于该响应：该地址可能不是登录 API 或返回了页面，对照 discover_login "
-                        "结论核对地址后再测"
+                return {
+                    "error": (
+                        "缺少 token_path，且该响应不是 JSON（无法按路径提取）——"
+                        "若凭证在 Set-Cookie 里，改用 token_source=cookie:<名字>"
                     )
-                elif not token_path:
-                    guidance = (
-                        "登录成功但未提取到 token：**本次调用未携带 token_path**（login_cfg "
-                        "顶层无该键或为空——写进嵌套层级/键名变形同样收不到，对照 "
-                        "received_login_cfg_keys 核对）。按 response_key_paths 键路径树选择"
-                        "正确路径后重测：登录已成功、凭证已验证有效，重测不受防锁限制"
-                        "（无撞锁风险）；以最终实测通过的 sut_config_auth_snippet 落盘"
-                    )
-                else:
-                    guidance = (
-                        f"登录成功但 token_path={token_path!r} 未命中响应结构——按 "
-                        "response_key_paths 键路径树选择正确路径后重测：登录已成功、凭证已"
-                        "验证有效，重测不受防锁限制（无撞锁风险）；以最终实测通过的 "
-                        "sut_config_auth_snippet 落盘"
-                    )
-        else:
-            # 认证层拒绝（4xx/5xx）：同组合不自动重试——防的是真实撞锁风险
-            # （2xx 成功与 404 均不入锁：前者凭证已验证有效，后者未到认证层）
-            self._login_tried.add(key)
-            guidance = (
-                f"HTTP {status}：接口存在（路由已匹配，校验/鉴权未过）——按证据核对字段名，"
-                "逐字段 ask_user(kind=credential) 收集/更正凭证后重测（新凭证录入即解锁"
-                "一次重试），或按证据更正 body_template（模板变化亦为新组合）"
+                }
+            token_value, hit = (
+                _walk_path(payload, token_path) if payload is not None else (None, False)
             )
-        # 值回流条件化（M1 红线收口）：值要回流，前提是知道哪些值是凭证——提取
-        # 成功时 _mask 已按已知凭证值（账密 + token）掩码；2xx JSON 提取失败时
-        # 无法知道响应里哪个值是会话凭证，原文不回传、只回结构树（实测事故：裸
-        # JWT 即经 evidence 回流并被模型试图绕过工具自带）；非 2xx 是失败响应
-        # （无会话凭证），原文保留供排错。该规则在探测面 v4 中延续（docs/plan/03 §3.6）
-        if status < 400 and is_json and not token_extracted:
-            evidence = _wrap_evidence(
-                "登录响应键路径结构（提取成功前不回传响应原文：响应可能含会话凭证，"
-                "值一律不回流）",
-                _key_path_tree(payload),
-            )
-        else:
-            evidence = _wrap_evidence("登录响应（已脱敏）", _mask(response.text, mask_values))
-        result = {
-            "ok": status < 400 and token_extracted,
-            "status": status,
-            "url": url,
-            # 生效入参回显（自诊断依据，v3.14 template_note 先例）：token_path 为
-            # 本次实际生效的归一化值，空串 = 未携带；received_login_cfg_keys 用于
-            # 发现参数嵌错层级/键名变形
-            "token_path": token_path,
-            "token_extracted": token_extracted,
-            "received_login_cfg_keys": sorted(login_cfg),
-            "evidence": evidence,
-            "next_step": guidance,
+            effective_path = token_path
+            if not hit:
+                return {
+                    "error": (
+                        f"token_path={token_path!r} 未命中响应结构——声明错了改路径重声明"
+                        "即可（不重发请求）；以 response_key_paths 键路径树为准"
+                    ),
+                    "response_key_paths": _key_path_tree(payload) if payload is not None else "",
+                }
+        # 成功：token 服务端持有（自动挂载）；cookie 型落共享 client 的 jar
+        # （Set-Cookie 场景登录请求本就发自此 client，jar 已持有——显式 set 幂等）
+        self._store_token(ref, str(token_value), source)
+        if source == "cookie":
+            client = await self._client()
+            client.cookies.set(cookie_key, str(token_value))
+        snippet = _render_auth_snippet(
+            ref=ref,
+            method=fact["method"],
+            url=fact["url"],
+            template=fact["body_template"],
+            token_type=source,
+            token_path=effective_path,
+            expires_in_path=expires_in_path,
+        )
+        # 证据账本（机械登记，不经 LLM 转述）：落盘对账门禁的事实源
+        self._record_login(
+            {
+                "ref": ref,
+                "method": fact["method"],
+                "url": fact["url"],
+                "body_template": fact["body_template"],
+                "token_path": effective_path,
+                "token_source": source,
+                "expires_in_path": expires_in_path,
+                "auth_snippet": snippet,
+            }
+        )
+        self._log(
+            "declare_token",
+            ref=ref,
+            source=source,
+            token_path=effective_path,
+            via_set_cookie=source == "cookie" and not effective_path,
+        )
+        return {
+            "ok": True,
+            "token_source": source,
+            "token_path": effective_path,
+            "note": "会话凭证已服务端持有并随请求自动挂载（值不在本返回中）"
+            + (f"；{expires_note}" if expires_note else ""),
+            "sut_config_auth_snippet": snippet,
+            "next_step": (
+                "把返回的 sut_config_auth_snippet **原样**写进 sut_configs 的 auth: 段"
+                "（勿拆分 URL、勿增删字段；凭证仅 credential_ref 引用）；若协议探测曾在"
+                "登录成功前失败（authenticated: false），现在重探 probe_protocol"
+                "（凭证已自动挂载）"
+            ),
         }
-        if status < 400 and not token_extracted and is_json:
-            result["response_key_paths"] = _key_path_tree(payload)
-        notes = [n for n in (template_note, token_path_note) if n]
-        if notes:
-            result["note"] = "；".join(notes)
-        if status < 400 and token_extracted and (fact := self.verified_login(ref)):
-            result["sut_config_auth_snippet"] = fact["auth_snippet"]
-        return result
+
+    def _extract_cookie(
+        self, fact: dict[str, Any], cookie_name: str, token_path: str, payload: Any
+    ) -> tuple[str, str, str, str]:
+        """cookie 型提取：优先 Set-Cookie 按名取（token_path 即 cookie 名），否则响应体。
+
+        返回 (token_value, cookie 名, 生效路径, 错误)——自 Set-Cookie 提取时生效
+        路径为空串（落 session_cookie 形态）；响应体提取时为点分路径
+        （落 api_login + extract.token_type=cookie，cookie 名须显式给出）。
+        """
+        set_cookies: dict[str, str] = fact.get("set_cookies") or {}
+        name = cookie_name or token_path
+        if not name and len(set_cookies) == 1:
+            name = next(iter(set_cookies))  # 唯一 cookie 机械取用，零字段名假设
+        if name and name in set_cookies:
+            return set_cookies[name], name, "", ""
+        # 不在 Set-Cookie：尝试响应体（token_path 为点分路径；cookie 名须显式）
+        if cookie_name and token_path and payload is not None:
+            value, hit = _walk_path(payload, token_path)
+            if hit:
+                return str(value), cookie_name, token_path, ""
+        available = (
+            f"响应 Set-Cookie 名单: {sorted(set_cookies)}" if set_cookies else "响应无 Set-Cookie"
+        )
+        if not name:
+            return (
+                "",
+                "",
+                "",
+                f"cookie 型需指明 cookie 名：token_source=cookie:<名字>，或 token_path "
+                f"传 cookie 名。{available}",
+            )
+        hint = (
+            f"cookie {name!r} 不在 Set-Cookie 名单（{available}）；若凭证在响应体中，"
+            "用 token_source=cookie:<名字> 显式命名并给 token_path"
+        )
+        return "", "", "", hint
 
     async def ask_user(
         self,
@@ -440,8 +349,8 @@ class LoginMixin:
             if kind == "credential":
                 if not (ref and field):
                     return {"error": "kind=credential 需要 ref 与 field 参数"}
-                # 一次只录一个字段：多字段打包会整串存成一个键名，probe_login 逐字段
-                # 查不到（实测 Agent 曾传 field="username,password"）
+                # 一次只录一个字段：多字段打包会整串存成一个键名，request 渲染时
+                # 逐字段查不到（实测 Agent 曾传 field="username,password"）
                 if len(field.split()) != 1 or any(c in field for c in ",，、;；/"):
                     return {
                         "error": (
@@ -485,7 +394,7 @@ class LoginMixin:
         bucket = next((k for k in secrets if k.upper() == ref.upper()), ref)
         secrets.setdefault(bucket, {})[field.lower()] = value
         save_secrets_file(secrets, None)
-        # 新凭证录入解锁该 ref 的登录防锁：一次录入换一次实测
+        # 新凭证录入解锁该 ref 的防锁：一次录入换一次实测
         # （重试循环被「必须经用户录入」天然限流）
         self._login_tried = {k for k in self._login_tried if k[0] != ref.lower()}
         self._log("ask_user", event="credential_saved", ref=ref, field=field)

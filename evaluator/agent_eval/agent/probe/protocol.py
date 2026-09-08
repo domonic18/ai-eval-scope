@@ -108,7 +108,7 @@ class ProtocolMixin:
                 ),
             ]
         try:
-            client_cm = await self._client()
+            client_cm = self._borrow_client()
             async with client_cm as client:
                 for name, endpoint, body, extra_headers in steps:
                     method = endpoint.split(" ")[0]
@@ -230,9 +230,10 @@ class ProtocolMixin:
             param_rejected = any(m.get("status") in (400, 422) for m in matrix)
             if not authenticated:
                 next_step = (
-                    "本次探测未携带鉴权（本会话尚无登录实测成功的 token）——协议端点"
+                    "本次探测未携带鉴权（本会话尚无已声明的会话凭证）——协议端点"
                     "若需认证，未鉴权请求可能被拒（401/403）也可能被网关静默 404："
-                    "先完成 probe_login 登录实测（成功后 token 自动挂载），再重探本工具"
+                    "先用 request 实测登录（body 带凭证模板 + ref），2xx 后 declare_token "
+                    "声明提取（凭证自动挂载），再重探本工具"
                 )
             elif auth_rejected:
                 next_step = (

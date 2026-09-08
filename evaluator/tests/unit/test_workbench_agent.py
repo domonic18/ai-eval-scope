@@ -513,7 +513,7 @@ class TestAgentTurn:
     _LOGIN_URL = "https://sasan-server.staging.example.com/users/login"
 
     def _record_login_fact(self, agent: WorkbenchAgent) -> None:
-        agent.probe._record_login(  # noqa: SLF001 — 单测模拟 probe_login 成功登记
+        agent.probe._record_login(  # noqa: SLF001 — 单测模拟 declare_token 成功登记
             {
                 "ref": "teacher-login",
                 "method": "POST",
@@ -702,7 +702,7 @@ class TestAgentTurn:
 
         assert not result.committed
         joined = "\n".join(result.validation_errors)
-        assert "未经本会话" in joined and "probe_login" in joined
+        assert "未经本会话" in joined and "declare_token" in joined
 
     def test_first_turn_text_uses_templates(self) -> None:
         text = WorkbenchAgent.first_turn_text(
@@ -1582,9 +1582,9 @@ class TestAgentConfig:
 
     def test_probe_domain_injection(self, tmp_path: Path) -> None:
         # 探测域档位（预算/超时）经 config 注入 SUTProbeToolServer
-        cfg = WorkbenchAgentConfig(probe_budgets={"http_request": 1}, probe_timeout_s=2.5)
+        cfg = WorkbenchAgentConfig(probe_budgets={"request": 1}, probe_timeout_s=2.5)
         agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
-        assert agent.probe.budgets == {"http_request": 1}
+        assert agent.probe.budgets == {"request": 1}
         assert agent.probe.timeout_s == 2.5
 
     def test_resume_truncation_uses_config(self, tmp_path: Path) -> None:
@@ -1607,9 +1607,9 @@ class TestAgentConfig:
 
     def test_config_injects_probe_domain(self, tmp_path: Path) -> None:
         # 探测域档位默认随 config 注入 SUTProbeToolServer（预算/超时可调）
-        cfg = WorkbenchAgentConfig(probe_budgets={"http_request": 1}, probe_timeout_s=2.5)
+        cfg = WorkbenchAgentConfig(probe_budgets={"request": 1}, probe_timeout_s=2.5)
         agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
-        assert agent.probe.budgets == {"http_request": 1}
+        assert agent.probe.budgets == {"request": 1}
         assert agent.probe.timeout_s == 2.5
 
     def test_resume_injection_respects_config(self, tmp_path: Path) -> None:
@@ -1740,9 +1740,7 @@ class TestSessionMachine:
         exc = self._recursion_exc()
         half_way = [
             SimpleNamespace(type="human", content="生成包"),
-            SimpleNamespace(
-                type="ai", content="", tool_calls=[{"id": "c9", "name": "http_request"}]
-            ),
+            SimpleNamespace(type="ai", content="", tool_calls=[{"id": "c9", "name": "request"}]),
         ]
 
         class _FakeGraph:

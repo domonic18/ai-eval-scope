@@ -104,7 +104,7 @@ class DiscoveryMixin:
             return {
                 "error": (
                     f"页面不可达: {page_url}（{fetch_err}）——核对地址与协议后重试；"
-                    "若用户给的是登录 API 而非页面，直接用 probe_login 实测"
+                    "若用户给的是登录 API 而非页面，直接用 request 实测（body 带凭证模板）"
                 )
             }
         # 传入接口地址（响应非 HTML）的识别：用户直接给登录 API 时无需页面发现
@@ -149,7 +149,7 @@ class DiscoveryMixin:
         ]
         checked_paths: list[dict[str, Any]] = []  # 全量留痕：404/失败不静默消失（可核对清单）
         if probe_paths:
-            client_cm = await self._client()
+            client_cm = self._borrow_client()
             async with client_cm as client:
                 for path in probe_paths:
                     target = path if path.startswith("/") else f"/{path}"
@@ -172,7 +172,7 @@ class DiscoveryMixin:
         # 阶梯③：OpenAPI/身份文档探测（挂载点为工具规范约定；POST 端点原样列出，
         # 哪个是登录由 Agent 判读，文档原文已入缓存可 search_content 检索）
         if not candidates:
-            client_cm = await self._client()
+            client_cm = self._borrow_client()
             async with client_cm as client:
                 for doc_path in (
                     "/openapi.json",
@@ -221,18 +221,19 @@ class DiscoveryMixin:
             "page_evidence": _wrap_evidence(f"页面 {page_url}", page),
             "next_step": (
                 "有候选→判读哪个是真正的登录端点（form 可能是搜索框等非登录表单），"
-                "用 probe_login 实测验证（相对路径候选以登录页域为缺省 base_url，"
-                "404 可换接口域再试——不同域即新组合）；"
+                "用 request 实测验证（body 传凭证模板变量 {{ 字段 }} 并带 ref；"
+                "相对路径候选以登录页域为缺省 base_url，404 可换接口域再试——不同域即"
+                "新组合），2xx 后 declare_token 声明提取；"
                 "快检未命中→前端包分析：search_content 在已缓存内容中检索（模式自拟——"
                 "业务词、请求构造痕迹、脚本分包机制痕迹），命中后从摘录读出真实路径与"
                 "请求体字段；主包没有登录请求字面量是常态（框架按路由分包）——从摘录"
-                "识别分块命名规则、推算页面分块文件名，http_request(GET) 抓取该分块后再检索；"
+                "识别分块命名规则、推算页面分块文件名，request(GET) 抓取该分块后再检索；"
                 "接口域与页面域可能分离——检索接口基址配置，与相对路径组合成完整 URL；"
                 "还可带 paths 参数（自拟候选登录路径）重跑本工具做定向检查；"
                 "全部落空→只向用户问登录接口地址一项；"
                 "字段名不要问用户——从检索摘录中的请求体对象读出（真实提取），"
                 "全无线索才用常见约定（username/password）拟定，"
-                "probe_login 发送前的脱敏预览会让用户看到字段并可纠正"
+                "request 首次凭证外发前的授权确认会让用户看到字段并可纠正"
             ),
         }
         if len(candidates) > 8:  # 截断显式化（对比 list_files 的 truncated 约定）
@@ -240,12 +241,12 @@ class DiscoveryMixin:
             result["candidates_total"] = len(candidates)
         if not looks_like_html:
             # 接口地址场景下覆盖兜底指引——两套指引并存方向相反时，Agent 会滑回
-            # http_request 逐路径猜（实测教训）；单一权威指引
+            # request 逐路径猜（实测教训）；单一权威指引
             result["next_step"] = (
                 "传入地址疑似接口而非登录页面（响应非 HTML）。用户提供的地址是权威输入——"
-                "不要再用 http_request 试其他路径：立即用该地址调用 probe_login 做实测"
-                "（可先最小 login_cfg：body_template 传 '{}' 做存在性探测——POST 404=路径"
-                "不存在；400/401/422=接口存在，再补真实字段与凭证实测）；"
-                "发送前脱敏预览会请用户确认"
+                "不要再用 request 逐路径试其他地址：立即用该地址做登录实测"
+                "（body 传凭证模板变量 {{ 字段 }} 并带 ref；可先最小 body '{}' 做存在性"
+                "探测——POST 404=路径不存在；400/401/422=接口存在，再补真实字段与凭证实测）；"
+                "2xx 后 declare_token 声明提取；首次凭证外发前会请用户授权"
             )
         return result
