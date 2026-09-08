@@ -764,7 +764,7 @@ class TestAgentTurn:
         assert not (tmp_path / "rules").exists()
 
     def test_emit_tool_events_from_updates(self) -> None:
-        from agent_eval.agent.workbench_agent import _emit_tool_events
+        from agent_eval.agent.workbench_messages import emit_tool_events as _emit_tool_events
 
         events: list[dict[str, Any]] = []
         updates = {
@@ -801,7 +801,7 @@ class TestAgentTurn:
     ) -> None:
         # KIMI/Claude 系模型 content 为 blocks（thinking/text）——真机冒烟实测曾因
         # isinstance(str) 过滤导致 token 零输出
-        from agent_eval.agent.workbench_agent import _text_from_content
+        from agent_eval.agent.workbench_messages import text_from_content as _text_from_content
 
         assert _text_from_content("纯文本") == "纯文本"
         assert (
@@ -1626,7 +1626,7 @@ class TestSessionMachine:
 
     @staticmethod
     def _recursion_exc() -> type[BaseException]:
-        from agent_eval.agent.workbench_agent import _GraphRecursionError
+        from agent_eval.agent.workbench_messages import _GraphRecursionError
 
         if _GraphRecursionError is None:  # langgraph 缺席（纯单测 CI）
             pytest.skip("langgraph 未安装（[agent] extra 缺席）")
