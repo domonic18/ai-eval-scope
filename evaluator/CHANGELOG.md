@@ -1,3 +1,24 @@
+## v0.3.0 (2026-09-09)
+
+### Feat
+
+- **workbench**: 通道排期门禁前移与执行域预检
+- **executor**: GenericHttpChannel 落地——generic_http 通道从预留转正
+- **probe**: 探测面 v4 薄原语落地——request/declare_token 替代 probe_login
+
+### Fix
+
+- **cli**: 交互会话传输层日志降噪
+- **probe**: 网络异常归因格式化——空文案兜底异常类型名
+- **workbench**: 工具面返回值规范轮 + 登录响应值回流条件化（arch/15 v3.22–v3.23）
+
+### Refactor
+
+- **agent**: agent/ 包三域子包化与 sut_probe 正名
+- **agent**: hooks 拆分为 budget 与 session_log 模块
+- **agent**: WorkbenchAgent 拆分（839→426 行 + 五个单一职责模块）
+- **probe**: SUT 探测改造为组合模式（ProbeContext + 域工具类）
+
 ## v0.2.1 (2026-09-04)
 
 ### Feat
