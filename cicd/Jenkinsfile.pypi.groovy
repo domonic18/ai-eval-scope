@@ -160,7 +160,8 @@ Build:       ${env.BUILD_NUMBER}
                     sh '''#!/bin/bash
                         set -euo pipefail
                         # 防错发核心：发布 tag 必须等于包 __version__（cz bump 保证同步，此处兜底）
-                        if [ -n "${RELEASE_TAG}" ]; then
+                        # （RELEASE_TAG 空值时 Jenkins 不导出该环境变量，set -u 下须用 :- 兜底）
+                        if [ -n "${RELEASE_TAG:-}" ]; then
                             VER="$(uv run python -c "import agent_eval; print(agent_eval.__version__)")"
                             if [ "v${VER}" != "${RELEASE_TAG}" ]; then
                                 echo "版本不一致：tag(${RELEASE_TAG}) != 包版本(${VER})，禁止错发"
