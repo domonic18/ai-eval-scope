@@ -36,7 +36,7 @@ sut:
 class FakeExecutionAgent:
     def __init__(self, config, sut_tools=None, extra_tool_servers=None):
         self.config = config
-        from agent_eval.agent.sut_tools import SUTToolServer
+        from agent_eval.agent.executor.sut_tools import SUTToolServer
         from agent_eval.storage.package import ExecutionPackage
 
         self._sut_tools = SUTToolServer(workspace_dir=self.config.workspace_dir)
@@ -59,7 +59,7 @@ class FakeExecutionAgent:
 
 
 def _patch_exec(monkeypatch):
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
     import agent_eval.execution.channels.base as channels_base
 
     class FakeChannel:
@@ -135,7 +135,7 @@ def test_pipeline_execution_failure_exits(tmp_path, monkeypatch) -> None:
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
     sut_cfg.write_text(SUT_YAML, encoding="utf-8")
 
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
     from agent_eval.core.exceptions import AgentEvalError
 
     class BoomAgent:

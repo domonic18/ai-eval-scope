@@ -5,7 +5,7 @@ auth 管平台身份（谁在上报、以哪个团队/项目）；secrets 管被
 三文件），启动注入 env 仅补缺（env 直供优先——CI/云函数/executor 不受影响）。
 登录双通道：打开平台页面创建 Key 后粘贴（浏览器，无浏览器环境自动降级打印 URL）/
 直接粘贴已有 Key；`--token/--host` 为 CI 非交互形态（F-C-AUTH-07）。
-`/cli-auth` 授权页与设备码流为 P2（平台侧落地后接入，arch/15 §5.2）。
+`/cli-auth` 授权页（通道 B 配对码）为 P2（平台侧落地后接入，arch/15 §5.1）。
 """
 
 from __future__ import annotations

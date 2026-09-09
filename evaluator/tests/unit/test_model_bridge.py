@@ -7,7 +7,7 @@ import types
 
 import pytest
 
-from agent_eval.agent.model_bridge import build_chat_model
+from agent_eval.agent.core.model_bridge import build_chat_model
 from agent_eval.config.llm import LLMConfig, ProviderConfig
 from agent_eval.core.exceptions import AgentError
 

@@ -1,85 +1,65 @@
-"""agent-protocol 符合性矩阵探测 — 含写操作，收尾清理（arch/15 §6.6）。
+"""ProtocolTool — agent-protocol 符合性矩阵探测：含写操作，收尾清理。
 
 逐端点事实记录（非二值判定）：建线程 → commands → state → stream，
 ✅/❌ 矩阵交 Agent 写进 sut_configs 的 protocol_flavor 与端点形态依据；
-矩阵机械登记进证据账本（``_record_protocol``），作为落盘对账门禁的事实源
+矩阵机械登记进证据账本（``record_protocol``），作为落盘对账门禁的事实源
 （核心判据 = send_command）。
 
-与执行器契约**同构**（v3.9）：AG-UI 网关族由客户端生成线程 UUID、首个
+与执行器契约**同构**：AG-UI 网关族由客户端生成线程 UUID、首个
 run.start 隐式建线程——执行器从不调用 POST /threads。故建线程端点失败
 不再阻断矩阵（那曾是「探测失败 → 判定不支持 agent_protocol」假阴性的
 根因），继续以客户端 UUID 实测 commands/state；命令信封/消息形态/
 会话路由头/鉴权头全部复用执行器单源构造（thread_commands + 登录令牌），
 探测说的就是执行器说的方言——探测结论直接预测执行行为。
 
-事实质量（v3.6）：3xx 重定向**不是**端点存在的证据（页面服务/catch-all
-常见，曾是假 ✅ 的来源）。
+事实质量：3xx 重定向**不是**端点存在的证据（页面服务/catch-all 常见，
+曾是假 ✅ 的来源）。
 """
 
 from __future__ import annotations
 
 import uuid
-from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from agent_eval.agent.probe.fetch import _host_of
-from agent_eval.agent.tools import truncate
+from agent_eval.agent.core.tools import truncate
+from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+from agent_eval.agent.workbench.sut_probe.helpers import host_of
 from agent_eval.execution.channels.thread_commands import (
     conversation_headers,
     run_start_envelope,
 )
 
 _PROBE_INPUT = "agent-eval-probe"  # 临时线程的探测输入（收尾即清理）
-# flavor → 协议判定核心端点（单源）：矩阵步骤名与落盘对账门禁（workbench_agent
-# _reconcile_protocol）共用——协议判定只看核心端点，POST /threads 不在判据内
+# flavor → 协议判定核心端点（单源）：矩阵步骤名与落盘对账门禁（workbench_gates
+# 协议对账）共用——协议判定只看核心端点，POST /threads 不在判据内
 CORE_STEP: dict[str, str] = {"commands": "send_command", "runs": "run_wait"}
 
 
-class ProtocolMixin:
-    """工具三：协议符合性矩阵（含写操作，收尾清理）。
+class ProtocolTool:
+    """工具：协议符合性矩阵（含写操作，收尾清理）。"""
 
-    协作契约注解：宿主提供 ``_budget/_ensure_host/_client/_log``、登录 token 头
-    （``auth_headers``）与证据账本（``_verified_protocols/_record_protocol``）——
-    类级注解仅供类型检查，运行时不创建属性。
-    """
-
-    _budget: Callable[[str], dict[str, str] | None]
-    _ensure_host: Callable[[str], Awaitable[str | None]]
-    _client: Callable[[], Awaitable[Any]]
-    _log: Callable[..., None]
-    _verified_protocols: dict[str, dict[str, Any]]
-    _record_protocol: Callable[[str, str, dict[str, bool]], None]
-
-    if TYPE_CHECKING:
-        # 宿主只读 property（登录 token 自动挂载）——property 桩避免与
-        # 可写属性注解冲突
-        @property
-        def auth_headers(self) -> dict[str, str]: ...
-
-    @property
-    def protocol_hosts(self) -> set[str]:
-        """已实测过协议矩阵的 host（小写）——证据账本的 host 集合视图。"""
-        return set(self._verified_protocols)
+    def __init__(self, ctx: ProbeContext) -> None:
+        self.ctx = ctx
 
     async def probe_protocol(
         self, base_url: str, flavor: str = "commands", configurable: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """configurable：与 sut_config.configurable 同形的业务参数（如 {"modelId": "19"}）。
 
-        带参探测（v3.13）：执行器以 ``config.configurable`` 下发这些参数（单源
+        带参探测：执行器以 ``config.configurable`` 下发这些参数（单源
         ``run_start_envelope``），网关缺参数时对裸请求回 400/422——若探测不能带参，
         账本永远记不到核心端点 ✅，**配置完全正确也会被落盘门禁死锁打回**（实测：
-        bj33 网关必须 modelId，裸探测 400 → 门禁拒判 agent_protocol → 包无法创建）。
+        网关必须 modelId，裸探测 400 → 门禁拒判 agent_protocol → 包无法创建）。
         """
-        if budget_err := self._budget("probe_protocol"):
+        if budget_err := self.ctx.budget("probe_protocol"):
             return budget_err
-        if host_err := await self._ensure_host(base_url):
+        if host_err := await self.ctx.ensure_host(base_url):
             return {"error": host_err}
         base = base_url.rstrip("/")
         matrix: list[dict[str, Any]] = []
-        # 执行器契约：线程 ID 客户端生成，首个 run.start 隐式建线程（v3.9 同构）
+        # 执行器契约：线程 ID 客户端生成，首个 run.start 隐式建线程
         tid = str(uuid.uuid4())
-        auth = self.auth_headers
+        auth = self.ctx.auth_headers
         # (步骤名, 端点模板, body, 附加头)——线程级请求带会话路由头（执行器同款）
         if flavor == "commands":
             steps: list[tuple[str, str, dict[str, Any] | None, dict[str, str]]] = [
@@ -108,7 +88,7 @@ class ProtocolMixin:
                 ),
             ]
         try:
-            client_cm = await self._client()
+            client_cm = self.ctx.borrow_client()
             async with client_cm as client:
                 for name, endpoint, body, extra_headers in steps:
                     method = endpoint.split(" ")[0]
@@ -168,12 +148,17 @@ class ProtocolMixin:
                                 f"{base}{spath}",
                                 headers={**auth, **conversation_headers(tid)},
                             ) as s:
+                                # 2xx-only（与其余端点同红线：3xx 重定向不是端点存在的证据）
+                                ok = 200 <= s.status_code < 300
+                                note = f"HTTP {s.status_code}"
+                                if 300 <= s.status_code < 400:
+                                    note += "——重定向不是端点存在的证据"
                                 matrix.append(
                                     {
                                         "step": "stream",
                                         "endpoint": spath.replace(tid, tid[:8]),
-                                        "ok": s.status_code < 400,
-                                        "note": f"HTTP {s.status_code}",
+                                        "ok": ok,
+                                        "note": note,
                                     }
                                 )
                                 break
@@ -201,8 +186,15 @@ class ProtocolMixin:
                                 "note": "临时线程已清理",
                             }
                         )
-                    except Exception:  # noqa: BLE001 — 清理失败不影响结论
-                        pass
+                    except Exception as e:  # noqa: BLE001 — 不影响结论，但残留必须可见
+                        matrix.append(
+                            {
+                                "step": "cleanup",
+                                "endpoint": f"DELETE /threads/{tid[:8]}…",
+                                "ok": False,
+                                "note": f"临时线程清理失败（残留）：{truncate(str(e), 100)}",
+                            }
+                        )
         except Exception as e:  # noqa: BLE001
             return {"error": f"探测失败: {e}"}
         # 鉴权状态与失败模式化指引：协议端点若需认证，未鉴权请求可能 401/403
@@ -218,9 +210,10 @@ class ProtocolMixin:
             param_rejected = any(m.get("status") in (400, 422) for m in matrix)
             if not authenticated:
                 next_step = (
-                    "本次探测未携带鉴权（本会话尚无登录实测成功的 token）——协议端点"
+                    "本次探测未携带鉴权（本会话尚无已声明的会话凭证）——协议端点"
                     "若需认证，未鉴权请求可能被拒（401/403）也可能被网关静默 404："
-                    "先完成 probe_login 登录实测（成功后 token 自动挂载），再重探本工具"
+                    "先用 request 实测登录（body 带凭证模板 + ref），2xx 后 declare_token "
+                    "声明提取（凭证自动挂载），再重探本工具"
                 )
             elif auth_rejected:
                 next_step = (
@@ -245,13 +238,13 @@ class ProtocolMixin:
                     "请求构造（URL 与载荷形态），或对会话内候选域逐一重探；全部落空"
                     "把证据呈报用户确认，勿按参照包示例臆造端点落盘"
                 )
-        if host := _host_of(base_url):
-            self._record_protocol(
+        if host := host_of(base_url):
+            self.ctx.record_protocol(
                 host,
                 flavor,
                 {m["step"]: m["ok"] for m in matrix if m["step"] != "skipped"},
             )
-        self._log("probe_protocol", base_url=base_url, steps=len(matrix))
+        self.ctx.log("probe_protocol", base_url=base_url, steps=len(matrix))
         result: dict[str, Any] = {
             "matrix": matrix,
             "authenticated": authenticated,

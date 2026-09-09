@@ -6,6 +6,7 @@ import pytest
 
 from agent_eval.core.exceptions import SUTChannelError
 from agent_eval.execution.registry import (
+    RequestTemplateConfig,
     SUTRegistry,
     SUTSystemConfig,
     resolve_login_url,
@@ -263,3 +264,81 @@ def test_validate_document_undefined_env_ref_reported() -> None:
     doc["sut"]["base_url"] = "${UNDEFINED_VAR_X}"
     errors = validate_sut_config_document(doc)
     assert any("UNDEFINED_VAR_X" in e for e in errors)
+
+
+# ── generic_http 通道（v4.7 落地）：request_template / response_mapping ──────
+
+
+GENERIC_HTTP_YAML = """
+sut:
+  name: plain-api
+  channel: generic_http
+  base_url: https://api.example.com
+  request_template:
+    method: POST
+    path: /v1/chat
+    headers:
+      X-Trace: "{{ metadata.task_id }}"
+    body:
+      query: "{{ input }}"
+  response_mapping:
+    text: data.answer
+    files: data.files
+"""
+
+
+def test_load_generic_http_config(tmp_path) -> None:
+    path = _write(tmp_path, "sut.yaml", GENERIC_HTTP_YAML)
+    sut = SUTRegistry.load(path).default
+    assert sut.channel == "generic_http"
+    assert sut.request_template is not None
+    assert sut.request_template.method == "POST"
+    assert sut.request_template.path == "/v1/chat"
+    assert sut.request_template.body == {"query": "{{ input }}"}
+    assert sut.response_mapping == {"text": "data.answer", "files": "data.files"}
+
+
+def test_request_template_method_normalized_and_validated() -> None:
+    assert RequestTemplateConfig(method="post", path="/x").method == "POST"
+    with pytest.raises(ValueError, match="method"):
+        RequestTemplateConfig(method="BREW", path="/x")
+
+
+def test_validate_generic_http_requires_request_template() -> None:
+    doc: dict = {"sut": {"name": "x", "channel": "generic_http", "base_url": "https://x"}}
+    errors = validate_sut_config_document(doc)
+    assert any("request_template" in e for e in errors)
+
+
+def test_validate_generic_http_rejects_unknown_mapping_keys() -> None:
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {"path": "/chat"},
+            "response_mapping": {"answer": "a.b"},
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("未知键 ['answer']" in e for e in errors)
+
+
+def test_validate_generic_http_rejects_unknown_template_fields() -> None:
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {"path": "/chat", "url": "https://other"},  # url 是发明的
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("sut.request_template 含未知字段 'url'" in e for e in errors)
+
+
+def test_validate_generic_http_accepts_full_config() -> None:
+    import yaml
+
+    doc = yaml.safe_load(GENERIC_HTTP_YAML)
+    assert validate_sut_config_document(doc) == []

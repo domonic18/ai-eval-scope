@@ -1,10 +1,10 @@
-"""PackageToolServer — 场景包工程沙盒工具面（arch/15 §六）。
+"""PackageToolServer — 场景包工程沙盒工具面。
 
 核心不变量：**磁盘上的包任何时刻只见过「用户确认且校验通过」的内容**——
 写操作一律进暂存区（内存 dict），宿主在 diff 确认 + 校验门禁通过后经
 :meth:`commit` 原子提交（staging → disk）。
 
-读写分级（arch/15 §6.11.1，Claude Code 式文件工具机制）：
+读写分级（Claude Code 式文件工具机制）：
 - **写**（write_file / delete_file）：硬沙盒——路径 ``resolve()`` 后必须位于包根内
   （防 ``..`` 与 symlink 逃逸），扩展名白名单 ``.yaml/.yml/.json/.md``，
   ``sut_configs/`` 凭证明文拒绝；无 shell、无网络、无包外写；
@@ -28,7 +28,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, ClassVar, cast
 
-from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec, truncate
 from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.packages import MANIFEST_FILENAME
 
@@ -38,8 +38,8 @@ _CRED_FIELD_RE = re.compile(
     r"^\s*(password|token|api_key|secret)\s*:\s*([^#\n]+?)\s*$", re.MULTILINE
 )
 
-# 随包发布资源根（自动授权只读域，arch/15 §6.11.1）：结构规范 / JSON Schema / 示例配置。
-# 运行时资料禁止引用仓库 docs/ 路径（pip 安装用户没有 docs/）
+# 随包发布资源根（自动授权只读域）：结构规范 / JSON Schema / 示例配置。
+# 运行时资料禁止引用仓库文档路径（pip 安装用户没有仓库文档）
 _ASSETS_ROOT = PACKAGE_ROOT / "assets"
 _LIST_MAX_FILES = 200
 # 工具签名缺省截断（LLM 可传参覆盖）：读长文件防上下文爆炸
@@ -192,7 +192,7 @@ class PackageToolServer(ToolExporterMixin):
     # ─── 工具（Agent 可调用；错误以 {"error": ...} 返回） ─────────
 
     async def list_files(self, path: str = "") -> dict[str, Any]:
-        """列目录文件（Claude Code 式分级，arch/15 §6.11.1）。
+        """列目录文件（分级授权）。
 
         会话根内（空/相对路径，含暂存态标记）与随包资源 assets/ 直接列出；
         其余外部目录复用 read_file 的授权账本（拒绝即拉黑）。
@@ -210,7 +210,7 @@ class PackageToolServer(ToolExporterMixin):
         if in_session and target == self.root:
             return self._list_session()
         if not target.is_dir():
-            return {"error": f"目录不存在: {target}"}
+            return {"error": f"不是目录或不存在: {target}"}
         files = sorted(
             p.relative_to(target).as_posix()
             for p in target.rglob("*")
@@ -248,7 +248,7 @@ class PackageToolServer(ToolExporterMixin):
         return {"files": files, "root": str(self.root)}
 
     async def read_file(self, path: str, max_chars: int = _DEFAULT_READ_CHARS) -> dict[str, Any]:
-        """读文件（Claude Code 式分级授权，arch/15 §6.11.1）。
+        """读文件（分级授权）。
 
         会话根内（相对或根内绝对路径）→ 暂存视图优先；随包资源 assets/ → 自动授权
         只读；其余外部路径 → 经 ask_fn 向用户申请授权（拒绝即拉黑）。凭证路径一律
@@ -478,7 +478,7 @@ class PackageToolServer(ToolExporterMixin):
         快照与运行时/落盘门禁**同一真相源**（rule_refs 的装载原语：内置注册 +
         包 entry_points）；暂存清单已声明 entry_points 时一并装载——草稿期声明的
         chat.* 等场景评估器同样可见，避免「清单已声明却被告知不可用」的假阴性
-        （与 v3.15 门禁同一教训：校验/工具的真相源必须与运行时同源）。
+        （教训：校验/工具的真相源必须与运行时同源）。
         """
         from agent_eval.evaluation.evaluators.plugins import load_package_entry_points
         from agent_eval.evaluation.registry import registry
@@ -492,7 +492,7 @@ class PackageToolServer(ToolExporterMixin):
         evaluators = sorted(registry.list_registered())
         # 判官模板变量契约（copy, don't recall 的变量面）：评估器类级 prompt_variables
         # 声明的实时快照——user_prompt_template 的变量从此原样复制，与落盘门禁同源
-        # （guide §4 的契约表是文档副本，真相源在这里与评估器类声明）
+        # （契约表文档是副本，真相源在这里与评估器类声明）
         contracts = {
             eid: sorted(contract)
             for eid in evaluators
@@ -513,6 +513,12 @@ class PackageToolServer(ToolExporterMixin):
 
     async def preview_diff(self) -> dict[str, Any]:
         """暂存 vs 磁盘的统一 diff（与宿主确认界面同源）。"""
+        if not self.staging:
+            return {
+                "diff": "",
+                "changed": 0,
+                "note": "暂存区为空：先用 write_file/delete_file 产生变更再预览",
+            }
         return {"diff": self.render_diff(), "changed": len(self.staging)}
 
     # ─── 宿主侧（不经 Agent） ─────────────────────────────────────

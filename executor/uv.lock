@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "ai-eval-scope"
-version = "0.1.0"
+version = "0.2.1"
 source = { editable = "../evaluator" }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -73,7 +73,11 @@ dev = [
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=0.23" },
     { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "pytest-timeout", specifier = ">=2.3" },
+    { name = "pytest-xdist", specifier = ">=3.5" },
     { name = "ruff", specifier = ">=0.4" },
+    { name = "types-jsonschema", specifier = ">=4.26.0.20260518" },
+    { name = "types-markdown", specifier = ">=3.10.2.20260712" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20260815" },
 ]
 

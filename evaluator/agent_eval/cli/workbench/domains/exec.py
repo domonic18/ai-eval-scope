@@ -14,6 +14,7 @@ from rich import print as rprint
 
 from agent_eval.cli.console.equiv import pipeline_argv, render, run_argv
 from agent_eval.cli.console.prompts import confirm, select
+from agent_eval.execution.registry import SCHEDULED_CHANNELS
 
 
 def _count_tasks(path: Path) -> int:
@@ -22,6 +23,19 @@ def _count_tasks(path: Path) -> int:
         return len(data.get("tasks", []))
     except Exception:  # noqa: BLE001 — 展示用途，解析失败按 0 计
         return 0
+
+
+def _sut_channel(path: Path) -> str:
+    """读 sut_configs 的 channel 字段（列表标注与预检；解析失败按空串计）。
+
+    容错 yaml 直读而非 SUTRegistry.load——后者遇未定义 ``${VAR}`` 会抛错，
+    会让一个文件的 env 问题炸掉整个选择列表；权威拦截仍在执行工厂与落盘门禁。
+    """
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        return str((data.get("sut") or {}).get("channel", ""))
+    except Exception:  # noqa: BLE001 — 展示用途
+        return ""
 
 
 def main(session: Any) -> None:
@@ -55,7 +69,18 @@ def main(session: Any) -> None:
     if not sut_files:
         rprint("[yellow]包内无 SUT 接入（eval-only 场景请走 pack → eval 流程）。[/yellow]")
         return
-    sut = select("选择 SUT", [f.stem for f in sut_files])
+    channels = {f.stem: _sut_channel(f) for f in sut_files}
+    sut = select("选择 SUT", [f"{stem}（{ch or '未知'}）" for stem, ch in channels.items()])
+    sut = sut.split("（")[0]
+    # 通道排期前置预检：答完 2 个交互即见错，不等到执行摘要之后的工厂报错
+    if channels[sut] not in SCHEDULED_CHANNELS:
+        rprint(
+            f"[red]通道 {channels[sut]!r} 预留未排期（本期排期通道 "
+            f"{'、'.join(SCHEDULED_CHANNELS)}，arch/03 §4.0.6/§4.2）——"
+            "请先把 sut_configs 的 channel 修正为排期通道（可在工作台会话中"
+            "让 Agent 重新探测修正）。[/red]"
+        )
+        return
     session.ctx.active_sut = sut
 
     rs_files = sorted(resolved.root.glob("rules/*.yaml"))

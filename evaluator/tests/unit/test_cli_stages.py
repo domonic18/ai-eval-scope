@@ -36,7 +36,7 @@ class FakeExecutionAgent:
 
     def __init__(self, config, sut_tools=None, extra_tool_servers=None):
         self.config = config
-        from agent_eval.agent.sut_tools import SUTToolServer
+        from agent_eval.agent.executor.sut_tools import SUTToolServer
         from agent_eval.storage.package import ExecutionPackage
 
         self._sut_tools = SUTToolServer(workspace_dir=self.config.workspace_dir)
@@ -93,7 +93,7 @@ class TestExecuteStage:
         sut_cfg.write_text(SUT_YAML, encoding="utf-8")
         inputs = resolve_run_inputs(None, task_set=str(task_set), sut_config=str(sut_cfg))
 
-        import agent_eval.agent.execution_agent as execution_agent_mod
+        import agent_eval.agent.executor.agent as execution_agent_mod
         import agent_eval.execution.channels.base as channels_base
 
         monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)

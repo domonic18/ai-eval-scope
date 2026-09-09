@@ -1,4 +1,4 @@
-"""Agent Protocol 语义工具面（arch/03 §4.0.6-b）。
+"""Agent Protocol 语义工具面。
 
 取代手搓 HTTP 请求：agent_run / agent_run_stream / create_thread /
 run_on_thread / cancel_run / get_agent_info 六个语义工具，封装
@@ -12,7 +12,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from agent_eval.agent.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec, truncate
 from agent_eval.core.exceptions import AgentEvalError
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 
@@ -93,11 +93,11 @@ class AgentProtocolToolServer(ToolExporterMixin):
         Args:
             channel: Agent Protocol 通道实例。
             default_metadata: 附加到每次 run 的元数据（如 eval_run_id/sut_name，
-                §4.0.6-e：便于被测系统侧审计与限流豁免协商）。
+                便于被测系统侧审计与限流豁免协商）。
         """
         self.channel = channel
         self.default_metadata = default_metadata or {}
-        # 最近一次 SUT run 摘要（ExecutionPackage trace 回填 SUT 回答文本用，v4.6.4）
+        # 最近一次 SUT run 摘要（ExecutionPackage trace 回填 SUT 回答文本用）
         self.last_run: dict[str, Any] | None = None
 
     def _record_last_run(self, result: dict[str, Any]) -> None:
@@ -124,7 +124,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             input, exec_mode=exec_mode, metadata=self._merge_metadata(metadata)
         )
         self._record_last_run(result)
-        return _bounded_result(result)
+        return bounded_result(result)
 
     @tool_guard
     async def agent_run_stream(
@@ -147,7 +147,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             }
             for e in result.get("events", [])[:MAX_STREAM_EVENTS]
         ]
-        return _bounded_result(result)
+        return bounded_result(result)
 
     @tool_guard
     async def create_thread(self, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -166,7 +166,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             thread_id, input, metadata=self._merge_metadata(metadata)
         )
         self._record_last_run(result)
-        return _bounded_result(result)
+        return bounded_result(result)
 
     @tool_guard
     async def cancel_run(self, run_id: str, action: str = "interrupt") -> dict[str, Any]:
@@ -182,7 +182,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         return {**self.default_metadata, **(metadata or {})}
 
 
-def _bounded_result(result: dict[str, Any]) -> dict[str, Any]:
+def bounded_result(result: dict[str, Any]) -> dict[str, Any]:
     """截断大体量字段（values/messages/events 文本化），保留状态与产出物结构。"""
     bounded = dict(result)
     for field in ("values", "messages", "text"):

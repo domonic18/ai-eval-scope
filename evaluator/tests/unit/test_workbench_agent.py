@@ -14,14 +14,14 @@ from typing import Any
 import pytest
 import typer
 
-from agent_eval.agent.workbench_agent import (
+from agent_eval.agent.workbench.agent import (
     TurnResult,
     WorkbenchAgent,
     WorkbenchAgentConfig,
     _resume_messages,
     repair_orphan_tool_calls,
 )
-from agent_eval.agent.workbench_tools import PackageToolServer
+from agent_eval.agent.workbench.tools import PackageToolServer
 from agent_eval.core.exceptions import AgentError
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
@@ -97,6 +97,20 @@ class TestSandbox:
     def test_write_rejects_non_whitelisted_ext(self, tmp_path: Path) -> None:
         result = asyncio.run(PackageToolServer(tmp_path).write_file("run.sh", "x"))
         assert "白名单" in result["error"]
+
+    def test_list_files_file_path_message_accurate(self, tmp_path: Path) -> None:
+        """B9：传文件路径报「不是目录或不存在」（旧文案「目录不存在」对存在的文件
+        是误导——回显 target 虽可自诊，文案仍须精确）。"""
+        (tmp_path / "a.yaml").write_text("x: 1\n", encoding="utf-8")
+        server = PackageToolServer(tmp_path)
+        result = asyncio.run(server.list_files("a.yaml"))
+        assert "不是目录或不存在" in result["error"]
+
+    def test_preview_diff_empty_staging_gives_note(self, tmp_path: Path) -> None:
+        """B10：空暂存的 preview_diff 带 note（其余空结果分支均有指引，此处曾缺）。"""
+        server = PackageToolServer(tmp_path)
+        result = asyncio.run(server.preview_diff())
+        assert result["changed"] == 0 and "暂存区为空" in result["note"]
 
     def test_write_intercepts_credential_plaintext(self, tmp_path: Path) -> None:
         server = PackageToolServer(tmp_path)
@@ -443,16 +457,48 @@ class TestAgentTurn:
         retry = asyncio.run(agent.turn("已按提示探测，重写", confirm_fn=lambda r, d: True))
         assert retry.committed
 
-    def test_protocol_gate_skips_non_agent_protocol_channel(
+    def test_protocol_gate_rejects_unscheduled_channel(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """门禁只针对 agent_protocol 通道：http 等通道不受 probe_protocol 约束。"""
+        """通道排期门禁：browser 预留未排期，落盘即打回。
+
+        实测教训：协议探测受挫后 Agent 自行降级写预留通道——创建侧当时全放行、
+        执行期工厂才报错，用户答完 5 个交互才见失败。拦截前移到落盘前。
+        """
+
+        async def write_browser_sut(server: PackageToolServer) -> str:
+            await _write_valid(server)
+            await server.write_file(
+                "sut_configs/ui.yaml",
+                "sut:\n  name: ui\n  channel: browser\n  base_url: https://ui.example.com\n",
+            )
+            return "写了 browser 通道配置"
+
+        fake, _ = _replay([write_browser_sut])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(
+            tmp_path, config=WorkbenchAgentConfig(max_fix_rounds=1), log_dir=tmp_path / "log"
+        )
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert not result.committed  # 未排期通道 → 门禁打回
+        assert any("预留未排期" in e for e in result.validation_errors)
+        assert any("不得静默降级" in e for e in result.validation_errors)
+        assert not (tmp_path / "sut_configs" / "ui.yaml").exists()  # 门禁未过不落盘
+
+    def test_generic_http_channel_passes_without_protocol_ledger(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """generic_http 已排期（v4.7 落地）且无协议端点语义：不需 probe_protocol
+        账本即可落盘（登录对账仍由 _reconcile_login 覆盖）。"""
 
         async def write_http_sut(server: PackageToolServer) -> str:
             await _write_valid(server)
             await server.write_file(
                 "sut_configs/api.yaml",
-                "sut:\n  name: api\n  channel: generic_http\n  base_url: https://api.example.com\n",
+                "sut:\n  name: api\n  channel: generic_http\n  base_url: https://api.example.com\n"
+                '  request_template:\n    method: POST\n    path: /chat\n    body: \'{"q": "{{ input }}"}\'\n',
             )
             return "写了 http 通道配置"
 
@@ -462,7 +508,8 @@ class TestAgentTurn:
 
         result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
 
-        assert result.committed  # 非 agent_protocol 通道不触发门禁
+        assert result.committed  # 已排期通道，协议对账不适用 → 放行
+        assert (tmp_path / "sut_configs" / "api.yaml").exists()
 
     def test_protocol_gate_rejects_core_step_not_ok(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -499,7 +546,7 @@ class TestAgentTurn:
     _LOGIN_URL = "https://sasan-server.staging.example.com/users/login"
 
     def _record_login_fact(self, agent: WorkbenchAgent) -> None:
-        agent.probe._record_login(  # noqa: SLF001 — 单测模拟 probe_login 成功登记
+        agent.probe._record_login(  # noqa: SLF001 — 单测模拟 declare_token 成功登记
             {
                 "ref": "teacher-login",
                 "method": "POST",
@@ -688,7 +735,7 @@ class TestAgentTurn:
 
         assert not result.committed
         joined = "\n".join(result.validation_errors)
-        assert "未经本会话" in joined and "probe_login" in joined
+        assert "未经本会话" in joined and "declare_token" in joined
 
     def test_first_turn_text_uses_templates(self) -> None:
         text = WorkbenchAgent.first_turn_text(
@@ -750,7 +797,7 @@ class TestAgentTurn:
         assert not (tmp_path / "rules").exists()
 
     def test_emit_tool_events_from_updates(self) -> None:
-        from agent_eval.agent.workbench_agent import _emit_tool_events
+        from agent_eval.agent.workbench.messages import emit_tool_events as _emit_tool_events
 
         events: list[dict[str, Any]] = []
         updates = {
@@ -787,7 +834,7 @@ class TestAgentTurn:
     ) -> None:
         # KIMI/Claude 系模型 content 为 blocks（thinking/text）——真机冒烟实测曾因
         # isinstance(str) 过滤导致 token 零输出
-        from agent_eval.agent.workbench_agent import _text_from_content
+        from agent_eval.agent.workbench.messages import text_from_content as _text_from_content
 
         assert _text_from_content("纯文本") == "纯文本"
         assert (
@@ -894,7 +941,7 @@ class TestCliEntries:
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             ),
@@ -922,7 +969,7 @@ class TestCliEntries:
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             )
 
-        monkeypatch.setattr("agent_eval.agent.workbench_agent.run_turn", fake_run_turn)
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
         root = sa.agent_new_package(
             ref=None, output=None, instruction="研学计划质检", yes=True, trust_agent=True
         )
@@ -939,7 +986,7 @@ class TestCliEntries:
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: (_ for _ in ()).throw(typer.Exit(1)),
         )
         with pytest.raises(typer.Exit):
@@ -1022,7 +1069,7 @@ class TestCliEntries:
 
         monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="d", staged=True, committed=True, committed_files=["M a.yaml"]
             ),
@@ -1097,7 +1144,7 @@ class TestCliEntries:
         inputs = iter(["加一条规则", ""])  # 首轮需求 + 空行退出（勿按 seen 取值：
         # run_turn 每轮异常会让 seen 永不增长 → REPL 无限循环吃满 CPU，实测教训）
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: (
                 seen.append(text) or TurnResult(reply="ok", diff="", staged=False)
             ),
@@ -1114,7 +1161,7 @@ class TestCliEntries:
 
         _seed_valid_package(tmp_path)
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("peer closed")),
         )
         monkeypatch.setattr(sa, "ask", lambda prompt: "")
@@ -1139,7 +1186,7 @@ class TestCliEntries:
         async def stage_secret() -> None:
             await agent.server.write_file("rules/a.yaml", RULES)
 
-        monkeypatch.setattr("agent_eval.agent.workbench_agent.run_turn", fake_run_turn)
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
         inputs = iter(["继续", "放弃", ""])
         monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
         asyncio.run(stage_secret())  # 预置暂存（模拟暂停轮遗留）
@@ -1193,7 +1240,7 @@ class TestCliEntries:
 
         monkeypatch.setattr(sa.sys, "stdout", _Tty(_sys.stdout))
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="", staged=False
             ),
@@ -1280,7 +1327,7 @@ class TestCliEntries:
         calls: list[bool] = []
         monkeypatch.setattr(sa, "_render_intro", lambda agent: calls.append(True))
         monkeypatch.setattr(
-            "agent_eval.agent.workbench_agent.run_turn",
+            "agent_eval.agent.workbench.agent.run_turn",
             lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
                 reply="ok", diff="", staged=False
             ),
@@ -1568,9 +1615,9 @@ class TestAgentConfig:
 
     def test_probe_domain_injection(self, tmp_path: Path) -> None:
         # 探测域档位（预算/超时）经 config 注入 SUTProbeToolServer
-        cfg = WorkbenchAgentConfig(probe_budgets={"http_request": 1}, probe_timeout_s=2.5)
+        cfg = WorkbenchAgentConfig(probe_budgets={"request": 1}, probe_timeout_s=2.5)
         agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
-        assert agent.probe.budgets == {"http_request": 1}
+        assert agent.probe.budgets == {"request": 1}
         assert agent.probe.timeout_s == 2.5
 
     def test_resume_truncation_uses_config(self, tmp_path: Path) -> None:
@@ -1593,9 +1640,9 @@ class TestAgentConfig:
 
     def test_config_injects_probe_domain(self, tmp_path: Path) -> None:
         # 探测域档位默认随 config 注入 SUTProbeToolServer（预算/超时可调）
-        cfg = WorkbenchAgentConfig(probe_budgets={"http_request": 1}, probe_timeout_s=2.5)
+        cfg = WorkbenchAgentConfig(probe_budgets={"request": 1}, probe_timeout_s=2.5)
         agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
-        assert agent.probe.budgets == {"http_request": 1}
+        assert agent.probe.budgets == {"request": 1}
         assert agent.probe.timeout_s == 2.5
 
     def test_resume_injection_respects_config(self, tmp_path: Path) -> None:
@@ -1612,7 +1659,7 @@ class TestSessionMachine:
 
     @staticmethod
     def _recursion_exc() -> type[BaseException]:
-        from agent_eval.agent.workbench_agent import _GraphRecursionError
+        from agent_eval.agent.workbench.messages import _GraphRecursionError
 
         if _GraphRecursionError is None:  # langgraph 缺席（纯单测 CI）
             pytest.skip("langgraph 未安装（[agent] extra 缺席）")
@@ -1726,9 +1773,7 @@ class TestSessionMachine:
         exc = self._recursion_exc()
         half_way = [
             SimpleNamespace(type="human", content="生成包"),
-            SimpleNamespace(
-                type="ai", content="", tool_calls=[{"id": "c9", "name": "http_request"}]
-            ),
+            SimpleNamespace(type="ai", content="", tool_calls=[{"id": "c9", "name": "request"}]),
         ]
 
         class _FakeGraph:

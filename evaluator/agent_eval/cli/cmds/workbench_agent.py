@@ -52,6 +52,8 @@ def _render_outcome(result: Any, landing: Path | None = None) -> None:  # noqa: 
         rprint("[red]❌ 校验未通过（未落盘）:[/red]")
         for e in result.validation_errors:
             rprint(f"  • {e}")
+        # 失败侧归位时序说清（v3.19 的补充）：未落盘 = 磁盘未动，包仍在暂存区
+        rprint("[dim]磁盘未做任何修改，变更仍在暂存区——继续对话修复上述错误后重新确认[/dim]")
     elif not result.staged:
         rprint("[yellow]（本轮无文件变更——可继续描述需求或换种说法）[/yellow]")
 
@@ -76,7 +78,7 @@ def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]
 
 def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """执行并渲染一轮：流式直播（回复不重复打印）或非流式兜底。"""
-    from agent_eval.agent.workbench_agent import run_turn
+    from agent_eval.agent.workbench.agent import run_turn
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
@@ -108,7 +110,12 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
         _render_diff(diff)
     landing = _landing_hint(agent) if agent is not None else None
     if landing:
-        rprint(f"[green]确认落盘后，会话结束（输入空行退出）即归位 → {landing}[/green]")
+        # 不预设门禁通过（实测：门禁打回后横幅仍称「确认落盘即归位」，用户误以为
+        # 已落盘）——归位是「确认 → 门禁通过 → 落盘 → 会话结束」的链，任何一环
+        # 失败都不归位
+        rprint(
+            f"[green]确认后经校验门禁，通过即落盘；会话结束（空行退出）后归位 → {landing}[/green]"
+        )
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 
@@ -141,7 +148,7 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
     ``cwd/<id>-package/``）；改已有项目包由 Agent 经 read_file 读入现有内容后在
     草稿中改造（prompts 域段规约）。LLM 未配置在此阻断（无模型 Agent 不可用）。
     """
-    from agent_eval.agent.workbench_agent import WorkbenchAgent
+    from agent_eval.agent.workbench.agent import WorkbenchAgent
     from agent_eval.packages import MANIFEST_FILENAME
 
     _guard_llm_ready()
@@ -244,7 +251,7 @@ def _guard_llm_ready() -> None:
     from agent_eval.core.exceptions import AgentError
 
     try:
-        from agent_eval.agent.model_bridge import build_chat_model
+        from agent_eval.agent.core.model_bridge import build_chat_model
 
         build_chat_model("agent")
     except AgentError as e:
@@ -255,7 +262,7 @@ def _guard_llm_ready() -> None:
 
 def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """--yes --trust-agent 单轮执行（流式进度 + 自动确认；未落盘退出码 1）。"""
-    from agent_eval.agent.workbench_agent import run_turn
+    from agent_eval.agent.workbench.agent import run_turn
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
@@ -389,7 +396,7 @@ def agent_new_package(
     给了 ref 默认落 ``cwd/<id>-package/``，给了 --output 则原地生成（支持指回
     草稿续作，非空目录放行）。
     """
-    from agent_eval.agent.workbench_agent import WorkbenchAgent, WorkbenchAgentConfig
+    from agent_eval.agent.workbench.agent import WorkbenchAgent, WorkbenchAgentConfig
     from agent_eval.packages import MANIFEST_FILENAME, parse_ref
 
     _guard_llm_ready()
@@ -457,7 +464,7 @@ def agent_edit_package(
     budget_usd: float | None = None,
 ) -> None:
     """``scenario edit``：对项目包做自然语言增删改查（REPL 会话）。"""
-    from agent_eval.agent.workbench_agent import WorkbenchAgent, WorkbenchAgentConfig
+    from agent_eval.agent.workbench.agent import WorkbenchAgent, WorkbenchAgentConfig
     from agent_eval.packages import MANIFEST_FILENAME, PackageManager
 
     _guard_llm_ready()

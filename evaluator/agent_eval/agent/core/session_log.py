@@ -1,9 +1,9 @@
-"""Agent Hooks — 预算控制与结构化日志（arch/03 §7a、§3.6）。
+"""Agent 执行结构化日志 — JSONL 事件流与任务汇总。
 
-BudgetController 监控 Agent 执行成本（token/美元计量 + 硬性上限）；
-SessionLogger 将 Agent 执行全程输出为机器可解析的 JSON Lines
-（workspace/runs/{run_id}/agent_logs/）。两者经 LangGraph 回调
-（agent/callbacks.py 的 BudgetGuard / SessionLogCallback）注入执行流程。
+SessionLogger 每任务一个 ``agent_{task_id}.jsonl``，close() 时向
+``agent_summary.jsonl`` 追加一条汇总；所有事件同时保留在内存 events 列表，
+便于上层直接消费（trace / metrics 构建）。经 LangGraph 回调（callbacks.py 的
+SessionLogCallback）注入执行流程。
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ def _now_iso() -> str:
 
 
 def _summarize(value: Any, max_chars: int = 500) -> Any:
-    """生成工具输入/输出的脱敏摘要（用于结构化日志，arch/03 §7a.3）。"""
+    """生成工具输入/输出的脱敏摘要（嵌套结构递归、列表截 20 项、长串截断）。"""
     if isinstance(value, dict):
         return {
             k: (
@@ -50,7 +50,7 @@ def _summarize(value: Any, max_chars: int = 500) -> Any:
 
 @dataclass
 class AgentExecutionLog:
-    """Agent 执行的结构化日志条目（arch/03 §7a.3）。"""
+    """Agent 执行的结构化日志条目（一行 JSON 的 schema）。"""
 
     # 追踪信息
     timestamp: str
@@ -91,45 +91,12 @@ class _PendingCall:
     started: float
 
 
-class BudgetController:
-    """预算控制器，监控 Agent 执行成本（arch/03 §3.6）。
-
-    check() 状态机：spent < 80% → "ok"；80%~100% → "warning"；≥ 上限 → "exceeded"。
-    """
-
-    def __init__(self, max_budget_usd: float, warn_threshold: float = 0.8) -> None:
-        self.max_budget_usd = max_budget_usd
-        self.warn_threshold = warn_threshold
-        self.spent_usd: float = 0.0
-        self.total_tokens: int = 0
-
-    def record(self, cost_usd: float = 0.0, tokens: int = 0) -> str:
-        """累计一次计量（LLM 回调的 token/成本），返回最新状态。"""
-        self.spent_usd += cost_usd
-        self.total_tokens += tokens
-        return self.check()
-
-    def check(self) -> str:
-        """检查当前预算状态。
-
-        Returns:
-            "ok" | "warning" | "exceeded"
-        """
-        if self.max_budget_usd <= 0:
-            return "ok"
-        if self.spent_usd >= self.max_budget_usd:
-            return "exceeded"
-        if self.spent_usd >= self.max_budget_usd * self.warn_threshold:
-            return "warning"
-        return "ok"
-
-
 class SessionLogger:
-    """Agent 执行会话的结构化日志记录器（arch/03 §7a.2-7a.5）。
+    """Agent 执行会话的结构化日志记录器。
 
-    每个任务一个 JSONL 文件（agent_{task_id}.jsonl），close() 时向
-    agent_summary.jsonl 追加一条汇总。所有事件同时保留在内存 events 列表，
-    便于上层直接消费（如构建 trace/metrics）。
+    - 每个任务一个 JSONL 文件（``agent_{task_id}.jsonl``），构造即建目录
+    - close() 向 ``agent_summary.jsonl`` 追加一条汇总（幂等）
+    - 事件同步保留在内存 ``events`` 列表
     """
 
     def __init__(
@@ -140,12 +107,12 @@ class SessionLogger:
         *,
         trace_id: str | None = None,
     ) -> None:
-        """初始化 SessionLogger。
+        """初始化日志器并创建日志目录。
 
         Args:
             run_id: 运行 ID（一次 run_task_set 共享）。
             task_id: 任务 ID。
-            log_dir: 日志目录；缺省为 ./workspace/runs/{run_id}/agent_logs。
+            log_dir: 日志目录；缺省为 ``./workspace/runs/{run_id}/agent_logs``。
             trace_id: 追踪 ID；缺省自动生成。
         """
         self.run_id = run_id
@@ -209,7 +176,10 @@ class SessionLogger:
         status: str = "success",
         duration_ms: float | None = None,
     ) -> None:
-        """记录 tool_result 事件（含耗时与状态）。"""
+        """记录 tool_result 事件（含耗时与状态）。
+
+        call_id 配对时自动补算耗时；status 透传（success / error / timeout）。
+        """
         pending = self._pending.pop(call_id, None) if call_id is not None else None
         if duration_ms is None and pending is not None:
             duration_ms = (time.perf_counter() - pending.started) * 1000
@@ -250,7 +220,7 @@ class SessionLogger:
         )
 
     def close(self) -> Path:
-        """向 agent_summary.jsonl 追加本任务汇总，返回汇总文件路径。"""
+        """向 agent_summary.jsonl 追加本任务汇总，返回汇总文件路径（幂等）。"""
         summary_path = self.log_dir / "agent_summary.jsonl"
         if self._closed:
             return summary_path

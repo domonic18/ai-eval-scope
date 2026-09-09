@@ -1,12 +1,12 @@
-"""Agent 会话记录与状态外部化（arch/03 §3.5 v4.6）。
+"""Agent 会话记录与状态外部化。
 
 AgentSession 从 DeepAgents/LangGraph 消息序列构建会话统计；
 WorkspaceCheckpointer 实现 LangGraph checkpointer 语义（鸭子类型），
 将会话状态 pickle 落盘 workspace/agent_sessions/——推理-执行-状态分离，
-崩溃可恢复/可重放/可审计。PoC 说明（v4.6.3）：单进程文件实现，
-**未接入 ExecutionAgent 图装配**——langgraph 高频触达 saver，全量读写
-实现会拖垮执行（实测 CPU 空转）；且 pending_writes 尚未按 checkpoint_id
-索引，恢复语义不完整。待 B4 实现增量真 saver 后接回。
+崩溃可恢复/可重放/可审计。现状说明：单进程文件实现**未接入
+ExecutionAgent 图装配**——langgraph 高频触达 saver，全量读写实现会拖垮
+执行（实测 CPU 空转）；且 pending_writes 尚未按 checkpoint_id 索引，恢复
+语义不完整。待增量真 saver 落地后接回。
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ _THREAD_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
 
 @dataclass
 class AgentSession:
-    """Agent 会话记录，保存完整的交互历史（arch/03 §3.5）。"""
+    """Agent 会话记录，保存完整的交互历史。"""
 
     messages: list[Any] = field(default_factory=list)
     total_input_tokens: int = 0
@@ -90,7 +90,7 @@ class WorkspaceCheckpointer(_LGBaseCheckpointSaver):  # type: ignore[misc]
 
     实现协议方法 put/put_writes/get_tuple/list（含 async 变体），按 thread_id
     一文件存储，pickle 序列化（内部工作区状态，崩溃恢复用，非跨系统交换格式）。
-    继承 BaseCheckpointSaver 仅为通过 langgraph 的 isinstance 校验（PoC，v4.6）。
+    继承 BaseCheckpointSaver 仅为通过 langgraph 的 isinstance 校验。
     """
 
     def __init__(self, workspace_dir: Path | str) -> None:

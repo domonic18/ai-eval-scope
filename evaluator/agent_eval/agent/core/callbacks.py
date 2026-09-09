@@ -1,4 +1,4 @@
-"""LangGraph 回调 — 预算护栏与会话日志注入（arch/03 §7a.6 v4.6）。
+"""LangGraph 回调 — 预算护栏与会话日志注入。
 
 BudgetGuard / SessionLogCallback 实现 LangChain 回调协议的
 on_llm_end / on_tool_start / on_tool_end 方法，经
@@ -12,8 +12,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent_eval.agent.hooks import BudgetController, SessionLogger
-from agent_eval.agent.sut_tools import HTTP_RAW_MAX_CHARS
+from agent_eval.agent.core.budget import BudgetController
+from agent_eval.agent.core.session_log import SessionLogger
 from agent_eval.core.exceptions import BudgetExceededError
 
 try:
@@ -126,6 +126,10 @@ class SessionLogCallback(_LCBaseCallbackHandler):  # type: ignore[misc]
         **kwargs: Any,
     ) -> None:
         """工具调用开始：记录 tool_call 事件。"""
+        # 函数级导入：core 不得对 executor 做 module 级反向依赖——executor 门面
+        # 会经 executor.agent 回引本模块，module 级导入将形成部分初始化环
+        from agent_eval.agent.executor.sut_tools import HTTP_RAW_MAX_CHARS
+
         name = ""
         if isinstance(serialized, dict):
             name = serialized.get("name") or ""
@@ -137,6 +141,8 @@ class SessionLogCallback(_LCBaseCallbackHandler):  # type: ignore[misc]
 
     def on_tool_end(self, output: Any, *, run_id: Any = None, **kwargs: Any) -> None:
         """工具调用结束：记录 tool_result 事件。"""
+        from agent_eval.agent.executor.sut_tools import HTTP_RAW_MAX_CHARS
+
         call_id, name = self._active.pop(str(run_id), (None, "unknown"))
         summary = {"output": str(output)[:HTTP_RAW_MAX_CHARS]}
         self.logger.log_tool_result(name, summary, call_id, status="success")

@@ -33,7 +33,7 @@ class FakeExecutionAgent:
 
     def __init__(self, config, sut_tools=None, extra_tool_servers=None):
         self.config = config
-        from agent_eval.agent.sut_tools import SUTToolServer
+        from agent_eval.agent.executor.sut_tools import SUTToolServer
         from agent_eval.storage.package import ExecutionPackage
 
         self._sut_tools = SUTToolServer(workspace_dir=self.config.workspace_dir)
@@ -62,7 +62,7 @@ def test_run_command_produces_packages(tmp_path, monkeypatch) -> None:
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
     sut_cfg.write_text(SUT_YAML, encoding="utf-8")
 
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
 
     monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)
 
@@ -111,7 +111,7 @@ def test_run_command_fills_missing_credentials_before_progress(tmp_path, monkeyp
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
     sut_cfg.write_text(SUT_AUTH_YAML, encoding="utf-8")
 
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
 
     monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)
     monkeypatch.setattr("agent_eval.cli.console.prompts.confirm", lambda *a, **k: True)
@@ -160,10 +160,11 @@ def test_run_command_declined_fill_exits_clean_without_run(tmp_path, monkeypatch
 
 
 def test_run_command_rejects_unscheduled_channel(tmp_path) -> None:
+    """browser 仍未排期（v4.7 起 generic_http 已落地，SCHEDULED_CHANNELS=协议+HTTP）。"""
     task_set = tmp_path / "task_set.yaml"
     sut_cfg = tmp_path / "sut.yaml"
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
-    sut_cfg.write_text(SUT_YAML.replace("agent_protocol", "generic_http"), encoding="utf-8")
+    sut_cfg.write_text(SUT_YAML.replace("agent_protocol", "browser"), encoding="utf-8")
     result = runner.invoke(app, ["run", "--task-set", str(task_set), "--sut-config", str(sut_cfg)])
     assert result.exit_code == 1
     assert "预留未排期" in result.output
@@ -214,7 +215,7 @@ def test_run_command_closes_channel_same_loop(tmp_path, monkeypatch) -> None:
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
     sut_cfg.write_text(SUT_YAML, encoding="utf-8")
 
-    import agent_eval.agent.execution_agent as execution_agent_mod
+    import agent_eval.agent.executor.agent as execution_agent_mod
     from agent_eval.execution.channels import base as channels_base
 
     monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)

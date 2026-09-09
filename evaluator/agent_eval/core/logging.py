@@ -18,14 +18,34 @@ def _ensure_utf8_streams() -> None:
             stream.reconfigure(encoding="utf-8", errors="replace")
 
 
+# 传输层噪声日志器：httpx / openai / anthropic SDK 每次请求都打 INFO 级
+# 「HTTP Request: … 200 OK」「Retrying request …」，在交互式会话（工作台流式直播）
+# 是纯污染——root 日志是进程级全局态，工作台里执行域先跑过一次评测，日志就会混进
+# 之后所有 Agent 会话。非 DEBUG 模式压到 WARNING（真故障仍可见）；DEBUG（--verbose
+# 诊断）不压，全量放行。
+_NOISY_HTTP_LOGGERS = ("httpx", "httpcore", "openai", "anthropic")
+
+
+def _tune_noisy_loggers(level: str) -> None:
+    """按根级别收敛传输层日志器级别（setup_logging 可重复调用，随最近一次生效）。"""
+    noisy_level = logging.NOTSET if level.upper() == "DEBUG" else logging.WARNING
+    for name in _NOISY_HTTP_LOGGERS:
+        logging.getLogger(name).setLevel(noisy_level)
+
+
 def setup_logging(level: str = "INFO", json_output: bool = False) -> None:
     """初始化 structlog 配置。
 
     Args:
         level: 日志级别（DEBUG/INFO/WARNING/ERROR）。
         json_output: 是否输出 JSON 格式（默认为控制台友好的 dev 格式）。
+
+    非 DEBUG 级别下同步把传输层日志器（httpx/httpcore/openai/anthropic）压到
+    WARNING——交互式会话不被「HTTP Request: …」INFO 噪声污染；DEBUG 诊断模式
+    全量放行（见 ``_NOISY_HTTP_LOGGERS``）。
     """
     _ensure_utf8_streams()
+    _tune_noisy_loggers(level)
 
     shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,

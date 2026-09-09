@@ -789,12 +789,14 @@ sys.modules.setdefault("langfuse", MagicMock())
 
 ## 六、版本记录
 
+> 逐版一行速览，只记「改了什么」；演进理由见 git 提交历史与正文对应章节。
+
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
-| v1.0 | 2026-06-08 | 按架构层次重组，更新交叉引用 |
-| v1.1 | 2026-06-08 | 新增 ProviderPool 多模型管理、运行时切换、JudgeRecord 评审溯源、ConstraintResult 模型溯源字段 |
-| v1.2 | 2026-06-08 | 视觉评估从 PPTX 截图调整为 HTML 渲染截图；PPTX 评估标注为后续插件扩展 |
-| **v2.0** | **2026-06-12** | **同步代码现状（Provider 实现清单 / Factory / judge 签名）；新增 §2.7 降级机制；合并原 09 Langfuse 调用追踪设计至 §五** |
-| **v2.1** | **2026-07-13** | **对接 [13 配置管理设计](./13配置管理设计.md)**：TemplateManager 演进为 PromptStore 抽象（File / Db / Snapshot 三实现），模板补 scenario / package / namespace / variables 字段与版本标签；JudgeOrchestrator 经 PromptStore 解析模板，不再读扁平 assets/prompts/ |
-| **v2.2** | **2026-08-18** | **§1.5 补执行 Agent 模型桥接注记（随 [03](./03执行引擎设计.md) v4.6）**：执行侧经 build_chat_model 构造 LangChain ChatModel（双协议），与评估侧 Provider 共用同一配置源 |
-| **v2.3** | **2026-08-25** | **LLM 配置双形态落地**（详见 [06 §4.6](./06数据管理与配置规范.md)）：移除 llm_config.yaml 与 `${VAR}` 解析，统一 resolve_llm_config()（本地 llm.json 优先、平台按角色拉取兜底）；providers 键=角色（text/vision/agent），Pool / 工厂 / 桥接零改动 |
+| v1.0 | 2026-06-08 | 按架构层次重组 |
+| v1.1 | 2026-06-08 | 新增 ProviderPool 与 JudgeRecord 溯源 |
+| v1.2 | 2026-06-08 | 视觉评估改 HTML 渲染截图 |
+| v2.0 | 2026-06-12 | 同步代码现状；合并调用追踪设计 |
+| v2.1 | 2026-07-13 | PromptStore 抽象（File/Db/Snapshot） |
+| v2.2 | 2026-08-18 | 补执行侧模型桥接注记（随 03 v4.6） |
+| v2.3 | 2026-08-25 | LLM 配置双形态 resolve_llm_config |

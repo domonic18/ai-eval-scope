@@ -1,4 +1,4 @@
-"""ExecutionAgent — 基于 DeepAgents（Python）的执行 Agent（arch/03 §三 v4.6）。
+"""ExecutionAgent — 基于 DeepAgents（Python）的执行 Agent。
 
 端到端驱动评测执行流程：理解任务、调用 SUT Tools、处理错误、收集结果、
 生成 ExecutionPackage。底座为 deepagents 的 create_deep_agent（惰性导入，
@@ -16,11 +16,11 @@ from typing import Any
 
 import yaml
 
-from agent_eval.agent.callbacks import BudgetGuard, SessionLogCallback
-from agent_eval.agent.hooks import SessionLogger
-from agent_eval.agent.model_bridge import build_chat_model
-from agent_eval.agent.session import AgentSession
-from agent_eval.agent.sut_tools import SUTToolServer
+from agent_eval.agent.core.callbacks import BudgetGuard, SessionLogCallback
+from agent_eval.agent.core.model_bridge import build_chat_model
+from agent_eval.agent.core.session import AgentSession
+from agent_eval.agent.core.session_log import SessionLogger
+from agent_eval.agent.executor.sut_tools import SUTToolServer
 from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.core.exceptions import (
     AgentError,
@@ -64,7 +64,7 @@ def _is_recursion_error(error: BaseException) -> bool:
 class ExecutionAgent:
     """基于 DeepAgents 的执行 Agent，端到端驱动评测执行流程。
 
-    - 模型：LLM 角色注册表（arch/06 §4.6）→ build_chat_model() 构造 ChatModel（双协议，模型无关）
+    - 模型：LLM 角色注册表 → build_chat_model() 构造 ChatModel（双协议，模型无关）
     - 工具：SUT Tools 经 LangChain Tool 显式绑定（白名单），未绑定工具不可用
     - 预算：BudgetGuard 回调（on_llm_end 累计 token/成本，超限抛 BudgetExceededError）
     - 状态：单任务单发 ainvoke，不接 checkpointer（见 _build_graph 说明）
@@ -82,8 +82,8 @@ class ExecutionAgent:
         Args:
             config: Agent 配置（轮次/预算/llm_role/workspace 等）。
             sut_tools: SUT 工具注册表；缺省按 config.sut_tools_config 构建。
-            extra_tool_servers: 追加工具注册表（如 AgentProtocolToolServer，
-                arch/03 §4.0.6 语义工具面），与 SUT Tools 一同显式绑定。
+            extra_tool_servers: 追加工具注册表（如 AgentProtocolToolServer
+                语义工具面），与 SUT Tools 一同显式绑定。
         """
         self.config = config
         self.sut_tools = sut_tools or SUTToolServer(
@@ -118,9 +118,9 @@ class ExecutionAgent:
         """
         run_id = run_id or generate_run_id()
         workspace = Path(self.config.workspace_dir)
-        # W7（arch/03 §7a.8）：执行包归位 runs/{run_id}/packages/{task_id}——
-        # 挂 run_id 与 agent_logs/results 同层可关联（旧布局 workspace/{task_id}
-        # 同名重跑互相覆盖且无法归属运行）。write_package 的目的地由
+        # 执行包归位 runs/{run_id}/packages/{task_id}——挂 run_id 与
+        # agent_logs/results 同层可关联（旧布局 workspace/{task_id} 同名重跑
+        # 互相覆盖且无法归属运行）。write_package 的目的地由
         # sut_tools.workspace_dir 决定，逐 run 注入包根。
         run_packages_root = workspace / "runs" / run_id / "packages"
         self.sut_tools.workspace_dir = run_packages_root
@@ -179,15 +179,15 @@ class ExecutionAgent:
 
         不接 checkpointer：单任务单发 ainvoke 无恢复需求；且 langgraph 会经
         put/put_writes/get_tuple 高频触达 saver，文件全量读写实现会拖垮执行
-        （v4.6.3 实测 CPU 空转）。WorkspaceCheckpointer 保留为独立组件，
-        待 B4 实现语义正确的真 saver（增量写 + pending_writes 按
-        checkpoint_id 索引）后再接回。
+        （实测 CPU 空转）。WorkspaceCheckpointer 保留为独立组件，待其实现
+        语义正确的真 saver（增量写 + pending_writes 按 checkpoint_id 索引）
+        后再接回。
         """
         try:
             from deepagents import create_deep_agent
         except ImportError:
             raise AgentError(
-                "ExecutionAgent 需要 deepagents（DeepAgents 底座，见 arch/03 §3.2）。"
+                "ExecutionAgent 需要 deepagents（DeepAgents 底座）。"
                 "请执行: pip install 'agent-eval[agent]'",
                 details={"missing_module": "deepagents"},
             ) from None
@@ -198,7 +198,7 @@ class ExecutionAgent:
             system_prompt=self._build_system_prompt(),
         )
 
-    # ─── Prompt 构建（arch/03 §3.3/§3.4） ───
+    # ─── Prompt 构建 ───
 
     def _describe_all_tools(self) -> str:
         """汇总全部工具注册表（SUT Tools + 追加注册表）的描述清单。"""
@@ -323,8 +323,8 @@ class ExecutionAgent:
 
         LLM 经 write_package 工具已写入 SUT-run 形态（run_id/thread_id/sut_response/
         turns_used…）时保留其字段，仅以 setdefault 补充 Agent 过程统计
-        （messages/tool_calls/turns/duration_ms，Sprint 9 v6.0 过程指标数据源）；
-        未写时创建完整骨架并回填 SUT 最终回答（v4.6.4）。
+        （messages/tool_calls/turns/duration_ms，过程指标数据源）；未写时创建
+        完整骨架并回填 SUT 最终回答。
         """
         trace_file = package_dir / "trace.json"
         trace: dict[str, Any] = {}
@@ -349,7 +349,7 @@ class ExecutionAgent:
         response.setdefault("tool_calls", session.tool_call_count)
         response.setdefault("turns", session.turns_used)
         response.setdefault("duration_ms", duration_ms)
-        # 回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象，v4.6.4）
+        # 回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象）
         if "sut" not in response:
             sut_run = self._last_sut_run()
             if sut_run is not None:

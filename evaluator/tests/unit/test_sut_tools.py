@@ -12,7 +12,7 @@ import types
 import httpx
 import pytest
 
-from agent_eval.agent.sut_tools import SUTToolServer
+from agent_eval.agent.executor.sut_tools import SUTToolServer
 from agent_eval.core.exceptions import AgentError, CollectionError, ToolExecutionError
 from agent_eval.execution.models import SUTToolsConfig
 

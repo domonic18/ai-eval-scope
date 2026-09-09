@@ -54,7 +54,7 @@
 | [03 执行引擎设计](../arch/03执行引擎设计.md) | DeepAgents 底座、`build_chat_model` 桥接、BudgetGuard、工具面护栏（tool_guard）的既有实现基础 |
 | [06 数据管理与配置规范](../arch/06数据管理与配置规范.md) | 配置面（llm.json / sut_credentials.json / .env / 平台 Secrets）的权威定义 |
 | [09 Web可观测平台架构设计](../arch/09Web可观测平台架构设计.md) | 平台账号 / API Key / SSO 与 CLI `auth` 浏览器配对的对接面 |
-| [14 场景扩展指南](../arch/14场景扩展指南.md) | PackageAgent 生成新场景包时的方法论参照与 few-shot 素材 |
+| 内置场景包（`agent_eval/assets/packages/`） | PackageAgent 生成新场景包时的方法论参照与 few-shot 素材 |
 | [guide/CLI使用教程](../guide/CLI使用教程.md) | 面向用户的操作文档，随功能落地同步更新 |
 
 ---
@@ -169,7 +169,7 @@
 | `write_file` / `delete_file` | 写/删包内文件（落盘前必须过 diff 确认与校验门禁） |
 | `read_manifest` / `update_manifest` | 包清单读写（版本、default_rule_set 等） |
 | `validate_package` | JSON Schema + 语义校验，返回结构化错误列表 |
-| `search_reference` | 检索内置包（courseware/chat/code）与 [14 指南](../arch/14场景扩展指南.md)作为生成参照 |
+| `search_reference` | 检索内置包（courseware/chat/code）作为生成参照 |
 | `preview_diff` | 生成统一 diff 供用户确认 |
 
 - **会话流程**：用户自然语言需求 → Agent 输出**改动计划**（改哪些文件、为什么）→ 调工具生成 → `preview_diff` 展示 → 用户确认（逐文件 / 全部 / 放弃）→ `validate_package` 门禁（不过则拒绝落盘并回改）→ 落盘 + 记录会话日志（含 token/耗时）。
@@ -192,7 +192,7 @@
 
 | 场景 | 行为 |
 |------|------|
-| `auth login`（浏览器配对） | 生成一次性配对码 → 调用系统浏览器打开平台 CLI 授权页 → 用户在浏览器登录并确认 → 粘贴回 CLI 显示的确认码（或 P2 设备码流自动轮询）→ 取回 API Key |
+| `auth login`（浏览器配对） | 生成一次性配对码 → 调用系统浏览器打开平台 CLI 授权页 → 用户在浏览器登录并确认 → 粘贴回 CLI 显示的确认码 → 取回 API Key |
 | `auth register` | 打开平台注册页；注册完成引导 `auth login` |
 | `models set` 过程中 | 询问「打开 <Provider> 控制台获取 API Key？」→ 打开对应密钥管理页（如 DeepSeek / Moonshot 控制台） |
 | `open <target>` / `--web` | 打开平台页（项目看板 / Run 详情 / 场景资产 / Secrets / API Keys / 文档）或本地报告 |
@@ -235,7 +235,6 @@
 | F-C-AUTH-03 | `auth status`：本地身份信息 + 平台 ping（Key 有效性、团队/项目归属）；未登录时明确提示并给出 `auth login` 指引 | P1 |
 | F-C-AUTH-04 | `auth logout`：清除本地平台凭证（`.env` 相关项）；可选 `--revoke` 吊销平台侧 Key（需平台端点，P2） | P1 |
 | F-C-AUTH-05 | `auth register`：打开平台注册页，轮询/等待用户完成后引导 `auth login` | P2 |
-| F-C-AUTH-06 | 设备码流免粘贴：CLI 生成配对码后自动轮询平台授权状态，浏览器确认即完成（需平台新增 CLI 配对端点，见开放问题 #1） | P2 |
 | F-C-AUTH-07 | 非交互形态：`auth login --token <key>` 或 env 直供（CI 无浏览器）；无浏览器环境检测（SSH / 无 `$BROWSER`）自动降级为打印 URL + 配对码 | P1 |
 
 ### 4.3 配置与自检（F-C-CONFIG）
@@ -383,7 +382,7 @@ $ agent-eval auth status
    1. 新增 rules/safety.yaml        — 安全门控规则集(4 条)
    2. 新增 prompts/safety.yaml      — 安全审查判官提示词
    3. 新增 agent_eval.yaml          — 包清单(travel@0.1.0)
-   参照: 内置包 chat@1.0.0 + arch/14 §三
+   参照: 内置包 chat@1.0.0
 ? 执行以上计划? (Y/n) y
 
 🤖 生成完成，以下变更待确认:
@@ -543,13 +542,13 @@ stage('评测回归') {
 |----|------|---------|
 | **P0 骨架+命名+执行+结果** | `start` 工作台（导航/上下文）；顶层 `doctor`；`scenario show`；向导式执行；`runs list/show`；`--no-input` / `--json` / 退出码；**命令重命名直接切换**（models login→set、package→scenario，教程/脚本/CI 同步更新） | 新用户 3 分钟内经向导拿到第一份评测报告；旧命令名全仓清零；Jenkins 片段可跑 |
 | **P1 账号+Agent 包工程** | `auth login/status/logout`（浏览器配对 + 粘贴 Key）、`auth register`；`models set`（含打开 Provider 控制台）；`scenario new/edit`（计划/diff/校验门禁/会话日志）；secrets 引导；上传向导 | 浏览器配对登录全流程可用；「一句话改包」端到端可用；校验门禁拦截率 100% |
-| **P2 增强** | 设备码流免粘贴（需平台配对端点）、`auth logout --revoke`；scenario 版本管理；run 对比；`--trust-agent` 非交互 Agent；包 push 到平台（视开放问题 #2）；TUI 全屏（远期） | 按需评估 |
+| **P2 增强** | `auth logout --revoke`；scenario 版本管理；run 对比；`--trust-agent` 非交互 Agent；包 push 到平台（视开放问题 #2）；TUI 全屏（远期） | 按需评估 |
 
 ---
 
 ## 九、开放问题
 
-1. **浏览器配对的平台端支持**：P1 的「配对码 + 粘贴确认码」只需平台提供一个轻量授权页（校验登录态后展示/回显确认码）；P2 设备码流需新增 CLI 配对端点（发码/轮询/签发 Key）。平台侧工作量与安全评审需 [09](../arch/09Web可观测平台架构设计.md) 侧确认。
+1. **浏览器配对的平台端支持**：P1 的「配对码 + 粘贴确认码」只需平台提供一个轻量授权页（校验登录态后展示/回显确认码）。平台侧工作量与安全评审需 [09](../arch/09Web可观测平台架构设计.md) 侧确认。
 2. **包发布通道**：项目包 → 平台 DB（`importAssetsToDb` 方向的 CLI 化 `scenario push`）是否纳入 P2？涉及平台资产评审流。
 3. **Agent 预算与角色**：PackageAgent 与执行 Agent 共用 `agent` 角色与预算上限，还是独立角色/独立配额？（倾向：共用角色、独立会话预算，避免新增配置面）
 4. **向导会话持久化**：工作台上下文（活动包/SUT 等）是否跨 `start` 会话记忆（`workspace/.workbench.yaml`）？记忆失效策略？
@@ -567,3 +566,4 @@ stage('评测回归') {
 | v1.2 | 2026-08-31 | **取消向下兼容**（用户基数小，决策）：重命名一次性直接切换，移除别名层、弃用警告与 `--strict-deprecation` 机制；旧命令名随版本清除，教程/示例脚本/CI 片段与全仓引用同步更新（§3.3、F-C-CONFIG-04、P6、P0 验收同步修订） |
 | v1.3 | 2026-09-01 | **F-C-AUTH 落地同步（Sprint 11）**：`auth login/status/logout/register` 四命令 + 工作台账号域「平台账号」子向导；身份探测走平台新增 `GET /api/public/whoami`（旧平台 404 回退 `/api/public/secrets` 轻探测）；浏览器通道降级打开 `/login` 引导（前端暂无独立 Keys 页与 `/cli-auth`，B 通道与设备码流仍为 P2）；参数表按实际形态修订 |
 | v1.4 | 2026-09-01 | **secrets 执行前缺失自动补录落地（Sprint 11）**：§3.5 凭证行补执行前行为——`ensure_sut_credentials` 挂执行阶段，交互终端列缺失字段 → 确认 → 隐藏输入一次落盘 → 复检继续；取消/`--no-input` 退回 fail fast（CI 零变化） |
+| v1.5 | 2026-09-07 | **移除 F-C-AUTH-06 设备码流免粘贴**（不做——复杂度高，粘贴 Key 双通道已满足）；F-C-AUTH-07 编号保持不变，开放问题 #1 收敛为平台轻量授权页 |
