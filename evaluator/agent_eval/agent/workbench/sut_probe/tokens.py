@@ -159,6 +159,7 @@ class TokenTool:
                 }
             expires_note = "expires_in_path 已声明（对齐执行器 AuthExtractConfig）"
         # 提取：cookie 型优先 Set-Cookie（token_path 即 cookie 名），其余走响应 JSON
+        token_value: str | None  # 非 cookie 分支的 (None, False) 未命中形态
         if source == "cookie":
             token_value, cookie_key, effective_path, extract_err = self._extract_cookie(
                 fact, cookie_name, token_path, payload

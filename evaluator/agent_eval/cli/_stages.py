@@ -14,13 +14,17 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlparse
 
 from rich import print as rprint
 
 from agent_eval.core.exceptions import AgentEvalError
 from agent_eval.packages.manifest import ResolvedPackage
+
+if TYPE_CHECKING:
+    from agent_eval.agent.executor.http_tools import GenericHttpToolServer
+    from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
 
 
 @dataclass
@@ -234,6 +238,7 @@ def execute_stage(
     channel = create_channel(sut)
     # 语义工具面按通道分支：agent_protocol 走 agent_run 族；generic_http 走
     # sut_request（模板渲染/响应提取在通道内完成，last_run 契约两者同构）
+    sut_tools: AgentProtocolToolServer | GenericHttpToolServer
     if sut.channel == "generic_http":
         from agent_eval.agent.executor.http_tools import GenericHttpToolServer
 
