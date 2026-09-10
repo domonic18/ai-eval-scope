@@ -46,6 +46,9 @@ def test_openai_protocol_bridge(monkeypatch) -> None:
     assert model.kwargs["model"] == "qwen-max"
     assert model.kwargs["base_url"] == "https://gw.example.com/v1"
     assert model.kwargs["api_key"].get_secret_value() == "sk-plain"
+    # 请求上限必须显式给定：SDK 默认超时可达 600s，执行循环一次卡顿即数分钟无输出
+    assert model.kwargs["timeout"] == 120.0
+    assert model.kwargs["max_retries"] == 2
 
 
 def test_deepseek_alias_default_base_url(monkeypatch) -> None:
@@ -81,6 +84,8 @@ def test_anthropic_protocol_bridge(monkeypatch) -> None:
     model = build_chat_model("kimi", llm_config=cfg)
     assert isinstance(model, fake)
     assert model.kwargs["base_url"] == "https://api.kimi.com/coding/"
+    assert model.kwargs["timeout"] == 120.0
+    assert model.kwargs["max_retries"] == 2
 
 
 def test_unknown_provider_name_raises() -> None:

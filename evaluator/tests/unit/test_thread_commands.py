@@ -233,6 +233,45 @@ def test_commands_stream_collects_events_and_finalizes_by_state() -> None:
     assert any(p.endswith("/stream/events") for p in calls)
 
 
+def test_commands_stream_deadline_breaks_endless_keepalive(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """SUT 反问暂停 + keepalive 注释帧喂住连接：SSE 无终态也必须在 deadline 跳出。
+
+    注释帧不产生 SSE 事件——deadline 必须行级判定（事件级检查永不执行，
+    2026-09 卡死事故回归）。跳出后终态与文本由 state 轮询收口。
+    """
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    monkeypatch.setattr(thread_commands, "SSE_DEADLINE_EXTRA_S", 0.0)
+
+    async def endless_keepalive():
+        while True:
+            yield b": keepalive\n\n"
+            await asyncio.sleep(0.02)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "rk"}})
+        if "/stream" in request.url.path:
+            return httpx.Response(
+                200, content=endless_keepalive(), headers={"Content-Type": "text/event-stream"}
+            )
+        if request.url.path.endswith("/state"):
+            return httpx.Response(
+                200,
+                json={
+                    "next": [],
+                    "values": {"messages": [{"role": "ai", "content": "请选择课件类型"}]},
+                },
+            )
+        raise AssertionError(f"unexpected {request.url.path}")
+
+    channel = _channel(_sut(exec_mode="stream", timeout=0.2), handler)
+    result = asyncio.run(channel.run("hi"))
+    assert result["status"] == "success" and result["text"] == "请选择课件类型"
+    assert result["terminal_event_seen"] is False  # SSE 未经终态收口，由 state 兜底
+
+
 def test_create_thread_commands_flavor_is_local_uuid() -> None:
     def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover — 不应发请求
         raise AssertionError("commands 形态建线程不发网络请求")

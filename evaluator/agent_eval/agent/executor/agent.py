@@ -9,11 +9,13 @@ BudgetGuard/SessionLogCallback 以 LangGraph 回调注入（预算/结构化日�
 from __future__ import annotations
 
 import json
+import time
 from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+import structlog
 import yaml
 
 from agent_eval.agent.core.callbacks import BudgetGuard, SessionLogCallback
@@ -105,7 +107,26 @@ class ExecutionAgent:
         run_id 可由调用方（CLI）注入——用于运行清单登记与外部关联。
         """
         run_id = run_id or generate_run_id()
-        packages = [await self.run_task(task, run_id=run_id) for task in task_set.tasks]
+        packages = []
+        total = len(task_set.tasks)
+        for idx, task in enumerate(task_set.tasks, start=1):
+            # 逐任务进度上终端（stderr）：执行域只有一根转轮，单任务数十分钟时
+            # 表现为「卡住不动」（SUT 反问循环实测 2026-09）——开始/结束都要可见
+            structlog.get_logger("executor").info(
+                "任务开始",
+                task_id=task.id,
+                progress=f"{idx}/{total}",
+            )
+            started = time.monotonic()
+            package = await self.run_task(task, run_id=run_id)
+            structlog.get_logger("executor").info(
+                "任务结束",
+                task_id=task.id,
+                progress=f"{idx}/{total}",
+                status=package.manifest.status,
+                elapsed_s=round(time.monotonic() - started, 1),
+            )
+            packages.append(package)
         return run_id, packages
 
     async def run_task(self, task: Task, *, run_id: str | None = None) -> ExecutionPackage:

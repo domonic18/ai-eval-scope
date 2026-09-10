@@ -8,6 +8,7 @@ threads 多轮、cancel、agents 能力发现；RunStatus → 执行引擎状态
 from __future__ import annotations
 
 import json
+import time
 import uuid
 from collections.abc import Callable
 from typing import Any
@@ -17,6 +18,8 @@ import httpx
 from agent_eval.core.exceptions import AgentProtocolError
 from agent_eval.execution.channels.base import SUTChannel
 from agent_eval.execution.channels.thread_commands import (
+    SSE_DEADLINE_EXTRA_S,
+    SSEDeadlineError,
     _iter_sse,  # noqa: F401 — SSE 解析迁至 thread_commands，此处重导出保持兼容
     commands_agent_info,
     commands_run,
@@ -121,7 +124,8 @@ class AgentProtocolChannel(SUTChannel):
                         f"runs/stream 失败（HTTP {response.status_code}）",
                         details={"sut": self.sut.name, "body": response.text[:500]},
                     )
-                async for event_name, data_text in _iter_sse(response):
+                sse_deadline = time.monotonic() + self.sut.timeout + SSE_DEADLINE_EXTRA_S
+                async for event_name, data_text in _iter_sse(response, sse_deadline):
                     try:
                         data: Any = json.loads(data_text) if data_text else {}
                     except json.JSONDecodeError:
@@ -137,6 +141,13 @@ class AgentProtocolChannel(SUTChannel):
                     message = data.get("message")
                     if isinstance(message, dict) and isinstance(message.get("content"), str):
                         text_parts.append(message["content"])
+        except SSEDeadlineError as e:
+            # keepalive 心跳喂住连接时 read timeout 永不触发——行级 deadline 是
+            # 唯一上限；runs 形态无 state 轮询兜底，超限即失败
+            raise AgentProtocolError(
+                f"runs/stream 超时：{self.sut.timeout}s 内无终态事件（连接被心跳喂住已截止）",
+                details={"sut": self.sut.name, "events": len(events)},
+            ) from e
         except httpx.HTTPError as e:
             raise AgentProtocolError(
                 f"runs/stream 传输失败: {e}", details={"sut": self.sut.name}

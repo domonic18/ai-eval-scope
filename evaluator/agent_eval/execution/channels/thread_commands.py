@@ -21,6 +21,7 @@ if TYPE_CHECKING:  # 防循环导入（agent_protocol 反向引用本模块的�
     from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 
 COMMANDS_POLL_INTERVAL_S = 1.5
+SSE_DEADLINE_EXTRA_S = 5.0  # SSE 总时长上限 = sut.timeout + 余量（超时后仍由 state 轮询收口）
 AI_ROLES = frozenset({"ai", "assistant"})
 # lifecycle 终态提示（最终状态一律以 GET state 为准，这里仅提前结束 SSE 等待）
 TERMINAL_LIFECYCLE_EVENTS = frozenset(
@@ -255,7 +256,12 @@ async def commands_stream(
             ) as stream_response:
                 if stream_response.status_code >= 400:
                     continue  # 换下一个候选路径
-                async for event_name, data_text in _iter_sse(stream_response):
+                # SSE 总时长上限：SUT 等待用户输入（反问暂停）时服务端可能持续发
+                # keepalive 心跳，read timeout 永不触发——deadline 在行级判定（注释帧
+                # 不产生事件，事件级检查形同虚设），超时跳出后仍由 _poll_state 按状态
+                # 收口（真相源是 state，流只是提前收口的优化）
+                sse_deadline = time.monotonic() + channel.sut.timeout + SSE_DEADLINE_EXTRA_S
+                async for event_name, data_text in _iter_sse(stream_response, sse_deadline):
                     try:
                         data: Any = json.loads(data_text) if data_text else {}
                     except json.JSONDecodeError:
@@ -289,12 +295,29 @@ async def commands_stream(
     }
 
 
-async def _iter_sse(response: Any) -> AsyncIterator[tuple[str | None, str]]:
-    """逐块解析 SSE：event:/data: 行组块；缺 id/event 字段按 data-only 兜底。"""
+class SSEDeadlineError(Exception):
+    """SSE 行级 deadline 超限：keepalive 心跳喂住连接，read timeout 永不触发。
+
+    SUT 等待用户输入（反问暂停）时服务端可持续发注释帧——行级 deadline 是唯一
+    可靠上限。commands 形态捕获后转 state 轮询收口（真相源）；runs 形态无兜底，
+    直接失败。
+    """
+
+
+async def _iter_sse(
+    response: Any, deadline: float | None = None
+) -> AsyncIterator[tuple[str | None, str]]:
+    """逐块解析 SSE：event:/data: 行组块；缺 id/event 字段按 data-only 兜底。
+
+    deadline（monotonic 时刻）超限即抛 SSEDeadlineError（注释帧不产生事件，
+    事件级检查形同虚设，必须在行级判定）。
+    """
     event_name: str | None = None
     data_lines: list[str] = []
 
     async for line in response.aiter_lines():
+        if deadline is not None and time.monotonic() >= deadline:
+            raise SSEDeadlineError
         if line == "":
             if data_lines or event_name is not None:
                 yield event_name, "\n".join(data_lines)

@@ -18,6 +18,9 @@ from agent_eval.core.exceptions import AgentError
 
 # deepseek 别名未指定 base_url 时预置端点（与 llm/providers/openai_compat.py 惯例一致）
 _DEEPSEEK_DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
+# 单次 LLM 请求超时（秒）——SDK 默认可达 600s，执行循环里一次卡顿即数分钟无输出
+_LLM_REQUEST_TIMEOUT_S = 120.0
+_LLM_MAX_RETRIES = 2
 
 
 def build_chat_model(
@@ -69,6 +72,8 @@ def build_chat_model(
             base_url=base_url,
             temperature=provider.temperature,
             max_completion_tokens=provider.max_tokens,
+            timeout=_LLM_REQUEST_TIMEOUT_S,
+            max_retries=_LLM_MAX_RETRIES,
         )
 
     if provider.provider == "anthropic":
@@ -83,6 +88,8 @@ def build_chat_model(
             "model": model_id,
             "api_key": api_key,
             "temperature": provider.temperature,
+            "timeout": _LLM_REQUEST_TIMEOUT_S,
+            "max_retries": _LLM_MAX_RETRIES,
         }
         if provider.base_url:
             kwargs["base_url"] = provider.base_url

@@ -10,6 +10,7 @@ import pytest
 
 from agent_eval.core.exceptions import AgentProtocolError, SUTAuthError
 from agent_eval.execution.auth.session import SUTSession
+from agent_eval.execution.channels import thread_commands
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel, _iter_sse
 from agent_eval.execution.registry import (
     AuthConfig,
@@ -123,6 +124,31 @@ def test_run_stream_aggregates_sse_with_unknown_events() -> None:
     # 未知事件原样保留（非 JSON data 兜底为 {"raw": ...}）
     assert ("custom-weird", {"raw": "not-json"}) in kinds
     assert any(e is None for e, _ in kinds)  # data-only 事件
+
+
+def test_run_stream_deadline_raises_when_keepalive_feeds_connection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """runs 形态无 state 轮询兜底：SSE 行级 deadline 超限必须失败而非静默挂死。
+
+    keepalive 注释帧不产生事件且喂住连接（read timeout 永不触发）——回归
+    SUT 反问暂停场景（2026-09 卡死事故同类）。
+    """
+    monkeypatch.setattr(thread_commands, "SSE_DEADLINE_EXTRA_S", 0.0)
+
+    async def endless_keepalive():
+        while True:
+            yield b": keepalive\n\n"
+            await asyncio.sleep(0.02)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, content=endless_keepalive(), headers={"Content-Type": "text/event-stream"}
+        )
+
+    channel = _channel(_sut(exec_mode="stream", timeout=0.15), handler)
+    with pytest.raises(AgentProtocolError, match="runs/stream 超时"):
+        asyncio.run(channel.run("input"))
 
 
 def test_on_completion_passed_through() -> None:

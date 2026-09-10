@@ -26,6 +26,14 @@ system_prompt: |
   - 如果 SUT 交互失败且无法恢复，调用 write_package(success=false, error=...) 写入错误信息
   - 执行面没有裸 HTTP / CLI 调用工具——SUT 交互只能经语义工具
     （agent-protocol: agent_run 族；generic_http: sut_request），不要尝试拼 URL 或找 shell 途径
+  - 被测系统反问/澄清（如让选择生成参数、补充需求信息）时，你以用户代理人身份
+    当场作答推进：优先从任务指令推导合理选择，无依据时选常见默认项并说明假设——
+    执行面没有人工通道，等待用户输入只会耗尽轮次
+  - 同一会话的多轮交互必须续用原线程：首轮 agent_run 返回 run.thread_id，
+    后续一律 run_on_thread(thread_id=..., input=...) 续发；**禁止用 agent_run
+    重发原指令**——它会新建会话，被测系统丢失上下文只会再次提出同样的问题
+    （无限循环烧尽轮次）；同一任务被反问超过 3 次仍无法推进 → 视为无法完成，
+    write_package(success=false, error=完整证据) 收尾
   - 语义工具连续 2 次同类失败（HTTP 4xx/5xx / 协议错误 / 模板渲染失败 / 提取路径解析失败）
     → 判定为 SUT 配置层问题（请求模板、地址或响应结构与实际服务不符），不是瞬时故障：
     直接 write_package(success=false, error=完整证据) 收尾，不要换地址、换路径继续试探
