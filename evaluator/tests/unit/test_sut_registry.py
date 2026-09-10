@@ -342,3 +342,157 @@ def test_validate_generic_http_accepts_full_config() -> None:
 
     doc = yaml.safe_load(GENERIC_HTTP_YAML)
     assert validate_sut_config_document(doc) == []
+
+
+# ── steps 链式模板 + 模板变量审计（v4.8：jxb 事故——input 未消费/变量拼错落盘前打回）──
+
+
+CHAIN_YAML = """
+sut:
+  name: chained-api
+  channel: generic_http
+  base_url: https://api.example.com
+  request_template:
+    steps:
+      - name: create
+        method: POST
+        path: /chat/conversations
+        body: {student_id: null}
+      - name: send
+        method: POST
+        path: /chat/conversations/{{ create.data.id }}/messages
+        body: {content: "{{ input }}"}
+      - name: history
+        method: GET
+        path: /chat/conversations/{{ create.data.id }}
+  response_mapping:
+    text: data.messages.-1.content
+"""
+
+
+def test_load_generic_http_steps_chain(tmp_path) -> None:
+    path = _write(tmp_path, "sut.yaml", CHAIN_YAML)
+    rt = SUTRegistry.load(path).default.request_template
+    assert rt is not None
+    assert rt.method is None and rt.path is None  # steps 形态下单步字段为空
+    assert [s.name for s in rt.steps] == ["create", "send", "history"]
+    assert rt.steps[1].path == "/chat/conversations/{{ create.data.id }}/messages"
+    assert rt.steps[1].body == {"content": "{{ input }}"}
+
+
+def test_validate_generic_http_accepts_steps_chain() -> None:
+    import yaml
+
+    assert validate_sut_config_document(yaml.safe_load(CHAIN_YAML)) == []
+
+
+def test_validate_generic_http_rejects_template_without_input() -> None:
+    """事故根因的机械判定：模板不消费 {{ input }} = 指令从未发给被测系统。"""
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {"method": "POST", "path": "/chat", "body": {"q": "固定词"}},
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("未引用 {{ input }}" in e for e in errors)
+
+
+def test_validate_generic_http_rejects_undefined_step_reference() -> None:
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {
+                "steps": [
+                    {
+                        "name": "send",
+                        "method": "POST",
+                        "path": "/c/{{ create.data.id }}/m",  # create 未定义（拼错/漏步）
+                        "body": {"content": "{{ input }}"},
+                    }
+                ]
+            },
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("引用未定义变量 'create'" in e for e in errors)
+
+
+def test_validate_generic_http_rejects_forward_step_reference() -> None:
+    """后续步只能引用**前序**步骤——前向引用同样打回。"""
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {
+                "steps": [
+                    {
+                        "name": "first",
+                        "method": "POST",
+                        "path": "/p",
+                        "body": {"q": "{{ second.data.id }}", "x": "{{ input }}"},
+                    },
+                    {"name": "second", "method": "GET", "path": "/q"},
+                ]
+            },
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("引用未定义变量 'second'" in e for e in errors)
+
+
+def test_validate_generic_http_rejects_steps_single_mix() -> None:
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {
+                "path": "/chat",
+                "steps": [{"name": "a", "method": "GET", "path": "/x"}],
+            },
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("不可混用" in e for e in errors)
+
+
+def test_validate_generic_http_rejects_duplicate_step_names() -> None:
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {
+                "steps": [
+                    {"name": "a", "method": "GET", "path": "/x"},
+                    {"name": "a", "method": "GET", "path": "/y"},
+                ]
+            },
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("重复步骤名" in e for e in errors)
+
+
+def test_validate_generic_http_rejects_reserved_step_name() -> None:
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {"steps": [{"name": "input", "method": "GET", "path": "/x"}]},
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("与模板根变量冲突" in e for e in errors)
+
+
+def test_request_template_without_steps_or_path_rejected() -> None:
+    with pytest.raises(ValueError, match="二选一"):
+        RequestTemplateConfig()
