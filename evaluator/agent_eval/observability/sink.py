@@ -32,16 +32,30 @@ if TYPE_CHECKING:
     from agent_eval.orchestrator.orchestrator import EvalResult
 
 
+_CONTENT_TYPES: dict[str, str] = {
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".json": "application/json",
+    ".md": "text/markdown",
+    ".txt": "text/plain",
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".csv": "text/csv",
+}
+
+
 def _content_type_for(f: Path) -> str:
-    """按文件后缀给语义化 Content-Type（前端据 contentType/kind 分栏与渲染）。"""
-    suffix = f.suffix.lower()
-    if suffix in (".html", ".htm"):
-        return "text/html"
-    if suffix == ".json":
-        return "application/json"
-    if suffix == ".md":
-        return "text/markdown"
-    return "text/plain"
+    """按文件后缀给语义化 Content-Type（前端据 contentType/kind 分栏与渲染）。
+
+    未知后缀兜底 application/octet-stream——前端触发下载而非内联乱码文本。
+    """
+    return _CONTENT_TYPES.get(f.suffix.lower(), "application/octet-stream")
 
 
 @dataclass

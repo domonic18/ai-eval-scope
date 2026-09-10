@@ -20,10 +20,15 @@ from agent_eval.execution.channels.base import SUTChannel
 from agent_eval.execution.channels.thread_commands import (
     SSE_DEADLINE_EXTRA_S,
     SSEDeadlineError,
+    _get_state,
     _iter_sse,  # noqa: F401 — SSE 解析迁至 thread_commands，此处重导出保持兼容
+    _poll_state,
     commands_agent_info,
     commands_run,
     commands_stream,
+    conversation_headers,
+    finalize_run_result,
+    respond_input_envelope,
 )
 from agent_eval.execution.registry import SUTSystemConfig
 from agent_eval.execution.utils import extract_by_path
@@ -193,6 +198,43 @@ class AgentProtocolChannel(SUTChannel):
             "POST", f"/threads/{thread_id}/runs/wait", json_body=self._run_body(input, metadata)
         )
         return self._parse_wait_response(response)
+
+    async def answer_interrupt(
+        self, thread_id: str, interrupt_id: str, response: dict[str, Any]
+    ) -> dict[str, Any]:
+        """应答线程上挂起的中断（askQuestion 反问）并续跑至终态（仅 commands 形态）。
+
+        恢复契约（2026-09 对 sasan 实测闭环）：POST /threads/{id}/commands
+        method=input.respond → 200 {type: success, result: {run_id}}，图恢复推进；
+        直接下发新消息会被 PENDING_QUESTION 拒绝。应答后继续轮询到终态（跳过
+        刚应答的 interrupt——受理与推进间存在竞态窗口，旧中断短暂仍在 state 上）。
+        """
+        if self.sut.protocol_flavor != "commands":
+            raise AgentProtocolError(
+                "runs 形态暂不支持中断应答（askQuestion 仅 commands 形态暴露）",
+                details={"sut": self.sut.name, "thread_id": thread_id},
+            )
+        prior = await _get_state(self, thread_id)
+        baseline = len((prior or {}).get("values", {}).get("messages") or [])
+        resp = await self.request(
+            "POST",
+            f"/threads/{thread_id}/commands",
+            json_body=respond_input_envelope(interrupt_id, response),
+            headers=conversation_headers(thread_id),
+        )
+        payload = self._json(resp)
+        if resp.status_code >= 400 or payload.get("type") == "error" or "error" in payload:
+            raise AgentProtocolError(
+                f"input.respond 失败: {payload.get('error')}",
+                details={"sut": self.sut.name, "thread_id": thread_id, "body": str(payload)[:500]},
+            )
+        run_id = (payload.get("result") or {}).get("run_id")
+        values, pending = await _poll_state(
+            self, thread_id, baseline, resolved_interrupt=interrupt_id
+        )
+        return finalize_run_result(
+            self, run_id=run_id, thread_id=thread_id, values=values, pending=pending
+        )
 
     async def cancel_run(self, run_id: str, action: str = "interrupt") -> dict[str, Any]:
         """主动取消（interrupt / rollback——rollback 仅在系统声明支持时使用）。"""

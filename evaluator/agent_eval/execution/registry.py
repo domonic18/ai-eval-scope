@@ -246,6 +246,13 @@ class SUTSystemConfig(BaseModel):
     stream_mode: str = Field(default="messages", description="exec_mode=stream 时的事件模式")
     auth: AuthConfig = Field(default_factory=AuthConfig)
     output_paths: OutputPathsConfig = Field(default_factory=OutputPathsConfig)
+    artifact_hosts: list[str] = Field(
+        default_factory=list,
+        description=(
+            "产物下载额外放行域（download_sut_file 白名单 = base_url 域 ∪ 此列表；"
+            "仅加产物实际所在的域，缺省只允许 SUT 同域下载）"
+        ),
+    )
     on_completion: str | None = Field(default=None, description="如 delete（临时线程用完即删）")
     request_template: RequestTemplateConfig | None = Field(
         default=None, description="generic_http 请求模板（channel=generic_http 必填）"

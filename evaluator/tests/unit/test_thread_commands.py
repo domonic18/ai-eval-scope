@@ -13,8 +13,12 @@ from agent_eval.core.exceptions import AgentProtocolError
 from agent_eval.execution.channels import thread_commands
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 from agent_eval.execution.channels.thread_commands import (
+    ask_question_tool_call_ids,
+    compact_messages,
     final_ai_text,
     messages_from_input,
+    pending_ask_questions,
+    respond_input_envelope,
 )
 from agent_eval.execution.registry import AuthConfig, SUTSystemConfig
 
@@ -307,3 +311,208 @@ def test_registry_defaults_flavor_runs_and_configurable_dict() -> None:
     sut = SUTSystemConfig(name="ok", channel="agent_protocol", base_url="https://x.example.com")
     assert sut.protocol_flavor == "runs"
     assert sut.configurable == {}
+
+
+# ─── askQuestion 中断与恢复（v4.11：反问不再空转超时，input.respond 续跑） ───
+
+INTERRUPT_ID = "8dfca77c1c85056d7243d0067a6d8ba3"
+ASK_TOOL_CALL_ID = "ask_question_0_f0a8bb6e"
+
+
+def _interrupt_state() -> dict:
+    """复刻 2026-09 sasan 实测挂起形态：next 非空 + tasks[].interrupts 携带反问。"""
+    return {
+        "next": ["tools"],
+        "tasks": [
+            {
+                "interrupts": [
+                    {
+                        "id": INTERRUPT_ID,
+                        "value": {
+                            "type": "ask_question",
+                            "questions": [
+                                {
+                                    "question": "课件的交付形式是哪种？",
+                                    "options": [
+                                        {"value": "ppt", "description": "演示文稿"},
+                                        {"value": "word", "description": "文档"},
+                                    ],
+                                }
+                            ],
+                        },
+                    }
+                ]
+            }
+        ],
+        "values": {
+            "messages": [
+                {"type": "human", "id": "m1", "content": "请生成《春》的课件"},
+                {
+                    "type": "ai",
+                    "id": "m2",
+                    "content": [{"type": "text", "text": "请选择课件交付形式"}],
+                    "tool_calls": [
+                        {
+                            "name": "ask_question",
+                            "id": ASK_TOOL_CALL_ID,
+                            "args": {"questions": ["课件的交付形式是哪种？"]},
+                        }
+                    ],
+                },
+            ]
+        },
+    }
+
+
+def test_pending_ask_questions_extracts_from_tasks_and_top_level() -> None:
+    state = _interrupt_state()
+    questions = pending_ask_questions(state)
+    assert len(questions) == 1
+    assert questions[0]["question"] == "课件的交付形式是哪种？"
+    assert questions[0]["options"][0]["value"] == "ppt"
+    assert questions[0]["interrupt_id"] == INTERRUPT_ID
+    # 顶层 interrupts 兼容 + 非反问中断/空 state 均不误报
+    top_level = {"interrupts": state["tasks"][0]["interrupts"]}
+    assert pending_ask_questions(top_level)[0]["interrupt_id"] == INTERRUPT_ID
+    assert (
+        pending_ask_questions({"tasks": [{"interrupts": [{"id": "x", "value": {"type": "hint"}}]}]})
+        == []
+    )
+    assert pending_ask_questions(None) == []
+
+
+def test_ask_question_tool_call_ids_from_tool_calls_and_content_blocks() -> None:
+    messages = _interrupt_state()["values"]["messages"]
+    assert ask_question_tool_call_ids(messages) == [ASK_TOOL_CALL_ID]
+    blocked = [{"content": [{"type": "tool_call", "name": "ask_question", "id": "askq-b"}]}]
+    assert ask_question_tool_call_ids(blocked) == ["askq-b"]
+    assert ask_question_tool_call_ids([{"tool_calls": [{"name": "other_tool", "id": "x"}]}]) == []
+
+
+def test_respond_input_envelope_shape() -> None:
+    envelope = respond_input_envelope(INTERRUPT_ID, {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]})
+    assert envelope["method"] == "input.respond"
+    assert envelope["params"]["namespace"] == []
+    assert envelope["params"]["interrupt_id"] == INTERRUPT_ID
+    assert envelope["params"]["response"] == {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]}
+
+
+def test_compact_messages_drops_reasoning_keeps_text_and_tool_calls() -> None:
+    """reasoning 块丢弃 + 文本/工具调用骨架保留——修 6 万字符推理挤占截断窗口。"""
+    messages = [
+        {"type": "human", "id": "m1", "content": "请生成《春》的课件"},
+        {
+            "type": "ai",
+            "id": "m2",
+            "content": [
+                {"type": "reasoning", "reasoning": "R" * 60000},
+                {"type": "text", "text": "x" * 100 + "请选择课件交付形式"},
+            ],
+            "tool_calls": [
+                {"name": "ask_question", "id": ASK_TOOL_CALL_ID, "args": {"questions": ["q"]}}
+            ],
+        },
+        {"type": "tool", "tool_call_id": ASK_TOOL_CALL_ID, "content": "工具观测" * 2000},
+    ]
+    dumped = json.dumps(compact_messages(messages), ensure_ascii=False)
+    assert "R" * 10 not in dumped  # reasoning 丢弃
+    assert "请选择课件交付形式" in dumped  # 尾部语义不被头部体量挤占
+    assert ASK_TOOL_CALL_ID in dumped  # 工具调用 id 保留（应答键）
+    compact = compact_messages(messages)
+    assert all(len(m.get("content", "")) <= 800 for m in compact)  # 超长文本逐条封顶
+
+
+def test_run_interrupted_by_ask_question_returns_questions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """反问挂起 → 提前返回 interrupted + 结构化 questions，不再空转到超时。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    gets = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r-i"}})
+        gets["n"] += 1
+        return httpx.Response(200, json=_interrupt_state())
+
+    channel = _channel(_sut(timeout=0.3), handler)  # 不修此缺陷时必然 raise「run 超时」
+    result = asyncio.run(channel.run("请生成《春》的课件"))
+    assert result["status"] == "interrupted"
+    assert result["questions"][0]["question"] == "课件的交付形式是哪种？"
+    assert result["questions"][0]["interrupt_id"] == INTERRUPT_ID
+    assert result["text"] == "请选择课件交付形式"
+    assert gets["n"] == 1  # 首次轮询即识别挂起，无空转
+
+
+def test_answer_interrupt_resumes_run_and_skips_stale_interrupt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """input.respond 信封契约 + 应答受理/图推进竞态窗口内跳过旧中断。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    captured: dict = {}
+    gets = {"n": 0}
+    resumed_state = {
+        "next": [],
+        "values": {
+            "messages": [
+                *_interrupt_state()["values"]["messages"],
+                {"type": "ai", "id": "m3", "content": [{"type": "text", "text": "课件已生成"}]},
+            ]
+        },
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            captured["body"] = json.loads(request.content)
+            captured["conv"] = request.headers.get("makers-conversation-id")
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r-r"}})
+        gets["n"] += 1
+        if gets["n"] == 3:  # 应答已受理但图未推进——旧中断仍在 state 上
+            return httpx.Response(200, json=_interrupt_state())
+        if gets["n"] >= 4:
+            return httpx.Response(200, json=resumed_state)
+        return httpx.Response(200, json=_interrupt_state())  # GET#1 应答前基线
+
+    channel = _channel(_sut(timeout=1.0), handler)
+    result = asyncio.run(
+        channel.answer_interrupt(
+            "00000000-0000-0000-0000-000000000009",
+            INTERRUPT_ID,
+            {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]},
+        )
+    )
+    assert result["status"] == "success" and result["text"] == "课件已生成"
+    assert captured["conv"] == "00000000-0000-0000-0000-000000000009"
+    envelope = captured["body"]
+    assert envelope["method"] == "input.respond"
+    assert envelope["params"]["interrupt_id"] == INTERRUPT_ID
+    assert envelope["params"]["namespace"] == []
+    assert envelope["params"]["response"] == {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]}
+    assert gets["n"] >= 4  # 旧中断被跳过，续轮询到真终态
+
+
+def test_answer_interrupt_rejects_runs_flavor() -> None:
+    """runs 形态无 input.respond——显式拒绝（预留，不静默乱发请求）。"""
+    channel = _channel(_sut(protocol_flavor="runs"), lambda request: httpx.Response(200, json={}))
+    with pytest.raises(AgentProtocolError, match="不支持中断应答"):
+        asyncio.run(channel.answer_interrupt("t", INTERRUPT_ID, {}))
+
+
+def test_commands_stream_interrupted_reports_questions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """stream 形态同样收口 interrupted 反问（SSE 终态后 state 轮询识别挂起）。"""
+    sse = 'data: {"type":"event","seq":1,"method":"lifecycle","params":{"data":{"event":"idle"}}}'
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "rs"}})
+        if "/stream" in request.url.path:
+            return httpx.Response(200, text=sse, headers={"Content-Type": "text/event-stream"})
+        return httpx.Response(200, json=_interrupt_state())
+
+    channel = _channel(_sut(exec_mode="stream", timeout=1.0), handler)
+    result = asyncio.run(channel.run("hi"))
+    assert result["status"] == "interrupted"
+    assert result["questions"][0]["interrupt_id"] == INTERRUPT_ID

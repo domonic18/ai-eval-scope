@@ -23,6 +23,7 @@ if TYPE_CHECKING:  # 防循环导入（agent_protocol 反向引用本模块的�
 COMMANDS_POLL_INTERVAL_S = 1.5
 SSE_DEADLINE_EXTRA_S = 5.0  # SSE 总时长上限 = sut.timeout + 余量（超时后仍由 state 轮询收口）
 AI_ROLES = frozenset({"ai", "assistant"})
+COMPACT_TEXT_MAX_CHARS = 800  # 消息摘要单条文本上限（整表仍受 bounded_result 截断约束）
 # lifecycle 终态提示（最终状态一律以 GET state 为准，这里仅提前结束 SSE 等待）
 TERMINAL_LIFECYCLE_EVENTS = frozenset(
     {"done", "completed", "complete", "error", "idle", "finished", "cancelled"}
@@ -113,6 +114,130 @@ def final_ai_text(messages: list[dict[str, Any]] | None) -> str:
     return ""
 
 
+def compact_messages(messages: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    """消息摘要：丢弃 reasoning/thinking 块与超长文本，保留对话骨架。
+
+    DeepAgents 族 SUT 单条 ai 消息可携带数万字符 reasoning 块且排布在 text 之前
+    ——整表 JSON 化再截断会把真正的回答/反问截掉，执行 Agent 只看到推理噪声
+    （2026-09 实测：6 万字符 reasoning 挤占 4000 字符窗口，任务连烧 3 轮要求
+    SUT「不要截断」——截断发生在评测器侧而非 SUT）。摘要按消息保留文本与
+    工具调用骨架。
+    """
+    out: list[dict[str, Any]] = []
+    for message in messages or []:
+        if not isinstance(message, dict):
+            continue
+        compact: dict[str, Any] = {"role": message.get("type") or message.get("role") or "unknown"}
+        texts: list[str] = []
+        content = message.get("content")
+        if isinstance(content, str):
+            texts.append(content)
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, str):
+                    texts.append(block)
+                elif not isinstance(block, dict):
+                    continue
+                elif block.get("type") in ("text", "tool_result"):
+                    text = block.get("text") or block.get("content") or ""
+                    texts.append(text if isinstance(text, str) else json.dumps(text, default=str))
+                elif block.get("type") == "tool_call":
+                    compact.setdefault("tool_calls", []).append(
+                        {
+                            "name": block.get("name"),
+                            "id": block.get("id"),
+                            "args": json.dumps(block.get("args"), ensure_ascii=False, default=str)[
+                                :COMPACT_TEXT_MAX_CHARS
+                            ],
+                        }
+                    )
+        for call in message.get("tool_calls") or []:
+            if isinstance(call, dict):
+                compact.setdefault("tool_calls", []).append(
+                    {
+                        "name": call.get("name"),
+                        "id": call.get("id"),
+                        "args": json.dumps(call.get("args"), ensure_ascii=False, default=str)[
+                            :COMPACT_TEXT_MAX_CHARS
+                        ],
+                    }
+                )
+        joined = "\n".join(t for t in texts if t and t.strip())[:COMPACT_TEXT_MAX_CHARS]
+        if joined:
+            compact["content"] = joined
+        if len(compact) > 1:
+            out.append(compact)
+    return out
+
+
+def pending_ask_questions(state: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """提取 state 中挂起的 ask_question 中断（LangGraph interrupt 结构）。
+
+    结构（2026-09 对 sasan/DeepAgents 实测）：state.next 非空（如 ['tools']），
+    state.tasks[].interrupts[] 携带 {"id", "value": {"type": "ask_question",
+    "questions": [{"question", "options": [{"value", "description"}], "multiple"?}]}}；
+    顶层 state.interrupts 作兼容提取。此前提取缺失——反问被当普通未终态轮询到
+    「run 超时」（300s），反问永远到不了评估 Agent。
+    """
+    if not isinstance(state, dict):
+        return []
+    interrupts: list[Any] = []
+    for task in state.get("tasks") or []:
+        if isinstance(task, dict):
+            interrupts.extend(task.get("interrupts") or [])
+    if isinstance(state.get("interrupts"), list):
+        interrupts.extend(state["interrupts"])
+    questions: list[dict[str, Any]] = []
+    for interrupt in interrupts:
+        if not isinstance(interrupt, dict):
+            continue
+        value = interrupt.get("value")
+        if not isinstance(value, dict) or value.get("type") != "ask_question":
+            continue
+        for question in value.get("questions") or []:
+            if isinstance(question, dict):
+                questions.append({**question, "interrupt_id": interrupt.get("id") or ""})
+    return questions
+
+
+def ask_question_tool_call_ids(messages: list[dict[str, Any]] | None) -> list[str]:
+    """从消息流提取 ask_question 工具调用 id（input.respond 的 response 键）。
+
+    中断恢复契约（2026-09 对 sasan 实测）：input.respond 的 params.response 以
+    {ask_question 工具调用 id: [逐题答案]} 键值对提交，而工具调用 id 只存在于
+    消息流（ai 消息的 tool_calls），interrupt value 不携带。
+    """
+    ids: list[str] = []
+    for message in messages or []:
+        if not isinstance(message, dict):
+            continue
+        calls = [c for c in message.get("tool_calls") or [] if isinstance(c, dict)]
+        for block in message.get("content") or []:
+            if isinstance(block, dict) and block.get("type") == "tool_call":
+                calls.append(block)
+        for call in calls:
+            if call.get("name") == "ask_question" and call.get("id"):
+                ids.append(str(call["id"]))
+    return ids
+
+
+def respond_input_envelope(
+    interrupt_id: str, response: dict[str, Any], *, command_id: int = 2
+) -> dict[str, Any]:
+    """构造 input.respond 命令信封（应答 ask_question 中断，续跑挂起的 run）。
+
+    namespace 恒为 []（SUT 前端序列化器同款）；response 形如
+    {ask_question 工具调用 id: [{"selected": ["选项值"], ...}]}——直接下发新
+    消息会被 PENDING_QUESTION 拒绝，unknown 的 method 名均报 unknown_command
+    （run.resume / question.answer 等 8 个候选名 2026-09 实测排除）。
+    """
+    return {
+        "id": command_id,
+        "method": "input.respond",
+        "params": {"namespace": [], "interrupt_id": interrupt_id, "response": response},
+    }
+
+
 # ─── run（commands + state 轮询；exec_mode=wait 语义） ───
 
 
@@ -146,17 +271,36 @@ async def commands_run(
             details={"sut": channel.sut.name, "thread_id": tid, "body": str(payload)[:500]},
         )
     run_id = (payload.get("result") or {}).get("run_id")
-    values = await _poll_state(channel, tid, baseline)
+    values, pending = await _poll_state(channel, tid, baseline)
+    return finalize_run_result(
+        channel, run_id=run_id, thread_id=tid, values=values, pending=pending
+    )
+
+
+def finalize_run_result(
+    channel: AgentProtocolChannel,
+    *,
+    run_id: str | None,
+    thread_id: str,
+    values: dict[str, Any],
+    pending: list[dict[str, Any]],
+    **extra: Any,
+) -> dict[str, Any]:
+    """由终态 values 组装 run 结果：success 走 output 提取；interrupted 附结构化反问。"""
     messages = values.get("messages") or []
     text = final_ai_text(messages)
-    return {
-        "status": "success",
-        "run": {"run_id": run_id, "thread_id": tid},
+    result: dict[str, Any] = {
+        "status": "interrupted" if pending else "success",
+        "run": {"run_id": run_id, "thread_id": thread_id},
         "values": values,
         "messages": messages,
         "output": channel._extract_output(values) or ({"text": text} if text else {}),
         "text": text,
+        **extra,
     }
+    if pending:
+        result["questions"] = pending
+    return result
 
 
 def run_start_envelope(
@@ -189,9 +333,23 @@ async def _get_state(channel: AgentProtocolChannel, thread_id: str) -> dict[str,
 
 
 async def _poll_state(
-    channel: AgentProtocolChannel, thread_id: str, baseline: int
-) -> dict[str, Any]:
-    """轮询 state 至终态：next==[] 且新增消息末尾为 ai 文本（未起跑/终态误读均不通过）。"""
+    channel: AgentProtocolChannel,
+    thread_id: str,
+    baseline: int,
+    *,
+    resolved_interrupt: str | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """轮询 state 至终态；遇 ask_question 反问挂起即提前返回，不再空转超时。
+
+    Returns:
+        (values, pending_questions)。pending 非空 = run 挂起等应答
+        （interrupt 挂载，next 通常非空），调用方按 interrupted 语义收口。
+
+    Args:
+        resolved_interrupt: 刚应答过的中断 id——input.respond 提交后存在竞态
+            窗口（应答已受理、图未推进），旧中断仍挂在 state 上，跳过它继续等
+            真正的推进/终态，否则会把同一反问再次当挂起返回。
+    """
     deadline = time.monotonic() + channel.sut.timeout
     last_values: dict[str, Any] = {}
     while True:
@@ -199,9 +357,16 @@ async def _poll_state(
         if state is not None:
             last_values = state.get("values") or {}
             messages = last_values.get("messages") or []
+            pending = [
+                q
+                for q in pending_ask_questions(state)
+                if q.get("interrupt_id") != resolved_interrupt
+            ]
+            if pending:
+                return last_values, pending
             finished = not (state.get("next") or [])
             if finished and len(messages) > baseline and final_ai_text(messages):
-                return last_values
+                return last_values, []
         if time.monotonic() >= deadline:
             raise AgentProtocolError(
                 f"run 超时：state 轮询 {channel.sut.timeout}s 未达终态",
@@ -280,19 +445,16 @@ async def commands_stream(
         except Exception:  # noqa: BLE001 — SSE 中断不致命，终态以 state 收口
             break
     # 无论 SSE 是否收齐，终态与文本一律以 state 为准
-    values = await _poll_state(channel, tid, 0)
-    messages = values.get("messages") or []
-    text = final_ai_text(messages)
-    return {
-        "status": "success",
-        "run": {"thread_id": tid},
-        "values": values,
-        "messages": messages,
-        "output": {"text": text} if text else {},
-        "text": text,
-        "events": events,
-        "terminal_event_seen": terminal_seen,
-    }
+    values, pending = await _poll_state(channel, tid, 0)
+    return finalize_run_result(
+        channel,
+        run_id=None,
+        thread_id=tid,
+        values=values,
+        pending=pending,
+        events=events,
+        terminal_event_seen=terminal_seen,
+    )
 
 
 class SSEDeadlineError(Exception):

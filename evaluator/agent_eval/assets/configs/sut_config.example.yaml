@@ -32,3 +32,7 @@ sut:
   # output_paths:
   #   files_field: values.output_files
   #   text_field: values.content
+  # 产物下载白名单（download_sut_file 工具；缺省仅允许 base_url 同域，
+  # SUT 产物文件托管在异域 CDN/文件服务时才需要追加）
+  # artifact_hosts:
+  #   - files.example.com

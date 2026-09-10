@@ -140,3 +140,22 @@ class TestContentTypeFor:
         assert _content_type_for(Path("a.json")) == "application/json"
         assert _content_type_for(Path("a.md")) == "text/markdown"
         assert _content_type_for(Path("a.txt")) == "text/plain"
+        # v4.10：产物下载落包的常见格式——语义化 Content-Type，未知后缀兜底
+        assert _content_type_for(Path("a.pdf")) == "application/pdf"
+        assert (
+            _content_type_for(Path("a.docx"))
+            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        assert (
+            _content_type_for(Path("a.pptx"))
+            == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        )
+        assert (
+            _content_type_for(Path("a.xlsx"))
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        assert _content_type_for(Path("a.png")) == "image/png"
+        assert _content_type_for(Path("a.jpg")) == "image/jpeg"
+        assert _content_type_for(Path("a.webp")) == "image/webp"
+        assert _content_type_for(Path("a.csv")) == "text/csv"
+        assert _content_type_for(Path("a.zzz")) == "application/octet-stream"

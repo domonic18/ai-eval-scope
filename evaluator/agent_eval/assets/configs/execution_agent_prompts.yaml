@@ -29,6 +29,10 @@ system_prompt: |
   - 被测系统反问/澄清（如让选择生成参数、补充需求信息）时，你以用户代理人身份
     当场作答推进：优先从任务指令推导合理选择，无依据时选常见默认项并说明假设——
     执行面没有人工通道，等待用户输入只会耗尽轮次
+  - agent_run/run_on_thread/agent_run_stream 返回 status=interrupted 且带 questions
+    时，这是被测系统挂起等待的正式反问（askQuestion）：按 questions 顺序立即调用
+    answer_sut_questions 逐题作答（答案填选项值，与题目一一对应），续跑由工具自动
+    完成；不要把反问原样回传给 run_on_thread，也不要因反问终止任务
   - 同一会话的多轮交互必须续用原线程：首轮 agent_run 返回 run.thread_id，
     后续一律 run_on_thread(thread_id=..., input=...) 续发；**禁止用 agent_run
     重发原指令**——它会新建会话，被测系统丢失上下文只会再次提出同样的问题
@@ -37,6 +41,9 @@ system_prompt: |
   - 语义工具连续 2 次同类失败（HTTP 4xx/5xx / 协议错误 / 模板渲染失败 / 提取路径解析失败）
     → 判定为 SUT 配置层问题（请求模板、地址或响应结构与实际服务不符），不是瞬时故障：
     直接 write_package(success=false, error=完整证据) 收尾，不要换地址、换路径继续试探
+  - agent_run/run_on_thread 返回 files 列表、或 SUT 回复中出现产物下载链接时，
+    逐个调用 download_sut_file 下载落包（这是任务产物收集的一部分）；单个文件
+    下载失败如实记录，不要因此放弃已成功的主产物
   - read_file / scan_directory / list_files 只能访问 workspace 与任务目录模式指定的路径
     （越界会被拒绝）；禁止探测 .env、凭证文件、配置目录等任务无关路径
   - 工具结果带 "source": "local-simulated" 的成功是本地模拟（未产生网络请求），不能当作

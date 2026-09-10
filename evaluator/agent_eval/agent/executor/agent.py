@@ -153,11 +153,18 @@ class ExecutionAgent:
         self.sut_tools = sut_tools or SUTToolServer(
             config.sut_tools_config, workspace_dir=config.workspace_dir
         )
-        # 外部注入的注册表（如 AgentProtocolToolServer）同样以 config.workspace_dir
-        # 为落盘根——write_package/collect_results 的目的地不交给 LLM 决定
-        self.sut_tools.workspace_dir = Path(config.workspace_dir)
         self.tool_servers: list[Any] = [self.sut_tools, *(extra_tool_servers or [])]
+        # 落盘根统一注入：凡有 workspace_dir 属性的注册表（SUTToolServer /
+        # AgentProtocolToolServer 等）同以 config.workspace_dir 为根——
+        # write_package/collect_results/download_sut_file 的目的地不交给 LLM 决定
+        self._inject_workspace(Path(config.workspace_dir))
         self._graph: Any = None
+
+    def _inject_workspace(self, workspace_dir: Path) -> None:
+        """向所有带 workspace_dir 属性的工具注册表注入落盘根。"""
+        for server in self.tool_servers:
+            if hasattr(server, "workspace_dir"):
+                server.workspace_dir = workspace_dir
 
     # ─── 对外入口 ───
 
@@ -206,7 +213,8 @@ class ExecutionAgent:
         # 互相覆盖且无法归属运行）。write_package 的目的地由
         # sut_tools.workspace_dir 决定，逐 run 注入包根。
         run_packages_root = workspace / "runs" / run_id / "packages"
-        self.sut_tools.workspace_dir = run_packages_root
+        # 逐 run 注入包根（SUTToolServer 与语义工具注册表同根，产物落同一执行包）
+        self._inject_workspace(run_packages_root)
         # 目录模式机械白名单：task.directory_path 由任务作者配置（非 LLM 运行时
         # 决定），注入为文件工具允许根——workspace 边界不挡目录模式扫描
         self.sut_tools.extra_allowed_roots = (
