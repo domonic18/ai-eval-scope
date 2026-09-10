@@ -27,6 +27,13 @@ from agent_eval.core.exceptions import AgentError
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
 # evaluator 须为注册 ID（llm_judge 是 method 枚举值——规则引用对账门禁会打回）
 RULES = "rules:\n  - id: r1\n    evaluator: format.response_format\n"
+# 聚合策略必选（落盘门禁对账）；r1 无 stage 字段，空 stage_weights 即覆盖通过
+POLICY = (
+    "aggregation_policy:\n"
+    "  id: p\n  scenario_id: demo\n"
+    "  stage_weights: []\n"
+    "  normalize_to: [0.0, 1.0]\n"
+)
 
 
 def _seed_valid_package(root: Path) -> None:
@@ -37,6 +44,8 @@ def _seed_valid_package(root: Path) -> None:
     (root / "rules" / "quality.yaml").write_text(RULES, encoding="utf-8")
     (root / "prompts" / "judge.yaml").write_text("prompts: []\n", encoding="utf-8")
     (root / "datasets" / "ref.yaml").write_text("data: []\n", encoding="utf-8")
+    (root / "metrics").mkdir(parents=True, exist_ok=True)
+    (root / "metrics" / "policy.yaml").write_text(POLICY, encoding="utf-8")
 
 
 def _ai(text: str) -> SimpleNamespace:
@@ -69,6 +78,7 @@ async def _write_valid(server: PackageToolServer) -> str:
     await server.write_file("rules/quality.yaml", RULES)
     await server.write_file("prompts/judge.yaml", "prompts: []\n")
     await server.write_file("datasets/ref.yaml", "data: []\n")
+    await server.write_file("metrics/policy.yaml", POLICY)
     return "已生成完整场景包"
 
 
@@ -197,6 +207,7 @@ class TestSandbox:
             await server.write_file("rules/quality.yaml", RULES)
             await server.write_file("prompts/judge.yaml", "template_id: j1\nsystem_prompt: x\n")
             await server.write_file("task_sets/default.yaml", "id: t1\nname: 考卷\ntasks: []\n")
+            await server.write_file("metrics/policy.yaml", POLICY)
             result = await server.validate_package()
             assert result["ok"], result["errors"]
             assert not any("datasets" in e for e in result["errors"])

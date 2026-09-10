@@ -25,9 +25,17 @@ from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.rule_refs import check_rule_references
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
+# 聚合策略必选（缺省注入声明 quality 阶段的合法 policy；测试可覆盖/省略以验证门禁）
+POLICY = (
+    "aggregation_policy:\n"
+    "  id: p\n  scenario_id: demo\n"
+    "  stage_weights:\n    - {stage_id: quality, weight: 1.0, is_gate: false}\n"
+    "  normalize_to: [0.0, 1.0]\n"
+)
 
 
 def _seed(tmp_path: Path, files: dict[str, str]) -> Path:
+    files = {"metrics/policy.yaml": POLICY, **files}
     for rel, content in files.items():
         p = tmp_path / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -370,3 +378,23 @@ def test_stage_without_evaluators_is_legal_empty_pipeline() -> None:
     )
     engine = PipelineEngine(config, registry)
     assert engine.stages[0].evaluators == []
+
+
+def test_missing_policy_yaml_reported(tmp_path: Path) -> None:
+    """聚合策略必选：无 metrics/policy.yaml（或缺 aggregation_policy）落盘前打回。"""
+    root = _seed(tmp_path, {"metrics/policy.yaml": ""})  # 覆盖缺省注入为空文件
+    errors = check_rule_references(root)
+    assert any("metrics/policy.yaml" in e and "courseware" in e for e in errors)
+
+
+def test_stage_not_declared_in_policy_reported(tmp_path: Path) -> None:
+    """规则阶段未在 stage_weights 声明 → 覆盖度打回（静默丢分教训前置到落盘门禁）。"""
+    root = _seed(
+        tmp_path,
+        {
+            "metrics/policy.yaml": POLICY,  # 只声明 quality
+            "rules/r.yaml": _rule_set(stage="safety"),
+        },
+    )
+    errors = check_rule_references(root)
+    assert any("'safety'" in e and "stage_weights" in e for e in errors)

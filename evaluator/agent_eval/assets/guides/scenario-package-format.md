@@ -18,7 +18,7 @@
 ├── datasets/                # 离线文件评测必需：数据资产；在线 SUT 形态不需要
 ├── task_sets/               # 在线被测系统需要：考卷
 ├── sut_configs/             # 在线被测系统需要：接入配置（不含凭证）
-└── metrics/                 # 可选：聚合策略 policy.yaml
+└── metrics/                 # 必选：聚合策略 policy.yaml（缺失构建期打回）
 ```
 
 硬性约定（门禁强制）：
@@ -67,6 +67,11 @@ package:
   这里声明的 stage id；`stop_on_fail: true` 的阶段是门控（失败即止）；
 - `rules[]` 公共字段：`id`、`name`、`dimension`（引用 dimensions id）、`stage`（引用
   cascade 的 stage id）、`description`、`weight`、`method`、`evaluator`。
+- `tier`（可选）：`hard_gate / hard_score / soft / preference` ——约束层级覆盖，缺省用
+  评估器内置层级。LLM judge 评估器（如 `chat.answer_quality`）内置 `soft`：判分只进
+  reward、不翻转样本 status；声明 `tier: hard_score` 后判分低于阈值（0.4）即 FAIL 并
+  翻转样本 status。**安全类规则必须显式声明**——soft 语义下 judge 全 0 分样本仍
+  pass（run 20260910_034232 教训：violence_003 假成功）。
 - `evaluator`：**评估器注册 ID**——不是 method。`llm_judge` 是 method 枚举值，写进
   `evaluator` 字段运行时必报「未注册的评估器」（落盘校验也会打回）。内置 ID 全集：
   `format.response_format` / `format.html_validity` / `format.content_completeness` /
@@ -253,8 +258,19 @@ steps 链约束：
 - 链中任一步 ≥400 即整体 failed（错误带步骤名）；
 - **`text` 已配置但路径未命中/取 null → failed**（错误带响应体摘录，据此修正路径），
   不再静默兜底整包——纯文本 API 请把 `response_mapping` 留空，整个响应体即回答；
-- SSE 流式末步（`text/event-stream`）自动解析 `data:` 帧为 `events` 列表，mapping 按
-  `events.-1.字段` 提取末帧；未配置 mapping 时整段原文即回答。
+- SSE 流式末步（`text/event-stream`）自动解析 `data:` 帧为 `events` 列表；未配置
+  mapping 时整段原文即回答。
+
+**提取路径语法（response_mapping.text / token_path / output_paths 共用）**：
+- 负下标取末元素：`data.messages.-1.content` 与 `data.messages[-1].content` 等价；
+- **字段过滤段** `[字段=值]`：按字段过滤列表后再取下标——
+  `events[type=content].-1.content`（SSE 答案帧位置不定，thought 帧数可变，裸下标
+  脆弱）、`data.messages[role=assistant].-1.content`（历史接口末条常是用户自己的
+  消息而非助手回复，裸 `messages[-1]` 提取到回显——run 20260910_034232 16/16
+  回显事故）；
+- **流式/多帧响应必须用过滤段**；过滤未命中直接 failed（fail-loud，不静默兜底）。
+  提取路径落盘前须实测验证：先 `request` 工具实调，确认答案帧的 `type`/`role`
+  字段真实形态再写映射。
 
 关键约束：
 - `channel` 可执行取值只有 `agent_protocol` 与 `generic_http`（`browser` 预留未
@@ -274,11 +290,21 @@ steps 链约束：
 
 ## 8. metrics/policy.yaml 聚合策略
 
-可选（缺省时按规则集 stage 结构聚合）。两个字段组：
+**必选**（`scenario new` 脚手架已含起始文件）。聚合策略不再回退 courseware 默认：
+缺包或缺 `metrics/policy.yaml` → 构建期直接打回——降级会把规则集未声明阶段的
+评估分数静默丢弃，正是 judge 打 0 分样本仍 reward=1.0 的根因（run 20260910_034232
+事故）。校验双端同源：`scenario validate` / Agent 落盘门禁与运行时 `build_pipeline`
+都会对账。
+
+**规则集里每个 `stage`（cascade 声明 + 规则引用）都必须在 `stage_weights` 中声明**，
+否则构建期直接打回（fail-loud）。
+
+两个字段组：
 
 - `aggregation_policy`：`id`、`scenario_id`、`stage_weights[]`
-  （`{stage_id, weight, is_gate}`，可加 `evaluator_weights` 细化到评估器级）、
-  `normalize_to: [0.0, 1.0]`；
+  （`{stage_id, weight, is_gate, skip_tiers_in_reward}`，可加 `evaluator_weights`
+  细化到评估器级；`skip_tiers_in_reward: []` 表示 hard_score 判定结果同样计分——
+  judge 0 分必须拉低 reward，而非只在 status 上体现）、`normalize_to: [0.0, 1.0]`；
 - `metric_definitions[]`：`{id, name, summary, expression}`（如
   `expression: "count(format_gate) / total"`）。
 

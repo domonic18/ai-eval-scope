@@ -1,0 +1,17 @@
+# 测试 fixture 包级聚合策略：eval 流程按 rule_set_path.parent.parent 推导包根
+# （tests/fixtures/），解析此处的 metrics/policy.yaml——聚合策略必选，不再回退
+# courseware 默认（降级会把未声明阶段的评估分数静默丢弃）。
+aggregation_policy:
+  id: fixtures-default
+  scenario_id: courseware
+  stage_weights:
+    - stage_id: format
+      weight: 1.0
+      is_gate: true
+    - stage_id: format_gate
+      weight: 1.0
+      is_gate: true
+    - stage_id: commonsense
+      weight: 1.0
+      is_gate: false
+  normalize_to: [0.0, 1.0]

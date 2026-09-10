@@ -28,7 +28,7 @@ def _scaffold(ref: str, output: Path | None, template: str, force: bool) -> Path
         rprint(f"[red]❌ 目标目录非空: {root}（用 --force 覆盖）[/red]")
         raise typer.Exit(code=1)
 
-    for sub in ("rules", "prompts", "datasets"):
+    for sub in ("rules", "prompts", "datasets", "metrics"):
         (root / sub).mkdir(parents=True, exist_ok=True)
 
     manifest = (
@@ -43,6 +43,19 @@ def _scaffold(ref: str, output: Path | None, template: str, force: bool) -> Path
         f"  labels: [latest]\n"
     )
     (root / "agent_eval.yaml").write_text(manifest, encoding="utf-8")
+    # 聚合策略必选（不回退 courseware 默认——降级会静默丢分）；stage_weights 由
+    # 作者按 rules/ 的 cascade 逐阶段补齐，validate 与 build_pipeline 双端对账打回
+    policy = (
+        "# 聚合策略与指标定义（必选；字段契约参照内置包 courseware/1.0.0/metrics/policy.yaml）\n"
+        "aggregation_policy:\n"
+        f"  id: {package_id}-default\n"
+        f"  scenario_id: {scenario}\n"
+        "  stage_weights: []         # TODO: rules/ cascade 的每个 stage 各声明一条\n"
+        "                            # {stage_id, weight, is_gate}——未声明的阶段分数不计入 reward\n"
+        "  normalize_to: [0.0, 1.0]\n"
+        "metric_definitions: []      # TODO: 按需声明场景指标（expression 表达式）\n"
+    )
+    (root / "metrics" / "policy.yaml").write_text(policy, encoding="utf-8")
     return root
 
 

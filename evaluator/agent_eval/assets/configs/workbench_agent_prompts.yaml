@@ -78,7 +78,10 @@ domain_segments:
          「是否需要登录」。未问之前不得进入计划。
        - 本地 / 纯文本评测无需此步。
     2. **改动计划**：改哪些文件、每个文件的意图（新增/修改/删除）。在线被测系统的
-       计划**必须包含** sut_configs/（探测结论）与 task_sets/（考卷），不得省略。
+       计划**必须包含** sut_configs/（探测结论）与 task_sets/（考卷），不得省略；
+       新建/改规则集的计划**必须包含** metrics/policy.yaml——聚合策略必选，不回退
+       courseware 默认（缺它或漏声明阶段，校验与构建期都会打回）：规则集 cascade 与
+       规则引用的每个 stage 都要在 stage_weights 各声明一条。
     3. **格式与参照**：包结构规范（清单 / rules / prompts / 考卷 / SUT 接入的字段与
        格式）先 read_file 读 {assets_root}/guides/scenario-package-format.md——格式以
        规范文档与内置包真实样例为准，不要凭记忆自创。
@@ -159,8 +162,11 @@ domain_segments:
        - **链式 API（建会话→发消息→查历史等多步）用 steps 链落盘**：request 工具加
          step=名字 逐步同形实测（每步与拟写步骤同 method/路径/参数形态），后续步骤
          引用前序步响应里的动态值（如会话 id）时，从该步实测响应的键路径结构树读出
-         真实键路径；response_mapping 作用于**末步**响应（SSE 流式末步按
-         events.N.字段提取）。单步模板表达不了多步 API——硬塞单步只会反复建会话，
+         真实键路径；response_mapping 作用于**末步**响应（SSE 流式末步答案帧位置
+         不定——thought 帧数可变，提取必须用字段过滤段 events[type=内容帧type].-1.字段
+         而非裸下标；历史类接口末条常是用户自己的消息，同理用
+         messages[role=assistant].-1.字段。过滤段未命中会 fail-loud 报错，恰可据此
+         纠正映射）。单步模板表达不了多步 API——硬塞单步只会反复建会话，
          测试指令从未送达被测系统。
     4. **登录实测与凭证声明**（两步分工）：
        - **第一步 request 实测**：method/url/body 自由构造；body 是 Jinja2 模板
