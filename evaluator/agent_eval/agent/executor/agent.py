@@ -220,6 +220,13 @@ class ExecutionAgent:
         self.sut_tools.extra_allowed_roots = (
             [Path(task.directory_path)] if task.directory_path else []
         )
+        # 跨任务清账：last_run 是语义工具注册表上的单槽缓存，而实例整个任务集共享
+        # ——本任务 SUT 调用全部失败时不产生新记录，兜底回填/物化会拿到上一任务
+        # 的残留（2026-09-10 实测串台：physics 四次尝试全超时，answer.md 与评估
+        # 对象是 chinese 留下的《春》完成通知，答非所问全 0 分）
+        for server in self.tool_servers:
+            if getattr(server, "last_run", None) is not None:
+                server.last_run = None
         package_dir = run_packages_root / task.id
         log_dir = workspace / "runs" / run_id / "agent_logs"
 
