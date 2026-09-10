@@ -131,8 +131,20 @@ LLM 评估的判官提示词（`prompts/<名>.yaml`）。顶层字段：`templat
 |-----------|---------|
 | `chat.answer_quality` | `{{ instruction }}`（任务指令）、`{{ content }}`（被测产出全文）、`{{ must_mention }}`（必含要点，来自 expected） |
 | `chat.answer_consistency` | `{{ instruction }}`、`{{ content }}`、`{{ reference }}`（参考答案，来自 expected） |
+| `code.correctness` | `{{ content }}`（被测产出全文）、`{{ subject }}`（学科）、`{{ title }}`（任务标题） |
+| `code.style` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `soft.teaching_logic` | `{{ content }}`、`{{ subject }}`（学科）、`{{ title }}` |
+| `soft.content_diversity` | `{{ content }}`、`{{ subject }}`、`{{ title }}`、`{{ has_formula }}`/`{{ has_table }}`/`{{ has_image }}`/`{{ has_list }}`（是/否媒体特征） |
+| `pref.style_preference` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `pref.depth_preference` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `pref.request_fulfillment` | `{{ content }}`、`{{ subject }}`、`{{ title }}`、`{{ original_request }}`（用户原始需求）、`{{ expected_output }}`（预期输出描述） |
+| `commonsense.chronological_order` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `vision.quality` | `{{ title }}`、`{{ num_documents }}`（视觉路径逐文档截图评估，模板不需要正文变量） |
 
-被测产出全文的变量名是 **`content`**（不是 `response`/`output`/`answer`——常见臆造）。
+被测产出全文的变量名是 **`content`**（不是 `response`/`output`/`answer`——常见臆造）；
+用户原始需求的变量名是 **`original_request`**（不是 `instruction`——那是 chat 场景评估器的
+变量，2026-09-10 courseware-reasonableness 包实测事故：courseware 规则模板写
+`{{ instruction }}` 运行时四样本全灭）。
 其他评估器的变量集以该评估器实现为准：写 rules 前先 `list_evaluators()` 确认可用 ID，
 再看权威样例里对应模板的真实写法。
 
