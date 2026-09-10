@@ -226,7 +226,8 @@ def test_run_task_set_shares_run_id(tmp_path, monkeypatch) -> None:
 def test_prompt_contents(tmp_path) -> None:
     agent = _agent(tmp_path)
     system_prompt = agent._build_system_prompt()
-    assert "invoke_http_sut" in system_prompt
+    # v4.8 裁剪：invoke_* 裸调用工具退出 LLM 工具面（SUT 交互唯一出口是语义工具）
+    assert "invoke_http_sut" not in system_prompt
     assert "write_package" in system_prompt
 
     task = Task(

@@ -10,7 +10,7 @@ from __future__ import annotations
 import functools
 import json
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import Any
 
 from agent_eval.core.exceptions import AgentError
 
@@ -47,7 +47,8 @@ class ToolExporterMixin:
     functools.wraps 保留原方法签名供 StructuredTool 推导参数 Schema。
     """
 
-    TOOL_SPECS: ClassVar[list[ToolSpec]] = []
+    # 非 ClassVar：子类允许按实例遮蔽（SUTToolServer 按执行面白名单裁剪工具集）
+    TOOL_SPECS: list[ToolSpec] = []
 
     def to_langchain_tools(self) -> list[Any]:
         """导出 LangChain Tool 列表供 DeepAgents 显式绑定。"""

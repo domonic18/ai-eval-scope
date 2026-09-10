@@ -124,6 +124,11 @@ class ExecutionAgent:
         # sut_tools.workspace_dir 决定，逐 run 注入包根。
         run_packages_root = workspace / "runs" / run_id / "packages"
         self.sut_tools.workspace_dir = run_packages_root
+        # 目录模式机械白名单：task.directory_path 由任务作者配置（非 LLM 运行时
+        # 决定），注入为文件工具允许根——workspace 边界不挡目录模式扫描
+        self.sut_tools.extra_allowed_roots = (
+            [Path(task.directory_path)] if task.directory_path else []
+        )
         package_dir = run_packages_root / task.id
         log_dir = workspace / "runs" / run_id / "agent_logs"
 

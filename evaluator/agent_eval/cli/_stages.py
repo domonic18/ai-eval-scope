@@ -252,8 +252,8 @@ def execute_stage(
             cast(AgentProtocolChannel, channel),
             default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
         )
-    # invoke_http_sut 的 host 边界收敛到被测系统配置域（实测：协议通道 404 后
-    # LLM 曾臆测 localhost:8000/8080 乱试）；base_url 缺失时留空 = 不限制
+    # 文件工具面用安全默认集（invoke_* 裸调用工具不进 LLM 面，SUT 交互唯一
+    # 出口是通道语义工具）；allowed_hosts 仅在显式恢复 invoke_http_sut 时生效
     sut_host = urlparse(sut.base_url).hostname if sut.base_url else None
     agent = ExecutionAgent(
         AgentConfig(
