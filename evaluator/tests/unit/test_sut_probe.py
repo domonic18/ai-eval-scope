@@ -299,6 +299,31 @@ class TestDiscoverLogin:
         assert candidate["fields"] == ["password", "username"]  # 排序后字段 schema
         assert "https://sut.example.com/openapi.json" in result["cached"]  # 原文可检索
 
+    def test_openapi_probed_even_with_form_candidates(self) -> None:
+        """OpenAPI 阶梯无前置门（v4.3）：页面有 form 不再跳过 schema 探测——form 与
+        schema 证据并列交 Agent 判读（曾有「仅 candidates 为空才探」的兜底门）。"""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/login":
+                return httpx.Response(
+                    200,
+                    text=(
+                        '<html><body><form action="/signin">'
+                        '<input name="user"/></form></body></html>'
+                    ),
+                    request=request,
+                )
+            if request.url.path == "/openapi.json":
+                return httpx.Response(
+                    200, json={"paths": {"/auth/login": {"post": {}}}}, request=request
+                )
+            return httpx.Response(404, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        result = _run(server.discover_login("https://sut.example.com/login"))
+        sources = {c["source"] for c in result["candidates"]}
+        assert "form" in sources and "openapi" in sources
+
     def test_no_candidate_guidance_never_asks_field_names(self) -> None:
         """全阶梯落空：兜底指引只向用户要接口地址，字段名由 Agent 拟定。"""
 
@@ -711,6 +736,150 @@ class TestRequestLoginFlow:
         )
         assert req["status"] == 200
         assert json.loads(sent[1].content) == {"csrf": "CSRFTOK", "u": "u1"}
+
+
+class TestRequestBodyGuard:
+    """渲染后 JSON 语义校验（jxb-server 422 误诊事故）：双重编码/凭证特殊字符
+    破损的变形报文发送前拦截——SUT 只回一句 422，把我方参数变形伪装成「后端
+    格式不明」，实测烧掉整轮探测预算。"""
+
+    def _server(self, creds: Any = None) -> tuple[SUTProbeToolServer, list[httpx.Request]]:
+        sent: list[httpx.Request] = []
+
+        def wrapping(request: httpx.Request) -> httpx.Response:
+            sent.append(request)
+            return httpx.Response(200, json={}, request=request)
+
+        return (
+            _make(
+                credential_store=creds,
+                http_client_factory=_transport(wrapping),
+            ),
+            sent,
+        )
+
+    def test_double_encoded_body_rejected_not_sent(self) -> None:
+        """body 是 JSON 字符串字面量（外层多一层引号）→ 拒发：SUT 会收到字符串
+        而非对象并报 422 model_attributes_type。"""
+        server, sent = self._server()
+        result = _run(server.request("POST", _LOGIN_URL, body=json.dumps('{"u": 1}')))
+        assert "双重编码" in result["error"]
+        assert "请求未发送" in result["error"]
+        assert sent == []
+
+    def test_double_encoded_templated_body_rejected_before_grant(self) -> None:
+        """变形校验在凭证授权之前：坏 body 不该打扰用户授权（非交互环境下若走到
+        授权门会报「非交互环境不外发凭证」——报错是双重编码即证明校验先行）。"""
+        creds = CredentialStore(env={"AGENT_EVAL_SUT__SUT__USERNAME": "u1"})
+        server, sent = self._server(creds)
+        result = _run(
+            server.request(
+                "POST", _LOGIN_URL, body=json.dumps('{"username": "{{ username }}"}'), ref="SUT"
+            )
+        )
+        assert "双重编码" in result["error"]
+        assert "非交互" not in result["error"]
+        assert sent == []
+
+    def test_credential_quote_breaks_json_rejected_with_tojson_hint(self) -> None:
+        """凭证值含 " 破坏模板拼接 → 渲染后非法 JSON 拒发，指引发 tojson 转义。"""
+        creds = CredentialStore(
+            env={
+                "AGENT_EVAL_SUT__SUT__USERNAME": "u1",
+                "AGENT_EVAL_SUT__SUT__PASSWORD": 'p"1',
+            }
+        )
+        server, sent = self._server(creds)
+        result = _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        assert "不是合法 JSON" in result["error"]
+        assert "tojson" in result["error"]
+        assert sent == []
+
+    def test_clean_object_body_passes_guard(self) -> None:
+        server, sent = self._server()
+        result = _run(server.request("POST", _LOGIN_URL, body='{"username": "u"}'))
+        assert result["status"] == 200 and len(sent) == 1
+
+    def test_array_body_allowed(self) -> None:
+        """数组是合法 JSON body（部分接口收数组）：不在拦截面。"""
+        server, sent = self._server()
+        result = _run(server.request("POST", _LOGIN_URL, body='[{"a": 1}]'))
+        assert result["status"] == 200 and len(sent) == 1
+
+    def test_explicit_non_json_content_type_skips_guard(self) -> None:
+        """显式非 JSON Content-Type（原始报文探测）不适用 JSON 语义校验。"""
+        server, sent = self._server()
+        result = _run(
+            server.request(
+                "POST", _LOGIN_URL, body="not-json-raw", headers="Content-Type: text/plain"
+            )
+        )
+        assert result["status"] == 200 and len(sent) == 1
+
+    def test_scalar_body_rejected(self) -> None:
+        """body 渲染后是裸标量（123 等）→ 拒发：JSON body 的合法形态只有对象/数组。"""
+        server, sent = self._server()
+        result = _run(server.request("POST", _LOGIN_URL, body="123"))
+        assert "双重编码" in result["error"] or "而非 JSON 对象" in result["error"]
+        assert sent == []
+
+
+class TestResponse422Triage:
+    """422 next_step 分诊（jxb-server 事故）：body 层错误换字段名无解——指引先读
+    detail 的 type 与 input 回显再动手，不再烧预算瞎猜。"""
+
+    def _run_422(self, detail: Any) -> dict[str, Any]:
+        def handler(request: httpx.Request) -> httpx.Response:
+            if isinstance(detail, str):
+                return httpx.Response(422, text=detail, request=request)
+            return httpx.Response(422, json=detail, request=request)
+
+        server = _make(http_client_factory=_transport(handler))
+        return _run(server.request("POST", "https://sut.example.com/api/login", body='{"u": 1}'))
+
+    def test_model_attributes_type_guides_double_encoding(self) -> None:
+        result = self._run_422(
+            {
+                "detail": [
+                    {
+                        "type": "model_attributes_type",
+                        "loc": ["body"],
+                        "msg": "Input should be a valid dictionary or object to extract fields from",
+                        "input": '"{\\"username\\": \\"u\\"}"',
+                    }
+                ]
+            }
+        )
+        step = result["next_step"]
+        assert "双重编码" in step
+        assert "input" in step
+
+    def test_json_invalid_guides_tojson_escape(self) -> None:
+        result = self._run_422(
+            {
+                "detail": [
+                    {
+                        "type": "json_invalid",
+                        "loc": ["body", 0],
+                        "msg": "JSON decode error",
+                        "ctx": {"error": "Expecting value"},
+                    }
+                ]
+            }
+        )
+        assert "tojson" in result["next_step"]
+
+    def test_missing_field_guides_loc(self) -> None:
+        result = self._run_422(
+            {"detail": [{"type": "missing", "loc": ["body", "password"], "msg": "Field required"}]}
+        )
+        assert "password" in result["next_step"]
+        assert "loc" in result["next_step"]
+
+    def test_non_fastapi_422_falls_back(self) -> None:
+        result = self._run_422("plain 422 text")
+        assert "校验被拒" in result["next_step"]
+        assert "detail" in result["next_step"]
 
 
 class TestDeclareToken:

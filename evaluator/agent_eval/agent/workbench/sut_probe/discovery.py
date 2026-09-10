@@ -160,48 +160,49 @@ class DiscoveryTool:
                         )
 
         # 阶梯③：OpenAPI/身份文档探测（挂载点为工具规范约定；POST 端点原样列出，
-        # 哪个是登录由 Agent 判读，文档原文已入缓存可 search_content 检索）
-        if not candidates:
-            client_cm = self.ctx.borrow_client()
-            async with client_cm as client:
-                for doc_path in (
-                    "/openapi.json",
-                    "/api/openapi.json",
-                    "/api-docs",
-                    "/swagger.json",
-                    "/v3/api-docs",
-                ):
-                    try:
-                        response = await client.get(f"{base}{doc_path}")
-                        if response.status_code != 200:
-                            continue
-                        spec = response.json()
-                    except Exception:  # noqa: BLE001 — 单路径失败不阻断清单
+        # 哪个是登录由 Agent 判读，文档原文已入缓存可 search_content 检索）。
+        # 无前置门（曾有「仅 candidates 为空才探」）：页面有 form 不代表没有更权威
+        # 的接口契约——openapi 是 schema 的一手证据，与 form/路径候选并列交 Agent 判读
+        client_cm = self.ctx.borrow_client()
+        async with client_cm as client:
+            for doc_path in (
+                "/openapi.json",
+                "/api/openapi.json",
+                "/api-docs",
+                "/swagger.json",
+                "/v3/api-docs",
+            ):
+                try:
+                    response = await client.get(f"{base}{doc_path}")
+                    if response.status_code != 200:
                         continue
-                    if not isinstance(spec, dict):
+                    spec = response.json()
+                except Exception:  # noqa: BLE001 — 单路径失败不阻断清单
+                    continue
+                if not isinstance(spec, dict):
+                    continue
+                self.ctx.cache_content(f"{base}{doc_path}", response.text)
+                for pathname, methods in (spec.get("paths") or {}).items():
+                    if not isinstance(methods, dict) or "post" not in methods:
                         continue
-                    self.ctx.cache_content(f"{base}{doc_path}", response.text)
-                    for pathname, methods in (spec.get("paths") or {}).items():
-                        if not isinstance(methods, dict) or "post" not in methods:
-                            continue
-                        props = _dig(
-                            methods.get("post"),
-                            "requestBody",
-                            "content",
-                            "application/json",
-                            "schema",
-                            "properties",
-                        )
-                        candidates.append(
-                            {
-                                "source": "openapi",
-                                "path": str(pathname),
-                                "fields": sorted(props) if isinstance(props, dict) else [],
-                                "method": "POST（openapi 声明）",
-                            }
-                        )
-                    if candidates:
-                        break  # 命中一份文档即止
+                    props = _dig(
+                        methods.get("post"),
+                        "requestBody",
+                        "content",
+                        "application/json",
+                        "schema",
+                        "properties",
+                    )
+                    candidates.append(
+                        {
+                            "source": "openapi",
+                            "path": str(pathname),
+                            "fields": sorted(props) if isinstance(props, dict) else [],
+                            "method": "POST（openapi 声明）",
+                        }
+                    )
+                if isinstance(spec.get("paths"), dict) and spec["paths"]:
+                    break  # 命中一份接口文档即止
         self.ctx.log("discover_login", page_url=page_url, candidates=len(candidates))
         result: dict[str, Any] = {
             "candidates": candidates[:8],
@@ -218,7 +219,9 @@ class DiscoveryTool:
                 "业务词、请求构造痕迹、脚本分包机制痕迹），命中后从摘录读出真实路径与"
                 "请求体字段；主包没有登录请求字面量是常态（框架按路由分包）——从摘录"
                 "识别分块命名规则、推算页面分块文件名，request(GET) 抓取该分块后再检索；"
-                "接口域与页面域可能分离——检索接口基址配置，与相对路径组合成完整 URL；"
+                "接口域与页面域可能分离——检索接口基址配置，与相对路径组合成完整 URL，"
+                "拿到接口域后先 GET {接口域}/openapi.json 取权威 schema"
+                "（FastAPI 系多为根路径挂载，一份 schema 省掉全部路径与字段猜测）；"
                 "还可带 paths 参数（自拟候选登录路径）重跑本工具做定向检查；"
                 "全部落空→只向用户问登录接口地址一项；"
                 "字段名不要问用户——从检索摘录中的请求体对象读出（真实提取），"
@@ -236,7 +239,8 @@ class DiscoveryTool:
                 "传入地址疑似接口而非登录页面（响应非 HTML）。用户提供的地址是权威输入——"
                 "不要再用 request 逐路径试其他地址：立即用该地址做登录实测"
                 "（body 传凭证模板变量 {{ 字段 }} 并带 ref；可先最小 body '{}' 做存在性"
-                "探测——POST 404=路径不存在；400/401/422=接口存在，再补真实字段与凭证实测）；"
+                "探测——POST 404=路径不存在；400/401/422=接口存在，再补真实字段与凭证实测；"
+                "FastAPI 系系统可先 GET 该域根路径 /openapi.json 取权威 schema 再构造 body）；"
                 "2xx 后 declare_token 声明提取；首次凭证外发前会请用户授权"
             )
         return result
