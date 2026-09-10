@@ -203,8 +203,10 @@ Agent 是工作台的首选工作方式——不是某个域里的一个动作�
   **直入对话，无前置菜单**：进入即横幅介绍能力与示例，随后直接 REPL——「新建 /
   改已有包 / 排查」都是会话里的一句话，不由菜单分流（对标 claude：打开即对话，
   能力介绍先行）。默认任务对象 = 新包草稿（`workspace/.staging`，会话后按清单 id
-  归位 `cwd/<id>-package/`，空会话退出清理草稿，见 §6.3）；改已有项目包由 Agent 经
-  `read_file` 读入现有内容后在草稿中改造（prompts 域段「改造已有项目包」规约），
+  归位 `cwd/<id>-package/`，空会话退出清理草稿，见 §6.3）；改已有包经 `list_packages`
+  三源发现（v4.4）+ `read_reference` 直读既有内容——project/local 包首选
+  `scenario edit` 原位编辑（会话根即包目录），本会话内 fork 改造必须**换新 scenario/id**
+  （沿用原 id 归位时与既有目录冲突）；prompts 域段「改造已有项目包」规约按来源分流，
   `scenario new/edit --mode agent` 命令与域内快捷方式保留为显式直达。
 - **域内入口 = 档位快捷方式**：场景包域两项标签为「用 Agent 创建场景包」「用 Agent
   修改选中的包」——语义是「预载对象上下文的快捷方式」（改包先经 `select_editable_ref`
@@ -324,6 +326,13 @@ agent = WorkbenchAgent(
 - **模型**：`build_chat_model(llm_role="agent")`（回退 text）；底座 `create_deep_agent`（03 §3.2 同源）。
 - **双工具面**：`PackageToolServer`（文件沙盒，§6.2）+ `SUTProbeToolServer`（受控网络探测，§6.5）
   并列挂载，`_describe_tools` 汇总注入系统提示词；`ask_fn` 同时桥接两面交互。
+- **工具面复位中间件（v4.4，`workbench/tool_filter.py`）**：`create_deep_agent(tools=...)` 是
+  additive 合并、不移除内置——内置 ls/glob/read_file 跑在 StateBackend **虚拟文件系统**
+  （与真实磁盘无关、永远为空），实测 Agent 连续 ls/glob 空转后误判「没有场景包」。per-call
+  中间件做**允许清单复位**（`wrap_model_call` 内 `request.override(tools=宿主装配清单)`）：
+  模型可见工具面恒等于两面装配清单，对未来版本新增内置名免疫。不走全局 `register_harness_profile`
+  （进程级不可注销，会波及同进程 ExecutionAgent，且按名排除误伤同名沙盒工具）；过滤按对象
+  **身份**（`id`）匹配而非按名，全部失配时原样返回（保守 no-op，防上游契约漂移把工具面清空）。
 - **提示词分段装配**：`system_prompt_base`（会话机段，零域语义）+ `domain_segments.<域>` 拼接，
   统一字面 replace 渲染 `{domain}/{tools}/{pkg_root}/{assets_root}`；未装配域抛 `AgentError`。
 - **预算与检查点**：`BudgetGuard` 会话级 token/成本预算（跨段/跨轮累计，`None` 不启用）；
@@ -346,8 +355,9 @@ agent = WorkbenchAgent(
 | `write_file` / `delete_file` | **先写暂存区**（staging dict），不直接落盘——diff 确认与校验门禁通过后才由宿主提交（§6.3） |
 | `read_manifest` / `update_manifest` | `agent_eval.yaml` 读写同样走暂存（update 为浅合并） |
 | `validate_package` | 对暂存视图执行清单合法 + 资源目录 + 规则 YAML 可解析校验（含对账门禁族，§6.3），返回结构化 errors |
+| `list_packages`（v4.4） | 三源发现（builtin/local/project）与 `scenario list` 同一真相源（`PackageManager.list`）：返回 ref/source/path/name/editable + 编辑引导 notes——「有哪些包 / 有没有现成包」的**第一查询入口**，不许凭记忆或目录列举判断（v4.4 前只有 `search_reference` 硬编码 builtin，用户既有项目包不可见） |
 | `search_reference` | 按文件名检索内置包（courseware/chat/code），返回命中文件与各包真实文件清单 |
-| `read_reference` | 只读内置包文件内容（ref + 包内 path）——Agent 参照真实格式的**合法通道**（`read_file` 对包外路径受分级授权约束，防反复试探） |
+| `read_reference` | 只读**已发现包（三源）**文件内容（ref + 包内 path，ref 走 `PackageManager.resolve_ref`）——Agent 参照真实格式的**合法通道**（`read_file` 对包外路径受分级授权约束，防反复试探） |
 | `list_evaluators` | 当前可用评估器注册 ID 的注册表实时快照（含本包 entry_points 声明）——rules 的 `evaluator` 字段从此清单**原样复制，勿凭记忆臆造**（copy, don't recall：示范强于指令） |
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff（宿主确认界面同源） |
 
@@ -779,3 +789,4 @@ review 检查项。
 | v4.1 | 2026-09-08 | 通道排期防线前移：落盘门禁打回未排期通道（§6.3 门禁族新行，单源 `SCHEDULED_CHANNELS`）+ 执行域 SUT 选择即预检（只答 2 个交互即见错）；§6.5 通道纪律（两形态实测才可下「不支持」结论、改通道须用户确认、不得静默降级） |
 | v4.2 | 2026-09-08 | 交互会话日志降噪（§6.4）：传输层日志器（httpx/httpcore/openai/anthropic）非 DEBUG 模式压到 WARNING——修执行域 setup_logging 进程级污染后续 Agent 流式直播的噪声混流 |
 | v4.3 | 2026-09-10 | 执行域事故修复（content-safety 假成功，arch/03 v4.8 同步）：generic_http steps 链式模板 + SSE 末步 + text 未命中判 failed；模板变量审计落盘门禁（§6.4 新增）；执行面工具结构性裁剪——invoke_* 退出 LLM 工具面 + 文件工具 workspace 边界（§6.4 新增）；prompts/guide 资产同步（steps 链实测纪律） |
+| v4.4 | 2026-09-10 | 既有场景包发现修复（用户实测「agent 找不到我创建的包」）：`list_packages` 三源工具（§6.2 新行，与 `scenario list` 同源）+ `read_reference` 纠偏为三源直读；工具面复位中间件（§6.1 新 bullet）剥除 deepagents 内置虚拟 FS 工具（ls/glob 永远为空致误判「没有包」）；prompts 域段包发现/改造规约按来源分流 + intro 示例（§3.5 同步） |
