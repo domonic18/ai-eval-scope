@@ -407,6 +407,8 @@ agent = WorkbenchAgent(
 - `scenario new/edit --instruction ... --yes --trust-agent`：非交互模式必须双重显式旗标；默认关闭。
 - 会话日志 `workspace/agent_logs/workbench_agent_<ts>.jsonl`：消息、工具调用与参数（凭证字段脱敏）、token、耗时；SUT 探测证据随会话日志同文件落盘（时间线完整）。
 - 传输层日志降噪：httpx/httpcore/openai/anthropic 的 INFO 级「HTTP Request: …」在非 DEBUG 模式压到 WARNING（`core/logging.py` 单点）——root 日志是进程级全局态，工作台里执行域先跑过一次评测，噪声就会混进之后所有 Agent 流式直播会话；`--verbose`（DEBUG）诊断模式全量放行。
+- 执行面工具按需装配（v4.8，执行域）：`SUTToolServer` 默认仅导出通用工具白名单（`DEFAULT_EXECUTION_TOOLS`），`invoke_http_sut`/`invoke_cli_sut` **退出 LLM 工具面**（`enabled_tools` 显式恢复，方法保留供服务端直调）——实测语义工具受挫后 LLM 借任意 shell `cat` 凭证与 `.env`，prompts 禁令打不过工具可用性，结构性裁剪才有效；配套 `read_file`/`scan_directory`/`list_files` 限 workspace 子树与任务目录模式路径（`extra_allowed_roots` 逐任务机械注入，不由 LLM 运行时决定）。
+- generic_http 模板变量审计（v4.8，落盘门禁）：request_template 全部模板叶子的 Jinja2 未声明变量并集必须**含 `input`**（测试指令未进模板 = 从未发送给被测系统，content-safety 假成功事故的机械判定），且 ⊆ {`input`, `metadata`, 前序步骤名}（拼错变量名/前向引用落盘前打回）；staging 门禁与 CLI `scenario validate` 同源生效（arch/03 §4.2）。
 
 ### 6.5 SUT 接入调试
 
@@ -776,3 +778,4 @@ review 检查项。
 | v4.0 | 2026-09-08 | 探测面 v4 落地（薄原语+厚思考，docs/plan/03 M1+M2）：`request` 门控请求原语（抓取/调试/登录实测同一出口；凭证模板服务端注入 + (host,ref) 组合级外发授权 + 防锁 + 值回流条件化 + 链式变量 `{{ stepN.* }}` 探索）与 `declare_token` 事后声明式提取（token_source 三态同构执行器、snippet 机械渲染、不重发请求无撞锁、执行器宽度守卫拒绝超宽形态落盘）替代 probe_login（退役）；共享 AsyncClient 会话级持有（cookie jar 跨请求）；预算重定 request 25 / declare_token 10 |
 | v4.1 | 2026-09-08 | 通道排期防线前移：落盘门禁打回未排期通道（§6.3 门禁族新行，单源 `SCHEDULED_CHANNELS`）+ 执行域 SUT 选择即预检（只答 2 个交互即见错）；§6.5 通道纪律（两形态实测才可下「不支持」结论、改通道须用户确认、不得静默降级） |
 | v4.2 | 2026-09-08 | 交互会话日志降噪（§6.4）：传输层日志器（httpx/httpcore/openai/anthropic）非 DEBUG 模式压到 WARNING——修执行域 setup_logging 进程级污染后续 Agent 流式直播的噪声混流 |
+| v4.3 | 2026-09-10 | 执行域事故修复（content-safety 假成功，arch/03 v4.8 同步）：generic_http steps 链式模板 + SSE 末步 + text 未命中判 failed；模板变量审计落盘门禁（§6.4 新增）；执行面工具结构性裁剪——invoke_* 退出 LLM 工具面 + 文件工具 workspace 边界（§6.4 新增）；prompts/guide 资产同步（steps 链实测纪律） |
