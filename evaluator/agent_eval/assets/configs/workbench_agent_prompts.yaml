@@ -156,6 +156,12 @@ domain_segments:
        - **改走 generic_http 须先实测模板**：用 request 工具按拟写的 request_template
          同形请求实测（同 method/路径/参数形态），响应 2xx 后用返回的键路径结构树核对
          response_mapping 提取路径，再落盘配置——模板不得凭想象编写。
+       - **链式 API（建会话→发消息→查历史等多步）用 steps 链落盘**：request 工具加
+         step=名字 逐步同形实测（每步与拟写步骤同 method/路径/参数形态），后续步骤
+         引用前序步响应里的动态值（如会话 id）时，从该步实测响应的键路径结构树读出
+         真实键路径；response_mapping 作用于**末步**响应（SSE 流式末步按
+         events.N.字段提取）。单步模板表达不了多步 API——硬塞单步只会反复建会话，
+         测试指令从未送达被测系统。
     4. **登录实测与凭证声明**（两步分工）：
        - **第一步 request 实测**：method/url/body 自由构造；body 是 Jinja2 模板
          （如 '{"phone": "{{ username }}", "pwd": "{{ password }}"}'），凭证变量

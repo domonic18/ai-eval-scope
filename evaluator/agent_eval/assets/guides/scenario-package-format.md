@@ -217,6 +217,45 @@ sut:
   auth: …                                 # 与 agent-protocol 通道同构（见下）
 ```
 
+**多步 API（steps 链）**：建会话→发消息→查历史这类多步接口，单步模板表达不了
+（硬塞单步只会反复建会话，测试指令从未送达）。用 `steps` 逐步声明，后续步以
+`{{ 步骤名.路径 }}` 引用前序步响应里的值（值全程服务端流动，不回流对话）；
+`response_mapping` 作用于**末步**响应：
+
+```yaml
+sut:
+  name: chained-api
+  channel: generic_http
+  base_url: ${MY_API_URL:-https://api.example.com}
+  request_template:
+    steps:
+      - name: create                        # 步骤名即后续步的引用键
+        method: POST
+        path: /chat/conversations
+        body: {student_id: null}
+      - name: send
+        method: POST
+        path: /chat/conversations/{{ create.data.id }}/messages   # 引用前序步响应值
+        body: {content: "{{ input }}", image_urls: []}            # 测试指令经 input 注入
+      - name: history
+        method: GET
+        path: /chat/conversations/{{ create.data.id }}
+  response_mapping:
+    text: data.messages.-1.content        # 列表末元素：-1 与 [-1] 两种写法等价
+```
+
+steps 链约束：
+- `steps` 与单步 `method`/`path` **二选一**（混用或都缺都会被校验打回）；步骤名须
+  唯一且不得为 `input`/`metadata`（模板根变量保留字）；
+- 全部模板叶子**必须引用 `{{ input }}`**（path/headers/body 任一处），否则落盘
+  校验打回——测试指令不进模板就从未发送给被测系统；
+- 变量空间仅 `input`、`metadata` 与**前序**步骤名（拼错或前向引用都会在落盘前打回）；
+- 链中任一步 ≥400 即整体 failed（错误带步骤名）；
+- **`text` 已配置但路径未命中/取 null → failed**（错误带响应体摘录，据此修正路径），
+  不再静默兜底整包——纯文本 API 请把 `response_mapping` 留空，整个响应体即回答；
+- SSE 流式末步（`text/event-stream`）自动解析 `data:` 帧为 `events` 列表，mapping 按
+  `events.-1.字段` 提取末帧；未配置 mapping 时整段原文即回答。
+
 关键约束：
 - `channel` 可执行取值只有 `agent_protocol` 与 `generic_http`（`browser` 预留未
   排期，落盘门禁直接打回）；探测受挫时继续排查或呈报用户，**不得降级改写通道**；
