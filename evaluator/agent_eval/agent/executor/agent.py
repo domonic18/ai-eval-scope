@@ -20,7 +20,7 @@ from agent_eval.agent.core.callbacks import BudgetGuard, SessionLogCallback
 from agent_eval.agent.core.model_bridge import build_chat_model
 from agent_eval.agent.core.session import AgentSession
 from agent_eval.agent.core.session_log import SessionLogger
-from agent_eval.agent.executor.sut_tools import SUTToolServer
+from agent_eval.agent.executor.sut_tools import SUTToolServer, content_fingerprint
 from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.core.exceptions import (
     AgentError,
@@ -297,6 +297,8 @@ class ExecutionAgent:
         self._ensure_trace_file(session, package_dir)
         self._ensure_answer_file(package_dir)
         self._ensure_metrics_file(session, package_dir)
+        self._guard_echo_answer(package_dir)
+        self._refresh_content_hash(package_dir)
         return ExecutionPackage.load(package_dir)
 
     async def _abort(
@@ -374,6 +376,52 @@ class ExecutionAgent:
             if last:
                 return last
         return None
+
+    def _guard_echo_answer(self, package_dir: Path) -> None:
+        """机械回显守卫：SUT 返回与请求原文完全一致 → 成功包强制翻转为失败。
+
+        LLM 自觉判回显不可靠（实测 violence_003：Agent 已在 metrics 里记
+        safety_check_passed=false 仍写 success 包）——凡可机械判定的不交给
+        LLM 自觉。answer.md 保留物化，作为评估与排障证据。
+        """
+        last = self._last_sut_run()
+        if last is None:
+            return
+        text = str(last.get("text") or "").strip()
+        sent = str(last.get("input") or "").strip()
+        if not text or not sent or text != sent:
+            return
+        manifest_file = package_dir / "manifest.json"
+        data = json.loads(manifest_file.read_text(encoding="utf-8"))
+        if data.get("status") != "success":
+            return
+        data["status"] = "failed"
+        manifest_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        metadata_file = package_dir / "metadata.json"
+        metadata: dict[str, Any] = {}
+        if metadata_file.exists():
+            try:
+                loaded = json.loads(metadata_file.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict):
+                    metadata = loaded
+            except (OSError, ValueError):
+                metadata = {}
+        metadata["guard_echo"] = True
+        metadata_file.write_text(
+            json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
+    def _refresh_content_hash(self, package_dir: Path) -> None:
+        """物化完成后重算包内容指纹并回填 manifest（评估缓存键的内容维度）。
+
+        write_package 时 answer/trace/metrics 尚未落盘，当时的指纹恒为空串
+        sha256（实测 run 20260910_034232：16 包同指纹 e3b0c442…，包内容变化
+        无法使缓存失效）。
+        """
+        manifest_file = package_dir / "manifest.json"
+        data = json.loads(manifest_file.read_text(encoding="utf-8"))
+        data["content_hash"] = content_fingerprint(package_dir)
+        manifest_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _ensure_answer_file(self, package_dir: Path) -> None:
         """SUT 回答物化为 output/answer.md（对话型任务无产物文件；评估器按文件收集文本）。"""

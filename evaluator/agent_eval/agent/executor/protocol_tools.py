@@ -100,8 +100,11 @@ class AgentProtocolToolServer(ToolExporterMixin):
         # 最近一次 SUT run 摘要（ExecutionPackage trace 回填 SUT 回答文本用）
         self.last_run: dict[str, Any] | None = None
 
-    def _record_last_run(self, result: dict[str, Any]) -> None:
-        """记录最近一次 run 的状态/线程/回答文本（截断前原文，供 trace 落盘）。"""
+    def _record_last_run(self, result: dict[str, Any], input: Any = None) -> None:
+        """记录最近一次 run 的状态/线程/回答文本（截断前原文，供 trace 落盘）。
+
+        input 一并记录：ExecutionAgent 的机械回显守卫据此判定「SUT 返回=请求原文」。
+        """
         run = result.get("run") or {}
         output = result.get("output") or {}
         self.last_run = {
@@ -110,6 +113,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             "run_id": run.get("run_id"),
             # commands 形态在顶层 text；runs 形态经 output_paths 提取到 output.text
             "text": result.get("text") or output.get("text") or "",
+            "input": input,
         }
 
     @tool_guard
@@ -123,7 +127,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         result = await self.channel.run(
             input, exec_mode=exec_mode, metadata=self._merge_metadata(metadata)
         )
-        self._record_last_run(result)
+        self._record_last_run(result, input)
         return bounded_result(result)
 
     @tool_guard
@@ -137,7 +141,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         result = await self.channel.run_stream(
             input, stream_mode=stream_mode, metadata=self._merge_metadata(metadata)
         )
-        self._record_last_run(result)
+        self._record_last_run(result, input)
         result["events"] = [
             {
                 "event": e.get("event"),
@@ -165,7 +169,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         result = await self.channel.run_on_thread(
             thread_id, input, metadata=self._merge_metadata(metadata)
         )
-        self._record_last_run(result)
+        self._record_last_run(result, input)
         return bounded_result(result)
 
     @tool_guard

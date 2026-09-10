@@ -197,7 +197,13 @@ def test_sut_request_returns_result_and_records_last_run() -> None:
     result = asyncio.run(server.sut_request("帮我生成课件"))
     assert result["status"] == "success"
     assert result["text"] == "课件正文"
-    assert server.last_run == {"status": "success", "run_id": None, "text": "课件正文"}
+    # input 随 last_run 记录：ExecutionAgent 机械回显守卫的判定信号源
+    assert server.last_run == {
+        "status": "success",
+        "run_id": None,
+        "text": "课件正文",
+        "input": "帮我生成课件",
+    }
 
 
 def test_sut_request_merges_default_and_call_metadata() -> None:

@@ -49,13 +49,17 @@ class GenericHttpToolServer(ToolExporterMixin):
         # 最近一次 SUT 请求摘要（ExecutionPackage trace 回填 SUT 回答文本用）
         self.last_run: dict[str, Any] | None = None
 
-    def _record_last_run(self, result: dict[str, Any]) -> None:
-        """记录最近一次请求的状态与回答文本（与 AgentProtocolToolServer 同契约）。"""
+    def _record_last_run(self, result: dict[str, Any], input: Any = None) -> None:
+        """记录最近一次请求的状态、输入与回答文本（与 AgentProtocolToolServer 同契约）。
+
+        input 一并记录：ExecutionAgent 的机械回显守卫据此判定「SUT 返回=请求原文」。
+        """
         output = result.get("output") or {}
         self.last_run = {
             "status": result.get("status"),
             "run_id": (result.get("run") or {}).get("run_id"),
             "text": result.get("text") or output.get("text") or "",
+            "input": input,
         }
 
     @tool_guard
@@ -68,7 +72,7 @@ class GenericHttpToolServer(ToolExporterMixin):
         result = await self.channel.run(
             input, metadata={**self.default_metadata, **(metadata or {})}
         )
-        self._record_last_run(result)
+        self._record_last_run(result, input)
         return bounded_result(result)
 
 

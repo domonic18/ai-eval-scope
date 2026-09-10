@@ -154,4 +154,5 @@ def test_agent_run_records_last_run_summary() -> None:
         "thread_id": "th-9",
         "run_id": "r-9",
         "text": "回答" * 3000,  # 截断前原文
+        "input": "问题",  # 机械回显守卫的判定信号源
     }
