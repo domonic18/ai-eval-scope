@@ -113,6 +113,7 @@ class ExecutionPackage(BaseModel):
         │   ├── _manifest.json  (目录模式时)
         │   └── ...
         ├── trace.json
+        ├── transcript.md  (执行对话记录：任务指令 + 对话 + 工具调用)
         ├── metrics.json
         └── metadata.json
     """

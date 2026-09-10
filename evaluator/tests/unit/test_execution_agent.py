@@ -385,6 +385,59 @@ def test_answer_file_not_duplicated_when_output_has_files(tmp_path, monkeypatch)
     assert not (output_dir / "answer.md").exists()
 
 
+def test_transcript_materializes_instruction_dialogue_and_tools(tmp_path, monkeypatch) -> None:
+    """transcript.md 记录任务指令 + 逐条对话（无思考块）+ 工具调用与结果。
+
+    回归 2026-09：answer.md 只有 SUT 最终回答，用户看不到当初提问与中间
+    反问/应答过程（askQuestion 循环取证即靠它）。
+    """
+    _fix_run_id(monkeypatch)
+    messages = [
+        {"type": "human", "content": "任务提示全文（转发指令：帮我出 5 道一元一次方程题）"},
+        {
+            "type": "ai",
+            "content": [
+                {"type": "reasoning", "reasoning": "内心独白不应出现"},
+                {"type": "text", "text": "我先调用工具转发任务"},
+            ],
+            "tool_calls": [
+                {"name": "agent_run", "args": {"input": "帮我出 5 道一元一次方程题"}, "id": "c1"}
+            ],
+        },
+        {"type": "tool", "name": "agent_run", "tool_call_id": "c1", "content": "请选择题目难度"},
+        {"type": "ai", "content": "已选简单难度，继续"},
+        {"type": "ai", "content": ""},  # 空消息不渲染
+    ]
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": messages}))
+    agent = _agent(tmp_path)
+    asyncio.run(
+        agent.run_task(Task(id="task_1", input={"instruction": "帮我出 5 道一元一次方程题"}))
+    )
+    text = (_pkg_root(tmp_path) / "task_1" / "transcript.md").read_text(encoding="utf-8")
+    assert "## 任务指令" in text and "帮我出 5 道一元一次方程题" in text
+    assert "任务提示（发起）" in text
+    assert "我先调用工具转发任务" in text
+    assert "内心独白" not in text  # 思考过程排除
+    assert "调用工具 `agent_run`" in text and '"input"' in text
+    assert "请选择题目难度" in text  # 工具结果（SUT 反问可见）
+    assert "已选简单难度，继续" in text
+
+
+def test_transcript_clips_oversized_message(tmp_path, monkeypatch) -> None:
+    """单条超长消息截断（完整原文见 agent_logs，transcript 保持可读）。"""
+    _fix_run_id(monkeypatch)
+    messages = [
+        {"type": "human", "content": "正常指令"},
+        {"type": "tool", "name": "agent_run", "content": "x" * 10000},
+    ]
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": messages}))
+    agent = _agent(tmp_path)
+    asyncio.run(agent.run_task(_task()))
+    text = (_pkg_root(tmp_path) / "task_1" / "transcript.md").read_text(encoding="utf-8")
+    assert "……（截断）" in text
+    assert len(text) < 10000
+
+
 def test_task_prompt_includes_deterministic_forward_section(tmp_path) -> None:
     """forward 段提供确定性的纯文本转发内容（修复 agent_run input 格式不一致）。"""
     agent = _agent(tmp_path)
