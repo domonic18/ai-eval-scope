@@ -107,11 +107,23 @@ def ensure_answer_file(package_dir: Any, last_sut_run: dict[str, Any] | None) ->
 
 
 def ensure_transcript_file(
-    session: AgentSession, task: Task, package_dir: Any, *, instruction_text: str
+    session: AgentSession,
+    task: Task,
+    package_dir: Any,
+    *,
+    instruction_text: str,
+    aborted_reason: str | None = None,
 ) -> None:
-    """执行对话记录物化为包根 transcript.md（answer.md 之外的人类可读完整过程）。"""
+    """执行对话记录物化为包根 transcript.md（answer.md 之外的人类可读完整过程）。
+
+    aborted_reason（异常收尾）非 None 时注入中断注记——图抛异常无会话可
+    恢复，对话过程为空属预期，注明原因与日志位置防误判记录丢失。
+    """
     (package_dir / "transcript.md").write_text(
-        build_transcript(task.id, instruction_text, session.messages), encoding="utf-8"
+        build_transcript(
+            task.id, instruction_text, session.messages, aborted_reason=aborted_reason
+        ),
+        encoding="utf-8",
     )
 
 
@@ -229,7 +241,13 @@ async def finalize_execution_package(
         session, package_dir, llm_role=llm_role, last_sut_run=last_sut_run, error=fallback_error
     )
     ensure_answer_file(package_dir, last_sut_run)
-    ensure_transcript_file(session, task, package_dir, instruction_text=extract_instruction(task))
+    ensure_transcript_file(
+        session,
+        task,
+        package_dir,
+        instruction_text=extract_instruction(task),
+        aborted_reason=fallback_error,
+    )
     ensure_metrics_file(session, package_dir)
     guard_echo_answer(package_dir, last_sut_run)
     if fallback_error is not None:

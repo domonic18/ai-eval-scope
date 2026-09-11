@@ -114,9 +114,14 @@ class ExecutionAgent:
         """批量执行任务集（共享 run_id），返回 (run_id, 执行包列表)。
 
         run_id 可由调用方（CLI）注入——用于运行清单登记与外部关联。
+
+        任务隔离（arch/16 Phase 1 收尾）：单任务异常终止不再烧掉整场——
+        两次 staging 重放实测（run 20260911_050015 / 073626）首个任务熔断后
+        其余考卷从未执行。失败包已由 _abort 补齐链物化，从包根恢复登记后
+        继续下一任务；包缺失（收尾链自身故障）才向上抛。
         """
         run_id = run_id or generate_run_id()
-        packages = []
+        packages: list[ExecutionPackage] = []
         total = len(task_set.tasks)
         for idx, task in enumerate(task_set.tasks, start=1):
             # 逐任务进度上终端（stderr）：执行域只有一根转轮，单任务数十分钟时
@@ -127,7 +132,20 @@ class ExecutionAgent:
                 progress=f"{idx}/{total}",
             )
             started = time.monotonic()
-            package = await self.run_task(task, run_id=run_id, task_set=task_set)
+            try:
+                package = await self.run_task(task, run_id=run_id, task_set=task_set)
+            except (AgentTimeoutError, AgentError, BudgetExceededError) as e:
+                structlog.get_logger("executor").error(
+                    "任务异常，隔离后继续下一任务",
+                    task_id=task.id,
+                    progress=f"{idx}/{total}",
+                    error=type(e).__name__,
+                )
+                package = self._load_failed_package(
+                    Path(self.config.workspace_dir), run_id, task.id
+                )
+                if package is None:
+                    raise  # 失败包都没落盘=收尾链自身故障，隔离无意义
             structlog.get_logger("executor").info(
                 "任务结束",
                 task_id=task.id,
@@ -136,7 +154,19 @@ class ExecutionAgent:
                 elapsed_s=round(time.monotonic() - started, 1),
             )
             packages.append(package)
+        failed = sum(1 for p in packages if p.manifest.status == "failed")
+        if failed:
+            structlog.get_logger("executor").warning("任务集部分失败", failed=failed, total=total)
         return run_id, packages
+
+    def _load_failed_package(
+        self, workspace: Path, run_id: str, task_id: str
+    ) -> ExecutionPackage | None:
+        """从包根恢复异常任务的失败包（_abort 补齐链已物化五件套 + ledger）。"""
+        package_dir = workspace / "runs" / run_id / "packages" / task_id
+        if not (package_dir / "manifest.json").exists():
+            return None
+        return ExecutionPackage.load(package_dir)
 
     async def run_task(
         self, task: Task, *, run_id: str | None = None, task_set: TaskSet | None = None

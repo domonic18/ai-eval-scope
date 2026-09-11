@@ -32,6 +32,9 @@ class FakeGraph:
         self.fire_callbacks = fire_callbacks
         self.invocations: list[tuple[dict, dict | None]] = []
         self.create_kwargs: dict | None = None  # create_deep_agent 装配参数（图结构断言用）
+        self.error_sequence: list[Exception | None] | None = (
+            None  # 逐次 ainvoke 异常（任务隔离测试用）
+        )
 
     async def ainvoke(self, payload: dict, config: dict | None = None):
         self.invocations.append((payload, config))
@@ -43,6 +46,10 @@ class FakeGraph:
                         {"usage_metadata": {"input_tokens": 10, "output_tokens": 5}},
                         run_id="fake-run-id",
                     )
+        if self.error_sequence is not None:
+            error = self.error_sequence.pop(0) if self.error_sequence else None
+            if error is not None:
+                raise error
         if self.error is not None:
             raise self.error
         return self.result
@@ -284,6 +291,31 @@ def test_run_task_set_shares_run_id(tmp_path, monkeypatch) -> None:
     assert not (tmp_path / "t_a").exists()
     log_names = sorted(p.name for p in (run_dir / "agent_logs").glob("agent_t*.jsonl"))
     assert log_names == ["agent_t_a.jsonl", "agent_t_b.jsonl"]
+
+
+def test_run_task_set_isolates_task_failure(tmp_path, monkeypatch) -> None:
+    """任务隔离（arch/16 Phase 1 收尾）：单任务熔断不烧整场。
+
+    两次 staging 重放实测（run 20260911_050015 / 073626）首个任务异常后
+    其余考卷从未执行——失败包由 _abort 补齐链物化，登记后继续下一任务。
+    """
+    _fix_run_id(monkeypatch)
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    graph.error_sequence = [GraphRecursionError("limit")]  # 首任务熔断，后续正常
+    agent = _agent(tmp_path)
+    # 预置 t_b 成功包：Agent 未写包时兜底链会写 failed，无法单独验证隔离后正常收尾
+    agent.sut_tools.workspace_dir = _pkg_root(tmp_path)
+    asyncio.run(agent.sut_tools.write_package(task_id="t_b", success=True))
+    task_set = TaskSet(id="ts", name="批量", tasks=[_task("t_a"), _task("t_b")])
+
+    run_id, packages = asyncio.run(agent.run_task_set(task_set))
+
+    assert [p.manifest.status for p in packages] == ["failed", "success"]
+    # 失败包完整可排查：manifest failed + trace.error 带保险丝归因
+    failed_dir = _pkg_root(tmp_path) / "t_a"
+    assert _read_json(failed_dir / "manifest.json")["status"] == "failed"
+    assert "保险丝触发" in _read_json(failed_dir / "trace.json")["error"]
+    assert _read_json(_pkg_root(tmp_path) / "t_b" / "manifest.json")["status"] == "success"
 
 
 def test_prompt_contents(tmp_path) -> None:

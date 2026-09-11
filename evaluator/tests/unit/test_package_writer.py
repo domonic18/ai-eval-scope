@@ -103,6 +103,9 @@ def test_finalize_materializes_degraded_package(tmp_path: Path) -> None:
     assert trace["response"]["sut"]["text"] == "课件已全部完成！"  # SUT 证据回填
     assert (package_dir / "output" / "answer.md").read_text(encoding="utf-8") == "课件已全部完成！"
     assert (package_dir / "transcript.md").exists()
+    transcript = (package_dir / "transcript.md").read_text(encoding="utf-8")
+    assert "会话异常中断" in transcript  # 空对话过程显式注明原因（A3），防误判记录丢失
+    assert "agent_logs" in transcript
     assert _read_json(package_dir / "metrics.json")["steps"] == 0
     ledger_lines = (package_dir / "ledger.jsonl").read_text(encoding="utf-8").splitlines()
     events = [json.loads(line) for line in ledger_lines if line]

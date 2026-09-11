@@ -69,8 +69,18 @@ def render_transcript_message(message: dict[str, Any]) -> str | None:
     return "\n".join(body) if body else None
 
 
-def build_transcript(task_id: str, instruction_text: str, messages: list[Any]) -> str:
-    """组装 transcript.md 全文（包根过程证据，与 trace.json 同层）。"""
+def build_transcript(
+    task_id: str,
+    instruction_text: str,
+    messages: list[Any],
+    *,
+    aborted_reason: str | None = None,
+) -> str:
+    """组装 transcript.md 全文（包根过程证据，与 trace.json 同层）。
+
+    aborted_reason 非 None（异常收尾，图抛异常无会话可恢复）时对话过程
+    为空属预期——显式注明中断原因与完整日志位置，避免读包人误判记录丢失。
+    """
     lines: list[str] = [
         "# 执行对话记录",
         "",
@@ -84,6 +94,13 @@ def build_transcript(task_id: str, instruction_text: str, messages: list[Any]) -
         "## 对话过程",
         "",
     ]
+    if aborted_reason is not None:
+        lines += [
+            f"> ⚠️ 会话异常中断：{clip_transcript_text(aborted_reason)}",
+            "> 完整过程日志见执行包同目录 agent_logs/agent_"
+            f"{task_id}.jsonl（本文件仅渲染正常完成的会话）。",
+            "",
+        ]
     seq = 0
     for message in messages:
         if not isinstance(message, dict):
