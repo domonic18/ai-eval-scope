@@ -241,7 +241,14 @@ class AgentProtocolChannel(SUTChannel):
         response = await self.request(
             "POST", f"/runs/{run_id}/cancel", json_body={"action": action}
         )
-        return {"run_id": run_id, "action": action, "response": self._json(response)}
+        try:
+            payload: dict[str, Any] = self._json(response)
+        except AgentProtocolError:
+            # staging 实测 cancel 2xx 可能返回空体/非 JSON——请求已受理即视为成功
+            if response.status_code >= 400:
+                raise
+            payload = {"raw": response.text[:200]}
+        return {"run_id": run_id, "action": action, "response": payload}
 
     # ─── 能力发现与接入自检（§4.0.6-f） ───
 

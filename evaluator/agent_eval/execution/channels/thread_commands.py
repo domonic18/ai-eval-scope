@@ -201,11 +201,10 @@ def pending_ask_questions(state: dict[str, Any] | None) -> list[dict[str, Any]]:
 
 
 def ask_question_tool_call_ids(messages: list[dict[str, Any]] | None) -> list[str]:
-    """从消息流提取 ask_question 工具调用 id（input.respond 的 response 键）。
+    """从消息流提取 ask_question 工具调用 id（诊断/留档用，不参与应答载荷）。
 
-    中断恢复契约（2026-09 对 sasan 实测）：input.respond 的 params.response 以
-    {ask_question 工具调用 id: [逐题答案]} 键值对提交，而工具调用 id 只存在于
-    消息流（ai 消息的 tool_calls），interrupt value 不携带。
+    应答载荷是前端同款 ``{"answers": [...]}``（见 respond_input_envelope），
+    无需工具调用 id；本函数仅用于 pending 留档与消息形态诊断。
     """
     ids: list[str] = []
     for message in messages or []:
@@ -226,10 +225,11 @@ def respond_input_envelope(
 ) -> dict[str, Any]:
     """构造 input.respond 命令信封（应答 ask_question 中断，续跑挂起的 run）。
 
-    namespace 恒为 []（SUT 前端序列化器同款）；response 形如
-    {ask_question 工具调用 id: [{"selected": ["选项值"], ...}]}——直接下发新
-    消息会被 PENDING_QUESTION 拒绝，unknown 的 method 名均报 unknown_command
-    （run.resume / question.answer 等 8 个候选名 2026-09 实测排除）。
+    namespace 恒为 []（SUT 前端序列化器同款）；response 为前端 AskQuestionCard
+    同款 ``{"answers": [{"selected": ["选项值"], ...}, ...]}``（顶层 answers 键，
+    不按工具调用 id 键控——2026-09-11 实测勘误，旧记载致 SUT 端「答案数据无效」）。
+    直接下发新消息会被 PENDING_QUESTION 拒绝，unknown 的 method 名均报
+    unknown_command（run.resume / question.answer 等 8 个候选名 2026-09 实测排除）。
     """
     return {
         "id": command_id,

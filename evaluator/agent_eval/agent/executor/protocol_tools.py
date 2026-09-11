@@ -230,6 +230,10 @@ class AgentProtocolToolServer(ToolExporterMixin):
         answers 逐题对应最近一次 interrupted run 的 questions 顺序：字符串视为
         单选值，{"selected": [...], "customText": ...} 原样透传。应答经
         input.respond 提交后继续轮询到终态——评估 Agent 无需再手动 run_on_thread。
+
+        恢复载荷为前端同款 ``{"answers": [逐题答案]}``（run 20260910_234613 实测：
+        旧实现按 ask_question 工具调用 id 键控，SUT 端校验不到 answers 数组报
+        「答案数据无效(非数组)未采纳」，SUT agent 视角=提问卡片失败 ×3 后放弃反问）。
         """
         pending = (self.last_run or {}).get("pending")
         if not pending:
@@ -244,12 +248,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
                 f"反问共 {len(questions)} 题，收到 {received} 份答案，须逐题一一对应: "
                 + json.dumps(questions, ensure_ascii=False)
             )
-        if not pending.get("tool_call_id"):
-            raise ToolExecutionError(
-                "未能从消息流定位 ask_question 工具调用 id，无法构造应答（消息形态可能变更）",
-                details={"questions": questions},
-            )
-        response = {pending["tool_call_id"]: [_normalize_answer(a) for a in answers]}
+        response = {"answers": [_normalize_answer(a) for a in answers]}
         result = await self.channel.answer_interrupt(
             self.last_run.get("thread_id") or "", pending["interrupt_id"], response
         )

@@ -271,7 +271,7 @@ def test_agent_run_interrupted_records_pending() -> None:
 
 
 def test_answer_sut_questions_resumes_to_success_and_clears_pending() -> None:
-    """应答 → input.respond 信封（tool_call_id 键 + 逐题 selected）→ 续跑至终态。"""
+    """应答 → input.respond 信封（顶层 answers 键 + 逐题 selected）→ 续跑至终态。"""
     captured: dict = {}
     server = _commands_server([INTERRUPT_STATE, INTERRUPT_STATE, RESUMED_STATE], captured)
     interrupted = asyncio.run(server.agent_run("生成课件"))
@@ -283,8 +283,10 @@ def test_answer_sut_questions_resumes_to_success_and_clears_pending() -> None:
     respond = captured["posts"][1]
     assert respond["method"] == "input.respond"
     assert respond["params"]["interrupt_id"] == "int-1"
+    # 前端 AskQuestionCard 同款：顶层 answers 键，不按工具调用 id 键控
+    # （run 20260910_234613 实测旧键控形状被 SUT 端「答案数据无效」拒绝）
     assert respond["params"]["response"] == {
-        "askq-1": [{"selected": ["ppt"]}, {"selected": ["课堂教学"]}]  # 字符串→单选规范化
+        "answers": [{"selected": ["ppt"]}, {"selected": ["课堂教学"]}]  # 字符串→单选规范化
     }
     assert server.last_run["pending"] is None  # 应答闭环后清除
     assert server.last_run["status"] == "success"

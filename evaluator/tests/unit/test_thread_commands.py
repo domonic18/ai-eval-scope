@@ -390,11 +390,12 @@ def test_ask_question_tool_call_ids_from_tool_calls_and_content_blocks() -> None
 
 
 def test_respond_input_envelope_shape() -> None:
-    envelope = respond_input_envelope(INTERRUPT_ID, {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]})
+    response = {"answers": [{"selected": ["ppt"]}]}  # 前端 AskQuestionCard 同款
+    envelope = respond_input_envelope(INTERRUPT_ID, response)
     assert envelope["method"] == "input.respond"
     assert envelope["params"]["namespace"] == []
     assert envelope["params"]["interrupt_id"] == INTERRUPT_ID
-    assert envelope["params"]["response"] == {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]}
+    assert envelope["params"]["response"] == response
 
 
 def test_compact_messages_drops_reasoning_keeps_text_and_tool_calls() -> None:
@@ -417,7 +418,7 @@ def test_compact_messages_drops_reasoning_keeps_text_and_tool_calls() -> None:
     dumped = json.dumps(compact_messages(messages), ensure_ascii=False)
     assert "R" * 10 not in dumped  # reasoning 丢弃
     assert "请选择课件交付形式" in dumped  # 尾部语义不被头部体量挤占
-    assert ASK_TOOL_CALL_ID in dumped  # 工具调用 id 保留（应答键）
+    assert ASK_TOOL_CALL_ID in dumped  # 工具调用 id 保留（诊断留档）
     compact = compact_messages(messages)
     assert all(len(m.get("content", "")) <= 800 for m in compact)  # 超长文本逐条封顶
 
@@ -474,11 +475,12 @@ def test_answer_interrupt_resumes_run_and_skips_stale_interrupt(
         return httpx.Response(200, json=_interrupt_state())  # GET#1 应答前基线
 
     channel = _channel(_sut(timeout=1.0), handler)
+    response = {"answers": [{"selected": ["ppt"]}]}  # 前端 AskQuestionCard 同款
     result = asyncio.run(
         channel.answer_interrupt(
             "00000000-0000-0000-0000-000000000009",
             INTERRUPT_ID,
-            {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]},
+            response,
         )
     )
     assert result["status"] == "success" and result["text"] == "课件已生成"
@@ -487,7 +489,7 @@ def test_answer_interrupt_resumes_run_and_skips_stale_interrupt(
     assert envelope["method"] == "input.respond"
     assert envelope["params"]["interrupt_id"] == INTERRUPT_ID
     assert envelope["params"]["namespace"] == []
-    assert envelope["params"]["response"] == {ASK_TOOL_CALL_ID: [{"selected": ["ppt"]}]}
+    assert envelope["params"]["response"] == response
     assert gets["n"] >= 4  # 旧中断被跳过，续轮询到真终态
 
 
@@ -496,6 +498,23 @@ def test_answer_interrupt_rejects_runs_flavor() -> None:
     channel = _channel(_sut(protocol_flavor="runs"), lambda request: httpx.Response(200, json={}))
     with pytest.raises(AgentProtocolError, match="不支持中断应答"):
         asyncio.run(channel.answer_interrupt("t", INTERRUPT_ID, {}))
+
+
+def test_cancel_run_tolerates_empty_body() -> None:
+    """cancel 2xx 空体/非 JSON 不炸（staging 实测返回空体）；4xx 仍抛错。"""
+    channel = _channel(
+        _sut(), lambda request: httpx.Response(200, text="", headers={"content-length": "0"})
+    )
+    result = asyncio.run(channel.cancel_run("run-1", "interrupt"))
+    assert result["run_id"] == "run-1"
+    assert result["action"] == "interrupt"
+
+    def reject(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, text="boom")
+
+    channel2 = _channel(_sut(), reject)
+    with pytest.raises(AgentProtocolError):
+        asyncio.run(channel2.cancel_run("run-1", "interrupt"))
 
 
 def test_commands_stream_interrupted_reports_questions(
