@@ -90,7 +90,9 @@ def scenario_new(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
     max_turns: int = typer.Option(
-        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+        40,
+        "--max-turns",
+        help="已废弃：轮次预算由 interaction_policy 声明，此参数不再生效",
     ),
     max_segments: int = typer.Option(
         3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"
@@ -147,7 +149,9 @@ def scenario_edit(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
     max_turns: int = typer.Option(
-        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+        40,
+        "--max-turns",
+        help="已废弃：轮次预算由 interaction_policy 声明，此参数不再生效",
     ),
     max_segments: int = typer.Option(
         3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"

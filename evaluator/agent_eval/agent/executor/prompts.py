@@ -62,19 +62,16 @@ def describe_channel_rules(tool_servers: list[Any]) -> str:
     return "\n\n".join(parts)
 
 
-def build_system_prompt(
-    *,
-    tool_servers: list[Any],
-    max_turns: int,
-    max_retries: int,
-) -> str:
-    """System Prompt：职责 + 可用工具 + 通用规则 + 通道纪律 + 输出规范。"""
+def build_system_prompt(*, tool_servers: list[Any]) -> str:
+    """System Prompt：职责 + 简报/仲裁标准 + 可用工具 + 通用规则 + 通道纪律。
+
+    提示词瘦身（arch/16 §5.3）：量化纪律不再注入——预算面由闸门拒绝载荷
+    实时告知，现状由决策简报每轮刷新，模板里写数字必然过时。
+    """
     template: str = load_prompts()["system_prompt"]
     return template.format(
         tools=describe_all_tools(tool_servers),
         channel_rules=describe_channel_rules(tool_servers),
-        max_turns=max_turns,
-        max_retries=max_retries,
     )
 
 

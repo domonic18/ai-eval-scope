@@ -10,7 +10,7 @@ recursion_limit 由 :func:`derive_recursion_limit` 自动推导为保险丝，
 2. ``task_set.interaction_policy``
 3. 全局缺省（``INTERACTION_POLICY_DEFAULTS``）
 
-非法子键静默回退上层——与 ``_resolve_max_turns``「兜底取值」惯例一致；
+非法子键静默回退上层——「兜底取值」既有惯例；
 组合后违约（如任务级 nudges 超出任务集 total-dispatch 余量）整层回退。
 """
 
@@ -22,12 +22,6 @@ from pydantic import ValidationError
 
 from agent_eval.config import INTERACTION_POLICY_DEFAULTS
 from agent_eval.execution.models import InteractionPolicy, Task, TaskSet
-
-# 双轨迁移注记（Phase 2 降格 max_turns 配置链前保留）
-LEGACY_MAX_TURNS_NOTE = (
-    "constraints.max_turns 双轨迁移：声明了 interaction_policy 的任务以 policy "
-    "为准（max_turns 忽略）；未声明的任务沿用 _resolve_max_turns 旧链。"
-)
 
 # 各字段的单键合法性判据（交叉校验交给最终模型构造）
 _INT_FIELDS = {"sut_calls_total", "dispatch", "state_polls", "downloads"}
@@ -82,13 +76,6 @@ def resolve_interaction_policy(
         # 组合后违约（如任务级 nudges 超出任务集 total-dispatch 余量）——
         # 任务层整体回退上层
         return InteractionPolicy(**upper)
-
-
-def declares_interaction_policy(task: Task, task_set: TaskSet | None = None) -> bool:
-    """任务 / 任务集是否显式声明了 interaction_policy（双轨迁移判据）。"""
-    if task_set is not None and task_set.interaction_policy is not None:
-        return True
-    return isinstance(task.constraints.get("interaction_policy"), dict)
 
 
 def derive_recursion_limit(policy: InteractionPolicy) -> int:

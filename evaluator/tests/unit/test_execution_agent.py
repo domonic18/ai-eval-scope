@@ -142,11 +142,11 @@ def test_run_task_success_with_agent_package(tmp_path, monkeypatch) -> None:
     assert package.manifest.status == "success"
     assert package.task_data["input"] == {"subject": "数学"}  # 缺省补写 task.json
 
-    # ainvoke 配置：recursion_limit=max_turns*2、双回调；
+    # ainvoke 配置：recursion_limit 恒由 policy 推导（未声明→全局缺省 158）、双回调；
     # 不注入 thread_id（无 checkpointer，单任务单发无恢复语义，v4.6.3）
     _, config = graph.invocations[0]
     assert "configurable" not in config
-    assert config["recursion_limit"] == 14
+    assert config["recursion_limit"] == 158
     assert len(config["callbacks"]) == 2
 
     # 结构化日志落盘
@@ -204,11 +204,12 @@ def test_run_task_recursion_error_becomes_timeout(tmp_path, monkeypatch) -> None
     assert manifest["status"] == "failed"
 
 
-def test_run_task_honors_task_level_max_turns(tmp_path, monkeypatch) -> None:
-    """constraints.max_turns 接线：任务级轮次预算生效（recursion_limit 同步缩放）。
+def test_run_task_ignores_legacy_max_turns_declaration(tmp_path, monkeypatch) -> None:
+    """单轨保险丝（arch/16 §七 Phase 2）：constraints.max_turns 声明不再生效。
 
-    此前声明未接线——任务集声明 5 实际按配置值 20 跑，宽预算给了失败重试
-    与空转催促成倍燃烧空间（run 20260911_030343：单任务 6 次追问、烧满超时）。
+    旧双轨时代任务声明 5 会把 recursion_limit 压到 10——轮次天花板伪装保险丝。
+    降格后保险丝恒由 interaction_policy 推导（未声明走全局缺省），与
+    max_turns 配置值 7 / 声明值 5 均无关。
     """
     _fix_run_id(monkeypatch)
     graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
@@ -216,7 +217,8 @@ def test_run_task_honors_task_level_max_turns(tmp_path, monkeypatch) -> None:
     task = Task(id="task_1", input={"subject": "数学"}, constraints={"max_turns": 5})
     asyncio.run(agent.run_task(task))
     _, config = graph.invocations[0]
-    assert config["recursion_limit"] == 10  # 任务声明 5 × 2，而非配置值 7 × 2
+    # 全局缺省 policy：(sut_calls 8 + downloads 5 + polls 60 + 余量 6) * 2 = 158
+    assert config["recursion_limit"] == 158
 
 
 def test_run_task_recursion_error_reports_declared_budget(tmp_path, monkeypatch) -> None:
@@ -225,20 +227,8 @@ def test_run_task_recursion_error_reports_declared_budget(tmp_path, monkeypatch)
     _install_fakes(monkeypatch, FakeGraph(error=GraphRecursionError("limit")))
     agent = _agent(tmp_path)
     task = Task(id="task_1", input={}, constraints={"max_turns": 5})
-    with pytest.raises(AgentTimeoutError, match="保险丝触发.*上限 10.*sut_calls_total=8"):
+    with pytest.raises(AgentTimeoutError, match="保险丝触发.*上限 158.*sut_calls_total=8"):
         asyncio.run(agent.run_task(task))
-
-
-def test_resolve_max_turns_falls_back_on_invalid_declaration(tmp_path) -> None:
-    """非法声明（非正整数，含布尔）静默回退配置值，与兜底取值既有惯例一致。"""
-    agent = _agent(tmp_path)  # 配置 max_turns=7
-    declared = agent._resolve_max_turns(Task(id="t", input={}, constraints={"max_turns": 3}))
-    assert declared == 3
-    for bad in (0, -2, 2.5, "5", True):
-        constraints = {"max_turns": bad}
-        assert agent._resolve_max_turns(Task(id="t", input={}, constraints=constraints)) == 7
-    # 未声明 / 空约束同样回退
-    assert agent._resolve_max_turns(Task(id="t", input={})) == 7
 
 
 def test_run_task_budget_exceeded_preserves_partial_package(tmp_path, monkeypatch) -> None:
@@ -356,16 +346,23 @@ def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
 
     agent = _agent(tmp_path)
     system_prompt = agent._build_system_prompt()
-    # YAML 模板特征句 + 运行时变量替换（工具清单 / 重试上限）
+    # YAML 模板特征句 + 运行时变量替换（工具清单）
     assert "## 输出规范" in system_prompt
     assert "scan_directory" in system_prompt
     assert "BudgetExhausted" in system_prompt  # 预算闸门纪律：拒绝即按 guidance 行动
     assert "TimeoutBudgetExhausted" in system_prompt  # 超时机械守卫纪律（v4.17）
-    assert f"最多重试 {agent.config.max_retries} 次" in system_prompt
-    # 数字条款清零（arch/16 Phase 1）：预算面由闸门拒绝载荷实时告知，提示词不再出现轮次数
+    # 完成仲裁标准（arch/16 §5.2 Phase 2）：四枚举 + rationale 留痕是提示词主体
+    for verdict in ("complete", "progressing", "stalled", "unknown"):
+        assert verdict in system_prompt
+    assert "rationale" in system_prompt
+    assert "briefing" in system_prompt  # 决策简报是行动依据
+    # 数字条款清零（arch/16 §5.3）：预算面由闸门拒绝载荷实时告知，提示词不再出现轮次数
     assert "max_turns" not in system_prompt
+    assert "max_retries" not in system_prompt
     assert "轮为限" not in system_prompt
     assert "最多 2 次" not in system_prompt
+    assert "最多重试" not in system_prompt
+    assert "超过 3 次" not in system_prompt
 
 
 class _DisciplineStubServer:
@@ -397,10 +394,11 @@ def test_channel_discipline_follows_tool_surface(tmp_path) -> None:
             extra_tool_servers=[_DisciplineStubServer(key)],
         )
 
-    # agent_protocol：反问应答 / 产物获取三步纪律注入（催促循环防线关键词）
+    # agent_protocol：先取证再打扰 / 反问应答纪律注入（催促循环防线关键词）
     protocol_prompt = _agent_with("agent_protocol")._build_system_prompt()
     assert "先回话" in protocol_prompt and "后干活" in protocol_prompt
     assert "空转催促" in protocol_prompt
+    assert "read_thread_state" in protocol_prompt  # 先取证再打扰
     assert "collect_results 只收集本机" in protocol_prompt  # 通用产物纪律
 
     # generic_http：模板语义注入，agent-protocol 纪律不混装

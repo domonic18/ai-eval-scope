@@ -6,7 +6,6 @@ import pytest
 from pydantic import ValidationError
 
 from agent_eval.agent.executor.policy import (
-    declares_interaction_policy,
     derive_recursion_limit,
     resolve_interaction_policy,
 )
@@ -117,14 +116,6 @@ class TestResolveInteractionPolicy:
         # 任务层整体回退：nudges 落任务集层级缺省 2（而非违约的 5）
         assert policy.nudges == 2
         assert policy.sut_calls_total == 4
-
-    def test_declares_interaction_policy(self) -> None:
-        assert declares_interaction_policy(_task({"nudges": 1}))
-        assert declares_interaction_policy(_task(), _task_set({"nudges": 1}))
-        assert not declares_interaction_policy(_task())
-        assert not declares_interaction_policy(_task(), _task_set(None))
-        # constraints 声明形态非法（非 dict）不算声明——走旧链
-        assert not declares_interaction_policy(_task("nudges=1"))
 
 
 class TestDeriveRecursionLimit:

@@ -239,7 +239,8 @@ class AgentConfig(BaseModel):
     max_turns: int = Field(
         default=AGENT_DEFAULTS.max_turns,
         gt=0,
-        description="单任务最大交互轮次",
+        description="单任务最大交互轮次（已废弃：executor 不再读，轮次预算由 "
+        "interaction_policy 声明；字段仅为构造兼容保留）",
     )
     max_budget_usd: float = Field(
         default=AGENT_DEFAULTS.max_budget_usd,

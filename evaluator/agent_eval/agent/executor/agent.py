@@ -27,7 +27,6 @@ from agent_eval.agent.core.tool_filter import build_toolset_filter
 from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
 from agent_eval.agent.executor.package_writer import finalize_execution_package
 from agent_eval.agent.executor.policy import (
-    declares_interaction_policy,
     derive_recursion_limit,
     resolve_interaction_policy,
 )
@@ -204,12 +203,9 @@ class ExecutionAgent:
         policy = resolve_interaction_policy(task, task_set)
         evidence = EvidenceLedger()
         self._inject_ledger(ResourceLedger(policy, evidence))
-        if declares_interaction_policy(task, task_set):
-            # 见 LEGACY_MAX_TURNS_NOTE：声明 policy 的任务以 policy 为准
-            recursion_limit = derive_recursion_limit(policy)
-        else:
-            # 双轨迁移：未声明任务沿用 max_turns 旧链
-            recursion_limit = self._resolve_max_turns(task) * 2
+        # 单轨（arch/16 §七 Phase 2）：保险丝恒由 policy 推导——max_turns
+        # 旧链退役，constraints.max_turns 声明不再生效（解析层有全局缺省兜底）
+        recursion_limit = derive_recursion_limit(policy)
         package_dir = run_packages_root / task.id
         log_dir = workspace / "runs" / run_id / "agent_logs"
 
@@ -299,11 +295,7 @@ class ExecutionAgent:
 
     def _build_system_prompt(self) -> str:
         """System Prompt（模板见 execution_agent_prompts.yaml，构建见 executor/prompts.py）。"""
-        return build_system_prompt(
-            tool_servers=self.tool_servers,
-            max_turns=self.config.max_turns,
-            max_retries=self.config.max_retries,
-        )
+        return build_system_prompt(tool_servers=self.tool_servers)
 
     def _build_task_prompt(self, task: Task) -> str:
         """Task Prompt（模板见 execution_agent_prompts.yaml，构建见 executor/prompts.py）。"""
@@ -312,19 +304,6 @@ class ExecutionAgent:
     _extract_instruction = staticmethod(extract_instruction)
 
     # ─── 工具注册表状态 ───
-
-    def _resolve_max_turns(self, task: Task) -> int:
-        """任务级轮次预算：constraints.max_turns 显式声明优先，缺省回退配置值。
-
-        此前 constraints.max_turns 未接线——任务集声明 5 实际按配置值 20 跑，
-        宽预算给了失败重试/催促成倍燃烧空间（run 20260911_030343 排查结论：
-        单任务烧 24 事件、6 次追问）。声明值非法（非正整数）时静默回退，
-        与「兜底取值」既有惯例一致。
-        """
-        raw = task.constraints.get("max_turns")
-        if isinstance(raw, int) and not isinstance(raw, bool) and raw > 0:
-            return raw
-        return self.config.max_turns
 
     def _clear_stale_tool_state(self) -> None:
         """跨任务清账：last_run 是语义工具注册表上的单槽缓存，而实例整个任务集共享
