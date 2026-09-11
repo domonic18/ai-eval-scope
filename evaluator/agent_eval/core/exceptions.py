@@ -94,6 +94,14 @@ class AgentProtocolError(SUTChannelError):
     """Agent Protocol 通道错误（runs/threads/agents 接口调用失败，arch/03 §4.0.6）。"""
 
 
+class AgentProtocolTimeoutError(AgentProtocolError):
+    """Agent Protocol 调用超时（state 轮询/SSE deadline/pending 超时）。
+
+    类型化子类：执行工具面据此做「同任务超时重试上限」机械判定
+    （TimeoutBudgetExhausted），不靠错误文案字符串匹配。
+    """
+
+
 # ─── 评估引擎相关 ───
 
 

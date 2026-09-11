@@ -32,6 +32,19 @@ def final_ai_text(messages: list[dict[str, Any]] | None) -> str:
     return ""
 
 
+def has_ai_message_from(messages: list[dict[str, Any]] | None, start: int) -> bool:
+    """messages[start:] 起是否出现过 ai 消息（内容形态不限：text / 工具调用块均算）。
+
+    终态判定用「新增 ai 消息」而非「尾随 ai 文本」：以工具调用收尾的 SUT
+    （写完产物即结束、无结束语）曾因无 text 块被判「未终态」，空转轮询烧满
+    超时预算后误报 run 超时（2026-09-11 实测事故）。
+    """
+    return any(
+        message.get("role") in AI_ROLES or message.get("type") in AI_ROLES
+        for message in (messages or [])[start:]
+    )
+
+
 def compact_messages(messages: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
     """消息摘要：丢弃 reasoning/thinking 块与超长文本，保留对话骨架。
 

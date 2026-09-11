@@ -9,7 +9,7 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
-from agent_eval.core.exceptions import AgentProtocolError
+from agent_eval.core.exceptions import AgentProtocolError, AgentProtocolTimeoutError
 from agent_eval.execution.channels import commands_stream, thread_commands
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 from agent_eval.execution.channels.interrupts import (
@@ -17,7 +17,11 @@ from agent_eval.execution.channels.interrupts import (
     pending_ask_questions,
     unrecognized_interrupt_types,
 )
-from agent_eval.execution.channels.message_digest import compact_messages, final_ai_text
+from agent_eval.execution.channels.message_digest import (
+    compact_messages,
+    final_ai_text,
+    has_ai_message_from,
+)
 from agent_eval.execution.channels.thread_commands import (
     messages_from_input,
     respond_input_envelope,
@@ -90,6 +94,26 @@ def test_final_ai_text_takes_last_nonempty_and_string_content() -> None:
     ]
     assert final_ai_text(messages) == "最终回答"
     assert final_ai_text([{"role": "human", "content": "用户"}]) == ""
+
+
+def test_has_ai_message_from_checks_only_messages_after_start() -> None:
+    """终态判定谓词：baseline 之后出现过 ai 消息即算，内容形态不限。"""
+    messages = [
+        {"role": "human", "content": "旧问题"},
+        {"role": "ai", "content": "旧回答"},
+        {"type": "human", "content": "新问题"},
+        {
+            "type": "ai",
+            "content": [
+                {"type": "reasoning", "reasoning": "先编写课件文件"},
+                {"type": "tool_call", "name": "write_file", "args": {}},
+            ],
+        },
+    ]
+    assert has_ai_message_from(messages, 2)  # 新增 ai 无 text 块也算（工具调用收尾形态）
+    assert not has_ai_message_from(messages, 4)  # 越界起点
+    assert not has_ai_message_from(messages[:3], 3)  # 空切片
+    assert has_ai_message_from(None, 0) is False
 
 
 # ─── commands_run（经 AgentProtocolChannel.run 分发） ───
@@ -203,6 +227,66 @@ def test_poll_state_timeout_raises_with_partial_detail(
     channel = _channel(_sut(timeout=0.1), handler)
     with pytest.raises(AgentProtocolError, match="run 超时"):
         asyncio.run(channel.run("hi"))
+
+
+def test_poll_state_accepts_tool_call_ending_turn_without_text(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """修 2026-09-11 误报超时事故：SUT 写完产物即结束（ai 尾随为工具调用块、
+    无 text 块），终态判定不再要求尾随文本——工具调用收尾照常收口。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    completed = {
+        "next": [],
+        "values": {
+            "messages": [
+                {"type": "human", "id": "m1", "content": "生成课件"},
+                {
+                    "type": "ai",
+                    "id": "m2",
+                    "content": [
+                        {"type": "reasoning", "reasoning": "先编写课件文件"},
+                        {
+                            "type": "tool_call",
+                            "name": "write_file",
+                            "args": {"path": "课件.html"},
+                        },
+                    ],
+                },
+                {"type": "tool", "id": "m3", "content": "written"},
+            ]
+        },
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r6"}})
+        return httpx.Response(200, json=completed)
+
+    channel = _channel(_sut(timeout=1.0), handler)  # 不修此缺陷时必然烧满超时报「run 超时」
+    result = asyncio.run(channel.run("生成课件"))
+    assert result["status"] == "success"
+    assert result["text"] == ""  # 尾随文本降级为内容信号，为空不阻塞终态
+    assert result["values"]["messages"][2]["type"] == "tool"  # values 照常透出（产物证据）
+
+
+def test_poll_state_timeout_reports_thread_idle(monkeypatch: pytest.MonkeyPatch) -> None:
+    """超时诊断：thread_idle=true = SUT 已空闲但终态未收口（契约/判定问题）；
+    同时锁定基线后无 ai 消息不构成终态（防起跑窗口误收口）。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r7"}})
+        return httpx.Response(
+            200, json={"next": [], "values": {"messages": [{"type": "human", "content": "hi"}]}}
+        )
+
+    channel = _channel(_sut(timeout=0.1), handler)
+    with pytest.raises(AgentProtocolError, match="run 超时") as exc_info:
+        asyncio.run(channel.run("hi"))
+    # 机械守卫按类型拦截（isinstance），不做错误文案字符串匹配（v4.17）
+    assert isinstance(exc_info.value, AgentProtocolTimeoutError)
+    assert exc_info.value.details.get("thread_idle") is True
 
 
 def test_commands_stream_collects_events_and_finalizes_by_state() -> None:

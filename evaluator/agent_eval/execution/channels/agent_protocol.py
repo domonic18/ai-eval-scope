@@ -15,7 +15,7 @@ from typing import Any
 
 import httpx
 
-from agent_eval.core.exceptions import AgentProtocolError
+from agent_eval.core.exceptions import AgentProtocolError, AgentProtocolTimeoutError
 from agent_eval.execution.channels.base import SUTChannel
 from agent_eval.execution.channels.commands_stream import (
     SSE_DEADLINE_EXTRA_S,
@@ -92,7 +92,7 @@ class AgentProtocolChannel(SUTChannel):
         except Exception as e:  # noqa: BLE001 — 超时与网络异常都要走取消路径
             if isinstance(getattr(e, "__cause__", None), httpx.TimeoutException):
                 await self._safe_cancel(run_id)
-                raise AgentProtocolError(
+                raise AgentProtocolTimeoutError(
                     f"run pending 超过超时，已主动 cancel(interrupt): {run_id}",
                     details={"sut": self.sut.name, "run_id": run_id},
                 ) from e
@@ -150,7 +150,7 @@ class AgentProtocolChannel(SUTChannel):
         except SSEDeadlineError as e:
             # keepalive 心跳喂住连接时 read timeout 永不触发——行级 deadline 是
             # 唯一上限；runs 形态无 state 轮询兜底，超限即失败
-            raise AgentProtocolError(
+            raise AgentProtocolTimeoutError(
                 f"runs/stream 超时：{self.sut.timeout}s 内无终态事件（连接被心跳喂住已截止）",
                 details={"sut": self.sut.name, "events": len(events)},
             ) from e
@@ -199,6 +199,20 @@ class AgentProtocolChannel(SUTChannel):
             "POST", f"/threads/{thread_id}/runs/wait", json_body=self._run_body(input, metadata)
         )
         return self._parse_wait_response(response)
+
+    async def thread_state(self, thread_id: str) -> dict[str, Any] | None:
+        """GET 线程当前状态（只读取证，不向会话注入消息）；线程未创建（404）返回 None。
+
+        run 超时/产物缺失时的取证入口：执行 Agent 据此判断 SUT 是否已完成、
+        values 里有无产物线索，避免用 run_on_thread 催促污染会话
+        （2026-09-11 事故：误报超时后连发追问，产物被追问应答覆盖）。
+        """
+        if self.sut.protocol_flavor != "commands":
+            raise AgentProtocolError(
+                "线程状态查看仅 commands 形态支持（runs 形态无 threads/{id}/state 端点）",
+                details={"sut": self.sut.name, "thread_id": thread_id},
+            )
+        return await _get_state(self, thread_id)
 
     async def answer_interrupt(
         self, thread_id: str, interrupt_id: str, response: dict[str, Any]

@@ -19,12 +19,12 @@ import uuid
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from agent_eval.core.exceptions import AgentProtocolError
+from agent_eval.core.exceptions import AgentProtocolError, AgentProtocolTimeoutError
 from agent_eval.execution.channels.interrupts import (
     pending_ask_questions,
     unrecognized_interrupt_types,
 )
-from agent_eval.execution.channels.message_digest import final_ai_text
+from agent_eval.execution.channels.message_digest import final_ai_text, has_ai_message_from
 
 if TYPE_CHECKING:  # 防循环导入（agent_protocol 反向引用本模块的函数）
     from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
@@ -109,7 +109,7 @@ async def commands_run(
 ) -> dict[str, Any]:
     """run.start + state 轮询至终态；fresh thread 客户端生成 UUID。"""
     tid = thread_id or str(uuid.uuid4())
-    # run_on_thread 语境：记录既有消息数，终态判定要求"新增 ai 回复"防误读上一轮；
+    # run_on_thread 语境：记录既有消息数，终态判定要求"新增 ai 消息"防误读上一轮；
     # fresh thread 线程尚未创建，预取只会得到 404，baseline 直接为 0
     baseline = 0
     if thread_id:
@@ -221,6 +221,10 @@ async def _poll_state(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """轮询 state 至终态；遇反问挂起（interrupt_types 识别集内）即提前返回。
 
+    终态 = next 为空且 baseline 之后新增过 ai 消息（内容形态不限）——不以
+    「尾随 ai 文本」为条件，以工具调用收尾的 SUT 不再被误判超时
+    （2026-09-11 实测事故：课件写完即结束、无结束语，空转烧满 900s）。
+
     Returns:
         (values, pending_questions)。pending 非空 = run 挂起等应答
         （interrupt 挂载，next 通常非空），调用方按 interrupted 语义收口。
@@ -248,19 +252,22 @@ async def _poll_state(
                 return last_values, pending
             unrecognized.update(unrecognized_interrupt_types(state, interrupt_types))
             finished = not (state.get("next") or [])
-            if finished and len(messages) > baseline and final_ai_text(messages):
+            if finished and has_ai_message_from(messages, baseline):
                 return last_values, []
         if time.monotonic() >= deadline:
             details: dict[str, Any] = {
                 "sut": channel.sut.name,
                 "thread_id": thread_id,
                 "messages": len(last_values.get("messages") or []),
+                # 超时时线程是否已空闲：true = SUT 已完成但终态判定未接受
+                # （判定逻辑缺陷），false = SUT 真未跑完（生成慢或卡死）
+                "thread_idle": state is not None and not (state.get("next") or []),
             }
             if unrecognized:
                 # 线程挂有未配置识别的中断形态——「超时」的真因大概率是它，
                 # 补进 sut.interrupt_types 即可识别（plan/07 G2）
                 details["unrecognized_interrupts"] = sorted(unrecognized)
-            raise AgentProtocolError(
+            raise AgentProtocolTimeoutError(
                 f"run 超时：state 轮询 {channel.sut.timeout}s 未达终态",
                 details=details,
             )
