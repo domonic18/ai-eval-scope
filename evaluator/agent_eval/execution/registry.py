@@ -43,6 +43,12 @@ EXEC_MODES = ("wait", "background", "stream")
 STREAM_MODES = ("values", "messages", "updates", "custom")
 AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
 # Agent Protocol 两种部署形态：runs（/runs/wait 族）| commands（/threads/{id}/commands + state）
+# Agent Protocol 两种部署形态（plan/07 G5 显式化）：
+# - runs：协议标准的 POST /runs/wait 族（通用默认）
+# - commands：POST /threads/{id}/commands + GET state 轮询（AG-UI 网关族官方
+#   Streaming 端点形态）。注意 commands 的信封/中断/终态语义目前以 sasan
+#   实测为基准（ask_question 反问中断、input.respond 应答、lifecycle 事件均
+#   为该实现的前端契约）——接入其他 AG-UI 网关前先核对其方言差异
 PROTOCOL_FLAVORS = ("runs", "commands")
 
 # ${VAR} / ${VAR:-默认值}（不支持嵌套占位；默认值内不含 '}'）
@@ -234,8 +240,8 @@ class SUTSystemConfig(BaseModel):
     )
     protocol_flavor: str = Field(
         default="runs",
-        description="runs（POST /runs/wait 族）| commands（POST /threads/{id}/commands"
-        " + GET state 轮询，官方 Streaming 端点形态）",
+        description="runs（POST /runs/wait 族，协议标准）| commands（POST /threads/{id}/commands"
+        " + GET state 轮询；信封与中断语义以 sasan 实测方言为基准，见 PROTOCOL_FLAVORS 注）",
     )
     configurable: dict[str, Any] = Field(
         default_factory=dict,
@@ -254,6 +260,14 @@ class SUTSystemConfig(BaseModel):
         ),
     )
     on_completion: str | None = Field(default=None, description="如 delete（临时线程用完即删）")
+    interrupt_types: list[str] = Field(
+        default_factory=lambda: ["ask_question"],
+        description=(
+            "终态轮询识别为「反问挂起」的 interrupt value.type 集合（human-in-the-loop"
+            "中断形态因 SUT 而异，接入新 SUT 时按其前端契约扩展）——集合外的中断不"
+            "识别，轮询超时错误会透出未识别类型便于补配"
+        ),
+    )
     request_template: RequestTemplateConfig | None = Field(
         default=None, description="generic_http 请求模板（channel=generic_http 必填）"
     )

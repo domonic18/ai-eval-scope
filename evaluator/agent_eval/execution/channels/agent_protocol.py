@@ -17,15 +17,16 @@ import httpx
 
 from agent_eval.core.exceptions import AgentProtocolError
 from agent_eval.execution.channels.base import SUTChannel
-from agent_eval.execution.channels.thread_commands import (
+from agent_eval.execution.channels.commands_stream import (
     SSE_DEADLINE_EXTRA_S,
-    SSEDeadlineError,
+    commands_stream,
+)
+from agent_eval.execution.channels.sse import SSEDeadlineError, iter_sse
+from agent_eval.execution.channels.thread_commands import (
     _get_state,
-    _iter_sse,  # noqa: F401 — SSE 解析迁至 thread_commands，此处重导出保持兼容
     _poll_state,
     commands_agent_info,
     commands_run,
-    commands_stream,
     conversation_headers,
     finalize_run_result,
     respond_input_envelope,
@@ -130,7 +131,7 @@ class AgentProtocolChannel(SUTChannel):
                         details={"sut": self.sut.name, "body": response.text[:500]},
                     )
                 sse_deadline = time.monotonic() + self.sut.timeout + SSE_DEADLINE_EXTRA_S
-                async for event_name, data_text in _iter_sse(response, sse_deadline):
+                async for event_name, data_text in iter_sse(response, sse_deadline):
                     try:
                         data: Any = json.loads(data_text) if data_text else {}
                     except json.JSONDecodeError:
@@ -230,7 +231,11 @@ class AgentProtocolChannel(SUTChannel):
             )
         run_id = (payload.get("result") or {}).get("run_id")
         values, pending = await _poll_state(
-            self, thread_id, baseline, resolved_interrupt=interrupt_id
+            self,
+            thread_id,
+            baseline,
+            resolved_interrupt=interrupt_id,
+            interrupt_types=self.sut.interrupt_types,
         )
         return finalize_run_result(
             self, run_id=run_id, thread_id=thread_id, values=values, pending=pending
