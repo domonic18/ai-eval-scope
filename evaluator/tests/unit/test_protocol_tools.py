@@ -13,8 +13,10 @@ import httpx
 import pytest
 
 from agent_eval.agent.executor import protocol_tools
+from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
 from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
+from agent_eval.execution.models import InteractionPolicy
 from agent_eval.execution.registry import OutputPathsConfig, SUTSystemConfig
 
 WAIT_PAYLOAD = {
@@ -49,13 +51,14 @@ def _server(workspace_dir: Path | None = None, **sut_kwargs) -> AgentProtocolToo
     )
 
 
-def test_eight_semantic_tools_registered() -> None:
+def test_semantic_tools_registered_in_order() -> None:
     server = _server()
     assert server.get_tool_names() == [
         "agent_run",
         "agent_run_stream",
         "create_thread",
         "run_on_thread",
+        "read_thread_state",
         "answer_sut_questions",
         "cancel_run",
         "get_agent_info",
@@ -308,6 +311,71 @@ def test_answer_sut_questions_without_pending_fails() -> None:
     assert "没有待应答的反问" in result["error"]["message"]
 
 
+# ─── read_thread_state（只读取证；2026-09-11 追问污染事故防线） ───
+
+
+def test_read_thread_state_returns_bounded_evidence() -> None:
+    """只读 GET state：不注入任何 run；values 摘要保尾（产物线索可见）。"""
+    captured: dict = {}
+    done_state = {
+        "next": [],
+        "values": {
+            "messages": [
+                {"type": "human", "content": "生成课件"},
+                {
+                    "type": "ai",
+                    "content": [
+                        {"type": "reasoning", "reasoning": "R" * 2000},
+                        {"type": "text", "text": "课件已写入 output/一元二次方程教学课件.html"},
+                    ],
+                },
+            ],
+            "skillsMetadata": {"name": "pbl-learning-plan"},
+        },
+    }
+    server = _commands_server([done_state], captured=captured)
+    result = asyncio.run(server.read_thread_state("11111111-1111-1111-1111-111111111111"))
+    assert "posts" not in captured  # 只读取证：未向 SUT 会话注入任何 run
+    assert result["status"] == "success"
+    assert result["thread_busy"] is False
+    assert result["pending_questions"] == []
+    assert "output/一元二次方程教学课件.html" in result["values"]  # 保尾：产物线索可见
+    assert "R" * 50 not in result["values"]  # reasoning 噪声摘要丢弃
+
+
+def test_read_thread_state_exposes_busy_and_pending_questions() -> None:
+    """SUT 未完成或挂起反问时如实透出——取证先于催促。"""
+    server = _commands_server([INTERRUPT_STATE])
+    result = asyncio.run(server.read_thread_state("t-busy"))
+    assert result["thread_busy"] is True
+    assert result["pending_questions"][0]["question"] == "交付形式?"
+
+
+def test_read_thread_state_missing_thread_reports_not_found() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, json={"message": "thread not found"})
+
+    channel = AgentProtocolChannel(
+        SUTSystemConfig(
+            name="cw",
+            channel="agent_protocol",
+            base_url="https://ap.example.com",
+            protocol_flavor="commands",
+        ),
+        http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    result = asyncio.run(AgentProtocolToolServer(channel).read_thread_state("t-404"))
+    assert result["status"] == "not_found" and result["thread_id"] == "t-404"
+
+
+def test_read_thread_state_rejects_runs_flavor() -> None:
+    """runs 形态无 threads/{id}/state 端点——显式拒绝，不静默乱发请求。"""
+    server = _server()  # protocol_flavor 缺省 runs
+    result = asyncio.run(server.read_thread_state("t-1"))
+    assert result["status"] == "failed"
+    assert "仅 commands 形态" in result["error"]["message"]
+
+
 def test_bounded_result_digest_drops_reasoning_keeps_answers() -> None:
     """工具结果 messages 摘要化：6 万字符 reasoning 不再把真正的回答挤出局。"""
     reasoning_state = {
@@ -475,6 +543,37 @@ def test_download_artifact_hosts_allows_extra_domain(tmp_path: Path) -> None:
     assert (tmp_path / "t1" / "output" / "doc.pdf").read_bytes() == b"cdn-file"
 
 
+def test_download_spa_shell_rejected_and_not_landed(tmp_path: Path) -> None:
+    """网关 SPA fallback 壳不是产物：判定下载失败且不落包（2026-09-11 事故）。"""
+    spa_shell = (
+        b"<!doctype html><html><head><title>Sasan Agent</title>"
+        b'<script type="module" crossorigin src="/assets/index-sTe-VZ9J.js"></script>'
+        b'</head><body><div id="root"></div></body></html>'
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=spa_shell, headers={"content-type": "text/html"})
+
+    server = _download_server(handler, tmp_path)
+    result = asyncio.run(server.download_sut_file("/files/courseware.html", "t1"))
+    assert result["status"] == "failed"
+    assert "前端壳" in result["error"]["message"]
+    assert list((tmp_path / "t1" / "output").glob("*")) == []  # 壳文件不留包
+
+
+def test_download_html_with_root_div_but_no_bundle_passes(tmp_path: Path) -> None:
+    """指纹须双命中：含 root 挂载点但无 /assets/index- 脚本的正常 HTML 不误伤。"""
+    legit = b'<!doctype html><html><body><div id="root"><h1>slides</h1></div></body></html>'
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=legit, headers={"content-type": "text/html"})
+
+    server = _download_server(handler, tmp_path)
+    result = asyncio.run(server.download_sut_file("/files/courseware.html", "t1"))
+    assert result["status"] == "success"
+    assert result["size_bytes"] == len(legit)
+
+
 def test_download_filename_traversal_flattened(tmp_path: Path) -> None:
     """filename 含 ../ 拍平为 basename（落盘目的地服务端持有，防路径逃逸）。"""
     served: list[httpx.Request] = []
@@ -547,3 +646,168 @@ def test_download_requires_workspace(tmp_path: Path) -> None:
     result = asyncio.run(server.download_sut_file("/f/a.pdf", "t1"))
     assert result["status"] == "failed"
     assert "workspace" in result["error"]["message"]
+
+
+# ─── 超时重试机械守卫（TimeoutBudgetExhausted，v4.17） ───
+
+
+def _timeout_commands_server(monkeypatch: pytest.MonkeyPatch) -> AgentProtocolToolServer:
+    """commands 通道：线程空闲但 baseline 后只有 human 消息——终态判定永不通过，
+    每次 SUT 执行调用必然超时（留证 TimeoutBudgetExhausted 守卫的触发链）。"""
+    import agent_eval.execution.channels.thread_commands as thread_commands
+
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    state = {"next": [], "values": {"messages": [{"type": "human", "content": "hi"}]}}
+    return _commands_server([state], timeout=0.05)
+
+
+def test_timeout_guard_allows_one_retry_then_blocks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """首次超时按 failed 透出原错误（允许重试 1 次）；再次超时起机械拒绝并附证据。"""
+    server = _timeout_commands_server(monkeypatch)
+
+    first = asyncio.run(server.agent_run("生成课件"))
+    assert first["status"] == "failed"
+    assert first["error"]["type"] == "AgentProtocolTimeoutError"
+
+    second = asyncio.run(server.agent_run("生成课件"))
+    assert second["status"] == "failed"
+    assert second["error"]["type"] == "TimeoutBudgetExhausted"
+    assert any("run 超时" in ev for ev in second["timeout_evidence"])
+
+    # 换执行工具同样在入口被拒——预算耗尽后不再有任何 SUT 执行调用
+    third = asyncio.run(server.run_on_thread("th-1", "继续"))
+    assert third["error"]["type"] == "TimeoutBudgetExhausted"
+    stream = asyncio.run(server.agent_run_stream("生成课件"))
+    assert stream["error"]["type"] == "TimeoutBudgetExhausted"
+
+
+def test_timeout_guard_reset_at_task_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    """reset_task_state（任务起点统一清账）解除封锁：下一任务重新计数，不误伤。"""
+    server = _timeout_commands_server(monkeypatch)
+    asyncio.run(server.agent_run("生成课件"))
+    exhausted = asyncio.run(server.agent_run("生成课件"))
+    assert exhausted["error"]["type"] == "TimeoutBudgetExhausted"
+
+    server.reset_task_state()
+    retried = asyncio.run(server.agent_run("生成课件"))
+    assert retried["error"]["type"] == "AgentProtocolTimeoutError"  # 新任务的首超时
+
+
+def test_read_thread_state_not_blocked_by_timeout_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """只读取证/产物下载不占超时预算——「先取证后催促」纪律的工具面基础。"""
+    server = _timeout_commands_server(monkeypatch)
+    server._timeout_errors.extend(["run 超时：a", "run 超时：b"])  # 预算耗尽态
+    result = asyncio.run(server.read_thread_state("th-1"))
+    assert result["status"] == "success"
+    assert result["thread_busy"] is False
+    assert result["pending_questions"] == []
+
+
+# ─── 交互预算闸门（BudgetExhausted，arch/16 §4.3 Phase 1 机械壳） ───
+
+
+def test_dispatch_exhausted_blocks_agent_run_without_network() -> None:
+    """dispatch 额度用尽后 agent_run 入口即拒——不触网（POST 计数不增）。"""
+    captured: dict = {}
+    server = _commands_server([RESUMED_STATE], captured=captured)
+    server.ledger = ResourceLedger(InteractionPolicy(dispatch=1))
+
+    first = asyncio.run(server.agent_run("生成课件"))
+    assert first["status"] == "success"
+    posts_after_first = len(captured["posts"])
+
+    second = asyncio.run(server.agent_run("生成课件"))
+    assert second["status"] == "failed"
+    assert second["error"]["type"] == "BudgetExhausted"
+    assert second["error"]["budget"] == "dispatch"
+    assert "read_thread_state" in second["error"]["guidance"]
+    assert any(item["budget"] == "dispatch" for item in second["ledger_digest"])
+    assert len(captured["posts"]) == posts_after_first  # 拒绝在触网之前
+
+
+def test_nudge_backoff_refusal_at_tool_entry() -> None:
+    """run_on_thread 入口背压：backoff 窗口内拒绝且不消耗催促额度。"""
+    # 三段状态：run_on_thread 先 GET prior 定 baseline=3（第二段），轮询 GET 到
+    # 第三段才出现 index>=3 的新 ai 消息——终态判定与 commands 形态一致
+    nudged = {
+        "next": [],
+        "values": {
+            "messages": [
+                *RESUMED_STATE["values"]["messages"],
+                {"type": "human", "content": "继续"},
+                {"type": "ai", "content": [{"type": "text", "text": "已继续处理"}]},
+            ]
+        },
+    }
+    server = _commands_server([RESUMED_STATE, RESUMED_STATE, nudged])
+    ledger = ResourceLedger(InteractionPolicy(dispatch=1, nudges=5, nudge_backoff_s=30))
+    server.ledger = ledger
+
+    asyncio.run(server.agent_run("生成课件"))
+    first = asyncio.run(server.run_on_thread("th-1", "继续"))
+    assert first["status"] == "success"
+
+    second = asyncio.run(server.run_on_thread("th-1", "继续"))
+    assert second["status"] == "failed"
+    assert second["error"]["type"] == "BudgetExhausted"
+    assert second["error"]["budget"] == "nudge_backoff"
+    assert ledger.counters["nudge"] == 1  # 节奏窗口不烧额度
+
+
+def test_execution_exhaustion_leaves_evidence_paths_open(tmp_path: Path) -> None:
+    """执行额度耗尽后取证与下载仍放行——闸门不挡「先取证后收尾」退出路径。"""
+    server = _commands_server([RESUMED_STATE])
+    ledger = ResourceLedger(InteractionPolicy(dispatch=1, nudges=0))
+    server.ledger = ledger
+    asyncio.run(server.agent_run("生成课件"))
+
+    blocked = asyncio.run(server.run_on_thread("th-1", "继续"))
+    assert blocked["status"] == "failed"
+    assert blocked["error"]["budget"] == "nudges"
+
+    state = asyncio.run(server.read_thread_state("th-1"))
+    assert state["status"] == "success"
+    assert ledger.remaining("state_poll") == f"{ledger.policy.state_polls - 1}/60"
+
+    downloader = _download_server(
+        lambda request: httpx.Response(200, content=b"<html>ok</html>"), tmp_path
+    )
+    downloader.ledger = ledger
+    result = asyncio.run(downloader.download_sut_file("/f/a.html", "t1"))
+    assert result["status"] == "success"
+    assert result["file"] == "output/a.html"
+
+
+def test_gate_refusals_and_outcomes_recorded_in_evidence_ledger() -> None:
+    """放行 outcome 与拒绝事件都进证据流（ledger.jsonl 的数据源）。"""
+    server = _commands_server([RESUMED_STATE])
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(InteractionPolicy(dispatch=1), evidence=evidence)
+
+    asyncio.run(server.agent_run("生成课件"))
+    asyncio.run(server.agent_run("生成课件"))  # 被拒
+
+    kinds = [e["kind"] for e in evidence.events]
+    assert kinds[0] == "sut_call"
+    assert evidence.events[0]["outcome"] == "ok"
+    assert evidence.events[0]["action"] == "dispatch"
+    assert "duration_s" in evidence.events[0]
+    assert kinds[-1] == "gate_refusal"
+    assert evidence.events[-1]["action"] == "dispatch"
+
+
+def test_ungated_tools_do_not_consume_budget() -> None:
+    """取证/收尾类工具不设闸——预算耗尽后仍可用，且不烧额度。"""
+    server = _commands_server([RESUMED_STATE])
+    ledger = ResourceLedger(InteractionPolicy(sut_calls_total=1, dispatch=1, nudges=0))
+    server.ledger = ledger
+    asyncio.run(server.agent_run("生成课件"))  # 烧尽合计面
+
+    for call in (lambda: server.get_agent_info(), lambda: server.cancel_run("r-1")):
+        result = asyncio.run(call())
+        assert result.get("error", {}).get("type") != "BudgetExhausted"
+    assert ledger.counters["sut_call"] == 1  # 只有 dispatch 那一次

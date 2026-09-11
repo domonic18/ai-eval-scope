@@ -394,3 +394,32 @@ def test_run_steps_chain_health_check_validates_all_step_templates() -> None:
 
     with pytest.raises(SUTChannelError, match=r"steps\[0\]\.path 模板语法错误"):
         asyncio.run(_channel(sut, handler).health_check())
+
+
+def test_sut_request_budget_gate_blocks_when_total_exhausted() -> None:
+    """sut_call 动作（额度=sut_calls_total）：无 dispatch 单发限制，总额尽即拒。
+
+    generic_http 一次任务常需多请求（链式 steps），不受 dispatch=1 约束；
+    闸门在触网之前拒绝并给收尾指引（arch/16 §4.3）。
+    """
+    from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
+    from agent_eval.execution.models import InteractionPolicy
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=RESPONSE)
+
+    server = GenericHttpToolServer(_channel(_sut(), handler), default_metadata={"task_id": "t0"})
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(
+        InteractionPolicy(sut_calls_total=2, dispatch=1, nudges=1), evidence=evidence
+    )
+
+    for _ in range(2):
+        assert asyncio.run(server.sut_request("hi"))["status"] == "success"
+
+    refused = asyncio.run(server.sut_request("hi"))
+    assert refused["status"] == "failed"
+    assert refused["error"]["type"] == "BudgetExhausted"
+    assert refused["error"]["budget"] == "sut_calls_total"
+    assert "write_package" in refused["error"]["guidance"]
+    assert any(e["kind"] == "sut_call" for e in evidence.events)

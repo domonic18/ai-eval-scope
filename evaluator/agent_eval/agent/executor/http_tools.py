@@ -8,9 +8,11 @@ agent_run 同一套约定；last_run 契约同构，ExecutionAgent 物化 answer
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec
+from agent_eval.agent.executor.ledger import ResourceLedger
 from agent_eval.agent.executor.protocol_tools import bounded_result, tool_guard
 from agent_eval.execution.channels.generic_http import GenericHttpChannel
 
@@ -49,6 +51,9 @@ class GenericHttpToolServer(ToolExporterMixin):
         self.default_metadata = default_metadata or {}
         # 最近一次 SUT 请求摘要（ExecutionPackage trace 回填 SUT 回答文本用）
         self.last_run: dict[str, Any] | None = None
+        # 交互预算账本（arch/16 §4.3）——缺省 None=闸门全放行；由 ExecutionAgent
+        # 逐任务注入新实例
+        self.ledger: ResourceLedger | None = None
 
     def _record_last_run(self, result: dict[str, Any], input: Any = None) -> None:
         """记录最近一次请求的状态、输入与回答文本（与 AgentProtocolToolServer 同契约）。
@@ -69,10 +74,21 @@ class GenericHttpToolServer(ToolExporterMixin):
         input: dict[str, Any] | str,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """向被测系统发送一次请求：input 进入预置请求模板，返回归一化结果。"""
+        """向被测系统发送一次请求：input 进入预置请求模板，返回归一化结果。
+
+        闸门走 sut_call 动作（额度=sut_calls_total）：generic_http 无会话语义，
+        一次任务常需多请求（登录/提交/取件），不受 dispatch 单发限制。
+        """
+        if self.ledger is not None:
+            refused = self.ledger.authorize("sut_call")
+            if refused is not None:
+                return refused
+        started = time.monotonic()
         result = await self.channel.run(
             input, metadata={**self.default_metadata, **(metadata or {})}
         )
+        if self.ledger is not None:
+            self.ledger.record("sut_call", "ok", duration_s=time.monotonic() - started)
         self._record_last_run(result, input)
         return bounded_result(result)
 

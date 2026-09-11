@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from agent_eval.agent.core.session import AgentSession
+from agent_eval.agent.executor.ledger import EvidenceLedger
 from agent_eval.agent.executor.prompts import extract_instruction
 from agent_eval.agent.executor.sut_tools import content_fingerprint
 from agent_eval.agent.executor.transcript import build_transcript
@@ -61,6 +62,7 @@ def ensure_trace_file(
     *,
     llm_role: str,
     last_sut_run: dict[str, Any] | None,
+    error: str | None = None,
 ) -> None:
     """写/补全 trace.json。
 
@@ -68,6 +70,9 @@ def ensure_trace_file(
     turns_used…）时保留其字段，仅以 setdefault 补充 Agent 过程统计
     （messages/tool_calls/turns/duration_ms，过程指标数据源）；未写时创建
     完整骨架并回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象）。
+
+    error 非 None 时写入 trace.error（LLM 已写错误不覆盖）——write_package 的
+    error 只进返回摘要不入包，异常收尾的真实错误只能由补齐链落盘。
     """
     trace_file = package_dir / "trace.json"
     trace = _load_json_object(trace_file)
@@ -83,7 +88,9 @@ def ensure_trace_file(
     trace.setdefault("request", {"executor": "ExecutionAgent", "llm_role": llm_role})
     trace.setdefault("started_at", session.started_at)
     trace.setdefault("finished_at", session.finished_at or _now_iso())
-    trace.setdefault("error", None)
+    if not trace.get("error"):
+        # 补齐语义：已有非空错误不覆盖；无错误时落 fallback（或骨架缺省 None）
+        trace["error"] = error
     _write_json_object(trace_file, trace)
 
 
@@ -180,19 +187,32 @@ async def finalize_execution_package(
     sut_tools: Any,
     llm_role: str,
     last_sut_run: dict[str, Any] | None,
+    evidence: EvidenceLedger | None = None,
+    fallback_error: str | None = None,
+    close_reason: str = "finalized",
 ) -> ExecutionPackage:
-    """收尾编排：兜底写包 → 补齐结构化文件 → 机械守卫 → 加载执行包。
+    """收尾编排：兜底写包 → 补齐结构化文件 → 机械守卫 → 证据落盘 → 加载执行包。
 
     Agent 已调用 write_package 时 ensure_failure_package 为 no-op，仅补齐
-    其余文件；未调用时先落 status=failed 兜底包再补齐。
+    其余文件；未调用时先落 status=failed 兜底包再补齐（fallback_error 覆盖
+    兜底归因——异常收尾把真实错误写进 manifest，而非「未写包」套话）。
+    成功收尾与异常收尾共用本链：唯一差异是传入的 session 与 fallback_error。
     """
-    await ensure_failure_package(package_dir, task.id, FALLBACK_NOT_WRITTEN, sut_tools=sut_tools)
+    await ensure_failure_package(
+        package_dir, task.id, fallback_error or FALLBACK_NOT_WRITTEN, sut_tools=sut_tools
+    )
     ensure_task_file(task, package_dir)
-    ensure_trace_file(session, package_dir, llm_role=llm_role, last_sut_run=last_sut_run)
+    ensure_trace_file(
+        session, package_dir, llm_role=llm_role, last_sut_run=last_sut_run, error=fallback_error
+    )
     ensure_answer_file(package_dir, last_sut_run)
     ensure_transcript_file(session, task, package_dir, instruction_text=extract_instruction(task))
     ensure_metrics_file(session, package_dir)
     guard_echo_answer(package_dir, last_sut_run)
+    if evidence is not None:
+        # 先落证据再算指纹——content_hash 覆盖最终包内容（含 ledger.jsonl）
+        evidence.log("close", reason=close_reason)
+        evidence.dump(package_dir)
     refresh_content_hash(package_dir)
     return ExecutionPackage.load(package_dir)
 

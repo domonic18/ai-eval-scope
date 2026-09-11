@@ -1,9 +1,9 @@
 """Agent Protocol 语义工具面。
 
 取代手搓 HTTP 请求：agent_run / agent_run_stream / create_thread /
-run_on_thread / answer_sut_questions / cancel_run / get_agent_info /
-download_sut_file 八个语义工具，封装 AgentProtocolChannel 暴露给
-DeepAgents 显式绑定（ToolExporterMixin）。
+run_on_thread / read_thread_state / answer_sut_questions / cancel_run /
+get_agent_info / download_sut_file 九个语义工具，封装
+AgentProtocolChannel 暴露给 DeepAgents 显式绑定（ToolExporterMixin）。
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from __future__ import annotations
 import functools
 import json
 import re
+import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -19,13 +20,18 @@ from urllib.parse import urlparse
 import httpx
 
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.agent.executor.ledger import ResourceLedger
 from agent_eval.core.exceptions import (
     AgentEvalError,
     AgentProtocolError,
+    AgentProtocolTimeoutError,
     ToolExecutionError,
 )
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
-from agent_eval.execution.channels.interrupts import ask_question_tool_call_ids
+from agent_eval.execution.channels.interrupts import (
+    ask_question_tool_call_ids,
+    pending_ask_questions,
+)
 from agent_eval.execution.channels.message_digest import compact_messages
 
 # 工具结果中大体量字段的截断上限（上下文经济性，非业务阈值）
@@ -34,6 +40,29 @@ EVENT_DATA_MAX_CHARS = 500
 MAX_STREAM_EVENTS = 100
 # 产物单文件下载上限（流式累计，超限即中止——防 SUT 指向超大文件耗尽磁盘/预算）
 DOWNLOAD_MAX_BYTES = 50 * 1024 * 1024
+# SPA 前端壳嗅探窗口（网关 fallback 页面远小于此）
+SPA_SNIFF_BYTES = 4096
+# 同任务 SUT 调用超时重试上限（机械守卫，不依赖 LLM 自觉——v4.8 哲学）：
+# 真超时后再重试只会重烧同量级时长（run 20260910_134410 实测 chinese/english
+# 各烧 3.7h/3.9h）。超过上限后 SUT 执行调用直接返回 TimeoutBudgetExhausted，
+# 证据随结果透出供写失败包；只读取证与产物下载不受限
+TIMEOUT_RETRY_LIMIT = 1
+TIMEOUT_EVIDENCE_MAX_CHARS = 300
+
+
+def _looks_like_spa_shell(path: Path) -> bool:
+    """命中 SUT 网关 SPA 前端指纹：root 挂载点 + /assets/index-*.js 模块脚本。
+
+    AG-UI 网关族对未知文件路径回前端壳而非 404（commands_agent_info 已记录的
+    fallback 行为）——该「文件」不是产物，落包会让评估对象变成 JS 应用骨架
+    （2026-09-11 实测：29.2k 课件被 396 字节 SPA 壳顶替入包）。双指纹同时命中
+    才判定，含 root div 的正常 HTML 产物不受影响。
+    """
+    try:
+        head = path.read_bytes()[:SPA_SNIFF_BYTES].decode("utf-8", errors="ignore")
+    except OSError:
+        return False
+    return '<div id="root"' in head and "/assets/index-" in head
 
 
 def tool_guard(
@@ -77,6 +106,14 @@ TOOL_SPECS: list[ToolSpec] = [
         name="run_on_thread",
         description="在既有线程上执行一轮（多轮对话任务的后续轮次）",
         method="run_on_thread",
+    ),
+    ToolSpec(
+        name="read_thread_state",
+        description=(
+            "只读查看线程当前状态（不注入新消息、不打断 SUT）：run 超时或拿不到"
+            "产物时先取证——thread_busy=false 且 values/messages 有内容说明 SUT 已完成"
+        ),
+        method="read_thread_state",
     ),
     ToolSpec(
         name="answer_sut_questions",
@@ -136,6 +173,12 @@ class AgentProtocolToolServer(ToolExporterMixin):
         self.workspace_dir: Path | None = Path(workspace_dir) if workspace_dir else None
         # 最近一次 SUT run 摘要（ExecutionPackage trace 回填 SUT 回答文本用）
         self.last_run: dict[str, Any] | None = None
+        # 本任务 SUT 调用超时留证（reset_task_state 逐任务清账）
+        self._timeout_errors: list[str] = []
+        # 交互预算账本（arch/16 §4.3）——缺省 None=闸门全放行（直连使用本注册表
+        # 的旧路径不受影响）；ExecutionAgent 逐任务注入新实例（账本随任务生灭，
+        # reset_task_state 不清它——换新即清零）
+        self.ledger: ResourceLedger | None = None
 
     def _record_last_run(self, result: dict[str, Any], input: Any = None) -> None:
         """记录最近一次 run 的状态/线程/回答文本（截断前原文，供 trace 落盘）。
@@ -166,6 +209,59 @@ class AgentProtocolToolServer(ToolExporterMixin):
             "pending": pending,
         }
 
+    def reset_task_state(self) -> None:
+        """任务起点清账（ExecutionAgent._clear_stale_tool_state 统一调用）。
+
+        last_run 单槽与超时计数都是任务集共享实例上的任务级状态——跨任务
+        残留轻则串台（v4.12），重则让下一任务被误判超时预算耗尽。
+        ledger 例外：账本随任务生灭，由 ExecutionAgent 在任务起点注入新实例
+        （换新即清零），此处不清。
+        """
+        self.last_run = None
+        self._timeout_errors.clear()
+
+    def _timeout_budget_blocked(self) -> dict[str, Any] | None:
+        """超时预算耗尽 → 返回拒绝载荷（不再触网）；未耗尽返回 None。"""
+        if len(self._timeout_errors) <= TIMEOUT_RETRY_LIMIT:
+            return None
+        return {
+            "status": "failed",
+            "error": {
+                "type": "TimeoutBudgetExhausted",
+                "message": (
+                    f"SUT 调用超时已达重试上限 {TIMEOUT_RETRY_LIMIT} 次——超时后重试只会"
+                    "重烧同量级时长。不要再发起任何 SUT 执行调用（agent_run/run_on_thread/"
+                    "agent_run_stream），直接 write_package(success=false, error=超时证据) 收尾"
+                ),
+            },
+            "timeout_evidence": [
+                truncate(text, TIMEOUT_EVIDENCE_MAX_CHARS) for text in self._timeout_errors
+            ],
+        }
+
+    def _budget(self, action: str) -> dict[str, Any] | None:
+        """交互预算闸门（arch/16 §4.3）：拒绝载荷（含 guidance）或 None 放行。"""
+        if self.ledger is None:
+            return None
+        return self.ledger.authorize(action)
+
+    def _ledger_record(
+        self, action: str, outcome: str, started: float, summary: Any = None
+    ) -> None:
+        """闸门放行后的结果留证（授权计数在 authorize 已完成，此处只补证据流）。"""
+        if self.ledger is not None:
+            self.ledger.record(
+                action, outcome, duration_s=time.monotonic() - started, summary=summary
+            )
+
+    def _register_timeout_or_reraise(self, error: AgentProtocolTimeoutError) -> dict[str, Any]:
+        """登记一次 SUT 调用超时；预算未耗尽则原样抛出（tool_guard 转 failed 结果）。"""
+        self._timeout_errors.append(str(error))
+        blocked = self._timeout_budget_blocked()
+        if blocked is not None:
+            return blocked
+        raise error
+
     @tool_guard
     async def agent_run(
         self,
@@ -174,9 +270,21 @@ class AgentProtocolToolServer(ToolExporterMixin):
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """执行被测 Agent：按 exec_mode 走 wait/background/stream。"""
-        result = await self.channel.run(
-            input, exec_mode=exec_mode, metadata=self._merge_metadata(metadata)
-        )
+        blocked = self._timeout_budget_blocked()
+        if blocked is not None:
+            return blocked
+        refused = self._budget("dispatch")
+        if refused is not None:
+            return refused
+        started = time.monotonic()
+        try:
+            result = await self.channel.run(
+                input, exec_mode=exec_mode, metadata=self._merge_metadata(metadata)
+            )
+        except AgentProtocolTimeoutError as e:
+            self._ledger_record("dispatch", "timeout", started)
+            return self._register_timeout_or_reraise(e)
+        self._ledger_record("dispatch", "ok", started, summary=result.get("status"))
         self._record_last_run(result, input)
         return bounded_result(result)
 
@@ -188,9 +296,21 @@ class AgentProtocolToolServer(ToolExporterMixin):
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """流式执行并聚合（未知事件保留在 events，完整原文可写入 trace）。"""
-        result = await self.channel.run_stream(
-            input, stream_mode=stream_mode, metadata=self._merge_metadata(metadata)
-        )
+        blocked = self._timeout_budget_blocked()
+        if blocked is not None:
+            return blocked
+        refused = self._budget("dispatch")
+        if refused is not None:
+            return refused
+        started = time.monotonic()
+        try:
+            result = await self.channel.run_stream(
+                input, stream_mode=stream_mode, metadata=self._merge_metadata(metadata)
+            )
+        except AgentProtocolTimeoutError as e:
+            self._ledger_record("dispatch", "timeout", started)
+            return self._register_timeout_or_reraise(e)
+        self._ledger_record("dispatch", "ok", started, summary=result.get("status"))
         self._record_last_run(result, input)
         result["events"] = [
             {
@@ -216,11 +336,59 @@ class AgentProtocolToolServer(ToolExporterMixin):
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """在既有线程上执行一轮。"""
-        result = await self.channel.run_on_thread(
-            thread_id, input, metadata=self._merge_metadata(metadata)
-        )
+        blocked = self._timeout_budget_blocked()
+        if blocked is not None:
+            return blocked
+        refused = self._budget("nudge")
+        if refused is not None:
+            return refused
+        started = time.monotonic()
+        try:
+            result = await self.channel.run_on_thread(
+                thread_id, input, metadata=self._merge_metadata(metadata)
+            )
+        except AgentProtocolTimeoutError as e:
+            self._ledger_record("nudge", "timeout", started)
+            return self._register_timeout_or_reraise(e)
+        self._ledger_record("nudge", "ok", started, summary=result.get("status"))
         self._record_last_run(result, input)
         return bounded_result(result)
+
+    @tool_guard
+    async def read_thread_state(self, thread_id: str) -> dict[str, Any]:
+        """只读取证线程当前状态（GET state，不向 SUT 会话注入任何消息）。
+
+        run 超时/无产物时的第一动作——先取证再决定是否打扰 SUT：
+        thread_busy=false = SUT 已空闲，产物线索看 values（messages 保尾摘要）；
+        有路径/链接直接 download_sut_file，无证据才 run_on_thread 索取。
+        """
+        refused = self._budget("state_poll")
+        if refused is not None:
+            return refused
+        started = time.monotonic()
+        state = await self.channel.thread_state(thread_id)
+        if state is None:
+            self._ledger_record("state_poll", "ok", started, summary="thread not_found")
+            return {
+                "status": "not_found",
+                "thread_id": thread_id,
+                "note": "线程不存在（commands 形态首个 run.start 才隐式建线程）",
+            }
+        self._ledger_record(
+            "state_poll",
+            "ok",
+            started,
+            summary={"thread_busy": bool(state.get("next") or [])},
+        )
+        return bounded_result(
+            {
+                "status": "success",
+                "thread_id": thread_id,
+                "thread_busy": bool(state.get("next") or []),
+                "pending_questions": pending_ask_questions(state, self.channel.sut.interrupt_types),
+                "values": state.get("values") or {},
+            }
+        )
 
     @tool_guard
     async def answer_sut_questions(self, answers: list[Any]) -> dict[str, Any]:
@@ -277,15 +445,27 @@ class AgentProtocolToolServer(ToolExporterMixin):
         必须在白名单（base_url 域 ∪ sut.artifact_hosts）内，防 SUT 返回恶意地址；
         流式累计字节超 DOWNLOAD_MAX_BYTES 即中止。文件名经 basename 拍平防路径逃逸。
         """
+        refused = self._budget("download")
+        if refused is not None:
+            return refused
+        started = time.monotonic()
         dest_url, dest_path = self._download_destination(url, task_id, filename)
         try:
             try:
                 size, content_type = await self._stream_download(dest_url, dest_path)
             except httpx.HTTPError as e:
                 raise ToolExecutionError(f"产物下载传输失败: {e}", details={"url": dest_url}) from e
+            if _looks_like_spa_shell(dest_path):
+                raise ToolExecutionError(
+                    "下载内容命中 SUT 网关前端壳（SPA fallback）——该路径没有真实产物，"
+                    "请核对产物路径后重试或如实记录下载失败",
+                    details={"url": dest_url},
+                )
         except BaseException:
             dest_path.unlink(missing_ok=True)  # 半截文件不留包（孤儿文件防护）
+            self._ledger_record("download", "error", started, summary=dest_path.name)
             raise
+        self._ledger_record("download", "ok", started, summary=dest_path.name)
         return {
             "status": "success",
             "file": f"output/{dest_path.name}",

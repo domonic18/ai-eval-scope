@@ -24,9 +24,12 @@ from agent_eval.agent.core.model_bridge import build_chat_model
 from agent_eval.agent.core.session import AgentSession
 from agent_eval.agent.core.session_log import SessionLogger
 from agent_eval.agent.core.tool_filter import build_toolset_filter
-from agent_eval.agent.executor.package_writer import (
-    ensure_failure_package,
-    finalize_execution_package,
+from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
+from agent_eval.agent.executor.package_writer import finalize_execution_package
+from agent_eval.agent.executor.policy import (
+    declares_interaction_policy,
+    derive_recursion_limit,
+    resolve_interaction_policy,
 )
 from agent_eval.agent.executor.prompts import (
     build_system_prompt,
@@ -93,6 +96,16 @@ class ExecutionAgent:
             if hasattr(server, "workspace_dir"):
                 server.workspace_dir = workspace_dir
 
+    def _inject_ledger(self, ledger: ResourceLedger) -> None:
+        """向所有带 ledger 属性的工具注册表注入交互预算账本（arch/16 §4.3）。
+
+        逐任务注入新实例（账本随任务生灭，跨任务计数不串）；协议与
+        generic_http 注册表共享同一账本——SUT 交互总额跨通道统一计量。
+        """
+        for server in self.tool_servers:
+            if hasattr(server, "ledger"):
+                server.ledger = ledger
+
     # ─── 对外入口 ───
 
     async def run_task_set(
@@ -114,7 +127,7 @@ class ExecutionAgent:
                 progress=f"{idx}/{total}",
             )
             started = time.monotonic()
-            package = await self.run_task(task, run_id=run_id)
+            package = await self.run_task(task, run_id=run_id, task_set=task_set)
             structlog.get_logger("executor").info(
                 "任务结束",
                 task_id=task.id,
@@ -125,8 +138,15 @@ class ExecutionAgent:
             packages.append(package)
         return run_id, packages
 
-    async def run_task(self, task: Task, *, run_id: str | None = None) -> ExecutionPackage:
+    async def run_task(
+        self, task: Task, *, run_id: str | None = None, task_set: TaskSet | None = None
+    ) -> ExecutionPackage:
         """执行单个任务，返回 ExecutionPackage。
+
+        Args:
+            task: 待执行任务。
+            run_id: 运行标识（缺省自动生成）。
+            task_set: 所属任务集——interaction_policy 声明的继承来源（arch/16 §4.1）。
 
         Raises:
             AgentTimeoutError: 超过轮次限制（已写入含部分结果的执行包）。
@@ -148,6 +168,18 @@ class ExecutionAgent:
             [Path(task.directory_path)] if task.directory_path else []
         )
         self._clear_stale_tool_state()
+        # 机械壳任务装配（arch/16 §4）：预算/账本/证据随任务生灭——逐任务新实例，
+        # 跨任务计数不串（v4.12 同因）；解析失败静默落缺省（闸门兜运行期额度，
+        # 不做配置期报错）
+        policy = resolve_interaction_policy(task, task_set)
+        evidence = EvidenceLedger()
+        self._inject_ledger(ResourceLedger(policy, evidence))
+        if declares_interaction_policy(task, task_set):
+            # 见 LEGACY_MAX_TURNS_NOTE：声明 policy 的任务以 policy 为准
+            recursion_limit = derive_recursion_limit(policy)
+        else:
+            # 双轨迁移：未声明任务沿用 max_turns 旧链
+            recursion_limit = self._resolve_max_turns(task) * 2
         package_dir = run_packages_root / task.id
         log_dir = workspace / "runs" / run_id / "agent_logs"
 
@@ -159,31 +191,34 @@ class ExecutionAgent:
             graph = self._ensure_graph()
             result = await graph.ainvoke(
                 {"messages": [{"role": "user", "content": self._build_task_prompt(task)}]},
-                # recursion_limit 假设「1 轮 ≈ 2 step（模型 + 工具节点）」——
-                # 深层假设：给执行图加会推进 step 的中间件时须同步校准此倍数
+                # 保险丝语义（arch/16 §4.1）：宽于语义预算、只兜图失控；仍假设
+                # 「1 轮 ≈ 2 step（模型 + 工具节点）」——给执行图加会推进 step
+                # 的中间件时须同步校准此倍数
                 config={
-                    "recursion_limit": self.config.max_turns * 2,
+                    "recursion_limit": recursion_limit,
                     "callbacks": [SessionLogCallback(logger), guard],
                 },
             )
         except (BudgetExceededError, AgentTimeoutError, AgentError) as e:
-            await self._abort(logger, guard, task, package_dir, e)
+            await self._abort(logger, guard, task, package_dir, e, evidence=evidence)
             raise
         except Exception as e:
             error: AgentError
             if _is_recursion_error(e):
                 error = AgentTimeoutError(
-                    f"Agent 执行超过轮次限制（max_turns={self.config.max_turns}）"
+                    f"Agent 执行保险丝触发：图步数超出上限 {recursion_limit}"
+                    f"（预算 sut_calls_total={policy.sut_calls_total}，"
+                    "交互明细见执行包 ledger.jsonl）"
                 )
             else:
                 error = AgentError(f"Agent 会话异常中断: {e}")
-            await self._abort(logger, guard, task, package_dir, error)
+            await self._abort(logger, guard, task, package_dir, error, evidence=evidence)
             raise error from e
 
         session = AgentSession.from_messages(result.get("messages", []))
         session.started_at = logger.started_at or _now_iso()
         session.finished_at = _now_iso()
-        package = await self._build_package(session, task, package_dir)
+        package = await self._build_package(session, task, package_dir, evidence=evidence)
         logger.log_end(
             cost_usd=guard.spent_usd,
             tokens_used=guard.total_tokens,
@@ -248,14 +283,33 @@ class ExecutionAgent:
 
     # ─── 工具注册表状态 ───
 
+    def _resolve_max_turns(self, task: Task) -> int:
+        """任务级轮次预算：constraints.max_turns 显式声明优先，缺省回退配置值。
+
+        此前 constraints.max_turns 未接线——任务集声明 5 实际按配置值 20 跑，
+        宽预算给了失败重试/催促成倍燃烧空间（run 20260911_030343 排查结论：
+        单任务烧 24 事件、6 次追问）。声明值非法（非正整数）时静默回退，
+        与「兜底取值」既有惯例一致。
+        """
+        raw = task.constraints.get("max_turns")
+        if isinstance(raw, int) and not isinstance(raw, bool) and raw > 0:
+            return raw
+        return self.config.max_turns
+
     def _clear_stale_tool_state(self) -> None:
         """跨任务清账：last_run 是语义工具注册表上的单槽缓存，而实例整个任务集共享
         ——本任务 SUT 调用全部失败时不产生新记录，兜底回填/物化会拿到上一任务
         的残留（2026-09-10 实测串台：physics 四次尝试全超时，answer.md 与评估
         对象是 chinese 留下的《春》完成通知，答非所问全 0 分）。
+
+        实现 reset_task_state 的注册表（AgentProtocolToolServer，含超时计数）
+        走统一清账入口；其余仅清 last_run。
         """
         for server in self.tool_servers:
-            if getattr(server, "last_run", None) is not None:
+            reset = getattr(server, "reset_task_state", None)
+            if reset is not None:
+                reset()
+            elif getattr(server, "last_run", None) is not None:
                 server.last_run = None
 
     def _last_sut_run(self) -> dict[str, Any] | None:
@@ -273,6 +327,8 @@ class ExecutionAgent:
         session: AgentSession,
         task: Task,
         package_dir: Path,
+        *,
+        evidence: EvidenceLedger | None = None,
     ) -> ExecutionPackage:
         """从 Agent 会话构建 ExecutionPackage（补齐/守卫细节见 executor/package_writer.py）。"""
         return await finalize_execution_package(
@@ -282,6 +338,7 @@ class ExecutionAgent:
             sut_tools=self.sut_tools,
             llm_role=self.config.llm_role,
             last_sut_run=self._last_sut_run(),
+            evidence=evidence,
         )
 
     async def _abort(
@@ -291,9 +348,31 @@ class ExecutionAgent:
         task: Task,
         package_dir: Path,
         error: BaseException,
+        *,
+        evidence: EvidenceLedger,
     ) -> None:
-        """异常路径统一收尾：日志 + 错误执行包（保留 Agent 已写的部分结果）。"""
+        """异常路径统一收尾（arch/16 §4.5 CLOSE）：走补齐链物化完整失败包。
+
+        图抛异常时无 result——以空 session 过 finalize：trace 以 last_sut_run
+        回填 SUT 侧证据（status/text/thread_id），answer.md 据此物化——修
+        「SUT 已交付但失败包空白」（run 20260911_050015：SUT 已写完全部课件，
+        失败包只有 manifest+metadata，评估对象丢失）。manifest 带真实错误
+        （fallback_error），任务失败语义不变（仍 raise），但包完整可评可排查。
+        """
         logger.log_error(type(error).__name__, str(error))
-        await ensure_failure_package(package_dir, task.id, str(error), sut_tools=self.sut_tools)
+        session = AgentSession()
+        session.started_at = logger.started_at or _now_iso()
+        session.finished_at = _now_iso()
+        await finalize_execution_package(
+            package_dir,
+            task,
+            session,
+            sut_tools=self.sut_tools,
+            llm_role=self.config.llm_role,
+            last_sut_run=self._last_sut_run(),
+            evidence=evidence,
+            fallback_error=str(error),
+            close_reason=f"aborted:{type(error).__name__}",
+        )
         logger.log_end(cost_usd=guard.spent_usd, tokens_used=guard.total_tokens)
         logger.close()

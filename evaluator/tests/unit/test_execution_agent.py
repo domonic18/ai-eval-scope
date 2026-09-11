@@ -197,6 +197,43 @@ def test_run_task_recursion_error_becomes_timeout(tmp_path, monkeypatch) -> None
     assert manifest["status"] == "failed"
 
 
+def test_run_task_honors_task_level_max_turns(tmp_path, monkeypatch) -> None:
+    """constraints.max_turns 接线：任务级轮次预算生效（recursion_limit 同步缩放）。
+
+    此前声明未接线——任务集声明 5 实际按配置值 20 跑，宽预算给了失败重试
+    与空转催促成倍燃烧空间（run 20260911_030343：单任务 6 次追问、烧满超时）。
+    """
+    _fix_run_id(monkeypatch)
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    agent = _agent(tmp_path)  # 配置 max_turns=7
+    task = Task(id="task_1", input={"subject": "数学"}, constraints={"max_turns": 5})
+    asyncio.run(agent.run_task(task))
+    _, config = graph.invocations[0]
+    assert config["recursion_limit"] == 10  # 任务声明 5 × 2，而非配置值 7 × 2
+
+
+def test_run_task_recursion_error_reports_declared_budget(tmp_path, monkeypatch) -> None:
+    """保险丝触发报错文案携带生效预算与账本指引（不再以 max_turns 裸形态面向用户）。"""
+    _fix_run_id(monkeypatch)
+    _install_fakes(monkeypatch, FakeGraph(error=GraphRecursionError("limit")))
+    agent = _agent(tmp_path)
+    task = Task(id="task_1", input={}, constraints={"max_turns": 5})
+    with pytest.raises(AgentTimeoutError, match="保险丝触发.*上限 10.*sut_calls_total=8"):
+        asyncio.run(agent.run_task(task))
+
+
+def test_resolve_max_turns_falls_back_on_invalid_declaration(tmp_path) -> None:
+    """非法声明（非正整数，含布尔）静默回退配置值，与兜底取值既有惯例一致。"""
+    agent = _agent(tmp_path)  # 配置 max_turns=7
+    declared = agent._resolve_max_turns(Task(id="t", input={}, constraints={"max_turns": 3}))
+    assert declared == 3
+    for bad in (0, -2, 2.5, "5", True):
+        constraints = {"max_turns": bad}
+        assert agent._resolve_max_turns(Task(id="t", input={}, constraints=constraints)) == 7
+    # 未声明 / 空约束同样回退
+    assert agent._resolve_max_turns(Task(id="t", input={})) == 7
+
+
 def test_run_task_budget_exceeded_preserves_partial_package(tmp_path, monkeypatch) -> None:
     _install_fakes(monkeypatch, FakeGraph(error=BudgetExceededError("over budget")))
     agent = _agent(tmp_path)
@@ -284,11 +321,16 @@ def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
 
     agent = _agent(tmp_path)
     system_prompt = agent._build_system_prompt()
-    # YAML 模板特征句 + 运行时变量替换（工具清单 / 轮次与重试上限）
+    # YAML 模板特征句 + 运行时变量替换（工具清单 / 重试上限）
     assert "## 输出规范" in system_prompt
     assert "scan_directory" in system_prompt
-    assert f"{agent.config.max_turns} 轮内完成" in system_prompt
+    assert "BudgetExhausted" in system_prompt  # 预算闸门纪律：拒绝即按 guidance 行动
+    assert "TimeoutBudgetExhausted" in system_prompt  # 超时机械守卫纪律（v4.17）
     assert f"最多重试 {agent.config.max_retries} 次" in system_prompt
+    # 数字条款清零（arch/16 Phase 1）：预算面由闸门拒绝载荷实时告知，提示词不再出现轮次数
+    assert "max_turns" not in system_prompt
+    assert "轮为限" not in system_prompt
+    assert "最多 2 次" not in system_prompt
 
 
 class _DisciplineStubServer:
@@ -414,6 +456,36 @@ class _RecordingGraph(FakeGraph):
     async def ainvoke(self, payload: dict, config: dict | None = None):
         self._server.last_run = self._record
         return await super().ainvoke(payload, config)
+
+
+class _ResettableSutServer(_StubSutServer):
+    """带统一清账入口的注册表桩（AgentProtocolToolServer 同款：last_run + 超时计数）。"""
+
+    def __init__(self, last_run: dict | None = None) -> None:
+        super().__init__(last_run=last_run)
+        self.timeout_errors: list[str] = ["run 超时：x"]  # 上一任务残留
+        self.reset_calls = 0
+
+    def reset_task_state(self) -> None:
+        self.reset_calls += 1
+        self.last_run = None
+        self.timeout_errors.clear()
+
+
+def test_task_start_routes_reset_through_reset_task_state(tmp_path, monkeypatch) -> None:
+    """实现统一清账入口的注册表：任务起点走 reset_task_state（超时计数随之清零），
+    不再走仅清 last_run 的旧路径——否则上一任务的超时残留会让下一任务被误判
+    TimeoutBudgetExhausted（v4.17）。"""
+    _fix_run_id(monkeypatch)
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    server = _ResettableSutServer(last_run={"status": "success", "text": "残留"})
+    agent = ExecutionAgent(
+        AgentConfig(workspace_dir=tmp_path, max_turns=7), extra_tool_servers=[server]
+    )
+    asyncio.run(agent.run_task(_task()))
+    assert server.reset_calls == 1
+    assert server.last_run is None
+    assert server.timeout_errors == []
 
 
 def test_trace_backfills_sut_last_run_text(tmp_path, monkeypatch) -> None:
@@ -735,3 +807,132 @@ def test_content_hash_reflects_materialized_content(tmp_path, monkeypatch) -> No
         manifest["content_hash"]
         != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     )
+
+
+# ─── 机械壳任务装配与统一收尾（arch/16 Phase 1：policy/ledger/evidence/CLOSE） ───
+
+
+def test_recursion_limit_derived_from_declared_policy(tmp_path, monkeypatch) -> None:
+    """声明 interaction_policy 的任务：recursion_limit 由预算自动推导（双轨切换）。"""
+    _fix_run_id(monkeypatch)
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    agent = _agent(tmp_path)  # 配置 max_turns=7（policy 声明后不再参与）
+    task_set = TaskSet(
+        id="ts",
+        name="预算集",
+        tasks=[],
+        interaction_policy={"sut_calls_total": 4, "nudges": 1},
+    )
+    task = Task(id="task_1", input={}, constraints={"max_turns": 5})  # max_turns 被忽略
+    asyncio.run(agent.run_task(task, task_set=task_set))
+    _, config = graph.invocations[0]
+    # (sut_calls_total 4 + downloads 5 + state_polls//10 6 + 余量 6) * 2 = 42
+    assert config["recursion_limit"] == 42
+
+
+def test_abort_package_carries_trace_answer_ledger(tmp_path, monkeypatch) -> None:
+    """异常收尾走补齐链：失败包含真实错误 + SUT 证据回填 + ledger.jsonl 三件。"""
+
+    class _SutDeliveringGraph(FakeGraph):
+        """ainvoke 中途写 last_run（对齐真链路：工具成功才入缓存）后抛异常。"""
+
+        def __init__(self, server: Any, record: dict, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+            self._server, self._record = server, record
+
+        async def ainvoke(self, payload: dict, config: dict | None = None):
+            self._server.last_run = self._record
+            return await super().ainvoke(payload, config)
+
+    _fix_run_id(monkeypatch)
+    agent = _agent(tmp_path)
+    graph = _SutDeliveringGraph(
+        agent.sut_tools,
+        {  # SUT 已交付（run 20260911_050015 场景：Agent 抛异常前 SUT 已写完课件）
+            "status": "success",
+            "thread_id": "th-9",
+            "text": "课件已全部完成！",
+            "input": {"subject": "数学"},
+            "pending": None,
+        },
+        error=RuntimeError("graph 中断"),
+    )
+    _install_fakes(monkeypatch, graph)
+    with pytest.raises(AgentError, match="graph 中断"):
+        asyncio.run(agent.run_task(_task()))
+
+    pkg_dir = _pkg_root(tmp_path) / "task_1"
+    manifest = _read_json(pkg_dir / "manifest.json")
+    assert manifest["status"] == "failed"
+    trace = _read_json(pkg_dir / "trace.json")
+    # 真实错误入 trace.error（write_package 的 error 只进返回摘要不入包）
+    assert "graph 中断" in trace["error"]
+    assert trace["response"]["sut"]["text"] == "课件已全部完成！"  # SUT 证据回填
+    answer = (pkg_dir / "output" / "answer.md").read_text(encoding="utf-8")
+    assert "课件已全部完成" in answer
+    ledger_lines = (pkg_dir / "ledger.jsonl").read_text(encoding="utf-8").splitlines()
+    close_events = [json.loads(line) for line in ledger_lines if line]
+    assert close_events[-1]["kind"] == "close"
+    assert close_events[-1]["reason"] == "aborted:AgentError"
+
+
+def test_success_package_dumps_ledger(tmp_path, monkeypatch) -> None:
+    """成功收尾同样落 ledger.jsonl（close 事件 reason=finalized）。"""
+    _fix_run_id(monkeypatch)
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    agent = _agent(tmp_path)
+    asyncio.run(agent.run_task(_task()))
+    ledger_lines = (
+        (_pkg_root(tmp_path) / "task_1" / "ledger.jsonl").read_text(encoding="utf-8").splitlines()
+    )
+    events = [json.loads(line) for line in ledger_lines if line]
+    assert events[-1]["kind"] == "close"
+    assert events[-1]["reason"] == "finalized"
+
+
+class _LedgerHost:
+    """带 ledger 属性的最小工具注册表替身（_inject_ledger 注入面验证）。"""
+
+    ledger = None
+
+    def to_langchain_tools(self) -> list[Any]:
+        return []
+
+    def describe_tools(self) -> str:
+        return ""
+
+
+class _LedgerConsumingGraph(FakeGraph):
+    """ainvoke 期间消耗当前账本额度并记录实例（跨任务生灭断言用）。"""
+
+    def __init__(self, host: _LedgerHost, **kwargs):
+        super().__init__(**kwargs)
+        self.host = host
+        self.seen_ledgers: list[Any] = []
+        self.snapshots: list[dict | None] = []
+
+    async def ainvoke(self, payload: dict, config: dict | None = None):
+        ledger = self.host.ledger
+        self.seen_ledgers.append(ledger)
+        self.snapshots.append(dict(ledger.counters) if ledger else None)  # 消耗前快照
+        if ledger is not None:
+            ledger.counters["sut_call"] += 5  # 模拟任务内 SUT 交互消耗
+        return await super().ainvoke(payload, config)
+
+
+def test_ledger_fresh_per_task(tmp_path, monkeypatch) -> None:
+    """账本逐任务新实例：上一任务的消耗不串入下一任务（v4.12 同因回归）。"""
+    _fix_run_id(monkeypatch)
+    host = _LedgerHost()
+    graph = _LedgerConsumingGraph(host, result={"messages": _messages()})
+    _install_fakes(monkeypatch, graph)
+    agent = _agent(tmp_path)
+    agent.tool_servers.append(host)
+    task_set = TaskSet(id="ts", name="批量", tasks=[_task("t_a"), _task("t_b")])
+    asyncio.run(agent.run_task_set(task_set))
+
+    first, second = graph.seen_ledgers
+    assert first is not second  # 逐任务新实例
+    assert first.counters["sut_call"] == 5  # 上一任务消耗留在旧账本
+    assert graph.snapshots[1]["sut_call"] == 0  # 新任务起点从零计量
+    assert host.ledger is second  # 注册表挂的是当前任务账本
