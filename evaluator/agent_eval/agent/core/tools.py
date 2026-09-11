@@ -74,6 +74,17 @@ class ToolExporterMixin:
             for spec in self.TOOL_SPECS
         ]
 
+    def _enrich_result(self, result: Any, *, tool: str) -> Any:
+        """工具结果出口的统一挂钩（默认恒等）——子类可注入附加上下文。
+
+        挂点 b（arch/16 §5.1 决策简报注入）：动作工具的结果经装饰器在
+        方法出口统一过本钩子，子类（如 AgentProtocolToolServer）按需前置
+        决策简报；基类与未覆写的注册表行为不变。放在方法层而非导出层
+        （_json_tool）：直调与 LangChain 导出两条路径行为一致，测试也无需
+        绕道导出面。
+        """
+        return result
+
     def _json_tool(self, method: Any) -> Any:
         """包装工具方法：结果 JSON 序列化为字符串（dict/list 统一文本化）。
 

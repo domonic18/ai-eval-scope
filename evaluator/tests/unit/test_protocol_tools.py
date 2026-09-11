@@ -714,7 +714,7 @@ def test_timeout_guard_allows_one_retry_then_blocks(
     assert any("run 超时" in ev for ev in second["timeout_evidence"])
 
     # 换执行工具同样在入口被拒——预算耗尽后不再有任何 SUT 执行调用
-    third = asyncio.run(server.run_on_thread("th-1", "继续"))
+    third = asyncio.run(server.run_on_thread("th-1", "继续", rationale="首次超时后取证续跑"))
     assert third["error"]["type"] == "TimeoutBudgetExhausted"
     stream = asyncio.run(server.agent_run_stream("生成课件"))
     assert stream["error"]["type"] == "TimeoutBudgetExhausted"
@@ -785,10 +785,14 @@ def test_nudge_backoff_refusal_at_tool_entry() -> None:
     server.ledger = ledger
 
     asyncio.run(server.agent_run("生成课件"))
-    first = asyncio.run(server.run_on_thread("th-1", "继续"))
+    first = asyncio.run(
+        server.run_on_thread("th-1", "继续", rationale="简报显示仍在产出，索取进度")
+    )
     assert first["status"] == "success"
 
-    second = asyncio.run(server.run_on_thread("th-1", "继续"))
+    second = asyncio.run(
+        server.run_on_thread("th-1", "继续", rationale="仍无产物，再等一个节奏窗口")
+    )
     assert second["status"] == "failed"
     assert second["error"]["type"] == "BudgetExhausted"
     assert second["error"]["budget"] == "nudge_backoff"
@@ -802,7 +806,7 @@ def test_execution_exhaustion_leaves_evidence_paths_open(tmp_path: Path) -> None
     server.ledger = ledger
     asyncio.run(server.agent_run("生成课件"))
 
-    blocked = asyncio.run(server.run_on_thread("th-1", "继续"))
+    blocked = asyncio.run(server.run_on_thread("th-1", "继续", rationale="长空闲无产物，索取交付"))
     assert blocked["status"] == "failed"
     assert blocked["error"]["budget"] == "nudges"
 
@@ -848,3 +852,144 @@ def test_ungated_tools_do_not_consume_budget() -> None:
         result = asyncio.run(call())
         assert result.get("error", {}).get("type") != "BudgetExhausted"
     assert ledger.counters["sut_call"] == 1  # 只有 dispatch 那一次
+
+
+# ─── 完成仲裁与决策简报（arch/16 §5 决策回路，Phase 2） ───
+
+
+def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> None:
+    """缺 rationale 的催促在入口被拒：不触网、不耗催促额度、gate_refusal 留证。"""
+    captured: dict = {}
+    server = _commands_server([RESUMED_STATE], captured=captured)
+    evidence = EvidenceLedger()
+    ledger = ResourceLedger(InteractionPolicy(), evidence=evidence)
+    server.ledger = ledger
+
+    refused = asyncio.run(server.run_on_thread("th-1", "继续"))
+    assert refused["status"] == "failed"
+    assert refused["error"]["type"] == "NudgeRationaleRequired"
+    assert "read_thread_state" in refused["error"]["message"]
+    assert ledger.counters["nudge"] == 0  # 资格闸门不耗额度
+    assert captured.get("posts") is None  # 拒绝在触网之前
+    refusal_events = [e for e in evidence.events if e["kind"] == "gate_refusal"]
+    assert refusal_events and refusal_events[0]["action"] == "nudge"
+
+
+def test_run_on_thread_rationale_lands_decision_event() -> None:
+    """带 rationale 的催促落 decision 台账（verdict 缺省 stalled）——可复盘。"""
+    # 三段状态：agent_run 定 baseline，run_on_thread 轮询到新增 ai 回复才算终态
+    nudged = {
+        "next": [],
+        "values": {
+            "messages": [
+                *RESUMED_STATE["values"]["messages"],
+                {"type": "human", "content": "继续"},
+                {"type": "ai", "content": [{"type": "text", "text": "已继续处理"}]},
+            ]
+        },
+    }
+    server = _commands_server([RESUMED_STATE, RESUMED_STATE, nudged])
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(InteractionPolicy(), evidence=evidence)
+    asyncio.run(server.agent_run("生成课件"))  # 先建立线程上下文
+
+    result = asyncio.run(server.run_on_thread("th-1", "继续", rationale="长空闲无产物，索取交付"))
+    assert result["status"] == "success"
+    decisions = [e for e in evidence.events if e["kind"] == "decision"]
+    assert len(decisions) == 1
+    assert decisions[0]["action"] == "nudge"
+    assert decisions[0]["verdict"] == "stalled"
+    assert decisions[0]["rationale"] == "长空闲无产物，索取交付"
+
+
+def test_read_thread_state_verdict_rationale_lands_decision_event() -> None:
+    """取证时携带 verdict/rationale → decision 台账（仲裁结论留痕）。"""
+    server = _commands_server([RESUMED_STATE])
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(InteractionPolicy(), evidence=evidence)
+
+    result = asyncio.run(
+        server.read_thread_state(
+            "th-1", verdict="progressing", rationale="values 仍在增长，等待不打扰"
+        )
+    )
+    assert result["status"] == "success"
+    decisions = [e for e in evidence.events if e["kind"] == "decision"]
+    assert decisions[0]["action"] == "state_poll"
+    assert decisions[0]["verdict"] == "progressing"
+
+
+def test_read_thread_state_rejects_illegal_verdict() -> None:
+    """verdict 非受控枚举即拒——受控枚举是契约不是装饰。"""
+    server = _commands_server([RESUMED_STATE])
+    result = asyncio.run(server.read_thread_state("th-1", verdict="done"))
+    assert result["status"] == "failed"
+    assert result["error"]["type"] == "ToolExecutionError"
+    assert "complete" in result["error"]["message"]
+
+
+def test_briefing_injected_and_refreshed_on_action_tools() -> None:
+    """挂点 b：动作工具结果附简报且随账本刷新；取证后 sut_state 有观察值。"""
+    path_state = {
+        "next": [],
+        "values": {
+            "messages": [
+                {
+                    "type": "ai",
+                    "content": [{"type": "text", "text": "已写入 output/课件_final.html"}],
+                }
+            ]
+        },
+    }
+    server = _commands_server([RESUMED_STATE, path_state])
+    server.ledger = ResourceLedger(InteractionPolicy())
+
+    first = asyncio.run(server.agent_run("生成课件"))
+    assert first["briefing"]["objective"] == "生成课件"
+    assert first["briefing"]["resources"]["sut_calls"] == "7/8"  # 消耗一次后刷新
+    assert first["briefing"]["last_result_digest"]
+
+    state = asyncio.run(server.read_thread_state("th-1"))
+    sut_state = state["briefing"]["sut_state"]
+    assert sut_state["thread_busy"] is False  # 来自 observe 的真实采证
+    assert sut_state["artifact_candidates"] == ["output/课件_final.html"]
+
+
+def test_briefing_absent_without_ledger_and_on_ungated_tools() -> None:
+    """直连使用（无账本）恒等返回；取证收尾类工具不注入简报。"""
+    server = _commands_server([RESUMED_STATE])
+    result = asyncio.run(server.agent_run("生成课件"))
+    assert "briefing" not in result
+
+    gated_server = _commands_server([RESUMED_STATE])
+    gated_server.ledger = ResourceLedger(InteractionPolicy())
+    info = asyncio.run(gated_server.get_agent_info())
+    assert "briefing" not in info
+
+
+def test_gate_refusal_carries_briefing() -> None:
+    """拒绝载荷同享简报——拒的是动作，简报告诉决策体接下来去哪。"""
+    captured: dict = {}
+    server = _commands_server([RESUMED_STATE], captured=captured)
+    server.ledger = ResourceLedger(InteractionPolicy(dispatch=1))
+    asyncio.run(server.agent_run("生成课件"))
+
+    refused = asyncio.run(server.agent_run("生成课件"))
+    assert refused["error"]["type"] == "BudgetExhausted"
+    assert refused["briefing"]["resources"]["sut_calls"] == "7/8"  # 合计面已耗 1
+
+
+def test_state_tracker_resets_across_tasks_and_feeds_idle() -> None:
+    """观察时间线随任务换新（reset_task_state）；连续同值观察产生 idle 计时。"""
+    import time as _time
+
+    server = _commands_server([RESUMED_STATE, RESUMED_STATE])
+    server.ledger = ResourceLedger(InteractionPolicy())
+    asyncio.run(server.read_thread_state("th-1"))
+    _time.sleep(0.01)
+    second = asyncio.run(server.read_thread_state("th-1"))
+    assert server._tracker.idle_for_s() is not None  # 两次同值观察界定「持续」
+    assert second["briefing"]["sut_state"]["idle_for_s"] is not None  # 简报可见（取整呈现）
+
+    server.reset_task_state()
+    assert server._tracker.last_busy is None  # 新任务无观察，不串上一任务状态

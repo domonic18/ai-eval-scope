@@ -20,6 +20,11 @@ from urllib.parse import urlparse
 import httpx
 
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec, truncate
+from agent_eval.agent.executor.briefing import (
+    ARBITRATION_VERDICTS,
+    SutStateTracker,
+    build_briefing,
+)
 from agent_eval.agent.executor.ledger import ResourceLedger
 from agent_eval.core.exceptions import (
     AgentEvalError,
@@ -90,6 +95,37 @@ def tool_guard(
 
     return wrapper
 
+
+def briefing_enriched(
+    fn: Callable[..., Awaitable[dict[str, Any]]],
+) -> Callable[..., Awaitable[dict[str, Any]]]:
+    """动作工具出口统一过 ``_enrich_result``（arch/16 §5.1 挂点 b）。
+
+    叠在 tool_guard 之上（guard 先把通道异常转 failed，简报随后照常注入
+    ——拒绝载荷同样需要指路）；方法层而非导出层（_json_tool）：直调与
+    LangChain 导出两条路径行为一致。
+    """
+
+    @functools.wraps(fn)
+    async def wrapper(self: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        result = await fn(self, *args, **kwargs)
+        return self._enrich_result(result, tool=fn.__name__)
+
+    return wrapper
+
+
+# 决策简报注入面（arch/16 §5.1 挂点 b）：对外部世界的昂贵动作 + 取证动作——
+# 每次执行后刷新，决策体在下一轮看的是最新现实；取证收尾类工具
+# （answer_sut_questions/cancel_run/get_agent_info/create_thread）不注入
+_BRIEFING_TOOLS = frozenset(
+    {
+        "agent_run",
+        "agent_run_stream",
+        "run_on_thread",
+        "read_thread_state",
+        "download_sut_file",
+    }
+)
 
 TOOL_SPECS: list[ToolSpec] = [
     ToolSpec(
@@ -184,6 +220,9 @@ class AgentProtocolToolServer(ToolExporterMixin):
         # 的旧路径不受影响）；ExecutionAgent 逐任务注入新实例（账本随任务生灭，
         # reset_task_state 不清它——换新即清零）
         self.ledger: ResourceLedger | None = None
+        # SUT 状态观察时间线（arch/16 §5.1 决策简报素材）——reset_task_state
+        # 逐任务换新，与账本同节奏
+        self._tracker = SutStateTracker()
 
     def _record_last_run(self, result: dict[str, Any], input: Any = None) -> None:
         """记录最近一次 run 的状态/线程/回答文本（截断前原文，供 trace 落盘）。
@@ -213,6 +252,12 @@ class AgentProtocolToolServer(ToolExporterMixin):
             "input": input,
             "pending": pending,
         }
+        # run 完成即活动：观察时间线记一笔（idle 计时从此刻起算）——简报
+        # sut_state 的素材与 last_run 同源，不需要决策体另行拼凑
+        self._tracker.observe(
+            (result.get("status") or run.get("status")) == "running",
+            str(self.last_run["text"] or ""),
+        )
 
     def reset_task_state(self) -> None:
         """任务起点清账（ExecutionAgent._clear_stale_tool_state 统一调用）。
@@ -220,10 +265,11 @@ class AgentProtocolToolServer(ToolExporterMixin):
         last_run 单槽与超时计数都是任务集共享实例上的任务级状态——跨任务
         残留轻则串台（v4.12），重则让下一任务被误判超时预算耗尽。
         ledger 例外：账本随任务生灭，由 ExecutionAgent 在任务起点注入新实例
-        （换新即清零），此处不清。
+        （换新即清零），此处不清。观察时间线同属任务级状态，此处换新。
         """
         self.last_run = None
         self._timeout_errors.clear()
+        self._tracker = SutStateTracker()
 
     def _timeout_budget_blocked(self) -> dict[str, Any] | None:
         """超时预算耗尽 → 返回拒绝载荷（不再触网）；未耗尽返回 None。"""
@@ -259,6 +305,51 @@ class AgentProtocolToolServer(ToolExporterMixin):
                 action, outcome, duration_s=time.monotonic() - started, summary=summary
             )
 
+    def _log_decision(self, action: str, verdict: str | None, rationale: str | None) -> None:
+        """仲裁决策落台账（arch/16 §5.2：结论为受控枚举 + rationale 供复盘）。"""
+        ledger = self.ledger
+        if ledger is None or ledger.evidence is None:
+            return
+        ledger.evidence.log(
+            "decision",
+            action=action,
+            verdict=verdict,
+            rationale=truncate(rationale, 500) if rationale else None,
+        )
+
+    def _rationale_refusal(self) -> dict[str, Any]:
+        """催促缺 rationale 的资格拒绝（arch/16 §5.2 十二连催病理的机械对应物）。
+
+        rationale 是资格不是额度——缺理由不消耗催促额度，也不触网；额度闸门
+        管「还能催几次」，本闸门管「每次催促必须是决策而非习惯」。
+        """
+        error = {
+            "budget": "nudge_rationale",
+            "message": (
+                "run_on_thread 缺少 rationale 参数——催促必须引用简报证据"
+                "（sut_state：空闲时长/产物候选/待答反问）说明为何此刻打扰 SUT。"
+                "先 read_thread_state 取证补充依据，再决定是否催促。"
+            ),
+        }
+        if self.ledger is not None and self.ledger.evidence is not None:
+            self.ledger.evidence.log("gate_refusal", action="nudge", **error)
+        return {"status": "failed", "error": {"type": "NudgeRationaleRequired", **error}}
+
+    def _enrich_result(self, result: Any, *, tool: str) -> Any:
+        """挂点 b（arch/16 §5.1）：动作工具结果统一前置决策简报。
+
+        仅账本就位（ExecutionAgent 驱动）时注入——gate 拒绝载荷同享简报
+        （拒的是动作，简报告诉决策体接下来该去哪）；直连使用（无账本）
+        恒等返回，行为不变。
+        """
+        if self.ledger is None or tool not in _BRIEFING_TOOLS or not isinstance(result, dict):
+            return result
+        result.setdefault(
+            "briefing",
+            build_briefing(ledger=self.ledger, tracker=self._tracker, last_run=self.last_run),
+        )
+        return result
+
     def _register_timeout_or_reraise(self, error: AgentProtocolTimeoutError) -> dict[str, Any]:
         """登记一次 SUT 调用超时；预算未耗尽则原样抛出（tool_guard 转 failed 结果）。"""
         self._timeout_errors.append(str(error))
@@ -267,6 +358,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             return blocked
         raise error
 
+    @briefing_enriched
     @tool_guard
     async def agent_run(
         self,
@@ -293,6 +385,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         self._record_last_run(result, input)
         return bounded_result(result)
 
+    @briefing_enriched
     @tool_guard
     async def agent_run_stream(
         self,
@@ -333,20 +426,30 @@ class AgentProtocolToolServer(ToolExporterMixin):
         """创建多轮会话线程。"""
         return await self.channel.create_thread(self._merge_metadata(metadata))
 
+    @briefing_enriched
     @tool_guard
     async def run_on_thread(
         self,
         thread_id: str,
         input: dict[str, Any] | str,
         metadata: dict[str, Any] | None = None,
+        rationale: str | None = None,
     ) -> dict[str, Any]:
-        """在既有线程上执行一轮。"""
+        """在既有线程上执行一轮（催促/续跑必须附 rationale——每次打扰都应是决策）。
+
+        rationale 缺失即拒绝且不耗额度（NudgeRationaleRequired，资格闸门）；
+        提供则落 decision 台账（verdict 缺省 stalled——催促的前提判断），
+        供事后复盘每一次催促的依据（arch/16 §5.2 验收门①）。
+        """
+        if not (isinstance(rationale, str) and rationale.strip()):
+            return self._rationale_refusal()
         blocked = self._timeout_budget_blocked()
         if blocked is not None:
             return blocked
         refused = self._budget("nudge")
         if refused is not None:
             return refused
+        self._log_decision("nudge", "stalled", rationale)
         started = time.monotonic()
         try:
             result = await self.channel.run_on_thread(
@@ -359,17 +462,33 @@ class AgentProtocolToolServer(ToolExporterMixin):
         self._record_last_run(result, input)
         return bounded_result(result)
 
+    @briefing_enriched
     @tool_guard
-    async def read_thread_state(self, thread_id: str) -> dict[str, Any]:
+    async def read_thread_state(
+        self,
+        thread_id: str,
+        verdict: str | None = None,
+        rationale: str | None = None,
+    ) -> dict[str, Any]:
         """只读取证线程当前状态（GET state，不向 SUT 会话注入任何消息）。
 
         run 超时/无产物时的第一动作——先取证再决定是否打扰 SUT：
         thread_busy=false = SUT 已空闲，产物线索看 values（messages 保尾摘要）；
         有路径/链接直接 download_sut_file，无证据才 run_on_thread 索取。
+
+        verdict/rationale（完成仲裁捕获，arch/16 §5.2）：提供即落 decision
+        台账——取证是决策点，结论（complete/progressing/stalled/unknown）
+        与理由必须留痕供复盘；verdict 非法枚举直接拒绝（受控枚举是契约）。
         """
+        if verdict is not None and verdict not in ARBITRATION_VERDICTS:
+            raise ToolExecutionError(
+                f"非法仲裁结论 verdict={verdict!r}（合法: {ARBITRATION_VERDICTS}）"
+            )
         refused = self._budget("state_poll")
         if refused is not None:
             return refused
+        if verdict is not None or rationale:
+            self._log_decision("state_poll", verdict, rationale)
         started = time.monotonic()
         state = await self.channel.thread_state(thread_id)
         if state is None:
@@ -379,19 +498,19 @@ class AgentProtocolToolServer(ToolExporterMixin):
                 "thread_id": thread_id,
                 "note": "线程不存在（commands 形态首个 run.start 才隐式建线程）",
             }
-        self._ledger_record(
-            "state_poll",
-            "ok",
-            started,
-            summary={"thread_busy": bool(state.get("next") or [])},
-        )
+        values = state.get("values") or {}
+        busy = bool(state.get("next") or [])
+        # 观察时间线记一笔（bounded_result 截断前的全量摘要——摘要稳定是
+        # idle 判定的前提，截断后的字符串反而可能抖动）
+        self._tracker.observe(busy, json.dumps(values, ensure_ascii=False, default=str))
+        self._ledger_record("state_poll", "ok", started, summary={"thread_busy": busy})
         return bounded_result(
             {
                 "status": "success",
                 "thread_id": thread_id,
-                "thread_busy": bool(state.get("next") or []),
+                "thread_busy": busy,
                 "pending_questions": pending_ask_questions(state, self.channel.sut.interrupt_types),
-                "values": state.get("values") or {},
+                "values": values,
             }
         )
 
@@ -437,6 +556,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
         """能力与 schema 发现。"""
         return await self.channel.get_agent_info(agent_id)
 
+    @briefing_enriched
     @tool_guard
     async def download_sut_file(
         self,
