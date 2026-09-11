@@ -10,8 +10,9 @@ import pytest
 
 from agent_eval.core.exceptions import AgentProtocolError, SUTAuthError
 from agent_eval.execution.auth.session import SUTSession
-from agent_eval.execution.channels import thread_commands
-from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel, _iter_sse
+from agent_eval.execution.channels import agent_protocol
+from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
+from agent_eval.execution.channels.sse import iter_sse
 from agent_eval.execution.registry import (
     AuthConfig,
     AuthExtractConfig,
@@ -134,7 +135,8 @@ def test_run_stream_deadline_raises_when_keepalive_feeds_connection(
     keepalive 注释帧不产生事件且喂住连接（read timeout 永不触发）——回归
     SUT 反问暂停场景（2026-09 卡死事故同类）。
     """
-    monkeypatch.setattr(thread_commands, "SSE_DEADLINE_EXTRA_S", 0.0)
+    # runs 形态 stream 定义在 agent_protocol 模块，常量 patch 其自身命名空间
+    monkeypatch.setattr(agent_protocol, "SSE_DEADLINE_EXTRA_S", 0.0)
 
     async def endless_keepalive():
         while True:
@@ -283,9 +285,7 @@ def test_iter_sse_parses_blocks() -> None:
     async def _collect():
         return [
             item
-            async for item in _iter_sse(
-                FakeStream(["event: a", 'data: {"x": 1}', "", "data: tail"])
-            )
+            async for item in iter_sse(FakeStream(["event: a", 'data: {"x": 1}', "", "data: tail"]))
         ]
 
     events = asyncio.run(_collect())

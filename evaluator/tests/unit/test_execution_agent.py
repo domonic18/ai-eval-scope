@@ -8,6 +8,7 @@ import sys
 import types
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -30,6 +31,7 @@ class FakeGraph:
         self.error = error
         self.fire_callbacks = fire_callbacks
         self.invocations: list[tuple[dict, dict | None]] = []
+        self.create_kwargs: dict | None = None  # create_deep_agent 装配参数（图结构断言用）
 
     async def ainvoke(self, payload: dict, config: dict | None = None):
         self.invocations.append((payload, config))
@@ -47,9 +49,14 @@ class FakeGraph:
 
 
 def _install_fakes(monkeypatch, graph: FakeGraph) -> FakeGraph:
-    """注入伪 deepagents / langchain_core / build_chat_model。"""
+    """注入伪 deepagents / langchain_core / langchain.agents / build_chat_model。"""
     fake_deepagents = types.ModuleType("deepagents")
-    fake_deepagents.create_deep_agent = lambda **kwargs: graph
+
+    def _capture_create(**kwargs):
+        graph.create_kwargs = kwargs
+        return graph
+
+    fake_deepagents.create_deep_agent = _capture_create
     monkeypatch.setitem(sys.modules, "deepagents", fake_deepagents)
 
     class FakeStructuredTool:
@@ -63,6 +70,21 @@ def _install_fakes(monkeypatch, graph: FakeGraph) -> FakeGraph:
     fake_pkg.tools = fake_tools
     monkeypatch.setitem(sys.modules, "langchain_core", fake_pkg)
     monkeypatch.setitem(sys.modules, "langchain_core.tools", fake_tools)
+
+    # langchain.agents.middleware.types（工具面复位中间件的基类）——离线可装配
+    fake_lc = types.ModuleType("langchain")
+    fake_agents = types.ModuleType("langchain.agents")
+    fake_middleware = types.ModuleType("langchain.agents.middleware")
+    fake_mw_types = types.ModuleType("langchain.agents.middleware.types")
+    fake_mw_types.AgentMiddleware = type("AgentMiddleware", (), {})
+    fake_mw_types.ModelRequest = object
+    fake_agents.middleware = fake_middleware
+    fake_middleware.types = fake_mw_types
+    fake_lc.agents = fake_agents
+    monkeypatch.setitem(sys.modules, "langchain", fake_lc)
+    monkeypatch.setitem(sys.modules, "langchain.agents", fake_agents)
+    monkeypatch.setitem(sys.modules, "langchain.agents.middleware", fake_middleware)
+    monkeypatch.setitem(sys.modules, "langchain.agents.middleware.types", fake_mw_types)
 
     monkeypatch.setattr(
         execution_agent_mod,
@@ -247,9 +269,9 @@ def test_prompt_contents(tmp_path) -> None:
 
 def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
     """提示词由 YAML 资产承载（不 hardcode）：结构完整 + 变量替换正确。"""
-    from agent_eval.agent.executor.agent import _load_prompts
+    from agent_eval.agent.executor.prompts import load_prompts
 
-    prompts = _load_prompts()
+    prompts = load_prompts()
     assert set(prompts["task_prompt"]) == {
         "header",
         "input",
@@ -269,14 +291,86 @@ def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
     assert f"最多重试 {agent.config.max_retries} 次" in system_prompt
 
 
-def test_prompt_artifact_acquisition_discipline(tmp_path) -> None:
-    """应答后产物获取纪律入提示词（催促循环防线——run 20260911_010507 教训）。"""
+class _DisciplineStubServer:
+    """带 discipline_key 的伪语义工具注册表（通道纪律拼装断言用）。"""
+
+    def __init__(self, key: str) -> None:
+        self.discipline_key = key
+
+    def to_langchain_tools(self) -> list[Any]:
+        return []
+
+    def describe_tools(self) -> str:
+        return f"- stub_tool（{self.discipline_key} 域）"
+
+
+def test_channel_discipline_follows_tool_surface(tmp_path) -> None:
+    """通道纪律与工具面同源（plan/07 G3）：按注册表 discipline_key 拼装。
+
+    深层动机：generic_http 任务的工具面里没有 answer_sut_questions/run_on_thread，
+    其纪律不该出现在那些任务的 system prompt 里（工具面与规则面同源）。
+    """
+    from agent_eval.agent.executor.sut_tools import SUTToolServer
+    from agent_eval.execution.models import SUTToolsConfig
+
+    def _agent_with(key: str) -> ExecutionAgent:
+        return ExecutionAgent(
+            AgentConfig(workspace_dir=tmp_path, max_turns=7),
+            sut_tools=SUTToolServer(SUTToolsConfig(allowed_hosts=[]), workspace_dir=tmp_path),
+            extra_tool_servers=[_DisciplineStubServer(key)],
+        )
+
+    # agent_protocol：反问应答 / 产物获取三步纪律注入（催促循环防线关键词）
+    protocol_prompt = _agent_with("agent_protocol")._build_system_prompt()
+    assert "先回话" in protocol_prompt and "后干活" in protocol_prompt
+    assert "空转催促" in protocol_prompt
+    assert "collect_results 只收集本机" in protocol_prompt  # 通用产物纪律
+
+    # generic_http：模板语义注入，agent-protocol 纪律不混装
+    generic_prompt = _agent_with("generic_http")._build_system_prompt()
+    assert "请求模板" in generic_prompt
+    assert "answer_sut_questions" not in generic_prompt
+    assert "空转催促" not in generic_prompt
+
+    # 无语义注册表（纯 SUT 工具面）：无通道纪律段
+    assert "空转催促" not in _agent(tmp_path)._build_system_prompt()
+
+
+def test_prompt_asset_declares_channel_discipline() -> None:
+    """YAML 资产结构：channel_discipline 段键与语义注册表 discipline_key 对齐。"""
+    from agent_eval.agent.executor.http_tools import GenericHttpToolServer
+    from agent_eval.agent.executor.prompts import load_prompts
+    from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
+    from agent_eval.agent.executor.sut_tools import SUTToolServer
+
+    prompts = load_prompts()
+    assert set(prompts["channel_discipline"]) == {
+        AgentProtocolToolServer.discipline_key,
+        GenericHttpToolServer.discipline_key,
+    }
+    assert SUTToolServer.discipline_key is None
+
+
+def test_build_graph_resets_visible_tool_surface(tmp_path, monkeypatch) -> None:
+    """执行图挂工具面复位中间件：模型可见面 = 自研装配清单（plan/07 G1）。
+
+    深层动机：deepagents 内置虚拟 FS 工具（ls/read_file/…）additive 混入曾致
+    最后两轮烧在内置 ls 上，且与自研 read_file 同名歧义——复位后内置全剥。
+    """
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
     agent = _agent(tmp_path)
-    system_prompt = agent._build_system_prompt()
-    # 关键词逐段断言（YAML 块标量换行会拆开长短语）
-    assert "先回话" in system_prompt and "后干活" in system_prompt
-    assert "空转催促" in system_prompt
-    assert "collect_results 只收集本机" in system_prompt
+    agent._build_graph()
+    assert graph.create_kwargs is not None
+    middleware = graph.create_kwargs["middleware"]
+    assert len(middleware) == 1
+    assert middleware[0].name == "ExecutionToolsetFilter"
+    # 伪环境下工具是 {"name": ...} dict；真环境是 LangChain Tool 对象
+    allowed_names = {t["name"] if isinstance(t, dict) else t.name for t in middleware[0]._allowed}
+    # 允许集恰为 SUT 工具面（真实 read_file），不含任何 deepagents 内置名
+    assert {"scan_directory", "read_file", "list_files", "collect_results", "write_package"} <= (
+        allowed_names
+    )
+    assert "ls" not in allowed_names and "glob" not in allowed_names
 
 
 def test_graph_built_once_and_reused(tmp_path, monkeypatch) -> None:

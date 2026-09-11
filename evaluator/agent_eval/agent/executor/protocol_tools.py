@@ -25,10 +25,8 @@ from agent_eval.core.exceptions import (
     ToolExecutionError,
 )
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
-from agent_eval.execution.channels.thread_commands import (
-    ask_question_tool_call_ids,
-    compact_messages,
-)
+from agent_eval.execution.channels.interrupts import ask_question_tool_call_ids
+from agent_eval.execution.channels.message_digest import compact_messages
 
 # 工具结果中大体量字段的截断上限（上下文经济性，非业务阈值）
 VALUES_MAX_CHARS = 4000
@@ -114,6 +112,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
     """Agent Protocol 语义工具注册表，绑定一个 AgentProtocolChannel。"""
 
     TOOL_SPECS = TOOL_SPECS
+    discipline_key = "agent_protocol"  # 通道专属纪律段（execution_agent_prompts.yaml）
 
     def __init__(
         self,
@@ -409,10 +408,27 @@ def _messages_tail_json(messages: list[dict[str, Any]], budget: int) -> str:
     return json.dumps([marker, *kept], ensure_ascii=False, default=str)
 
 
+def _values_tail_json(values: dict[str, Any], budget: int) -> str:
+    """values 外壳 + messages 的复合载荷保尾弃头（与消息列表同病同治）。
+
+    values（state 终态）是 {messages: [...], ...} 复合结构——整表 dumps 再
+    头部截断同样会把最新一条 SUT 回复挤出窗口，故 messages 用同一保尾预算
+    序列化，外壳其余键 dumps 计入预算开销（过半则先头部截断）。
+    """
+    shell = {k: v for k, v in values.items() if k != "messages"}
+    shell_json = json.dumps(shell, ensure_ascii=False, default=str)
+    if len(shell_json) > budget // 2:
+        shell_json = truncate(shell_json, budget // 2)
+    messages_budget = budget - len(shell_json) - 20  # 组合键名/括号序列化开销
+    tail = _messages_tail_json(values.get("messages") or [], max(messages_budget, 200))
+    combined = {**json.loads(shell_json), "messages": json.loads(tail)}
+    return json.dumps(combined, ensure_ascii=False, default=str)
+
+
 def bounded_result(result: dict[str, Any]) -> dict[str, Any]:
     """截断大体量字段（values/messages 先摘要化再文本化），保留状态与产出物结构。
 
-    消息列表走保尾弃头（_messages_tail_json）——最新一条 SUT 回复必须留在
+    消息列表与 values 复合载荷走保尾弃头——最新一条 SUT 回复必须留在
     窗口内；其余字段维持头部截断语义。
     """
     bounded = dict(result)
@@ -424,6 +440,8 @@ def bounded_result(result: dict[str, Any]) -> dict[str, Any]:
             digest = _digest_payload(bounded[field])
             if isinstance(digest, list):
                 bounded[field] = _messages_tail_json(digest, VALUES_MAX_CHARS)
+            elif isinstance(digest, dict) and isinstance(digest.get("messages"), list):
+                bounded[field] = _values_tail_json(digest, VALUES_MAX_CHARS)
             else:
                 bounded[field] = truncate(
                     json.dumps(digest, ensure_ascii=False, default=str), VALUES_MAX_CHARS

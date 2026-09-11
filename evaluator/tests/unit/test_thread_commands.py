@@ -10,14 +10,16 @@ import pytest
 from pydantic import ValidationError
 
 from agent_eval.core.exceptions import AgentProtocolError
-from agent_eval.execution.channels import thread_commands
+from agent_eval.execution.channels import commands_stream, thread_commands
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
-from agent_eval.execution.channels.thread_commands import (
+from agent_eval.execution.channels.interrupts import (
     ask_question_tool_call_ids,
-    compact_messages,
-    final_ai_text,
-    messages_from_input,
     pending_ask_questions,
+    unrecognized_interrupt_types,
+)
+from agent_eval.execution.channels.message_digest import compact_messages, final_ai_text
+from agent_eval.execution.channels.thread_commands import (
+    messages_from_input,
     respond_input_envelope,
 )
 from agent_eval.execution.registry import AuthConfig, SUTSystemConfig
@@ -246,7 +248,8 @@ def test_commands_stream_deadline_breaks_endless_keepalive(
     2026-09 卡死事故回归）。跳出后终态与文本由 state 轮询收口。
     """
     monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
-    monkeypatch.setattr(thread_commands, "SSE_DEADLINE_EXTRA_S", 0.0)
+    # SSE_DEADLINE_EXTRA_S 由 commands_stream 模块消费，patch 其定义处（plan/07 拆分）
+    monkeypatch.setattr(commands_stream, "SSE_DEADLINE_EXTRA_S", 0.0)
 
     async def endless_keepalive():
         while True:
@@ -379,6 +382,106 @@ def test_pending_ask_questions_extracts_from_tasks_and_top_level() -> None:
         == []
     )
     assert pending_ask_questions(None) == []
+
+
+def test_pending_ask_questions_honors_configured_interrupt_types() -> None:
+    """识别集可配：非 ask_question 形态的 SUT 中断按 sut.interrupt_types 识别。"""
+    state = {
+        "tasks": [
+            {
+                "interrupts": [
+                    {
+                        "id": "int-9",
+                        "value": {
+                            "type": "select_option",
+                            "questions": [{"question": "选择交付格式", "options": []}],
+                        },
+                    }
+                ]
+            }
+        ]
+    }
+    # 缺省集不识别（sasan 契约≠协议标准）；显式配置后识别
+    assert pending_ask_questions(state) == []
+    questions = pending_ask_questions(state, interrupt_types=["ask_question", "select_option"])
+    assert len(questions) == 1
+    assert questions[0]["interrupt_id"] == "int-9"
+
+
+def test_unrecognized_interrupt_types_lists_unknown_sorted() -> None:
+    """超时诊断：线程上挂着的未配置中断类型按序透出，识别集内的不算。"""
+    state = {
+        "tasks": [
+            {
+                "interrupts": [
+                    {"id": "a", "value": {"type": "approval"}},
+                    {"id": "b", "value": {"type": "ask_question"}},
+                    {"id": "c", "value": {"type": "budget_confirm"}},
+                ]
+            }
+        ]
+    }
+    assert unrecognized_interrupt_types(state) == ["approval", "budget_confirm"]
+    assert unrecognized_interrupt_types(state, interrupt_types=["ask_question", "approval"]) == [
+        "budget_confirm"
+    ]
+    assert unrecognized_interrupt_types(None) == []
+
+
+def test_poll_state_timeout_reports_unrecognized_interrupts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """「run 超时」的真因可见：错误 details 透出未识别中断类型（plan/07 G2）。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    stuck_state = {
+        "next": ["tools"],
+        "tasks": [{"interrupts": [{"id": "i-1", "value": {"type": "human_approval"}}]}],
+        "values": {"messages": []},
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r4"}})
+        return httpx.Response(200, json=stuck_state)
+
+    channel = _channel(_sut(timeout=0.1), handler)
+    with pytest.raises(AgentProtocolError, match="run 超时") as exc_info:
+        asyncio.run(channel.run("hi"))
+    assert exc_info.value.details.get("unrecognized_interrupts") == ["human_approval"]
+
+
+def test_run_interrupted_by_configured_custom_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
+    """接入新 SUT：interrupt_types 配置扩展后，自定义中断按 interrupted 收口。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    custom_state = {
+        "next": ["tools"],
+        "tasks": [
+            {
+                "interrupts": [
+                    {
+                        "id": "int-7",
+                        "value": {
+                            "type": "select_option",
+                            "questions": [{"question": "输出格式?", "options": [{"value": "pdf"}]}],
+                        },
+                    }
+                ]
+            }
+        ],
+        "values": {"messages": []},
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r5"}})
+        return httpx.Response(200, json=custom_state)
+
+    sut = _sut(timeout=1.0, interrupt_types=["select_option"])
+    channel = _channel(sut, handler)
+    result = asyncio.run(channel.run("生成报告"))
+    assert result["status"] == "interrupted"
+    assert result["questions"][0]["question"] == "输出格式?"
+    assert result["questions"][0]["interrupt_id"] == "int-7"
 
 
 def test_ask_question_tool_call_ids_from_tool_calls_and_content_blocks() -> None:

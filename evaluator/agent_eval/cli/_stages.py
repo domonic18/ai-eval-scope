@@ -246,11 +246,16 @@ def execute_stage(
             cast(GenericHttpChannel, channel),
             default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
         )
-    else:
+    elif sut.channel == "agent_protocol":
         sut_tools = AgentProtocolToolServer(
-            # create_channel 静态返回基类；非 generic_http 恒为该子类
+            # create_channel 静态返回基类；agent_protocol 恒为该子类
             cast(AgentProtocolChannel, channel),
             default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
+        )
+    else:
+        # CHANNEL_TYPES 含预留通道（browser 等）——通道排期外不静默装配工具面
+        raise AgentEvalError(
+            f"通道 {sut.channel!r} 未接入执行 Agent 工具面（已接入：generic_http / agent_protocol）"
         )
     # 文件工具面用安全默认集（invoke_* 裸调用工具不进 LLM 面，SUT 交互唯一
     # 出口是通道语义工具）；allowed_hosts 仅在显式恢复 invoke_http_sut 时生效

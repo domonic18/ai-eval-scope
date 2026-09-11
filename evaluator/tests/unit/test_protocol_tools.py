@@ -367,6 +367,27 @@ def test_bounded_result_short_messages_kept_intact() -> None:
     assert "已截断" not in dumped
 
 
+def test_bounded_result_values_payload_keeps_tail_symmetrically() -> None:
+    """values 复合载荷（外壳 + messages）保尾弃头与消息列表同病同治（plan/07 P3）。
+
+    整表 dumps 头部截断会把 values.messages 里最新回复挤出窗口——长历史 +
+    短最新回复时最易触发。
+    """
+    from agent_eval.agent.executor.protocol_tools import bounded_result
+
+    messages = [{"role": "human", "content": f"历史 {i}：" + "垫" * 700} for i in range(12)]
+    messages.append({"role": "ai", "content": "完成，产物在 /w/课件.html"})
+    values = {"next": [], "total_messages": 13, "messages": messages}
+    result = bounded_result({"values": values})
+    dumped = result["values"]
+    assert isinstance(dumped, str)
+    assert len(dumped) <= 4000 + 120
+    assert "/w/课件.html" in dumped  # values.messages 最新回复可见
+    assert "条历史消息已省略" in dumped
+    assert "历史 0：" not in dumped  # 头部确实被弃
+    assert "total_messages" in dumped  # 外壳字段保留
+
+
 # ─── download_sut_file（产物下载落包；arch/03 §4.0.6-b v4.10） ───
 
 

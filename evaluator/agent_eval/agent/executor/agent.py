@@ -4,54 +4,43 @@
 生成 ExecutionPackage。底座为 deepagents 的 create_deep_agent（惰性导入，
 [agent] optional extra）；模型经 build_chat_model 从角色注册表双协议桥接；
 BudgetGuard/SessionLogCallback 以 LangGraph 回调注入（预算/结构化日志）。
+
+本模块只保留装配与执行循环；prompt 构建见 executor/prompts.py，
+包物化与机械守卫见 executor/package_writer.py，transcript 渲染见
+executor/transcript.py（plan/07 G4 拆分）。
 """
 
 from __future__ import annotations
 
-import json
 import time
 from datetime import UTC, datetime
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import structlog
-import yaml
 
 from agent_eval.agent.core.callbacks import BudgetGuard, SessionLogCallback
 from agent_eval.agent.core.model_bridge import build_chat_model
 from agent_eval.agent.core.session import AgentSession
 from agent_eval.agent.core.session_log import SessionLogger
-from agent_eval.agent.executor.sut_tools import SUTToolServer, content_fingerprint
-from agent_eval.config.paths import PACKAGE_ROOT
+from agent_eval.agent.core.tool_filter import build_toolset_filter
+from agent_eval.agent.executor.package_writer import (
+    ensure_failure_package,
+    finalize_execution_package,
+)
+from agent_eval.agent.executor.prompts import (
+    build_system_prompt,
+    build_task_prompt,
+    extract_instruction,
+)
+from agent_eval.agent.executor.sut_tools import SUTToolServer
 from agent_eval.core.exceptions import (
     AgentError,
     AgentTimeoutError,
     BudgetExceededError,
 )
-from agent_eval.execution.models import AgentConfig, ProcessMetrics, Task, TaskSet
+from agent_eval.execution.models import AgentConfig, Task, TaskSet
 from agent_eval.storage.package import ExecutionPackage, generate_run_id
-
-# 执行 Agent 提示词资产（prompt 在 YAML 中维护，不 hardcode；对齐 summary_prompt.yaml 惯例）
-_PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "execution_agent_prompts.yaml"
-
-
-@lru_cache(maxsize=1)
-def _load_prompts() -> dict[str, Any]:
-    """加载 execution_agent_prompts.yaml → {system_prompt, task_prompt}。"""
-    try:
-        data = yaml.safe_load(_PROMPTS_PATH.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as e:
-        raise AgentError(
-            f"执行 Agent 提示词资产损坏: {_PROMPTS_PATH}（{e}）",
-            details={"path": str(_PROMPTS_PATH)},
-        ) from e
-    if not isinstance(data, dict) or not data.get("system_prompt") or not data.get("task_prompt"):
-        raise AgentError(
-            f"执行 Agent 提示词资产结构不完整（需 system_prompt/task_prompt 两段）: {_PROMPTS_PATH}",
-            details={"path": str(_PROMPTS_PATH)},
-        )
-    return data
 
 
 def _now_iso() -> str:
@@ -61,68 +50,6 @@ def _now_iso() -> str:
 def _is_recursion_error(error: BaseException) -> bool:
     """识别 LangGraph GraphRecursionError（按类名，避免硬依赖 langgraph）。"""
     return type(error).__name__ == "GraphRecursionError"
-
-
-# transcript 单条消息渲染上限——对话记录是可读性过程证据，超长内容（如 SUT
-# 全量线程回传）截断；完整原文在 agent_logs 会话日志里
-_TRANSCRIPT_MESSAGE_MAX_CHARS = 6000
-
-
-def _clip_transcript_text(text: str) -> str:
-    if len(text) <= _TRANSCRIPT_MESSAGE_MAX_CHARS:
-        return text
-    return text[:_TRANSCRIPT_MESSAGE_MAX_CHARS] + "\n\n……（截断）"
-
-
-def _transcript_message_text(message: dict[str, Any]) -> str:
-    """提取消息可展示文本：content 字符串 / 类型块列表仅取 text 块（思考块天然排除）。"""
-    if "repr" in message:  # 序列化兜底形态（非 langchain 消息对象）
-        return str(message["repr"])
-    content = message.get("content")
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        parts = [
-            block.get("text") or ""
-            for block in content
-            if isinstance(block, dict) and block.get("type") == "text"
-        ]
-        return "\n".join(p for p in parts if p.strip())
-    if isinstance(content, dict):
-        return json.dumps(content, ensure_ascii=False, default=str)
-    return ""
-
-
-def _render_transcript_message(message: dict[str, Any]) -> str | None:
-    """渲染单条消息为 Markdown 段；无正文且无工具调用返回 None（段内跳过）。"""
-    mtype = str(message.get("type", "")).lower()
-    text = _transcript_message_text(message).strip()
-    if mtype == "tool":
-        name = message.get("name") or message.get("tool_call_id") or "tool"
-        return "\n".join(
-            [f"工具结果 · {name}", "", "```", _clip_transcript_text(text or "（空）"), "```"]
-        )
-    body: list[str] = []
-    if text:
-        label = "任务提示（发起）" if mtype == "human" else "执行 Agent"
-        body.extend([label, "", _clip_transcript_text(text)])
-    for call in message.get("tool_calls") or []:
-        if not isinstance(call, dict):
-            continue
-        body.append("")
-        body.append(f"**调用工具 `{call.get('name') or 'unknown'}`**")
-        if call.get("args") is not None:
-            body.extend(
-                [
-                    "",
-                    "```json",
-                    _clip_transcript_text(
-                        json.dumps(call["args"], ensure_ascii=False, default=str)
-                    ),
-                    "```",
-                ]
-            )
-    return "\n".join(body) if body else None
 
 
 class ExecutionAgent:
@@ -220,13 +147,7 @@ class ExecutionAgent:
         self.sut_tools.extra_allowed_roots = (
             [Path(task.directory_path)] if task.directory_path else []
         )
-        # 跨任务清账：last_run 是语义工具注册表上的单槽缓存，而实例整个任务集共享
-        # ——本任务 SUT 调用全部失败时不产生新记录，兜底回填/物化会拿到上一任务
-        # 的残留（2026-09-10 实测串台：physics 四次尝试全超时，answer.md 与评估
-        # 对象是 chinese 留下的《春》完成通知，答非所问全 0 分）
-        for server in self.tool_servers:
-            if getattr(server, "last_run", None) is not None:
-                server.last_run = None
+        self._clear_stale_tool_state()
         package_dir = run_packages_root / task.id
         log_dir = workspace / "runs" / run_id / "agent_logs"
 
@@ -238,6 +159,8 @@ class ExecutionAgent:
             graph = self._ensure_graph()
             result = await graph.ainvoke(
                 {"messages": [{"role": "user", "content": self._build_task_prompt(task)}]},
+                # recursion_limit 假设「1 轮 ≈ 2 step（模型 + 工具节点）」——
+                # 深层假设：给执行图加会推进 step 的中间件时须同步校准此倍数
                 config={
                     "recursion_limit": self.config.max_turns * 2,
                     "callbacks": [SessionLogCallback(logger), guard],
@@ -299,80 +222,51 @@ class ExecutionAgent:
             model=build_chat_model(self.config.llm_role, self.config.model),
             tools=tools,
             system_prompt=self._build_system_prompt(),
+            # 工具面复位：create_deep_agent 对内置工具 additive 合并——不清则
+            # StateBackend 虚拟 FS 的 ls/read_file 等混进模型可见面（真实路径
+            # 返回 "No files found"，run 20260911_010507 最后两轮烧在其上），
+            # 且内置 read_file 与自研白名单 read_file 同名歧义。共享实现见
+            # agent/core/tool_filter.py（工作台域同款，中间件名按域区分）
+            middleware=[build_toolset_filter(tools, middleware_name="ExecutionToolsetFilter")],
         )
 
-    # ─── Prompt 构建 ───
-
-    def _describe_all_tools(self) -> str:
-        """汇总全部工具注册表（SUT Tools + 追加注册表）的描述清单。"""
-        return "\n".join(server.describe_tools() for server in self.tool_servers)
+    # ─── Prompt 构建（拼装见 executor/prompts.py，本类仅传参委托） ───
 
     def _build_system_prompt(self) -> str:
-        """System Prompt：角色职责 + 可用工具 + 执行规则 + 输出规范（模板见 execution_agent_prompts.yaml）。"""
-        template: str = _load_prompts()["system_prompt"]
-        return template.format(
-            tools=self._describe_all_tools(),
+        """System Prompt（模板见 execution_agent_prompts.yaml，构建见 executor/prompts.py）。"""
+        return build_system_prompt(
+            tool_servers=self.tool_servers,
             max_turns=self.config.max_turns,
             max_retries=self.config.max_retries,
         )
 
     def _build_task_prompt(self, task: Task) -> str:
-        """Task Prompt：任务输入/转发指令/预期/约束 + 目录模式 + 写包指令（模板见 execution_agent_prompts.yaml）。
+        """Task Prompt（模板见 execution_agent_prompts.yaml，构建见 executor/prompts.py）。"""
+        return build_task_prompt(task, workspace_dir=Path(self.config.workspace_dir))
 
-        forward 段提供确定性的纯文本转发内容——执行 Agent 不再依赖 LLM
-        自行从 JSON 结构中提取 instruction（此前行为不一致，有时传整个 dict）。
+    _extract_instruction = staticmethod(extract_instruction)
+
+    # ─── 工具注册表状态 ───
+
+    def _clear_stale_tool_state(self) -> None:
+        """跨任务清账：last_run 是语义工具注册表上的单槽缓存，而实例整个任务集共享
+        ——本任务 SUT 调用全部失败时不产生新记录，兜底回填/物化会拿到上一任务
+        的残留（2026-09-10 实测串台：physics 四次尝试全超时，answer.md 与评估
+        对象是 chinese 留下的《春》完成通知，答非所问全 0 分）。
         """
-        segments: dict[str, str] = _load_prompts()["task_prompt"]
-        package_dir = Path(self.config.workspace_dir) / task.id
-        instruction_text = self._extract_instruction(task)
-        parts = [
-            segments["header"].format(task_id=task.id),
-            segments["input"].format(
-                task_input=json.dumps(task.input, ensure_ascii=False, indent=2)
-            ),
-            segments["forward"].format(instruction_text=instruction_text),
-        ]
-        if task.expected:
-            parts.append(
-                segments["expected"].format(
-                    expected=json.dumps(task.expected, ensure_ascii=False, indent=2)
-                )
-            )
-        if task.constraints:
-            parts.append(
-                segments["constraints"].format(
-                    constraints=json.dumps(task.constraints, ensure_ascii=False, indent=2)
-                )
-            )
-        if task.input_mode == "directory" and task.directory_path:
-            parts.append(
-                segments["directory_mode"].format(
-                    directory_path=task.directory_path,
-                    file_patterns=task.file_patterns,
-                )
-            )
-        parts.append(segments["footer"].format(package_dir=package_dir))
-        return "\n\n".join(p.rstrip("\n") for p in parts)
+        for server in self.tool_servers:
+            if getattr(server, "last_run", None) is not None:
+                server.last_run = None
 
-    @staticmethod
-    def _extract_instruction(task: Task) -> str:
-        """从 task.input 提取纯文本指令（agent_run 的确定转发内容）。
+    def _last_sut_run(self) -> dict[str, Any] | None:
+        """取工具注册表记录的最近一次 SUT run 摘要（AgentProtocolToolServer.last_run）。"""
+        for server in self.tool_servers:
+            last: dict[str, Any] | None = getattr(server, "last_run", None)
+            if last:
+                return last
+        return None
 
-        - dict 型 input：取 instruction 字段（缺失时取第一个字符串值）
-        - str 型 input：直接返回
-        """
-        if isinstance(task.input, dict):
-            text = task.input.get("instruction", "")
-            if not text:
-                # 兼容无 instruction 键的 input：取第一个非空字符串值
-                for v in task.input.values():
-                    if isinstance(v, str) and v.strip():
-                        text = v
-                        break
-            return str(text).strip()
-        return str(task.input).strip()
-
-    # ─── ExecutionPackage 构建 ───
+    # ─── ExecutionPackage 构建（物化编排见 executor/package_writer.py） ───
 
     async def _build_package(
         self,
@@ -380,25 +274,15 @@ class ExecutionAgent:
         task: Task,
         package_dir: Path,
     ) -> ExecutionPackage:
-        """从 Agent 会话构建 ExecutionPackage。
-
-        Agent 已调用 write_package 时直接加载其产物；否则写入兜底失败包
-        （status=failed，error=未写包说明），再补齐 task/trace/metrics。
-        """
-        if not (package_dir / "manifest.json").exists():
-            await self.sut_tools.write_package(
-                task_id=task.id,
-                success=False,
-                error="Agent 未调用 write_package，已由 ExecutionAgent 兜底写包",
-            )
-        self._ensure_task_file(task, package_dir)
-        self._ensure_trace_file(session, package_dir)
-        self._ensure_answer_file(package_dir)
-        self._ensure_transcript_file(session, task, package_dir)
-        self._ensure_metrics_file(session, package_dir)
-        self._guard_echo_answer(package_dir)
-        self._refresh_content_hash(package_dir)
-        return ExecutionPackage.load(package_dir)
+        """从 Agent 会话构建 ExecutionPackage（补齐/守卫细节见 executor/package_writer.py）。"""
+        return await finalize_execution_package(
+            package_dir,
+            task,
+            session,
+            sut_tools=self.sut_tools,
+            llm_role=self.config.llm_role,
+            last_sut_run=self._last_sut_run(),
+        )
 
     async def _abort(
         self,
@@ -410,183 +294,6 @@ class ExecutionAgent:
     ) -> None:
         """异常路径统一收尾：日志 + 错误执行包（保留 Agent 已写的部分结果）。"""
         logger.log_error(type(error).__name__, str(error))
-        if not (package_dir / "manifest.json").exists():
-            await self.sut_tools.write_package(
-                task_id=task.id,
-                success=False,
-                error=str(error),
-            )
+        await ensure_failure_package(package_dir, task.id, str(error), sut_tools=self.sut_tools)
         logger.log_end(cost_usd=guard.spent_usd, tokens_used=guard.total_tokens)
         logger.close()
-
-    def _ensure_task_file(self, task: Task, package_dir: Path) -> None:
-        task_file = package_dir / "task.json"
-        if not task_file.exists():
-            task_file.write_text(task.model_dump_json(indent=2), encoding="utf-8")
-
-    def _ensure_trace_file(self, session: AgentSession, package_dir: Path) -> None:
-        """写/补全 trace.json（merge 语义）。
-
-        LLM 经 write_package 工具已写入 SUT-run 形态（run_id/thread_id/sut_response/
-        turns_used…）时保留其字段，仅以 setdefault 补充 Agent 过程统计
-        （messages/tool_calls/turns/duration_ms，过程指标数据源）；未写时创建
-        完整骨架并回填 SUT 最终回答。
-        """
-        trace_file = package_dir / "trace.json"
-        trace: dict[str, Any] = {}
-        if trace_file.exists():
-            try:
-                loaded = json.loads(trace_file.read_text(encoding="utf-8"))
-                if isinstance(loaded, dict):
-                    trace = loaded
-            except (OSError, ValueError):
-                trace = {}
-        duration_ms = 0.0
-        try:
-            start = datetime.fromisoformat(session.started_at)
-            end = datetime.fromisoformat(session.finished_at or _now_iso())
-            duration_ms = (end - start).total_seconds() * 1000
-        except ValueError:
-            pass
-        response = trace.setdefault("response", {})
-        if not isinstance(response, dict):
-            response = trace["response"] = {}
-        response.setdefault("messages", len(session.messages))
-        response.setdefault("tool_calls", session.tool_call_count)
-        response.setdefault("turns", session.turns_used)
-        response.setdefault("duration_ms", duration_ms)
-        # 回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象）
-        if "sut" not in response:
-            sut_run = self._last_sut_run()
-            if sut_run is not None:
-                response["sut"] = sut_run
-        trace.setdefault(
-            "request", {"executor": "ExecutionAgent", "llm_role": self.config.llm_role}
-        )
-        trace.setdefault("started_at", session.started_at)
-        trace.setdefault("finished_at", session.finished_at or _now_iso())
-        trace.setdefault("error", None)
-        trace_file.write_text(json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    def _last_sut_run(self) -> dict[str, Any] | None:
-        """取工具注册表记录的最近一次 SUT run 摘要（AgentProtocolToolServer.last_run）。"""
-        for server in self.tool_servers:
-            last: dict[str, Any] | None = getattr(server, "last_run", None)
-            if last:
-                return last
-        return None
-
-    def _guard_echo_answer(self, package_dir: Path) -> None:
-        """机械回显守卫：SUT 返回与请求原文完全一致 → 成功包强制翻转为失败。
-
-        LLM 自觉判回显不可靠（实测 violence_003：Agent 已在 metrics 里记
-        safety_check_passed=false 仍写 success 包）——凡可机械判定的不交给
-        LLM 自觉。answer.md 保留物化，作为评估与排障证据。
-        """
-        last = self._last_sut_run()
-        if last is None:
-            return
-        text = str(last.get("text") or "").strip()
-        sent = str(last.get("input") or "").strip()
-        if not text or not sent or text != sent:
-            return
-        manifest_file = package_dir / "manifest.json"
-        data = json.loads(manifest_file.read_text(encoding="utf-8"))
-        if data.get("status") != "success":
-            return
-        data["status"] = "failed"
-        manifest_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        metadata_file = package_dir / "metadata.json"
-        metadata: dict[str, Any] = {}
-        if metadata_file.exists():
-            try:
-                loaded = json.loads(metadata_file.read_text(encoding="utf-8"))
-                if isinstance(loaded, dict):
-                    metadata = loaded
-            except (OSError, ValueError):
-                metadata = {}
-        metadata["guard_echo"] = True
-        metadata_file.write_text(
-            json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-
-    def _refresh_content_hash(self, package_dir: Path) -> None:
-        """物化完成后重算包内容指纹并回填 manifest（评估缓存键的内容维度）。
-
-        write_package 时 answer/trace/metrics 尚未落盘，当时的指纹恒为空串
-        sha256（实测 run 20260910_034232：16 包同指纹 e3b0c442…，包内容变化
-        无法使缓存失效）。
-        """
-        manifest_file = package_dir / "manifest.json"
-        data = json.loads(manifest_file.read_text(encoding="utf-8"))
-        data["content_hash"] = content_fingerprint(package_dir)
-        manifest_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    def _ensure_answer_file(self, package_dir: Path) -> None:
-        """SUT 回答物化为 output/answer.md（对话型任务无产物文件；评估器按文件收集文本）。"""
-        text = (self._last_sut_run() or {}).get("text") or ""
-        if not text.strip():
-            return
-        output_dir = package_dir / "output"
-        if output_dir.exists() and any(output_dir.iterdir()):
-            return  # SUT 已有产物文件，不重复物化
-        output_dir.mkdir(parents=True, exist_ok=True)
-        (output_dir / "answer.md").write_text(text, encoding="utf-8")
-
-    def _ensure_transcript_file(self, session: AgentSession, task: Task, package_dir: Path) -> None:
-        """执行对话记录物化为包根 transcript.md（与 trace.json 同层的过程证据）。
-
-        answer.md 只承载 SUT 最终回答（评估输入）；本文件补全人类可读的完整过程：
-        当初的任务指令 + 逐条对话（ai 文本，不含思考过程）+ 工具调用（名称与入参）
-        及其结果（含 SUT 反问）。单条超长截断（完整原文见 agent_logs 会话日志）。
-        """
-        lines: list[str] = [
-            "# 执行对话记录",
-            "",
-            f"> 任务 ID: {task.id}。记录执行 Agent 的完整交互过程（不含思考过程），"
-            "单条超长内容截断——完整原文见 agent_logs 会话日志。",
-            "",
-            "## 任务指令",
-            "",
-            _clip_transcript_text(self._extract_instruction(task)),
-            "",
-            "## 对话过程",
-            "",
-        ]
-        seq = 0
-        for message in session.messages:
-            if not isinstance(message, dict):
-                continue
-            section = _render_transcript_message(message)
-            if section is None:
-                continue
-            seq += 1
-            lines.extend([f"### {seq}. {section}", ""])
-        (package_dir / "transcript.md").write_text("\n".join(lines), encoding="utf-8")
-
-    def _ensure_metrics_file(self, session: AgentSession, package_dir: Path) -> None:
-        """写/补全 metrics.json（merge 语义：保留 LLM 已写字段，setdefault 补过程统计）。"""
-        metrics_file = package_dir / "metrics.json"
-        metrics: dict[str, Any] = {}
-        if metrics_file.exists():
-            try:
-                loaded = json.loads(metrics_file.read_text(encoding="utf-8"))
-                if isinstance(loaded, dict):
-                    metrics = loaded
-            except (OSError, ValueError):
-                metrics = {}
-        duration_ms = 0.0
-        try:
-            start = datetime.fromisoformat(session.started_at)
-            end = datetime.fromisoformat(session.finished_at or _now_iso())
-            duration_ms = (end - start).total_seconds() * 1000
-        except ValueError:
-            pass
-        agent_metrics = ProcessMetrics(
-            total_duration_ms=duration_ms,
-            steps=len(session.messages),
-            tool_calls=session.tool_call_count,
-        ).model_dump()
-        for k, v in agent_metrics.items():
-            metrics.setdefault(k, v)
-        metrics_file.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
