@@ -30,6 +30,7 @@ class GenericHttpToolServer(ToolExporterMixin):
     """generic_http 语义工具注册表，绑定一个 GenericHttpChannel。"""
 
     TOOL_SPECS = TOOL_SPECS
+    discipline_key = "generic_http"  # 通道专属纪律段（execution_agent_prompts.yaml）
 
     def __init__(
         self,

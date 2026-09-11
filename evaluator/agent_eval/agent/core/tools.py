@@ -50,6 +50,12 @@ class ToolExporterMixin:
     # 非 ClassVar：子类允许按实例遮蔽（SUTToolServer 按执行面白名单裁剪工具集）
     TOOL_SPECS: list[ToolSpec] = []
 
+    # 通道专属纪律段键（execution_agent_prompts.yaml channel_discipline 段的键）：
+    # 语义工具注册表声明自己的纪律落在哪一段，ExecutionAgent 按注册表拼装
+    # {channel_rules}——工具面与规则面同源，generic_http 任务不背 agent-protocol
+    # 规则噪声（plan/07 G3）。None = 无专属纪律（如 SUTToolServer 文件工具面）。
+    discipline_key: str | None = None
+
     def to_langchain_tools(self) -> list[Any]:
         """导出 LangChain Tool 列表供 DeepAgents 显式绑定。"""
         try:
