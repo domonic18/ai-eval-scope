@@ -154,6 +154,27 @@ def guard_echo_answer(package_dir: Any, last_run: dict[str, Any] | None) -> None
     _write_json_object(metadata_file, metadata)
 
 
+def guard_aborted_manifest(package_dir: Any, error: str) -> None:
+    """异常收尾守卫：任务以异常终止时 manifest 强制翻为 failed。
+
+    LLM 在异常前写入的 success 判定不可信（run 20260911_073626：三个产物
+    下载全败、SUT text 只是「第 2 步完成」进度播报，仍写 success 包，随后
+    保险丝熔断）——「自称成功但异常收场」的包不会被当失败重跑，评分却必然
+    极低，排查方向被带偏。完成与否的最终裁决权在机械壳，不在执行 LLM。
+    已 failed 不动（兜底包 / LLM 自判失败），metadata 记 guard_abort 留痕，
+    与 guard_echo 同款守卫惯例。
+    """
+    metadata_file = package_dir / "metadata.json"
+    metadata = _load_json_object(metadata_file)
+    metadata["guard_abort"] = True
+    manifest_file = package_dir / "manifest.json"
+    data = json.loads(manifest_file.read_text(encoding="utf-8"))
+    if data.get("status") == "success":
+        data["status"] = "failed"
+        _write_json_object(manifest_file, data)
+    _write_json_object(metadata_file, metadata)
+
+
 def refresh_content_hash(package_dir: Any) -> None:
     """物化完成后重算包内容指纹并回填 manifest（评估缓存键的内容维度）。
 
@@ -196,7 +217,9 @@ async def finalize_execution_package(
     Agent 已调用 write_package 时 ensure_failure_package 为 no-op，仅补齐
     其余文件；未调用时先落 status=failed 兜底包再补齐（fallback_error 覆盖
     兜底归因——异常收尾把真实错误写进 manifest，而非「未写包」套话）。
-    成功收尾与异常收尾共用本链：唯一差异是传入的 session 与 fallback_error。
+    成功收尾与异常收尾共用本链：唯一差异是传入的 session 与 fallback_error
+    ——后者额外触发 guard_aborted_manifest（LLM 已写的 success 判定强制
+    翻 failed）。
     """
     await ensure_failure_package(
         package_dir, task.id, fallback_error or FALLBACK_NOT_WRITTEN, sut_tools=sut_tools
@@ -209,6 +232,10 @@ async def finalize_execution_package(
     ensure_transcript_file(session, task, package_dir, instruction_text=extract_instruction(task))
     ensure_metrics_file(session, package_dir)
     guard_echo_answer(package_dir, last_sut_run)
+    if fallback_error is not None:
+        # 异常收尾（fallback_error 仅由 abort 路径传入）：LLM 已写的 success
+        # 判定不可信，强制翻 failed——正常收尾不设此守卫
+        guard_aborted_manifest(package_dir, fallback_error)
     if evidence is not None:
         # 先落证据再算指纹——content_hash 覆盖最终包内容（含 ledger.jsonl）
         evidence.log("close", reason=close_reason)
@@ -225,6 +252,7 @@ __all__ = [
     "ensure_trace_file",
     "ensure_transcript_file",
     "finalize_execution_package",
+    "guard_aborted_manifest",
     "guard_echo_answer",
     "refresh_content_hash",
 ]

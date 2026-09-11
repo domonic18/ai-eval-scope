@@ -238,13 +238,16 @@ def test_run_task_budget_exceeded_preserves_partial_package(tmp_path, monkeypatc
     _install_fakes(monkeypatch, FakeGraph(error=BudgetExceededError("over budget")))
     agent = _agent(tmp_path)
     _fix_run_id(monkeypatch)
-    # 预置 Agent 已写的成功包（部分结果）→ 异常路径不得覆盖
+    # 预置 Agent 已写的成功包（部分结果）→ 包内容与产物保留，但结论被
+    # 异常守卫翻 failed（P2：自称成功但异常收场的包不流入下游）
     agent.sut_tools.workspace_dir = _pkg_root(tmp_path)
     asyncio.run(agent.sut_tools.write_package(task_id="task_1", success=True))
     with pytest.raises(BudgetExceededError):
         asyncio.run(agent.run_task(_task()))
-    manifest = _read_json(_pkg_root(tmp_path) / "task_1" / "manifest.json")
-    assert manifest["status"] == "success"
+    pkg = _pkg_root(tmp_path) / "task_1"
+    manifest = _read_json(pkg / "manifest.json")
+    assert manifest["status"] == "failed"
+    assert _read_json(pkg / "metadata.json")["guard_abort"] is True
 
 
 def test_run_task_generic_error_wrapped(tmp_path, monkeypatch) -> None:

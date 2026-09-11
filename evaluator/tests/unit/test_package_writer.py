@@ -134,6 +134,9 @@ def test_finalize_preserves_existing_package(tmp_path: Path) -> None:
     assert package.manifest.status == "success"  # Agent 的成功判定不被兜底覆盖
     assert sut_tools.calls == []  # write_package 未被调用
     assert (package_dir / "task.json").exists()
+    metadata_file = package_dir / "metadata.json"
+    # 正常收尾不设异常守卫（守卫只在 fallback_error 非 None 时触发，不凭空写 metadata）
+    assert not metadata_file.exists() or "guard_abort" not in _read_json(metadata_file)
 
 
 def test_finalize_fallback_error_not_overriding_llm_error(tmp_path: Path) -> None:
@@ -157,6 +160,61 @@ def test_finalize_fallback_error_not_overriding_llm_error(tmp_path: Path) -> Non
         )
     )
     assert _read_json(package_dir / "trace.json")["error"] == "SUT 侧限流拒绝"
+
+
+def test_abort_flips_llm_success_manifest_to_failed(tmp_path: Path) -> None:
+    """异常收尾守卫（P2，run 20260911_073626 回归）：LLM 在异常前写的
+    success 判定强制翻 failed——「自称成功但异常收场」不再流入下游。
+
+    事故形态：三个产物下载全败、SUT text 只是进度播报，LLM 仍写
+    success 包，随后保险丝熔断——幂等保留让 manifest success 与任务
+    异常终止并存，评估器按「跑成功了但 0 分」误导读数人。
+    """
+    package_dir = tmp_path / "task_1"
+    package_dir.mkdir()
+    _write_manifest(package_dir, PackageStatus.SUCCESS)  # LLM 写的成功包
+    (package_dir / "trace.json").write_text(
+        json.dumps({"response": {"sut": {"text": "✅ 第 2 步完成"}}}), encoding="utf-8"
+    )
+
+    package = asyncio.run(
+        finalize_execution_package(
+            package_dir,
+            _task(),
+            AgentSession(),  # 异常收尾：无会话可恢复
+            sut_tools=_StubPackageWriter(package_dir),
+            llm_role="agent",
+            last_sut_run=None,
+            fallback_error="Agent 执行保险丝触发",
+            close_reason="aborted:AgentTimeoutError",
+        )
+    )
+
+    assert package.manifest.status == "failed"  # LLM 的 success 判定被机械翻转
+    assert _read_json(package_dir / "metadata.json")["guard_abort"] is True
+    # 包内容与证据不动——只翻结论，不毁证据
+    assert _read_json(package_dir / "trace.json")["response"]["sut"]["text"] == "✅ 第 2 步完成"
+
+
+def test_abort_guard_keeps_failed_manifest_and_marks_metadata(tmp_path: Path) -> None:
+    """已 failed 的包（兜底包 / LLM 自判失败）不重复翻转，仅 metadata 留痕。"""
+    package_dir = tmp_path / "task_1"
+    package_dir.mkdir()
+    _write_manifest(package_dir, PackageStatus.FAILED)
+
+    asyncio.run(
+        finalize_execution_package(
+            package_dir,
+            _task(),
+            AgentSession(),
+            sut_tools=_StubPackageWriter(package_dir),
+            llm_role="agent",
+            last_sut_run=None,
+            fallback_error="Agent 会话异常中断",
+        )
+    )
+    assert _read_json(package_dir / "manifest.json")["status"] == "failed"
+    assert _read_json(package_dir / "metadata.json")["guard_abort"] is True
 
 
 def test_finalize_without_evidence_skips_ledger(tmp_path: Path) -> None:
