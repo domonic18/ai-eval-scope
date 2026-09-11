@@ -94,9 +94,14 @@ def declares_interaction_policy(task: Task, task_set: TaskSet | None = None) -> 
 def derive_recursion_limit(policy: InteractionPolicy) -> int:
     """由语义预算推导图保险丝——宽于正常消耗，只兜失控不参与控制。
 
-    语义步 = SUT 交互 + 下载 + 取证轮询（按 1/10 折算）+ 固定余量
+    语义步 = SUT 交互 + 下载 + 取证轮询（全额计入）+ 固定余量
     （取证整理 / write_package / read_file 等非 SUT 交互步）；
     ×2 对齐「1 轮 ≈ 2 step（模型 + 工具节点）」的图步进假设。
+
+    轮询不可折算：每轮 poll 都是完整的模型决策 + 工具执行（实测定级
+    run 20260911_073626：等待 SUT 分段后台生成合法轮询 21 次，1/10 折算
+    使保险丝 50 步在语义预算 21/60 时熔断——违背「宽于语义预算」不变量）。
+    保险丝兜的是无限失控，158 与 50 同样兜得住，晚熔断不损失防线。
     """
-    semantic_steps = policy.sut_calls_total + policy.downloads + policy.state_polls // 10 + 6
+    semantic_steps = policy.sut_calls_total + policy.downloads + policy.state_polls + 6
     return semantic_steps * 2

@@ -826,8 +826,8 @@ def test_recursion_limit_derived_from_declared_policy(tmp_path, monkeypatch) -> 
     task = Task(id="task_1", input={}, constraints={"max_turns": 5})  # max_turns 被忽略
     asyncio.run(agent.run_task(task, task_set=task_set))
     _, config = graph.invocations[0]
-    # (sut_calls_total 4 + downloads 5 + state_polls//10 6 + 余量 6) * 2 = 42
-    assert config["recursion_limit"] == 42
+    # (sut_calls_total 4 + downloads 5 + state_polls 60 全额 + 余量 6) * 2 = 150
+    assert config["recursion_limit"] == 150
 
 
 def test_abort_package_carries_trace_answer_ledger(tmp_path, monkeypatch) -> None:

@@ -131,13 +131,25 @@ class TestDeriveRecursionLimit:
     """保险丝推导：宽于语义预算，只兜图失控。"""
 
     def test_formula(self) -> None:
-        # (sut_calls_total 8 + downloads 5 + state_polls//10 6 + 固定余量 6) * 2 = 50
-        assert derive_recursion_limit(InteractionPolicy()) == 50
+        # (sut_calls_total 8 + downloads 5 + state_polls 60 全额 + 固定余量 6) * 2 = 158
+        assert derive_recursion_limit(InteractionPolicy()) == 158
+
+    def test_polls_counted_in_full_not_discounted(self) -> None:
+        """轮询全额计入（run 20260911_073626 回归）：合法轮询 21 次（42 步）不得熔断。
+
+        1/10 折算时代保险丝 50 步，dispatch 2 + 轮询 42 + 下载 4 + 收尾 2 恰好
+        触顶——语义预算只用 21/60；全额计入后同轨迹余量充足。
+        """
+        policy = InteractionPolicy(state_polls=21)
+        limit = derive_recursion_limit(policy)
+        # (8 + 5 + 21 + 6) * 2 = 80，严格宽于该轨迹的最大合法消耗 50 步
+        assert limit == 80
+        assert limit > 50
 
     def test_scales_with_declaration(self) -> None:
         policy = InteractionPolicy(sut_calls_total=20, downloads=10, state_polls=100)
-        # (20 + 10 + 10 + 6) * 2 = 92
-        assert derive_recursion_limit(policy) == 92
+        # (20 + 10 + 100 + 6) * 2 = 272
+        assert derive_recursion_limit(policy) == 272
 
     def test_fuse_wider_than_declared_sut_calls(self) -> None:
         """保险丝恒宽于语义预算——正常消耗永不触顶。"""
