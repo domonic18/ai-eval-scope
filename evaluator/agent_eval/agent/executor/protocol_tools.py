@@ -40,6 +40,11 @@ EVENT_DATA_MAX_CHARS = 500
 MAX_STREAM_EVENTS = 100
 # 产物单文件下载上限（流式累计，超限即中止——防 SUT 指向超大文件耗尽磁盘/预算）
 DOWNLOAD_MAX_BYTES = 50 * 1024 * 1024
+# 【临时停用 2026-09-11，用户指示】staging 网关对 SUT 报告的产物路径（file:///workspace/...）
+# 统一回 SPA 前端壳，下载必然失败且空烧执行步数（run 20260911_073626：3 连败促成
+# 收尾拖延）——评测执行期间暂停下载功能，工具入口直接返回带收尾指引的 failed 结果
+# （不触网、不耗下载预算）。恢复下载：置 True 即可，原逻辑无改动。
+SUT_FILE_DOWNLOAD_ENABLED = False
 # SPA 前端壳嗅探窗口（网关 fallback 页面远小于此）
 SPA_SNIFF_BYTES = 4096
 # 同任务 SUT 调用超时重试上限（机械守卫，不依赖 LLM 自觉——v4.8 哲学）：
@@ -444,7 +449,24 @@ class AgentProtocolToolServer(ToolExporterMixin):
         机械边界（不依赖 LLM 自觉）：相对路径按 base_url 解析；绝对 URL 的 host
         必须在白名单（base_url 域 ∪ sut.artifact_hosts）内，防 SUT 返回恶意地址；
         流式累计字节超 DOWNLOAD_MAX_BYTES 即中止。文件名经 basename 拍平防路径逃逸。
+
+        【临时停用】SUT_FILE_DOWNLOAD_ENABLED=False 期间入口直接返回带收尾指引的
+        failed 结果——不触网、不耗下载预算（停用缘由见常量注释）。
         """
+        if not SUT_FILE_DOWNLOAD_ENABLED:
+            self._ledger_record("download", "disabled", time.monotonic(), summary=url)
+            return {
+                "status": "failed",
+                "error": {
+                    "type": "ToolDisabled",
+                    "message": (
+                        "download_sut_file 临时停用（SUT 网关产物路径暂不可达，下载必然失败）。"
+                        "不要重试下载；把产物路径与 SUT 回复原文作为证据，直接 "
+                        "write_package 收尾（成功与否据已收集到的证据如实判定）"
+                    ),
+                },
+                "url": url,
+            }
         refused = self._budget("download")
         if refused is not None:
             return refused

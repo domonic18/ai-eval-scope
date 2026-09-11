@@ -26,6 +26,13 @@ WAIT_PAYLOAD = {
 }
 
 
+@pytest.fixture(autouse=True)
+def _downloads_enabled_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
+    """生产默认停用下载（SUT_FILE_DOWNLOAD_ENABLED=False，临时措施）——本模块
+    单测恢复开启以验证下载行为；停用行为单独测（见 test_download_disabled_*）。"""
+    monkeypatch.setattr(protocol_tools, "SUT_FILE_DOWNLOAD_ENABLED", True)
+
+
 def _server(workspace_dir: Path | None = None, **sut_kwargs) -> AgentProtocolToolServer:
     defaults: dict[str, Any] = dict(
         name="cw",
@@ -646,6 +653,36 @@ def test_download_requires_workspace(tmp_path: Path) -> None:
     result = asyncio.run(server.download_sut_file("/f/a.pdf", "t1"))
     assert result["status"] == "failed"
     assert "workspace" in result["error"]["message"]
+
+
+# ─── 下载临时停用（SUT_FILE_DOWNLOAD_ENABLED=False，2026-09-11 用户指示） ───
+
+
+def test_download_disabled_returns_guidance_without_budget_or_network(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """停用期间入口即拒：不触网、不耗下载预算，指引写包收尾；证据流记 disabled。"""
+    monkeypatch.setattr(protocol_tools, "SUT_FILE_DOWNLOAD_ENABLED", False)  # 盖过 autouse
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, content=b"should-not-be-fetched")
+
+    server = _download_server(handler, tmp_path)
+    ledger = ResourceLedger(InteractionPolicy())
+    evidence = EvidenceLedger()
+    ledger.evidence = evidence
+    server.ledger = ledger
+
+    result = asyncio.run(server.download_sut_file("/files/课件.html", "t1"))
+    assert result["status"] == "failed"
+    assert result["error"]["type"] == "ToolDisabled"
+    assert "临时停用" in result["error"]["message"]
+    assert "write_package" in result["error"]["message"]  # 收尾指引随载荷透出
+    assert not requests  # 未发起任何网络请求
+    assert ledger.counters["download"] == 0  # 停用尝试不消耗下载额度
+    assert evidence.events[-1]["outcome"] == "disabled"  # 证据流留痕
 
 
 # ─── 超时重试机械守卫（TimeoutBudgetExhausted，v4.17） ───
