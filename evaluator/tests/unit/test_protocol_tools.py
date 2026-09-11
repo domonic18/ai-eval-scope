@@ -335,6 +335,38 @@ def test_bounded_result_digest_drops_reasoning_keeps_answers() -> None:
     assert "R" * 10 not in dumped
 
 
+def test_bounded_result_messages_keep_tail_drop_head() -> None:
+    """多轮线程摘要保尾弃头：最新 SUT 回复（含产物路径）必须留在窗口内。"""
+    from agent_eval.agent.executor.protocol_tools import bounded_result
+
+    messages = [{"role": "human", "content": f"历史消息 {i}：" + "垫" * 600} for i in range(10)]
+    messages.append(
+        {"role": "ai", "content": "课件已生成：/workspace/agent/一元二次方程_公式法_课件.html"}
+    )
+    result = bounded_result({"status": "success", "messages": messages})
+    dumped = result["messages"]
+    assert isinstance(dumped, str)
+    assert len(dumped) <= 4000 + 80  # 省略标记占用额外长度
+    assert "一元二次方程_公式法_课件.html" in dumped  # 最新回复可见
+    assert "条历史消息已省略" in dumped  # 头部以占位标记省略
+    assert "历史消息 0：" not in dumped  # 头部确实被弃
+
+
+def test_bounded_result_short_messages_kept_intact() -> None:
+    """预算内的短消息全量保留，不追加省略标记。"""
+    from agent_eval.agent.executor.protocol_tools import bounded_result
+
+    messages = [
+        {"role": "human", "content": "生成课件"},
+        {"role": "ai", "content": "课件已完成"},
+    ]
+    result = bounded_result({"messages": messages})
+    dumped = result["messages"]
+    assert "生成课件" in dumped and "课件已完成" in dumped
+    assert "已省略" not in dumped
+    assert "已截断" not in dumped
+
+
 # ─── download_sut_file（产物下载落包；arch/03 §4.0.6-b v4.10） ───
 
 

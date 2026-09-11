@@ -269,6 +269,16 @@ def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
     assert f"最多重试 {agent.config.max_retries} 次" in system_prompt
 
 
+def test_prompt_artifact_acquisition_discipline(tmp_path) -> None:
+    """应答后产物获取纪律入提示词（催促循环防线——run 20260911_010507 教训）。"""
+    agent = _agent(tmp_path)
+    system_prompt = agent._build_system_prompt()
+    # 关键词逐段断言（YAML 块标量换行会拆开长短语）
+    assert "先回话" in system_prompt and "后干活" in system_prompt
+    assert "空转催促" in system_prompt
+    assert "collect_results 只收集本机" in system_prompt
+
+
 def test_graph_built_once_and_reused(tmp_path, monkeypatch) -> None:
     graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
     agent = _agent(tmp_path)

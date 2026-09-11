@@ -386,17 +386,47 @@ def _digest_payload(value: Any) -> Any:
     return value
 
 
+def _messages_tail_json(messages: list[dict[str, Any]], budget: int) -> str:
+    """消息序列化保尾弃头：预算从最新消息向前分配，历史头部以占位标记省略。
+
+    整表 dumps 再头部截断在多轮线程上会把最新一条 SUT 回复（往往携带产物路径
+    或完成声明）挤出窗口——执行 Agent「看不见」交付物便空转催促（run
+    20260911_010507 实测：12 次催促烧尽 20 轮，文件路径始终不可见）。最新一条
+    无条件保留（compact 后单条文本 ≤ COMPACT_TEXT_MAX_CHARS，预算必然容纳）。
+    """
+    kept: list[dict[str, Any]] = []
+    used = 2  # JSON 数组方括号
+    for message in reversed(messages):
+        chunk = json.dumps(message, ensure_ascii=False, default=str)
+        if kept and used + len(chunk) + 1 > budget:
+            break
+        kept.insert(0, message)
+        used += len(chunk) + 1
+    omitted = len(messages) - len(kept)
+    if omitted <= 0:
+        return json.dumps(kept, ensure_ascii=False, default=str)
+    marker = json.dumps({"note": f"（前 {omitted} 条历史消息已省略）"}, ensure_ascii=False)
+    return json.dumps([marker, *kept], ensure_ascii=False, default=str)
+
+
 def bounded_result(result: dict[str, Any]) -> dict[str, Any]:
-    """截断大体量字段（values/messages 先摘要化再文本化），保留状态与产出物结构。"""
+    """截断大体量字段（values/messages 先摘要化再文本化），保留状态与产出物结构。
+
+    消息列表走保尾弃头（_messages_tail_json）——最新一条 SUT 回复必须留在
+    窗口内；其余字段维持头部截断语义。
+    """
     bounded = dict(result)
     for field in ("values", "messages", "text"):
         if field in bounded and bounded[field] is not None:
             if isinstance(bounded[field], str):
                 bounded[field] = truncate(bounded[field], VALUES_MAX_CHARS)
+                continue
+            digest = _digest_payload(bounded[field])
+            if isinstance(digest, list):
+                bounded[field] = _messages_tail_json(digest, VALUES_MAX_CHARS)
             else:
                 bounded[field] = truncate(
-                    json.dumps(_digest_payload(bounded[field]), ensure_ascii=False, default=str),
-                    VALUES_MAX_CHARS,
+                    json.dumps(digest, ensure_ascii=False, default=str), VALUES_MAX_CHARS
                 )
     if "error" in bounded and isinstance(bounded["error"], dict):
         message = bounded["error"].get("message")
