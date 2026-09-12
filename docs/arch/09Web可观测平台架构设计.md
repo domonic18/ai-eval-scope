@@ -684,6 +684,9 @@ Authorization: Bearer eval-xxxxx
 > `metrics` 为动态键值对象，键由对应 scenario 的 `MetricDefinition.id` 定义，不再强制固定 `DR/CPR/avg_reward/condR`。courseware 场景仍上报这些指标 id，但 Web 后端不再把它们映射到 `Run` 的固定列，而是存入 `Run.metrics` JSONB；同时回填 `dr/cpr/avgReward/...` 遗留列以兼容旧版查询（迁移完成后可删除回填逻辑）。
 > `run_config_snapshot_id` 必须在 run 事件到达前由评估器通过 `POST /api/v1/run-config-snapshots` 预创建并上传快照内容。
 - `tier` 枚举须与评估器 `ConstraintTier` 四档完全一致：`hard_gate | hard_score | soft | preference`（`hard_score` = 硬性评分，失败归零；曾因 schema 漏列该档导致真实评估被拒，已纳入回归测试）。
+- `artifact.kind` 枚举：`screenshot | judge_record | output | trace | manifest | transcript`。
+  `transcript`（v1.8 新增）= 样本执行对话记录（包根 `transcript.md`，markdown）——前端按
+  kind 分流到「对话过程」tab 渲染；枚举只增不改，旧版评估器不受影响。
 - `project_id`/`batch_id` 可为 `null`（未指定项目时用 Key 所属项目）。
 **该 schema 文件同时拷贝到评估器 `evaluator/agent_eval/observability/schemas/`，作为双方契约并由 CI 校验一致性**（NF-O-13 防漂移）。
 
@@ -858,6 +861,7 @@ evaluator/agent_eval/observability/
 | `SampleResult` + `scores.json` | `sample` | `sample_id → external_sample_id`；`metrics → Record<metric_id/stage_id, number>`（替代固定 `s_format/s_common/s_soft/s_pref/reward`）；`dimensions` 从 scores.json |
 | `ConstraintResult`（rule_results.json 元素） | `constraint` | `constraint_id/rule_id/name/tier/status/passed/score/reason/details/duration_ms/judge_*` 直传；`judge_record_path → judge_record_object_key`（制品上传后替换） |
 | 截图 / 原始产出物 / JudgeRecord / trace.json | `artifact` | 上传后生成 `object_key`，附 `kind/md5/size/content_type` |
+| 包根 `transcript.md`（执行对话记录） | `artifact` | `kind="transcript"`（v1.8）；上传白名单三组之一（`output/*`、包根技术 json、transcript.md）——文件不存在（手动 pack 包）自动跳过，eval_only 不受影响 |
 | Langfuse `trace_id` | run 字段 | `tracing.get_current_trace_id()` 透传 |
 
 > **字段名对齐**：评估器序列化的 `passed`/`rule_id`（见现状 `rule_results.json`）与 dataclass `to_dict` 的 `status`/`constraint_id` 存在差异——`events.py` 统一以**事件 schema**为准输出，兼容两种来源，确保后端只认 schema。
@@ -1068,6 +1072,10 @@ LIMIT $4;
 - **页面映射**：ProjectList/ProjectDetail/RunDetail/TaskDetail 等页面**新建**（Sprint 7a 的本地查看器前端已移除），数据源为 Query API；目录模式（DirectoryTree/ModuleScoreTable）按 `module_results` 字段切换。
 - **样本 Tab（项目页）**：项目页新增「样本」Tab——样本清单表（`externalSampleId` / 最近评估时间 / 最近 Reward / 评估次数 / 状态 / 内容版本）；点样本进入样本走势视图：该样本 `reward` 跨 run 走势图（复用 LineChart）+ 历次评估明细表（时间 / run / reward / s_format / s_common / 状态 / `content_hash`）。与运行视图互补：运行视图看「每次评估评了什么」，样本视图看「每个样本随时间的演进」。
 - **制品预览**：任务详情页对 `artifact.kind`（screenshot/judge_record/output）提供预览，经 `GET /api/artifacts/:id/preview` 取 URL——image 走 presigned 直链，html/text/trace 走同源 raw 代理（`/raw?token=`，见 §5.4）。
+- **样本明细证据扩展（原始问题 + 对话过程，v1.8）**：SampleDetail 右栏 `PreviewPane` 由三 tab（原始文档/渲染截图/执行 Trace）扩为五 tab：
+  - 「原始问题」：`kind="trace"` 且 `originalName == "task.json"` 的制品特判归组——渲染 `input.instruction` 主文本 + `expected`（reference / must_mention）折叠区。task.json 此前已随技术文件上传（kind=trace），但被埋没在 Trace tab 的 JSON 下拉里；数据零新增，只补语义位。
+  - 「对话过程」：`kind="transcript"` 制品（evaluator sink 上传包根 transcript.md）按 markdown 渲染——transcript.md 本为分节人读结构（任务提示 → 执行 Agent → 工具结果 → 反问应答），直接渲染即可，不引入结构化气泡（YAGNI，验证阅读体验后再议）。
+  - **eval_only 兼容**：tab 由制品列表动态生成——手动 pack 包无 transcript 制品则「对话过程」tab 不出现；task.json 由 pack 一并写入，「原始问题」tab 照常可用（eval_only 同样能看到被评估的原始题目）。「执行 Trace」tab 保持现状。
 - **扣分项文件定位与制品联动**：
   - 数据：`ConstraintResult.details.source_files` 标注约束涉及的课件文件（`filename`、`artifact_kind`、`page`、`snippet`）。
   - 匹配：前端用 `matchArtifactByFilename(artifacts, filename)` 将 `filename` 匹配到 sample 制品的 `originalName`。
@@ -1211,3 +1219,4 @@ volumes: { pgdata: {} }
 | v1.5 | 2026-07-13 | 合并结果文件定位与制品联动方案 |
 | v1.6 | 2026-07-13 | 对接 13：Run/Sample 增场景化指标 |
 | v1.7 | 2026-08-27 | 资产化同步：Secrets 拉取与结构重写 |
+| v1.8 | 2026-09-12 | 样本明细证据扩展：artifact.kind 增 transcript（执行对话记录上传）+ SampleDetail「原始问题/对话过程」tab（eval_only 条件渲染兼容） |
