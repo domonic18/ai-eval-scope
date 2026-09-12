@@ -60,13 +60,18 @@ export async function ingest(tenant: Tenant, body: unknown): Promise<IngestOutco
   }
   const batch = body as IngestBatch
 
-  // 3. 跨项目拒绝
+  // 3. 跨项目拒绝（uuid 或 slug 均可——AGENT_EVAL_PROJECT 文档契约允许 slug，Key 归属外的项目一律 403）
   const effectiveProjectId = tenant.projectId!
-  if (batch.project_id && batch.project_id !== effectiveProjectId) {
-    return { status: "forbidden" }
-  }
-
   const prisma = usePrisma()
+  if (batch.project_id && batch.project_id !== effectiveProjectId) {
+    const proj = await prisma.project.findUnique({
+      where: { id: effectiveProjectId },
+      select: { slug: true },
+    })
+    if (batch.project_id !== proj?.slug) {
+      return { status: "forbidden" }
+    }
+  }
   const repo = new IngestRepository(effectiveProjectId)
   const storage = getObjectStorage()
   const logger = getLogger()
