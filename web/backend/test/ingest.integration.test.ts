@@ -10,6 +10,7 @@
  */
 
 import express from "express"
+import request from "supertest"
 import { createApp } from "../src/server"
 import { getPrisma } from "../src/infra/prisma"
 import { requireApiKey } from "../src/middleware/apiKeyAuth"
@@ -244,6 +245,20 @@ describe("#4 跨项目 project_id → PROJECT_FORBIDDEN", () => {
     })
     expect(r.status).toBe(403)
     expect(r.body.code).toBe("PROJECT_FORBIDDEN")
+  })
+
+  it("accepts own project slug as project_id (AGENT_EVAL_PROJECT 契约允许 slug)", async () => {
+    const r = await bearerPost(app, {
+      url: "/api/public/ingest",
+      token: key.token,
+      bodyObj: {
+        schema_version: "1.0",
+        project_id: project.slug, // slug 而非 uuid——评估器 platform.json 存的就是 slug
+        events: [runEvent(uid("r"), uid("ev"))],
+      },
+    })
+    expect(r.status).toBe(202)
+    expect(r.body.accepted).toBe(1)
   })
 })
 
@@ -523,5 +538,107 @@ describe("回归：tier=hard_score + project_id=null（防 7e 集成缺陷）", 
     expect(r.body.accepted).toBe(0)
     expect(r.body.errors.length).toBe(1)
     expect(r.body.errors[0].code).toBe("SCHEMA_INVALID")
+  })
+})
+
+// ── 方向1（arch/09 §7.5 / arch/13 §5.3）：run 事件自动注册场景资产 ──
+// 快照只补缺：scenarios 行不存在才建；defaults 仅当场景尚无任何版本时从快照创建。
+
+describe("#8 run 事件自动注册场景资产", () => {
+  function runEventWithSnapshot(runId: string, eventId: string, scn: string, defName: string) {
+    return {
+      event_id: eventId,
+      type: "run",
+      data: {
+        external_run_id: runId,
+        mode: "eval_only",
+        status: "completed",
+        metrics: { [`${scn}:reward`]: 0.9 },
+        scenario_id: scn,
+        run_config_snapshot: {
+          run_id: runId,
+          scenario_id: scn,
+          package: { id: scn, version: "2.5.0" },
+          snapshot_hash: `sha256:${uid("h")}`,
+          metric_definitions: [
+            {
+              id: `${scn}:reward`,
+              name: defName,
+              unit: "score",
+              threshold: 0.7,
+              expression: "mean(reward)",
+            },
+          ],
+          aggregation_policy: { id: `${scn}-policy`, scenario_id: scn, stage_weights: [] },
+        },
+      },
+    }
+  }
+
+  it("ingest 后场景与 defaults 自动可见（GET /scenarios/:id/defaults 返回快照指标）", async () => {
+    const scn = `auto-scn-${uid("a")}`
+    const r = await bearerPost(app, {
+      url: "/api/public/ingest",
+      token: key.token,
+      bodyObj: {
+        schema_version: "1.0",
+        events: [runEventWithSnapshot(uid("r"), uid("ev"), scn, "安全拒绝质量")],
+      },
+    })
+    expect(r.status).toBe(202)
+    expect(r.body.accepted).toBe(1)
+
+    const d = await request(app).get(`/api/v1/scenarios/${scn}/defaults`)
+    expect(d.status).toBe(200)
+    const mdefs = d.body.metric_definitions as Array<{ id: string; name: string }>
+    expect(mdefs).toHaveLength(1)
+    expect(mdefs[0].name).toBe("安全拒绝质量")
+    expect(mdefs[0].id).toBe(`${scn}:reward`)
+    expect(d.body.aggregation_policy).toMatchObject({ scenario_id: scn })
+  })
+
+  it("快照只补缺：场景已有 defaults 时，后续 run 的快照不覆盖（文件导入真相源）", async () => {
+    const scn = `auto-scn-${uid("b")}`
+    for (const defName of ["首个定义", "后来的定义"]) {
+      const r = await bearerPost(app, {
+        url: "/api/public/ingest",
+        token: key.token,
+        bodyObj: {
+          schema_version: "1.0",
+          events: [runEventWithSnapshot(uid("r"), uid("ev"), scn, defName)],
+        },
+      })
+      expect(r.status).toBe(202)
+    }
+    const d = await request(app).get(`/api/v1/scenarios/${scn}/defaults`)
+    expect(d.status).toBe(200)
+    expect((d.body.metric_definitions as Array<{ name: string }>)[0].name).toBe("首个定义")
+  })
+
+  it("run 无快照也注册 scenarios 行（defaults 为空数组，前端回退运行快照）", async () => {
+    const scn = `auto-scn-${uid("c")}`
+    const r = await bearerPost(app, {
+      url: "/api/public/ingest",
+      token: key.token,
+      bodyObj: {
+        schema_version: "1.0",
+        events: [
+          {
+            event_id: uid("ev"),
+            type: "run",
+            data: {
+              external_run_id: uid("r"),
+              mode: "eval_only",
+              metrics: {},
+              scenario_id: scn,
+            },
+          },
+        ],
+      },
+    })
+    expect(r.status).toBe(202)
+    const d = await request(app).get(`/api/v1/scenarios/${scn}/defaults`)
+    expect(d.status).toBe(200)
+    expect(d.body.metric_definitions).toEqual([])
   })
 })

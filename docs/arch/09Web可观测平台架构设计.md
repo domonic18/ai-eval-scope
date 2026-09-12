@@ -689,6 +689,12 @@ Authorization: Bearer eval-xxxxx
   kind 分流到「对话过程」tab 渲染；枚举只增不改，旧版评估器不受影响。
 - `project_id`/`batch_id` 可为 `null`（未指定项目时用 Key 所属项目）。
 **该 schema 文件同时拷贝到评估器 `evaluator/agent_eval/observability/schemas/`，作为双方契约并由 CI 校验一致性**（NF-O-13 防漂移）。
+- **run 事件自动注册场景资产（v1.9）**：run 事件携带 `scenario_id` 时摄取侧补缺注册——
+  `scenarios` 行不存在才建；defaults（`metric_definitions` + `aggregation_policy`）仅当该场景
+  尚无任何版本时从 `run_config_snapshot` 创建（labels=`auto-ingest`，version=包版本），
+  并发撞唯一键静默吞掉不拖垮事件事务。快照只补缺、文件导入可覆盖（arch/13 §5.3）——
+  「CLI 建包 → 评测 → 上传 → Web 看结果」主链路零手工导入，场景即资产台可见；
+  已有 defaults 的场景不受影响，run 明细页指标展示以运行快照为准（平台 defaults 仅作最新版覆盖）。
 
 ### 7.2 幂等去重
 
@@ -1220,3 +1226,4 @@ volumes: { pgdata: {} }
 | v1.6 | 2026-07-13 | 对接 13：Run/Sample 增场景化指标 |
 | v1.7 | 2026-08-27 | 资产化同步：Secrets 拉取与结构重写 |
 | v1.8 | 2026-09-12 | 样本明细证据扩展：artifact.kind 增 transcript（执行对话记录上传）+ SampleDetail「原始问题/对话过程」tab（eval_only 条件渲染兼容） |
+| v1.9 | 2026-09-12 | 摄取自动注册场景资产：run 事件携 scenario_id 时补缺建 scenarios 行 + defaults（快照只补缺、文件导入可覆盖）——CLI 主链路零手工导入；ingest project_id 兼容 slug 形态；useScenarioDefaults 失败清空回退运行快照 |
