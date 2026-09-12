@@ -80,13 +80,13 @@ interface SampleData {
   artifacts: ArtifactRow[]
 }
 
-type PreviewMode = "iframe" | "img" | "markdown" | "json" | "text" | "none"
+type PreviewMode = "iframe" | "img" | "markdown" | "json" | "text" | "task" | "none"
 interface PreviewState {
   mode: PreviewMode
   url?: string
   text?: string
 }
-type PrevTab = "doc" | "shot" | "trace"
+type PrevTab = "doc" | "task" | "transcript" | "shot" | "trace"
 
 /** 文件定位（约束→源课件文件），评估器产出 details.source_files（docs/arch/13）。 */
 interface SourceFile {
@@ -98,6 +98,8 @@ interface SourceFile {
 
 /** 制品归属的预览 tab（与 PreviewPane 分组一致）。 */
 function artifactTab(a: ArtifactRow): PrevTab {
+  if (a.kind === "transcript") return "transcript"
+  if (a.kind === "trace" && a.originalName === "task.json") return "task"
   if (a.kind === "trace" || a.contentType.includes("json") || a.kind === "judge_record") return "trace"
   if (a.contentType.startsWith("image") || a.kind === "screenshot") return "shot"
   return "doc"
@@ -149,6 +151,8 @@ export default function SampleDetail() {
   const [previewTab, setPreviewTab] = useState<PrevTab>("doc")
   const [previewSelected, setPreviewSelected] = useState<Record<PrevTab, string>>({
     doc: "",
+    task: "",
+    transcript: "",
     shot: "",
     trace: "",
   })
@@ -533,6 +537,63 @@ function scoreColor(score: number | null): string {
   return "text-red-600"
 }
 
+/** task.json 语义化视图（「原始问题」tab）：发给被测系统的原始问题主文本 + 评估预期（不发给被测方）。 */
+function TaskQuestionView({ text }: { text: string }) {
+  const parsed = useMemo(() => {
+    try {
+      return JSON.parse(text) as {
+        input?: Record<string, unknown>
+        expected?: { reference?: string; must_mention?: string[] } | null
+      }
+    } catch {
+      return null
+    }
+  }, [text])
+
+  if (!parsed) return <CodeBlock title="task.json" code={text} />
+  const entries = Object.entries(parsed.input ?? {}).filter(([, v]) => v !== undefined && v !== null)
+  const expected = parsed.expected
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4">
+      <section className="rounded-lg border bg-background p-5">
+        <h3 className="mb-3 text-sm font-semibold text-muted-foreground">发送给被测系统的原始问题</h3>
+        {typeof parsed.input?.instruction === "string" ? (
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{parsed.input.instruction}</p>
+        ) : null}
+        {entries
+          .filter(([k]) => k !== "instruction")
+          .map(([k, v]) => (
+            <div key={k} className="mt-2 flex gap-2 text-xs text-muted-foreground">
+              <span className="shrink-0 font-medium">{k}</span>
+              <span className="break-all">{typeof v === "string" ? v : JSON.stringify(v)}</span>
+            </div>
+          ))}
+        {!entries.length && <p className="text-sm text-muted-foreground">（任务未声明输入）</p>}
+      </section>
+      {!!(expected?.reference || expected?.must_mention?.length) && (
+        <section className="rounded-lg border border-dashed bg-inset p-4">
+          <h3 className="mb-2 text-xs font-semibold text-muted-foreground">
+            评估预期（仅供参考，不发送给被测系统）
+          </h3>
+          {expected?.reference && (
+            <p className="mb-2 text-xs leading-relaxed text-muted-foreground">参考答案：{expected.reference}</p>
+          )}
+          {!!expected?.must_mention?.length && (
+            <div className="flex flex-wrap gap-1.5">
+              {expected.must_mention.map((m) => (
+                <span key={m} className="rounded bg-accent px-1.5 py-0.5 text-xs text-muted-foreground">
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  )
+}
+
 function PreviewPane({
   artifacts,
   isMultimodal,
@@ -554,13 +615,23 @@ function PreviewPane({
   const groups = useMemo(() => {
     const shot = artifacts.filter((a) => artifactTab(a) === "shot")
     const trace = artifacts.filter((a) => artifactTab(a) === "trace")
-    const used = new Set([...shot, ...trace].map((a) => a.id))
+    const task = artifacts.filter((a) => artifactTab(a) === "task")
+    const transcript = artifacts.filter((a) => artifactTab(a) === "transcript")
+    const used = new Set([...shot, ...trace, ...task, ...transcript].map((a) => a.id))
     const doc = artifacts.filter((a) => !used.has(a.id))
-    return { doc, shot, trace }
+    return { doc, shot, trace, task, transcript }
   }, [artifacts])
 
   const listFor = (t: PrevTab): ArtifactRow[] =>
-    t === "doc" ? groups.doc : t === "shot" ? groups.shot : groups.trace
+    t === "doc"
+      ? groups.doc
+      : t === "shot"
+        ? groups.shot
+        : t === "task"
+          ? groups.task
+          : t === "transcript"
+            ? groups.transcript
+            : groups.trace
 
   const currentList = listFor(tab)
   const currentId = selectedId[tab] || currentList[0]?.id || ""
@@ -581,7 +652,8 @@ function PreviewPane({
         try {
           const resp = await fetch(p.url)
           const text = await resp.text()
-          if (p.contentType.includes("markdown")) setPreview({ mode: "markdown", text })
+          if (artifactTab(current) === "task") setPreview({ mode: "task", text })
+          else if (p.contentType.includes("markdown")) setPreview({ mode: "markdown", text })
           else if (p.contentType.includes("json")) setPreview({ mode: "json", text })
           else setPreview({ mode: "text", text })
         } catch {
@@ -594,7 +666,15 @@ function PreviewPane({
     }
   }, [current])
 
-  const tabs: [PrevTab, string][] = [["doc", "原始文档"], ...(isMultimodal ? [["shot", "渲染截图"] as [PrevTab, string]] : []), ["trace", "执行 Trace"]]
+  // tab 按制品动态显隐（arch/09 v1.8）：无 task/transcript 制品（如 eval_only 手动包）
+  // 不出现对应 tab，eval_only 场景不受影响
+  const tabs: [PrevTab, string][] = [
+    ["doc", "原始文档"],
+    ...(groups.task.length ? [["task", "原始问题"] as [PrevTab, string]] : []),
+    ...(groups.transcript.length ? [["transcript", "对话过程"] as [PrevTab, string]] : []),
+    ...(isMultimodal ? [["shot", "渲染截图"] as [PrevTab, string]] : []),
+    ["trace", "执行 Trace"],
+  ]
   const hasAny = artifacts.length > 0
 
   return (
@@ -634,7 +714,19 @@ function PreviewPane({
         {!hasAny ? (
           <div className="py-8 text-center text-sm text-muted-foreground">该样本暂无可预览的产出物。</div>
         ) : !current ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">暂无{tab === "doc" ? "原始文档" : tab === "shot" ? "渲染截图" : "执行 Trace"}制品</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            暂无
+            {tab === "doc"
+              ? "原始文档"
+              : tab === "shot"
+                ? "渲染截图"
+                : tab === "task"
+                  ? "原始问题"
+                  : tab === "transcript"
+                    ? "对话过程"
+                    : "执行 Trace"}
+            制品
+          </div>
         ) : loading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">加载中…</div>
         ) : preview.mode === "iframe" ? (
@@ -643,6 +735,8 @@ function PreviewPane({
           <div className="mx-auto max-w-2xl">
             <img src={preview.url} alt="screenshot" className="w-full rounded-lg border" />
           </div>
+        ) : preview.mode === "task" ? (
+          <TaskQuestionView text={preview.text ?? ""} />
         ) : preview.mode === "markdown" ? (
           <article className="mx-auto max-w-3xl rounded-lg border bg-background p-6 text-sm leading-relaxed [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_p]:mb-2 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-inset [&_pre]:p-3 [&_code]:font-mono [&_code]:text-xs [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_strong]:font-semibold">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
