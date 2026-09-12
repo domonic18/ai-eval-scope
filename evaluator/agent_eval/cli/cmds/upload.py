@@ -70,8 +70,10 @@ def upload_run(
     env_override: dict[str, str] = {}
     if project:
         env_override["AGENT_EVAL_PROJECT"] = project
-    # upload 子命令默认强制开启上传
-    cfg = load_config(upload_override=True)
+    # upload 子命令默认强制开启上传（env_override 需并入进程 env 一并传入，否则 --project 不生效）
+    import os
+
+    cfg = load_config(upload_override=True, env={**os.environ, **env_override})
     if not cfg.has_credentials():
         rprint("[red]未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY[/red]")
         raise typer.Exit(code=1)
