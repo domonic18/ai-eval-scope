@@ -85,7 +85,7 @@ export default function RunDetail() {
   const [overview, setOverview] = useState<OverviewData | null>(null)
   const toast = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const defaultDefs = useScenarioDefaults(run?.scenarioId ?? "courseware")
+  const defaultDefs = useScenarioDefaults(run?.scenarioId)
 
   useEffect(() => {
     if (!id) return
