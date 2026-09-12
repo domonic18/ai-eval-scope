@@ -280,6 +280,12 @@ class ResultSink:
         ]
         _upload(tech_files, kind="trace")
 
+        # ③ 执行对话记录：包根 transcript.md（前端「对话过程」栏，arch/09 v1.8）。
+        # 手动 pack 包无此文件，is_file() 天然跳过——eval_only 场景不受影响
+        transcript = package_dir / "transcript.md"
+        if transcript.is_file():
+            _upload([(transcript, transcript.name, str(package_dir))], kind="transcript")
+
         # 兼容：无 output/ 且无技术文件（极简包/异常布局）→ 扫整包为 output
         if not events:
             for f in sorted(package_dir.rglob("*")):

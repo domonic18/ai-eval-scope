@@ -159,3 +159,32 @@ class TestContentTypeFor:
         assert _content_type_for(Path("a.webp")) == "image/webp"
         assert _content_type_for(Path("a.csv")) == "text/csv"
         assert _content_type_for(Path("a.zzz")) == "application/octet-stream"
+
+
+class TestTranscriptUpload:
+    def test_transcript_uploaded_as_transcript_kind(self, tmp_path: Path) -> None:
+        """包根 transcript.md → kind="transcript"（arch/09 v1.8「对话过程」栏）。"""
+        sink, client = _make_sink(tmp_path)
+        root = _make_pkg_set(tmp_path, ["t"])
+        (root / "t" / "transcript.md").write_text("# 执行对话记录\n", encoding="utf-8")
+        events = sink._upload_package_artifacts(
+            root / "t",
+            "r",
+            _samples(["t"]),
+            SimpleNamespace(artifacts_uploaded=0, artifacts_failed=0),
+        )
+        tx = [(ct, name) for _, kind, ct, name in client.uploads if kind == "transcript"]
+        assert tx == [("text/markdown", "transcript.md")]
+        assert len(events) == 7  # answer.md + 5 技术文件 + transcript.md
+
+    def test_manual_pack_without_transcript_skips(self, tmp_path: Path) -> None:
+        """手动 pack 包（无 transcript.md）不产生 transcript 制品——eval_only 不受影响。"""
+        sink, client = _make_sink(tmp_path)
+        root = _make_pkg_set(tmp_path, ["manual"])
+        sink._upload_package_artifacts(
+            root / "manual",
+            "r",
+            _samples(["manual"]),
+            SimpleNamespace(artifacts_uploaded=0, artifacts_failed=0),
+        )
+        assert not any(kind == "transcript" for _, kind, _, _ in client.uploads)
