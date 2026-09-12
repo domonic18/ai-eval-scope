@@ -14,7 +14,7 @@ from typing import Any
 
 from agent_eval.config import PIPELINE_DEFAULTS
 from agent_eval.core.exceptions import EvaluationError, ScenarioError
-from agent_eval.core.types import ConstraintTier, EvalStatus
+from agent_eval.core.types import ConstraintTier, EvalStatus, PackageStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.models import MetricsReport, SampleResult, StageResult
 from agent_eval.evaluation.registry import EvaluatorRegistry
@@ -205,6 +205,21 @@ class PipelineEngine:
                 return cached
 
         sample_id = context.get("sample_id", "unknown")
+
+        # 执行失败包短路（失败语义分层：执行失败 ≠ 评得低分）
+        # manifest.status=failed 表示包未执行完成（半张卷子）——残留产物打出的分数
+        # 只会误导，不进 stage 评估、reward 0.0，由 metrics 侧从分母剔除。
+        # partial（部分产物）仍有评估价值，照常评估。
+        pkg_status = getattr(getattr(sample, "manifest", None), "status", None)
+        if pkg_status == PackageStatus.FAILED:
+            result = SampleResult(
+                sample_id=sample_id,
+                status=EvalStatus.RUN_ERROR,
+                content_hash=context.get("content_hash"),
+            )
+            self._cache[cache_key] = result
+            return result
+
         result = SampleResult(
             sample_id=sample_id,
             status=EvalStatus.PASS,
@@ -349,6 +364,12 @@ class PipelineEngine:
     ) -> MetricsReport:
         """从样本结果计算运行级指标并组装 MetricsReport（场景化 metrics dict）。"""
         metrics = self.metrics_calculator.compute(results)
+        # 执行失败率（失败语义分层）：run_error 样本已被指标分母剔除，此处单独暴露
+        # 规模，供报告与可观测面呈现「多少卷子没跑完」。代码侧附加，不动 policy 表达式体系。
+        run_error_count = sum(1 for r in results if r.status == EvalStatus.RUN_ERROR)
+        if results:
+            metrics["run_error_count"] = float(run_error_count)
+            metrics["error_rate"] = run_error_count / len(results)
         return self._build_report(results, metrics, run_id=run_id)
 
     def _build_report(

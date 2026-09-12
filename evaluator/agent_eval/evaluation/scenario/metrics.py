@@ -29,6 +29,15 @@ _SCALAR_FIELDS = (
 )
 
 
+def _evaluable(results: list[SampleResult]) -> list[SampleResult]:
+    """剔除执行失败样本（失败语义分层：run_error = 包未执行完成，非内容质量问题）。
+
+    run_error 样本不进任何指标数组、不计入 ``total`` 分母——「评得低分」与「没跑完」
+    语义分离。SKIP 维持现状（在数组取 0.0），不随此剔除扩面。
+    """
+    return [r for r in results if r.status != EvalStatus.RUN_ERROR]
+
+
 class ScenarioMetricsCalculator:
     """声明式批量指标计算器。
 
@@ -50,10 +59,14 @@ class ScenarioMetricsCalculator:
         """计算所有指标，返回 ``Record[metric_id, number]``。"""
         if not self.definitions or not results:
             return {}
-        ctx = self._build_context(results)
+        evaluated = _evaluable(results)
+        if not evaluated:
+            return {}  # 全部执行失败：无内容质量结果可言，避免 total=0 除零
+        ctx = self._build_context(evaluated)
         return {d.id: safe_eval(d.expression, ctx) for d in self.definitions}
 
     def _build_context(self, results: list[SampleResult]) -> dict[str, Any]:
+        results = _evaluable(results)
         total = len(results)
         ctx: dict[str, Any] = {"total": total}
         if total == 0:

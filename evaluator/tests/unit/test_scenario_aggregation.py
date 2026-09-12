@@ -146,6 +146,45 @@ def test_metrics_empty_results_returns_empty() -> None:
     assert new == {}
 
 
+# ── 失败语义分层：RUN_ERROR 不进指标数组与分母 ────────────────────────────────
+
+
+def _run_error(sid: str) -> SampleResult:
+    """执行失败样本（短路产物）：stage_results 空、reward 0.0。"""
+    r = SampleResult(sample_id=sid, status=EvalStatus.RUN_ERROR)
+    r.reward = 0.0
+    return r
+
+
+def test_metrics_exclude_run_error_from_arrays_and_total() -> None:
+    """RUN_ERROR 样本不进任何数组、不计入 total——mean(reward) 只均可评估样本。"""
+    ok1, ok2 = _make(True, True, sid="a"), _make(False, True, sid="b")
+    ok1.reward, ok2.reward = 0.8, 0.6
+    dead = _run_error("dead")
+
+    computed = ScenarioMetricsCalculator(COURSEWARE_DEFAULT_METRICS).compute([ok1, ok2, dead])
+
+    # 污染则为 (0.8+0.6+0.0)/3 ≈ 0.467；剔除后 (0.8+0.6)/2 = 0.7
+    assert computed["courseware:reward"] == pytest.approx(0.7)
+    # total 剔除 RUN_ERROR：document_rate = count(format_gate)/total = 1/2（污染则 1/3）
+    assert computed["courseware:document_rate"] == pytest.approx(0.5)
+
+
+def test_metrics_all_run_error_returns_empty() -> None:
+    """全部执行失败：无内容质量结果可言，表达式指标整体缺席（防 total=0 除零）。"""
+    computed = ScenarioMetricsCalculator(COURSEWARE_DEFAULT_METRICS).compute(
+        [_run_error("d1"), _run_error("d2")]
+    )
+    assert computed == {}
+
+
+def test_aggregator_run_error_stage_results_empty_naturally_excluded() -> None:
+    """钉住机制：run_error 样本 stage_results 空 → 全阶段 None → reward 归零不进分母。"""
+    out = ScenarioScoreAggregator(COURSEWARE_DEFAULT_POLICY).aggregate(_run_error("dead"))
+    assert out["reward"] == 0.0
+    assert "soft" not in out and "pref" not in out
+
+
 # ── 安全表达式引擎 ─────────────────────────────────────────────────────────────
 
 
