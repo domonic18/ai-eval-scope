@@ -105,6 +105,16 @@ class ExecutionAgent:
             if hasattr(server, "ledger"):
                 server.ledger = ledger
 
+    def _inject_session_key(self, session_key: str) -> None:
+        """向 generic_http 语义工具面注入 once 步会话键（plan/06 M1）。
+
+        键=task.id：once 步会话缓存的多任务隔离由键空间机械保证——与
+        workspace_dir/ledger 同一注入模式，不依赖 Agent 在 metadata 自觉传。
+        """
+        for server in self.tool_servers:
+            if hasattr(server, "current_session_key"):
+                server.current_session_key = session_key
+
     # ─── 对外入口 ───
 
     async def run_task_set(
@@ -203,6 +213,8 @@ class ExecutionAgent:
         policy = resolve_interaction_policy(task, task_set)
         evidence = EvidenceLedger()
         self._inject_ledger(ResourceLedger(policy, evidence))
+        # once 步会话键随任务换新（plan/06 M1）——跨任务不串由键空间保证
+        self._inject_session_key(task.id)
         # 单轨（arch/16 §七 Phase 2）：保险丝恒由 policy 推导——max_turns
         # 旧链退役，constraints.max_turns 声明不再生效（解析层有全局缺省兜底）
         recursion_limit = derive_recursion_limit(policy)

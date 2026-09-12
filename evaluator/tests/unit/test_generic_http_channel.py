@@ -423,3 +423,108 @@ def test_sut_request_budget_gate_blocks_when_total_exhausted() -> None:
     assert refused["error"]["budget"] == "sut_calls_total"
     assert "write_package" in refused["error"]["guidance"]
     assert any(e["kind"] == "sut_call" for e in evidence.events)
+
+
+# ── once 会话续接（plan/06 M1）：sut_request 跨调用共享会话 ──────────────────
+
+
+def _once_channel(handler) -> GenericHttpChannel:
+    steps = [
+        RequestStepConfig(name="create", method="POST", path="/chat/conversations", once=True),
+        RequestStepConfig(
+            name="send",
+            method="POST",
+            path="/chat/conversations/{{ create.data.id }}/messages",
+            body={"content": "{{ input }}"},
+        ),
+    ]
+    sut = _sut(
+        request_template=RequestTemplateConfig(steps=steps),
+        response_mapping={"text": "reply"},
+    )
+    return _channel(sut, handler)
+
+
+def test_sut_request_session_continues_across_calls() -> None:
+    """多轮 sut_request 自动续接：create 只在首轮执行（次轮仅 send）。"""
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        if request.url.path == "/chat/conversations":
+            return httpx.Response(200, json={"data": {"id": "c1"}})
+        return httpx.Response(200, json={"reply": f"回:{json.loads(request.content)['content']}"})
+
+    server = GenericHttpToolServer(_once_channel(handler))
+    server.current_session_key = "t1"
+    first = asyncio.run(server.sut_request("第一问"))
+    second = asyncio.run(server.sut_request("第二问"))
+    assert first["text"] == "回:第一问"
+    assert second["text"] == "回:第二问"
+    assert [r.url.path for r in captured] == [
+        "/chat/conversations",
+        "/chat/conversations/c1/messages",
+        "/chat/conversations/c1/messages",  # 次轮仅 send——create 命中缓存
+    ]
+
+
+def test_sut_request_new_session_rebuilds_conversation() -> None:
+    """new_session=True 显式换会话：create 重新执行。"""
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        if request.url.path == "/chat/conversations":
+            return httpx.Response(200, json={"data": {"id": "c1"}})
+        return httpx.Response(200, json={"reply": "ok"})
+
+    server = GenericHttpToolServer(_once_channel(handler))
+    server.current_session_key = "t1"
+    asyncio.run(server.sut_request("hi"))
+    captured.clear()
+    asyncio.run(server.sut_request("hi", new_session=True))
+    assert captured[0].url.path == "/chat/conversations"
+
+
+def test_sut_request_once_cache_hit_still_counts_sut_call() -> None:
+    """once 次轮命中缓存跳过 create 请求，但仍计一次 sut_call（授权=尝试语义）。"""
+    from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
+    from agent_eval.execution.models import InteractionPolicy
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/chat/conversations":
+            return httpx.Response(200, json={"data": {"id": "c1"}})
+        return httpx.Response(200, json={"reply": "ok"})
+
+    server = GenericHttpToolServer(_once_channel(handler))
+    server.current_session_key = "t1"
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(
+        InteractionPolicy(sut_calls_total=2, dispatch=1, nudges=1), evidence=evidence
+    )
+
+    for _ in range(2):
+        assert asyncio.run(server.sut_request("hi"))["status"] == "success"
+    assert server.ledger is not None
+    assert server.ledger.counters["sut_call"] == 2  # 次轮 create 跳过仍计数
+
+    refused = asyncio.run(server.sut_request("hi"))
+    assert refused["error"]["type"] == "BudgetExhausted"
+
+
+def test_channel_aclose_clears_session_cache() -> None:
+    """aclose 清会话缓存——会话属于单次评测运行，不跨运行存活。"""
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/chat/conversations":
+            return httpx.Response(200, json={"data": {"id": "c1"}})
+        return httpx.Response(200, json={"reply": "ok"})
+
+    channel = _once_channel(handler)
+    asyncio.run(channel.run("hi", metadata={}, session_key="t1"))
+    assert len(channel._session) == 1  # noqa: SLF001
+
+    asyncio.run(channel.aclose())
+    assert len(channel._session) == 0  # noqa: SLF001
+    seen.clear()  # aclose 后会话不存活：再次 run 需重建（仅验证缓存清空）

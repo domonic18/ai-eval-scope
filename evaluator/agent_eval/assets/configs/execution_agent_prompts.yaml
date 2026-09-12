@@ -86,6 +86,11 @@ channel_discipline:
       传给 sut_request，不要尝试构造 URL、HTTP 头或自行解析响应结构（工具已完成）
     - 返回的 text 即被测系统回答文本（对话型任务直接 write_package，无需 collect_results）；
       files 为本机产物路径，逐个 collect_results 收集
+    - 多轮会话自动续接（plan/06 M1）：被测系统配置了会话步时，多次 sut_request
+      自动共享同一会话——第 N 轮直接发新指令即可（如「你上一条回复说了什么」），
+      不要自作主张传 new_session=true；仅当明确要开启全新会话（与此前对话无关）才用
+    - 返回结果若带 session_rebuilt 标记，说明会话曾在服务端过期且已自动重建——
+      此前的会话上下文已丢失，多轮任务按新会话如实记录
     - 模板渲染失败/提取路径未命中属于 SUT 配置层问题（见失败处理），如实写失败包，
       不要反复重试同一请求
 

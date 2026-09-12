@@ -622,6 +622,44 @@ def test_workspace_injected_into_all_tool_servers(tmp_path, monkeypatch) -> None
     assert server.workspace_dir == _pkg_root(tmp_path)
 
 
+def test_session_key_injected_per_task(tmp_path, monkeypatch) -> None:
+    """generic_http 语义工具面逐任务注入 current_session_key=task.id（plan/06 M1）。
+
+    多任务隔离由键空间机械保证；无该属性的工具面（协议/SUT 工具）不受影响。
+    """
+    _fix_run_id(monkeypatch)
+    _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+
+    class _SessionServer:
+        """带 current_session_key 属性的语义工具注册表（如 GenericHttpToolServer）。"""
+
+        current_session_key = None
+
+        def to_langchain_tools(self) -> list:
+            return []
+
+        def describe_tools(self) -> str:
+            return "stub"
+
+    class _PlainServer:
+        """无 current_session_key 属性的注册表（注入应跳过）。"""
+
+        def to_langchain_tools(self) -> list:
+            return []
+
+        def describe_tools(self) -> str:
+            return "stub"
+
+    session_server = _SessionServer()
+    plain_server = _PlainServer()
+    agent = ExecutionAgent(
+        AgentConfig(workspace_dir=tmp_path, max_turns=7),
+        extra_tool_servers=[session_server, plain_server],
+    )
+    asyncio.run(agent.run_task(_task()))
+    assert session_server.current_session_key == "task_1"
+
+
 def test_answer_file_materialized_from_last_run(tmp_path, monkeypatch) -> None:
     _fix_run_id(monkeypatch)
     """SUT 回答物化为 output/answer.md（对话型任务，评估器按文件收集文本）。"""

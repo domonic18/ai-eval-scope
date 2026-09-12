@@ -177,6 +177,12 @@ domain_segments:
          messages[role=assistant].-1.字段。过滤段未命中会 fail-loud 报错，恰可据此
          纠正映射）。单步模板表达不了多步 API——硬塞单步只会反复建会话，
          测试指令从未送达被测系统。
+       - **once 步（会话续接）与 poll 步（异步轮询）同形实测后才可落盘**：
+         once 标注只给「建会话」类步骤——按既有 request 逐步同形实测一次即可；
+         poll 步须实测**首轮响应形态**并从键路径结构树读出终态判定字段（`until`
+         的字段名与取值必须来自实测证据，不得凭想象——服务端状态字段常见
+         state/status/phase，取值常见 succeeded/completed/done，实际以实测为准）；
+         落盘对账门禁同步核对 once/poll 声明与实测证据。
     4. **登录实测与凭证声明**（两步分工）：
        - **第一步 request 实测**：method/url/body 自由构造；body 是 Jinja2 模板
          （如 '{"phone": "{{ username }}", "pwd": "{{ password }}"}'），凭证变量

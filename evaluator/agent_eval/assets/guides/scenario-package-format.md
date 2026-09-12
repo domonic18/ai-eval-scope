@@ -264,14 +264,63 @@ sut:
 steps 链约束：
 - `steps` 与单步 `method`/`path` **二选一**（混用或都缺都会被校验打回）；步骤名须
   唯一且不得为 `input`/`metadata`（模板根变量保留字）；
-- 全部模板叶子**必须引用 `{{ input }}`**（path/headers/body 任一处），否则落盘
+- 全部模板叶子**必须引用 `{{ input }}`**（path/headers/body/until 任一处），否则落盘
   校验打回——测试指令不进模板就从未发送给被测系统；
-- 变量空间仅 `input`、`metadata` 与**前序**步骤名（拼错或前向引用都会在落盘前打回）；
+- 变量空间仅 `input`、`metadata` 与**前序**步骤名（poll 步的 `until` 可自引用本步；
+  拼错或前向引用都会在落盘前打回）；
+- 末步不可为 `once`（`response_mapping` 作用于末步，会话续轮无响应可提取）；
 - 链中任一步 ≥400 即整体 failed（错误带步骤名）；
 - **`text` 已配置但路径未命中/取 null → failed**（错误带响应体摘录，据此修正路径），
   不再静默兜底整包——纯文本 API 请把 `response_mapping` 留空，整个响应体即回答；
 - SSE 流式末步（`text/event-stream`）自动解析 `data:` 帧为 `events` 列表；未配置
   mapping 时整段原文即回答。
+
+**会话续接（once 步，plan/06 M1）**：建会话类步骤标 `once: true`——响应跨
+`sut_request` 调用缓存，多轮任务同一会话续问，不再每轮重建会话丢失上下文：
+
+```yaml
+    steps:
+      - name: create
+        method: POST
+        path: /chat/conversations
+        once: true                        # 仅会话首轮执行，续轮引用缓存值
+        body: {student_id: null}
+      - name: send
+        method: POST
+        path: /chat/conversations/{{ create.data.id }}/messages   # 写法不变
+        body: {content: "{{ input }}"}
+```
+
+执行语义：会话键由执行框架按任务注入（多任务隔离自动保证）；once 步缓存命中
+即跳过请求（仍计一次 SUT 调用——授权按尝试计）；非 once 步 404 且会话缓存非空
+（服务端会话过期）自动清缓存整链重建一次，结果标注 `session_rebuilt: true`，
+重建仍 404 才 failed（带两轮证据）。会话缓存随运行 `aclose` 全清，不跨运行存活。
+
+**异步轮询（poll 步，plan/06 M2）**：提交 job → 轮询 status → 取结果的任务型
+API 用 `poll` 声明轮询步——反复执行直到 `until` 渲染为真（true/1/yes）或超时：
+
+```yaml
+    steps:
+      - name: submit
+        method: POST
+        path: /jobs
+        body: {prompt: "{{ input }}"}
+      - name: status
+        method: GET
+        path: /jobs/{{ submit.data.job_id }}
+        poll:
+          until: "{{ status.data.state == 'succeeded' }}"   # 本步响应自引用可见
+          interval_s: 3
+          timeout_s: 300    # 防呆上界 900；须小于任务级超时预算
+      - name: fetch
+        method: GET
+        path: /jobs/{{ submit.data.job_id }}/result
+```
+
+执行语义：do-while（先发请求再判终态）；轮询中单次 ≥400 不立即失败（受理后
+短暂不一致是常态），持续至终态或超时；超时整体 failed（`poll_timeout`，错误带
+最后响应摘录与尝试次数）；`until` 引用未声明变量在落盘前打回，渲染错误
+fail-loud。`once` 与 `poll` 互斥（落盘校验打回）。
 
 **提取路径语法（response_mapping.text / token_path / output_paths 共用）**：
 - 负下标取末元素：`data.messages.-1.content` 与 `data.messages[-1].content` 等价；

@@ -150,6 +150,24 @@ def _normalize_http_method(v: str) -> str:
     return upper
 
 
+class PollConfig(BaseModel):
+    """链式请求模板的轮询步配置（plan/06 M2，异步任务型 API）。
+
+    do-while 语义：先发请求再判终态——``until`` 渲染结果（strip+lower）为
+    true/1/yes 即通过；轮询中 ≥400 不立即失败（受理后短暂不一致是常态），
+    超时整体 failed 并带最后响应证据。
+    """
+
+    until: str = Field(
+        description="终态判定 Jinja2 表达式（本步响应自引用可见，如"
+        " {{ status.data.state == 'succeeded' }}）；渲染为 true/1/yes 即通过"
+    )
+    interval_s: float = Field(default=3.0, gt=0, description="轮询间隔（秒）")
+    timeout_s: float = Field(
+        default=300.0, gt=0, le=900, description="轮询超时（秒；防呆上界 900）"
+    )
+
+
 class RequestStepConfig(BaseModel):
     """链式请求模板的单步定义（arch/03 §4.2）。
 
@@ -165,6 +183,15 @@ class RequestStepConfig(BaseModel):
     body: Any = Field(
         default=None,
         description="请求体：dict 直发 JSON；str 须为合法 JSON 文本；字符串值支持模板",
+    )
+    once: bool = Field(
+        default=False,
+        description="会话步（plan/06 M1）：响应跨 sut_request 调用缓存，仅会话首轮执行"
+        "（建会话类步骤标 true，多轮续接由通道会话存储保证）",
+    )
+    poll: PollConfig | None = Field(
+        default=None,
+        description="轮询步（plan/06 M2）：反复执行直到 until 渲染为真或超时（异步任务型 API）",
     )
 
     @field_validator("name")
@@ -182,6 +209,14 @@ class RequestStepConfig(BaseModel):
     @classmethod
     def _normalize_method(cls, v: str) -> str:
         return _normalize_http_method(v)
+
+    @model_validator(mode="after")
+    def _check_once_poll_mutual(self) -> RequestStepConfig:
+        if self.once and self.poll is not None:
+            raise ValueError(
+                f"步骤 {self.name}: once 与 poll 互斥（once=只执行一次，poll=反复执行到终态）"
+            )
+        return self
 
 
 class RequestTemplateConfig(BaseModel):
@@ -225,6 +260,11 @@ class RequestTemplateConfig(BaseModel):
             raise ValueError("request_template 需要单步（method/path）或 steps 列表（二选一）")
         if len({s.name for s in self.steps}) != len(self.steps):
             raise ValueError("request_template.steps 存在重复步骤名")
+        if self.steps and self.steps[-1].once:
+            raise ValueError(
+                f"request_template.steps 末步 {self.steps[-1].name!r} 不可为 once——"
+                "response_mapping 作用于末步，会话续轮末步命中缓存即无响应可提取"
+            )
         return self
 
 
@@ -352,6 +392,7 @@ def _template_variables(shape: dict[str, Any]) -> set[str]:
     strings = _collect_template_strings(shape.get("path"))
     strings += _collect_template_strings(shape.get("headers") or {})
     strings += _collect_template_strings(shape.get("body"))
+    strings += _collect_template_strings(shape.get("poll") or {})  # 含 until 终态表达式
     variables: set[str] = set()
     for source in strings:
         try:
@@ -379,6 +420,10 @@ def _template_audit_errors(rt: dict[str, Any]) -> list[str]:
     declared: set[str] = set()
     all_variables: set[str] = set()
     for step_name, shape in step_shapes:
+        is_poll = isinstance(shape.get("poll"), dict)
+        if step_name and is_poll:
+            # poll 步 until 可自引用本步响应（do-while 先发请求再判终态）
+            declared.add(step_name)
         variables = _template_variables(shape)
         all_variables |= variables
         for bad in sorted(variables - {"input", "metadata", *declared}):
