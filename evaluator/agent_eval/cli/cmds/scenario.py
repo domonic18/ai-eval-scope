@@ -51,7 +51,10 @@ def _scaffold(ref: str, output: Path | None, template: str, force: bool) -> Path
         f"  id: {package_id}-default\n"
         f"  scenario_id: {scenario}\n"
         "  stage_weights: []         # TODO: rules/ cascade 的每个 stage 各声明一条\n"
-        "                            # {stage_id, weight, is_gate}——未声明的阶段分数不计入 reward\n"
+        "                            # {stage_id, weight, is_gate, skip_tiers_in_reward}\n"
+        "                            # ——未声明的阶段分数不计入 reward；软约束阶段\n"
+        "                            # （LLM 质量分）声明 skip_tiers_in_reward:\n"
+        "                            # [hard_gate, hard_score] 只按软分计入 reward\n"
         "  normalize_to: [0.0, 1.0]\n"
         "metric_definitions: []      # TODO: 按需声明场景指标（expression 表达式）\n"
     )
@@ -375,10 +378,13 @@ def scenario_validate(
     problems: list[str] = []
     # 资源目录按包形态判定（运行时真相）：清单声明 default_task_set = 在线 SUT
     # 形态，考卷来自 task_sets/、datasets 不参与（内置 chat 包即无 datasets/）；
-    # 未声明 = 离线文件形态，datasets/ 必需
+    # 未声明 = 离线文件形态，datasets/ 必需。在线形态 task_sets/ 同样必需——
+    # 缺失此前一路绿灯到运行时才炸（指南 §1：task_sets/ 在线必需）
     required_dirs = ["rules", "prompts"]
     if manifest.default_task_set is None:
         required_dirs.append("datasets")
+    else:
+        required_dirs.append("task_sets")
     for sub in required_dirs:
         d = path / sub
         if not d.is_dir():
@@ -388,6 +394,16 @@ def scenario_validate(
         d = path / sub
         if d.is_dir() and not any(d.glob("*.yaml")):
             problems.append(f"{sub}/ 缺少 YAML 资产（提示词/规则集须为 .yaml）")
+    ts_dir = path / "task_sets"
+    if (
+        manifest.default_task_set is not None
+        and ts_dir.is_dir()
+        and not any([*ts_dir.glob("*.yaml"), *ts_dir.glob("*.yml")])
+    ):
+        problems.append(
+            "task_sets/ 缺少 YAML 考卷（清单声明了 default_task_set: "
+            f"{manifest.default_task_set}，运行时按名加载 task_sets/{manifest.default_task_set}.yaml）"
+        )
 
     rule_files = sorted((path / "rules").glob("*.yaml")) if (path / "rules").is_dir() else []
     for rf in rule_files:

@@ -214,6 +214,21 @@ class TestSandbox:
 
         asyncio.run(run())
 
+    def test_validate_online_requires_task_sets(self, tmp_path: Path) -> None:
+        # 在线形态缺考卷在落盘前打回——此前一路绿灯到运行时才炸（指南 §1 task_sets/ 必需）
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await server.write_file("agent_eval.yaml", MANIFEST + "  default_task_set: default\n")
+            await server.write_file("rules/quality.yaml", RULES)
+            await server.write_file("prompts/judge.yaml", "template_id: j1\nsystem_prompt: x\n")
+            await server.write_file("metrics/policy.yaml", POLICY)
+            result = await server.validate_package()
+            assert not result["ok"]
+            assert any("task_sets" in e for e in result["errors"])
+
+        asyncio.run(run())
+
     def test_list_evaluators_returns_registered_ids(self, tmp_path: Path) -> None:
         server = PackageToolServer(tmp_path)
 
