@@ -21,6 +21,9 @@ from typing import Any
 from agent_eval.execution.models import InteractionPolicy
 
 _SUMMARY_MAX_CHARS = 200
+# 连拒升级阈值：同 action 连续被拒达此次数，拒绝载荷点名收尾路径（Phase 2.1）
+_REFUSAL_ESCALATION_THRESHOLD = 3
+_REFUSAL_ESCALATION_ACTION = "write_package"
 
 
 def _now_iso() -> str:
@@ -258,12 +261,41 @@ class ResourceLedger:
         return time.monotonic() - self.last_nudge_at >= self.policy.nudge_backoff_s
 
     def _refuse(self, action: str, error: dict[str, Any]) -> dict[str, Any]:
+        self.register_refusal(action, error)
         payload: dict[str, Any] = {
             "status": "failed",
             "error": {"type": "BudgetExhausted", **error},
             "ledger_digest": self.budget_digest(),
         }
-        self.refusals.append({"action": action, "error": error})
         if self.evidence is not None:
             self.evidence.log("gate_refusal", action=action, **error)
         return payload
+
+    # ─── 连拒升级（Phase 2.1：重放显示 13 连拒零依从，空转要被点名） ───
+
+    def _refusal_streak(self, action: str) -> int:
+        """尾部连续同 action 拒绝次数（被其它动作打断则清零重计）。"""
+        streak = 0
+        for entry in reversed(self.refusals):
+            if entry.get("action") != action:
+                break
+            streak += 1
+        return streak
+
+    def register_refusal(self, action: str, error: dict[str, Any]) -> str | None:
+        """登记一次闸门拒绝并返回升级语（尾部连拒 ≥3 时非 None）。
+
+        额度闸（``_refuse``）与资格闸（如催促缺 rationale）共用：拒绝不消耗
+        额度，但同 action 连续被拒说明模型在空转——升级语直接点名收尾路径，
+        且就地写进 error（随拒绝载荷与证据流一并可见）。
+        """
+        self.refusals.append({"action": action, "error": error})
+        streak = self._refusal_streak(action)
+        if streak < _REFUSAL_ESCALATION_THRESHOLD:
+            return None
+        escalation = (
+            f"同一动作（{action}）已被连续拒绝 {streak} 次——重复同样的调用不会成功，"
+            f"立即按 guidance 收尾（{_REFUSAL_ESCALATION_ACTION}）。"
+        )
+        error["escalation"] = escalation
+        return escalation

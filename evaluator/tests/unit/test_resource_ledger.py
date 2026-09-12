@@ -174,6 +174,42 @@ class TestResourceLedgerEvidence:
         assert evidence.events[-1]["kind"] == "artifact"
 
 
+class TestRefusalEscalation:
+    """连拒升级（Phase 2.1）：同 action 连拒 ≥3 次点名收尾路径，打断即重计。"""
+
+    def test_refusal_streak_counts_tail_and_resets_on_other_action(self) -> None:
+        ledger = ResourceLedger(InteractionPolicy())
+        for _ in range(3):
+            ledger.register_refusal("nudge", {"budget": "nudge_rationale"})
+        assert ledger._refusal_streak("nudge") == 3
+        ledger.register_refusal("state_poll", {"budget": "state_polls"})
+        assert ledger._refusal_streak("nudge") == 0
+        assert ledger._refusal_streak("state_poll") == 1
+
+    def test_register_refusal_escalates_from_third_consecutive(self) -> None:
+        ledger = ResourceLedger(InteractionPolicy())
+        error = {"budget": "nudge_rationale"}
+        assert ledger.register_refusal("nudge", error) is None
+        assert "escalation" not in error
+        ledger.register_refusal("nudge", {"budget": "nudge_rationale"})
+        escalation = ledger.register_refusal("nudge", {"budget": "nudge_rationale"})
+        assert escalation is not None
+        assert "连续拒绝 3 次" in escalation
+        assert "write_package" in escalation
+
+    def test_refuse_payload_and_evidence_carry_escalation(self) -> None:
+        evidence = EvidenceLedger()
+        ledger = ResourceLedger(InteractionPolicy(state_polls=1), evidence=evidence)
+        assert ledger.authorize("state_poll") is None  # 放行烧尽额度
+        payload = None
+        for _ in range(3):
+            payload = ledger.authorize("state_poll")  # 连续 3 次拒绝
+        assert payload is not None
+        assert "escalation" in _digest(payload)
+        refusal_events = [e for e in evidence.events if e["kind"] == "gate_refusal"]
+        assert "escalation" in refusal_events[-1]
+
+
 class TestEvidenceLedger:
     """证据台账落盘。"""
 

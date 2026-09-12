@@ -321,16 +321,22 @@ class AgentProtocolToolServer(ToolExporterMixin):
         """催促缺 rationale 的资格拒绝（arch/16 §5.2 十二连催病理的机械对应物）。
 
         rationale 是资格不是额度——缺理由不消耗催促额度，也不触网；额度闸门
-        管「还能催几次」，本闸门管「每次催促必须是决策而非习惯」。
+        管「还能催几次」，本闸门管「每次催促必须是决策而非习惯」。拒绝载荷
+        附可抄模板（Phase 2.1：抽象要求改为示例填法，重放显示零依从的根因）；
+        同 action 连拒升级语由账本统一追加（连拒 3 次起）。
         """
         error = {
             "budget": "nudge_rationale",
             "message": (
-                "run_on_thread 缺少 rationale 参数——催促必须引用简报证据"
-                "（sut_state：空闲时长/产物候选/待答反问）说明为何此刻打扰 SUT。"
-                "先 read_thread_state 取证补充依据，再决定是否催促。"
+                "run_on_thread 缺少 rationale 参数。催促的 rationale 直接按此模板填："
+                'rationale="简报显示空闲 180s、无产物候选、无待答反问，需向 SUT 确认进度"'
+                "——引用 briefing.sut_state 的具体数值"
+                "（idle_for_s / artifact_candidates / pending_questions），"
+                "不要写「请继续」类空话。"
             ),
         }
+        if self.ledger is not None:
+            self.ledger.register_refusal("nudge", error)
         if self.ledger is not None and self.ledger.evidence is not None:
             self.ledger.evidence.log("gate_refusal", action="nudge", **error)
         return {"status": "failed", "error": {"type": "NudgeRationaleRequired", **error}}

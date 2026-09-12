@@ -868,11 +868,30 @@ def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> N
     refused = asyncio.run(server.run_on_thread("th-1", "继续"))
     assert refused["status"] == "failed"
     assert refused["error"]["type"] == "NudgeRationaleRequired"
-    assert "read_thread_state" in refused["error"]["message"]
+    # 拒绝载荷附可抄模板（Phase 2.1：抽象要求→示例填法，修零依从）
+    assert 'rationale="' in refused["error"]["message"]
     assert ledger.counters["nudge"] == 0  # 资格闸门不耗额度
     assert captured.get("posts") is None  # 拒绝在触网之前
     refusal_events = [e for e in evidence.events if e["kind"] == "gate_refusal"]
     assert refusal_events and refusal_events[0]["action"] == "nudge"
+    assert len(ledger.refusals) == 1  # 资格拒绝也进连拒计数
+
+
+def test_run_on_thread_consecutive_rationale_refusals_escalate() -> None:
+    """连拒 3 次起载荷点名收尾路径（Phase 2.1：13 连拒空转的机械对应物）。"""
+    server = _commands_server([RESUMED_STATE])
+    evidence = EvidenceLedger()
+    ledger = ResourceLedger(InteractionPolicy(), evidence=evidence)
+    server.ledger = ledger
+
+    results = [asyncio.run(server.run_on_thread("th-1", "继续")) for _ in range(3)]
+    for refused in results[:2]:
+        assert "escalation" not in refused["error"]
+    assert "连续拒绝 3 次" in results[2]["error"]["escalation"]
+    assert "write_package" in results[2]["error"]["escalation"]
+    # 升级语同步进证据流（ledger.jsonl 可复盘）
+    refusal_events = [e for e in evidence.events if e["kind"] == "gate_refusal"]
+    assert "escalation" in refusal_events[-1]
 
 
 def test_run_on_thread_rationale_lands_decision_event() -> None:
