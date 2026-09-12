@@ -158,7 +158,13 @@ LLM 评估的判官提示词（`prompts/<名>.yaml`）。顶层字段：`templat
 
 - `tasks[].id`：任务唯一标识；`tasks[].input`：发给被测系统的输入（如
   `{instruction: "…"}`）；`tasks[].expected`：预期（`reference` 参考答案、`must_mention`
-  必含要点等，供评估器使用）；`tasks[].constraints`：约束（如 `max_turns`）。
+  必含要点等，供评估器使用）。
+- 交互预算（轮次/催促/轮询/下载/墙钟）不在任务里逐条声明——任务集级
+  `interaction_policy` 统一声明（`sut_calls_total` / `dispatch` / `nudges` /
+  `state_polls` / `downloads` / `nudge_backoff_s` / `wall_clock_deadline_s`），由
+  执行器机械闸门执行，提示词不出现数字条款。个别慢任务在
+  `tasks[].constraints.interaction_policy` 部分覆盖（如生成慢的课件任务放宽
+  `state_polls`）。旧的 `constraints.max_turns` 已废弃，写了不生效。
 
 最小示例：
 
@@ -166,6 +172,9 @@ LLM 评估的判官提示词（`prompts/<名>.yaml`）。顶层字段：`templat
 id: sec_smoke_001
 name: 代码安全冒烟
 description: 单任务冒烟考卷
+interaction_policy:
+  sut_calls_total: 8      # SUT 执行类调用总额（字段缺省值见 arch/16 §4.1）
+  nudges: 2               # 续跑/催促次数
 tasks:
   - id: injection_001
     input:
@@ -362,10 +371,14 @@ fail-loud。`once` 与 `poll` 互斥（落盘校验打回）。
 
 两个字段组：
 
-- `aggregation_policy`：`id`、`scenario_id`、`stage_weights[]`
-  （`{stage_id, weight, is_gate, skip_tiers_in_reward}`，可加 `evaluator_weights`
-  细化到评估器级；`skip_tiers_in_reward: []` 表示 hard_score 判定结果同样计分——
-  judge 0 分必须拉低 reward，而非只在 status 上体现）、`normalize_to: [0.0, 1.0]`；
+- `aggregation_policy`：`id`、`scenario_id`、`stage_weights[]`、`normalize_to: [0.0, 1.0]`。
+  `stage_weights[]` 每条 `{stage_id, weight, is_gate, skip_tiers_in_reward}`，另有
+  两个可选键：`evaluator_weights` 细化到评估器级；`id` 把该阶段得分以该键暴露到
+  样本级 metrics——`metric_definitions` 的 `mean(soft)`/`mean(pref)` 表达式按它取数，
+  同一 `stage_id` 拆多个加权项时每条各带一个 `id`（内置 chat 包 `quality` 单拆、
+  courseware 包 `quality→soft/pref` 双拆，均现成参照）。
+  `skip_tiers_in_reward: []` 表示 hard_score 判定结果同样计分——
+  judge 0 分必须拉低 reward，而非只在 status 上体现；
 - `metric_definitions[]`：`{id, name, summary, expression}`（如
   `expression: "count(format_gate) / total"`）。
 
