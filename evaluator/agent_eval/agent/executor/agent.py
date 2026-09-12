@@ -341,6 +341,20 @@ class ExecutionAgent:
                 return last
         return None
 
+    async def _refresh_sut_final_state(self) -> None:
+        """freeze 前终局快照刷新（arch/16 §4.5 snapshot/reconcile）。
+
+        answer.md 物化的输入是 last_run.text，而 run 工具返回时刻 ≠ SUT 最终
+        发言时刻（run 20260912_000410：answer 冻结在中间播报）。包物化前机械
+        确认线程空闲并回写最新回答——正常路径（_build_package）与异常路径
+        （_abort）共用。仅对提供 refresh_final_state 的工具面生效（generic_http
+        无线程概念自然跳过）；server 内部静默降级，取证失败不阻塞包物化。
+        """
+        for server in self.tool_servers:
+            refresh = getattr(server, "refresh_final_state", None)
+            if refresh is not None:
+                await refresh()
+
     # ─── ExecutionPackage 构建（物化编排见 executor/package_writer.py） ───
 
     async def _build_package(
@@ -352,6 +366,7 @@ class ExecutionAgent:
         evidence: EvidenceLedger | None = None,
     ) -> ExecutionPackage:
         """从 Agent 会话构建 ExecutionPackage（补齐/守卫细节见 executor/package_writer.py）。"""
+        await self._refresh_sut_final_state()
         return await finalize_execution_package(
             package_dir,
             task,
@@ -384,6 +399,7 @@ class ExecutionAgent:
         session = AgentSession()
         session.started_at = logger.started_at or _now_iso()
         session.finished_at = _now_iso()
+        await self._refresh_sut_final_state()
         await finalize_execution_package(
             package_dir,
             task,

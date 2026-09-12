@@ -8,6 +8,7 @@ AgentProtocolChannel 暴露给 DeepAgents 显式绑定（ToolExporterMixin）。
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import json
 import re
@@ -37,7 +38,8 @@ from agent_eval.execution.channels.interrupts import (
     ask_question_tool_call_ids,
     pending_ask_questions,
 )
-from agent_eval.execution.channels.message_digest import compact_messages
+from agent_eval.execution.channels.message_digest import compact_messages, final_ai_text
+from agent_eval.execution.channels.thread_commands import COMMANDS_POLL_INTERVAL_S
 
 # 工具结果中大体量字段的截断上限（上下文经济性，非业务阈值）
 VALUES_MAX_CHARS = 4000
@@ -519,6 +521,63 @@ class AgentProtocolToolServer(ToolExporterMixin):
                 "values": values,
             }
         )
+
+    async def refresh_final_state(self, *, settle_timeout_s: float = 120.0) -> None:
+        """收尾终局快照刷新（arch/16 §4.5 snapshot/reconcile，壳层机械动作非 LLM 工具）。
+
+        run 工具返回时刻 ≠ SUT 最终发言时刻：阶段切换空窗误判终态后，后续取证
+        （read_thread_state）只读不回写，last_run.text 冻结在中间播报，answer.md
+        随之冻结（run 20260912_000410）。由 ExecutionAgent 在 freeze（包物化）前
+        机械调用：等待线程空闲（snapshot），把最新 ai 回答回写 last_run.text
+        （reconcile）。
+
+        - 门控：无 last_run/thread_id 或非 commands 形态直接返回（runs 形态
+          thread_state 直接 raise；generic_http 无线程概念，无本方法自然跳过）；
+        - settle_timeout_s 内轮询等 next 清空；线程 404 或超时保留现值静默返回
+          ——收尾取证失败不得 fail 任务、不得破坏失败包物化；
+        - 直调通道不经 _budget("state_poll")：收尾取证不耗执行 Agent 的轮询额度
+          （对齐「取证/下载/写包不设闸」惯例），留证走 ledger.record；
+        - 只改 text：input 保留原值（guard_echo_answer 以 input vs text 比对回显，
+          动 input 守卫语义漂移）。
+        """
+        last = self.last_run
+        thread_id = (last or {}).get("thread_id")
+        if not last or not thread_id or self.channel.sut.protocol_flavor != "commands":
+            return
+        started = time.monotonic()
+        deadline = started + settle_timeout_s
+        idle_state: dict[str, Any] | None = None
+        try:
+            while idle_state is None:
+                state = await self.channel.thread_state(thread_id)
+                if state is None:
+                    # 线程不存在：不会再有更新的终局事实，保留现值
+                    self._ledger_record(
+                        "state_poll", "ok", started, summary={"final_refresh": "thread_not_found"}
+                    )
+                    return
+                if not (state.get("next") or []):
+                    idle_state = state
+                    break
+                if time.monotonic() >= deadline:
+                    self._ledger_record(
+                        "state_poll", "ok", started, summary={"final_refresh": "settle_timeout"}
+                    )
+                    return
+                await asyncio.sleep(COMMANDS_POLL_INTERVAL_S)
+        except AgentEvalError as e:  # 网络抖动/通道错误：静默降级，不破坏收尾
+            self._ledger_record(
+                "state_poll", "error", started, summary={"final_refresh": str(e)[:200]}
+            )
+            return
+        values = idle_state.get("values") or {}
+        self._tracker.observe(False, json.dumps(values, ensure_ascii=False, default=str))
+        self._ledger_record(
+            "state_poll", "ok", started, summary={"final_refresh": "ok", "thread_busy": False}
+        )
+        fresh = final_ai_text(values.get("messages") or [])
+        if fresh and fresh != last.get("text"):
+            last["text"] = fresh
 
     @tool_guard
     async def answer_sut_questions(self, answers: list[Any]) -> dict[str, Any]:

@@ -383,6 +383,144 @@ def test_read_thread_state_rejects_runs_flavor() -> None:
     assert "仅 commands 形态" in result["error"]["message"]
 
 
+# ─── refresh_final_state（收尾终局快照，run 20260912_000410） ───
+
+
+_REFRESH_BLANK = {
+    "next": [],
+    "values": {
+        "messages": [
+            {"type": "human", "id": "h1", "content": "生成课件"},
+            {"type": "ai", "id": "a1", "content": [{"type": "text", "text": "正在导出为 PDF"}]},
+        ]
+    },
+}
+_REFRESH_BUSY = {"next": ["agent"], "values": _REFRESH_BLANK["values"]}
+_REFRESH_FINAL = {
+    "next": [],
+    "values": {
+        "messages": [
+            *_REFRESH_BLANK["values"]["messages"],
+            {"type": "ai", "id": "a2", "content": [{"type": "text", "text": "课件已生成完毕"}]},
+        ]
+    },
+}
+
+
+def test_refresh_final_state_reconciles_latest_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+    """snapshot/reconcile：run 过早返回中间播报后，收尾刷新把最新 ai 回答回写
+    last_run.text——只改 text，input 原值保留（guard_echo_answer 语义不漂移）。"""
+    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    # 次序：busy → 空窗(中间播报) → busy → 空窗×2（稳定窗误判收口，旧病复现）
+    # → 真终态（刷新取到）
+    server = _commands_server(
+        [
+            _REFRESH_BUSY,
+            _REFRESH_BLANK,
+            _REFRESH_BUSY,
+            _REFRESH_BLANK,
+            _REFRESH_BLANK,
+            _REFRESH_FINAL,
+        ]
+    )
+    asyncio.run(server.agent_run("生成课件"))
+    assert server.last_run is not None
+    assert server.last_run["text"] == "正在导出为 PDF"  # 旧病：中间播报被焊死
+
+    asyncio.run(server.refresh_final_state())
+    assert server.last_run["text"] == "课件已生成完毕"  # 收尾时刻的最新事实
+    assert server.last_run["input"] == "生成课件"  # 回显守卫比对键不动
+
+
+def test_refresh_final_state_busy_thread_times_out_silently(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """线程持续忙碌 → settle 超时静默保留现值——收尾取证失败不 fail 任务。"""
+    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    server = _commands_server([_REFRESH_BUSY])  # 末态复用：恒 busy
+    server.last_run = {
+        "status": "success",
+        "thread_id": "th-x",
+        "run_id": "r-1",
+        "text": "旧文本",
+        "input": "生成课件",
+        "pending": None,
+    }
+    asyncio.run(server.refresh_final_state(settle_timeout_s=0.05))  # 不抛异常
+    assert server.last_run["text"] == "旧文本"
+
+
+def test_refresh_final_state_noop_without_commands_thread() -> None:
+    """门控：无 last_run 或非 commands 形态直接返回，零网络请求。"""
+    hits = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        hits["n"] += 1
+        return httpx.Response(200, json=_REFRESH_FINAL)
+
+    def _channel(flavor: str) -> AgentProtocolToolServer:
+        return AgentProtocolToolServer(
+            AgentProtocolChannel(
+                SUTSystemConfig(
+                    name="cw",
+                    channel="agent_protocol",
+                    base_url="https://ap.example.com",
+                    protocol_flavor=flavor,
+                ),
+                http_client_factory=lambda: httpx.AsyncClient(
+                    transport=httpx.MockTransport(handler)
+                ),
+            )
+        )
+
+    commands_server = _channel("commands")
+    asyncio.run(commands_server.refresh_final_state())  # last_run=None
+    assert hits["n"] == 0
+
+    runs_server = _channel("runs")  # runs 形态 thread_state 直接 raise，必须门控前置
+    runs_server.last_run = {
+        "status": "success",
+        "thread_id": "th-1",
+        "run_id": "r-1",
+        "text": "x",
+        "input": "y",
+        "pending": None,
+    }
+    asyncio.run(runs_server.refresh_final_state())
+    assert hits["n"] == 0
+
+
+def test_refresh_final_state_records_evidence_without_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """收尾取证不耗 LLM 轮询额度（state_polls 耗尽后闸门必拒，本方法照常完成），
+    但落 state_poll 证据留痕（evidence ledger 可复盘）。"""
+    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    server = _commands_server([_REFRESH_FINAL])
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(InteractionPolicy(state_polls=1), evidence=evidence)
+    server.last_run = {
+        "status": "success",
+        "thread_id": "th-1",
+        "run_id": "r-1",
+        "text": "正在导出为 PDF",
+        "input": "生成课件",
+        "pending": None,
+    }
+
+    # 先把 state_polls 额度烧光：再走 read_thread_state 会被闸门拒绝
+    asyncio.run(server.read_thread_state("th-1"))
+    assert server.ledger is not None and server.ledger.counters["state_poll"] == 1
+    blocked = asyncio.run(server.read_thread_state("th-1"))
+    assert blocked["status"] == "failed"
+
+    asyncio.run(server.refresh_final_state())  # 不经 _budget：额度耗尽仍放行
+    assert server.last_run["text"] == "课件已生成完毕"
+    assert server.ledger is not None and server.ledger.counters["state_poll"] == 1  # 计数未增
+    polls = [e for e in evidence.events if e["action"] == "state_poll"]
+    assert polls and "final_refresh" in polls[-1]["summary"]
+
+
 def test_bounded_result_digest_drops_reasoning_keeps_answers() -> None:
     """工具结果 messages 摘要化：6 万字符 reasoning 不再把真正的回答挤出局。"""
     reasoning_state = {
@@ -780,7 +918,9 @@ def test_nudge_backoff_refusal_at_tool_entry() -> None:
             ]
         },
     }
-    server = _commands_server([RESUMED_STATE, RESUMED_STATE, nudged])
+    # 稳定窗（settle）：agent_run 消费 2 个 GET，run_on_thread baseline 预取 1 个
+    # + 稳定确认 2 个——恒定终态段需给足三连，nudged 段需两连
+    server = _commands_server([RESUMED_STATE, RESUMED_STATE, RESUMED_STATE, nudged, nudged])
     ledger = ResourceLedger(InteractionPolicy(dispatch=1, nudges=5, nudge_backoff_s=30))
     server.ledger = ledger
 
@@ -907,7 +1047,9 @@ def test_run_on_thread_rationale_lands_decision_event() -> None:
             ]
         },
     }
-    server = _commands_server([RESUMED_STATE, RESUMED_STATE, nudged])
+    # 稳定窗（settle）：agent_run 消费 2 个 GET，run_on_thread baseline 预取 1 个
+    # + 稳定确认 2 个——恒定终态段需给足三连，nudged 段需两连
+    server = _commands_server([RESUMED_STATE, RESUMED_STATE, RESUMED_STATE, nudged, nudged])
     evidence = EvidenceLedger()
     server.ledger = ResourceLedger(InteractionPolicy(), evidence=evidence)
     asyncio.run(server.agent_run("生成课件"))  # 先建立线程上下文
