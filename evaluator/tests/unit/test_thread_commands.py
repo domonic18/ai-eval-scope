@@ -289,6 +289,72 @@ def test_poll_state_timeout_reports_thread_idle(monkeypatch: pytest.MonkeyPatch)
     assert exc_info.value.details.get("thread_idle") is True
 
 
+def test_poll_state_stable_window_ignores_blank_window_misfire(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """settle 稳定窗（run 20260912_000410）：阶段切换的 next 瞬时空窗不再被
+    单采样误判终态——空窗 → busy → 真终态×2 才收口，text 取终稿非中间播报。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    intermediate = [
+        {"type": "human", "id": "m1", "content": "生成课件"},
+        {"type": "ai", "id": "m2", "content": [{"type": "text", "text": "正在导出为 PDF"}]},
+    ]
+    gets = {"n": 0}
+
+    def state_for(n: int) -> dict:
+        if n == 1:  # 空窗：生成→导出阶段切换，next 瞬时为空（旧代码在此误判终态）
+            return {"next": [], "values": {"messages": intermediate}}
+        if n == 2:  # 导出阶段实际开工
+            return {"next": ["agent"], "values": {"messages": intermediate}}
+        final = [*intermediate, {"type": "ai", "id": "m3", "content": "课件已生成完毕"}]
+        return {"next": [], "values": {"messages": final}}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r-s"}})
+        gets["n"] += 1
+        return httpx.Response(200, json=state_for(gets["n"]))
+
+    channel = _channel(_sut(timeout=1.0), handler)
+    result = asyncio.run(channel.run("生成课件"))
+    assert result["status"] == "success"
+    assert result["text"] == "课件已生成完毕"  # 非中间播报
+    assert gets["n"] == 4  # 空窗(1) + busy 归零(2) + 真终态重数(3,4)
+
+
+def test_poll_state_timeout_when_terminal_never_stabilizes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """空窗反复出现终态条件永不连满稳定窗 → 按超时收口；最后一次采样空闲
+    但稳定未满，thread_idle=true 诊断语义不降级（arch/16 §4.5 settle）。"""
+    monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.5)  # > timeout
+    gets = {"n": 0}
+    blank = {
+        "next": [],
+        "values": {
+            "messages": [
+                {"type": "human", "id": "m1", "content": "hi"},
+                {"type": "ai", "id": "m2", "content": "半成品播报"},
+            ]
+        },
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={"type": "success", "result": {"run_id": "r-u"}})
+        gets["n"] += 1
+        if gets["n"] == 1:
+            return httpx.Response(200, json={"next": ["agent"], "values": blank["values"]})
+        return httpx.Response(200, json=blank)  # 之后恒空闲，但永远只连续 1 次
+
+    channel = _channel(_sut(timeout=0.1), handler)
+    with pytest.raises(AgentProtocolError, match="run 超时") as exc_info:
+        asyncio.run(channel.run("hi"))
+    assert isinstance(exc_info.value, AgentProtocolTimeoutError)
+    assert exc_info.value.details.get("thread_idle") is True
+    assert gets["n"] == 2
+
+
 def test_commands_stream_collects_events_and_finalizes_by_state() -> None:
     sse = "\n".join(
         [

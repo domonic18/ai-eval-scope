@@ -30,6 +30,11 @@ if TYPE_CHECKING:  # 防循环导入（agent_protocol 反向引用本模块的�
     from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 
 COMMANDS_POLL_INTERVAL_S = 1.5
+# 终态稳定窗（arch/16 §4.5 settle）：连续 N 次采样满足终态条件才返回——
+# SUT 阶段切换/反问 resume 后存在 next 瞬时空窗，单采样会误判完成并把
+# 中间播报焊死成 answer（run 20260912_000410）。形态无关的时间维度确认，
+# 不是又一个「完成的形状」判定式
+TERMINAL_STABILITY_SAMPLES = 2
 
 
 def conversation_headers(thread_id: str) -> dict[str, str]:
@@ -221,9 +226,12 @@ async def _poll_state(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """轮询 state 至终态；遇反问挂起（interrupt_types 识别集内）即提前返回。
 
-    终态 = next 为空且 baseline 之后新增过 ai 消息（内容形态不限）——不以
+    终态 = next 为空且 baseline 之后新增过 ai 消息（内容形态不限），且该
+    条件连续 TERMINAL_STABILITY_SAMPLES 次采样成立（settle 稳定窗）——不以
     「尾随 ai 文本」为条件，以工具调用收尾的 SUT 不再被误判超时
-    （2026-09-11 实测事故：课件写完即结束、无结束语，空转烧满 900s）。
+    （2026-09-11 实测事故：课件写完即结束、无结束语，空转烧满 900s）；
+    稳定窗防 next 阶段切换空窗的单采样误判（2026-09-12 事故）。反问挂起
+    不做稳定确认：SUT 显式信号，单采样即返回。
 
     Returns:
         (values, pending_questions)。pending 非空 = run 挂起等应答
@@ -238,6 +246,7 @@ async def _poll_state(
     deadline = time.monotonic() + channel.sut.timeout
     last_values: dict[str, Any] = {}
     unrecognized: set[str] = set()
+    stable_streak = 0
     while True:
         state = await _get_state(channel, thread_id)
         if state is not None:
@@ -253,7 +262,12 @@ async def _poll_state(
             unrecognized.update(unrecognized_interrupt_types(state, interrupt_types))
             finished = not (state.get("next") or [])
             if finished and has_ai_message_from(messages, baseline):
-                return last_values, []
+                stable_streak += 1
+                if stable_streak >= TERMINAL_STABILITY_SAMPLES:
+                    return last_values, []
+            else:
+                # 归零是关键：空窗后 SUT 恢复 busy，下次真终态重新数满
+                stable_streak = 0
         if time.monotonic() >= deadline:
             details: dict[str, Any] = {
                 "sut": channel.sut.name,
