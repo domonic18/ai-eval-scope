@@ -219,16 +219,18 @@ class JudgeRecord:
     template_id: str                      # 使用的 Prompt 模板
     temperature: float                    # 温度
     seed: int                             # 随机种子
+    max_tokens: int | None = None         # 生效的最大输出 tokens（配置三跳下发的最终值——截断类故障第一排查线索）
     # 结果
-    raw_response: str                     # LLM 原始响应
+    raw_response: str                     # LLM 原始响应（失败记录为末次原始响应尾部，≤2000 字符）
     parsed_scores: dict                   # 解析后的评分
     final_scores: dict                    # 最终得分（多次采样取中位数后）
     confidence: dict                      # 各维度置信度
     summary: str = ""                     # LLM 生成的评价总结（可解释性）
+    error: str = ""                       # 失败调用摘要「类型: 消息」（成功调用为空）
     # 统计
-    num_samples: int                      # 采样次数
+    num_samples: int                      # 采样次数（失败记录为已收到原始响应的调用次数）
     total_duration_ms: float              # 总耗时
-    token_usage: TokenUsage | None        # Token 消耗
+    token_usage: TokenUsage | None        # Token 消耗（失败尝试的消耗同样累计）
     timestamp: str                        # 调用时间 ISO 8601
 ```
 
@@ -236,8 +238,17 @@ class JudgeRecord:
 
 ```
 workspace/runs/{run_id}/results/{task_id}/evidence/
-└── judge_{constraint_id}_{timestamp}.json   # JudgeRecord JSON 文件
+├── judge_{constraint_id}_{timestamp}.json         # 成功调用
+└── judge_{constraint_id}_{timestamp}_failed.json  # 失败调用（异常路径同样落盘后原样上抛）
 ```
+
+**失败路径证据契约（run 20260912_111958 事故驱动，五层防线）**：
+
+1. **截断/拒答显式报错**：Provider 层检查 `stop_reason=max_tokens`（Anthropic）/`finish_reason=length`（OpenAI 兼容），命中即抛 `LLMResponseError`——静默返回半截 JSON 只会把症状推迟到解析层，报成难懂的「JSON 解析失败」；
+2. **解析失败重试**：orchestrator 对 `LLMResponseError` 重试至 `parser.max_retries`（默认 3）次——截断/半截 JSON 等瞬时缺陷重唤一次即可痊愈；网络/鉴权错误不在此重试（provider 层已有瞬时错误退避）；
+3. **失败调用落证据**：judge 异常路径同样持久化 JudgeRecord（`_failed` 后缀文件，含错误摘要、末次原始响应尾部、生效参数、token 消耗），随后原样上抛——排障不再只剩 Web reason 里的半截文案；
+4. **约束结果带错误详情**：评估器/stage 兜底把异常转为 `status=error` 时，`reason` 只取异常消息本体（`str(e)` 会拼接 details 原文污染前端），raw 尾部/异常负载进 `ConstraintResult.details`（`error` / `exception_details` / `evidence_dir`）；
+5. **分数型失败可解释**：LLM 评分不达标（非规则错误）的 FAIL，reason 透出维度评分、加权分与通过线（如知识准确性），不再只有「未通过」三个字。
 
 **溯源记录在 ConstraintResult 中的引用**：
 
@@ -800,3 +811,4 @@ sys.modules.setdefault("langfuse", MagicMock())
 | v2.1 | 2026-07-13 | PromptStore 抽象（File/Db/Snapshot） |
 | v2.2 | 2026-08-18 | 补执行侧模型桥接注记（随 03 v4.6） |
 | v2.3 | 2026-08-25 | LLM 配置双形态 resolve_llm_config |
+| v2.4 | 2026-09-13 | 失败路径证据契约五层防线（run 20260912_111958 事故）：截断/拒答显式报错、解析失败重试、失败调用落 `_failed` 证据（error 摘要/raw 尾部/max_tokens 生效参数）、约束结果 error 带详情且 reason 去 raw 化（§2.2） |

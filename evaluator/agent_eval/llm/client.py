@@ -65,10 +65,16 @@ class LLMClient(ABC):
         ...
 
     @property
+    def max_tokens(self) -> int | None:
+        """生效的最大输出 tokens（线路配置缺省；无配置概念的替身返回 None）。"""
+        return None
+
+    @property
     def provider_info(self) -> ProviderInfo:
         """获取 Provider 元信息。"""
         return ProviderInfo(
             name=self.provider_name,
             model=self.model,
             provider=self.provider_type,
+            max_tokens=self.max_tokens,
         )

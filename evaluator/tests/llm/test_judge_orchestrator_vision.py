@@ -43,6 +43,7 @@ def _make_client(provider_name="kimi_vision", model="kimi-2.6") -> MagicMock:
     client.provider_info = MagicMock()
     client.provider_info.name = provider_name
     client.provider_info.model = model
+    client.provider_info.max_tokens = None  # MagicMock 默认值无法 JSON 序列化
     return client
 
 

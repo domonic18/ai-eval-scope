@@ -95,6 +95,7 @@ class ProviderInfo:
     name: str  # 配置名称，如 "deepseek_judge"
     model: str  # 模型 ID，如 "deepseek-chat"
     provider: str  # 协议类型，如 "deepseek" / "openai" / "anthropic"
+    max_tokens: int | None = None  # 生效的最大输出 tokens（None=线路未提供，如测试替身）
 
 
 @dataclass
@@ -112,6 +113,8 @@ class JudgeRecord:
     template_id: str  # 使用的 Prompt 模板
     temperature: float = field(default_factory=lambda: JUDGE_RECORD_DEFAULTS.temperature)
     seed: int = field(default_factory=lambda: JUDGE_RECORD_DEFAULTS.seed)
+    # 生效的最大输出 tokens（配置三跳下发的最终值——截断类故障的第一排查线索）
+    max_tokens: int | None = None
     # 结果
     raw_response: str = ""
     parsed_scores: dict[str, Any] = field(default_factory=dict)
@@ -121,6 +124,8 @@ class JudgeRecord:
     summary: str = ""
     # 逐维度可解释性详情：dim_id -> {reason, issues[], highlights[]}（取自末样本）
     dim_details: dict[str, Any] = field(default_factory=dict)
+    # 失败调用摘要「类型: 消息」（judge 异常路径落盘的证据，成功调用为空）
+    error: str = ""
     # 统计
     num_samples: int = field(default_factory=lambda: JUDGE_RECORD_DEFAULTS.num_samples)
     total_duration_ms: float = 0.0
@@ -140,6 +145,7 @@ class JudgeRecord:
             "template_id": self.template_id,
             "temperature": self.temperature,
             "seed": self.seed,
+            "max_tokens": self.max_tokens,
             "raw_response": self.raw_response,
             "parsed_scores": self.parsed_scores,
             "final_scores": self.final_scores,
@@ -147,6 +153,7 @@ class JudgeRecord:
             "num_samples": self.num_samples,
             "summary": self.summary,
             "dim_details": self.dim_details,
+            "error": self.error,
             "total_duration_ms": self.total_duration_ms,
             "timestamp": self.timestamp,
             "image_hashes": self.image_hashes,

@@ -54,13 +54,17 @@ class PipelineStage:
             try:
                 constraint_result = evaluator.evaluate(sample, context)
             except Exception as e:
+                # reason 只取异常消息本体——str(e) 会拼接 details（可能含 raw_response
+                # 原文）污染前端展示；异常 details 原样进 ConstraintResult.details
+                error_message = getattr(e, "message", None) or str(e)
                 constraint_result = ConstraintResult(
                     constraint_id=evaluator.evaluator_id,
                     name=evaluator.name,
                     tier=evaluator.tier,
                     status=EvalStatus.ERROR,
                     score=0.0,
-                    reason=f"评估器执行异常: {e}",
+                    reason=f"评估器执行异常（{type(e).__name__}）：{error_message[:300]}",
+                    details={"error": f"{type(e).__name__}: {error_message}"[:500]},
                     duration_ms=(time.monotonic() - ev_start) * 1000,
                 )
                 gate_passed = False

@@ -302,11 +302,22 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 duration_ms=elapsed,
             )
         except Exception as e:
+            # reason 只取异常消息本体——str(e) 会拼接 details（含 raw_response 原文），
+            # 污染前端展示（run 20260912_111958 半截 JSON 直接进了 reason）
+            error_message = getattr(e, "message", None) or str(e)
             elapsed = (time.monotonic() - start) * 1000
+            failure_details: dict[str, Any] = {
+                "error": f"{type(e).__name__}: {error_message}"[:500],
+                # orchestrator 已在 evidence 目录落失败溯源（judge_*_failed.json）
+                "evidence_dir": str(evidence_dir),
+            }
+            if getattr(e, "details", None):
+                failure_details["exception_details"] = e.details
             return self._make_result(
                 status=EvalStatus.ERROR,
                 score=0.0,
-                reason=f"LLM Judge 调用失败: {e}",
+                reason=f"LLM Judge 调用失败（{type(e).__name__}）：{error_message[:300]}",
+                details=failure_details,
                 duration_ms=elapsed,
             )
 

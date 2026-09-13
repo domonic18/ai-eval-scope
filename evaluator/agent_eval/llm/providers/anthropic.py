@@ -27,6 +27,7 @@ from agent_eval.core.exceptions import (
     LLMNetworkError,
     LLMQuotaExceededError,
     LLMRateLimitError,
+    LLMResponseError,
 )
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
@@ -131,6 +132,11 @@ class AnthropicCompatClient(LLMClient):
         )
 
     @property
+    def max_tokens(self) -> int | None:
+        """生效的最大输出 tokens（线路配置值，随 provider_info 透出）。"""
+        return self._config.max_tokens
+
+    @property
     def provider_name(self) -> str:
         return self._name
 
@@ -189,6 +195,18 @@ class AnthropicCompatClient(LLMClient):
 
         # 重试循环要么 break（response 已赋值）要么在 except 内抛出——此处恒非 None
         assert response is not None
+
+        # 截断/拒答显式报错——静默返回半截 JSON 只会把症状推迟到解析层，
+        # 报成难懂的「JSON 解析失败」（run 20260912_111958 content_diversity 事故）
+        stop_reason = getattr(response, "stop_reason", None)
+        if stop_reason == "max_tokens":
+            out_tokens = getattr(response.usage, "output_tokens", 0) if response.usage else 0
+            raise LLMResponseError(
+                f"LLM 输出被截断（stop_reason=max_tokens，已完成 {out_tokens} 输出 tokens）"
+                "——请调大该线路 max_tokens 或精简评审输出"
+            )
+        if stop_reason == "refusal":
+            raise LLMResponseError("LLM 拒绝回答（stop_reason=refusal），无法完成评审")
 
         # 提取文本（content 是 block 列表，取第一个 text 块）
         content_text = ""

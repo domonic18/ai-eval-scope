@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
 
+from agent_eval.core.exceptions import LLMResponseError
 from agent_eval.llm.judge.file_prompt_store import FilePromptStore
 from agent_eval.llm.judge.orchestrator import JudgeOrchestrator
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
@@ -62,6 +64,7 @@ class TestJudgeOrchestrator:
         mock_client.provider_info = MagicMock()
         mock_client.provider_info.name = "ds_judge"
         mock_client.provider_info.model = "deepseek-chat"
+        mock_client.provider_info.max_tokens = None
 
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
@@ -120,6 +123,7 @@ class TestJudgeOrchestrator:
         mock_client.provider_info = MagicMock()
         mock_client.provider_info.name = "kimi"
         mock_client.provider_info.model = "kimi-2.6"
+        mock_client.provider_info.max_tokens = None
 
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
@@ -163,6 +167,7 @@ class TestJudgeOrchestrator:
         mock_client.provider_info = MagicMock()
         mock_client.provider_info.name = "ds"
         mock_client.provider_info.model = "m"
+        mock_client.provider_info.max_tokens = None
 
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
@@ -226,6 +231,7 @@ class TestJudgeOrchestrator:
         mock_client.provider_info = MagicMock()
         mock_client.provider_info.name = "ds"
         mock_client.provider_info.model = "m"
+        mock_client.provider_info.max_tokens = None
 
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
@@ -266,6 +272,7 @@ class TestJudgeOrchestrator:
         mock_client.provider_info = MagicMock()
         mock_client.provider_info.name = "ds"
         mock_client.provider_info.model = "m"
+        mock_client.provider_info.max_tokens = None
 
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
@@ -311,6 +318,7 @@ class TestJudgeOrchestratorTracing:
         mock_client.provider_info = MagicMock()
         mock_client.provider_info.name = "ds"
         mock_client.provider_info.model = "m"
+        mock_client.provider_info.max_tokens = None
 
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
@@ -365,6 +373,7 @@ class TestJudgeOrchestratorTracing:
         mock_client.provider_info = MagicMock()
         mock_client.provider_info.name = "ds"
         mock_client.provider_info.model = "m"
+        mock_client.provider_info.max_tokens = None
 
         mock_pool = MagicMock()
         mock_pool.get.return_value = mock_client
@@ -396,3 +405,102 @@ class TestJudgeOrchestratorTracing:
 
         mock_create_trace.assert_called_once()
         mock_create_span.assert_not_called()
+
+
+class TestJudgeParseRetryAndFailureEvidence:
+    """解析失败重试 + 失败调用证据落盘（run 20260912_111958 契约缺口 #2/#3/#4）。"""
+
+    def _make_client(self, max_tokens: int | None = None) -> MagicMock:
+        mock_client = MagicMock()
+        mock_client.provider_info = MagicMock()
+        mock_client.provider_info.name = "ds"
+        mock_client.provider_info.model = "m"
+        mock_client.provider_info.max_tokens = max_tokens
+        return mock_client
+
+    def _make_orchestrator(self, tmp_path: Path, mock_client: MagicMock) -> JudgeOrchestrator:
+        prompts_dir = tmp_path / "prompts"
+        prompts_dir.mkdir()
+        _setup_template(prompts_dir)
+
+        mock_pool = MagicMock()
+        mock_pool.get.return_value = mock_client
+        tm = FilePromptStore(prompts_dir)
+        tm.load_all()
+
+        from agent_eval.llm.judge.stability import StabilityController
+
+        return JudgeOrchestrator(
+            pool=mock_pool,
+            prompt_store=tm,
+            stability=StabilityController(num_samples=1),
+            parser=StructuredOutputParser(),
+        )
+
+    def _judge(self, orchestrator: JudgeOrchestrator, tmp_path: Path) -> None:
+        orchestrator.judge(
+            constraint_id="c1",
+            sample_id="s1",
+            template_id="test_judge",
+            variables={"content": "test"},
+            evidence_dir=tmp_path / "ev",
+        )
+
+    def test_parse_retry_recovers(self, tmp_path: Path) -> None:
+        """首次输出畸形（如截断半截 JSON）重试后痊愈：chat 调 2 次，结果成功。"""
+        mock_client = self._make_client()
+        mock_client.chat.side_effect = [
+            LLMResponse(content='{"clarity": 8', provider_name="ds", model="m"),
+            LLMResponse(content='{"clarity": 8.0, "depth": 7.0}', provider_name="ds", model="m"),
+        ]
+        orchestrator = self._make_orchestrator(tmp_path, mock_client)
+
+        scores, record = orchestrator.judge(
+            constraint_id="c1",
+            sample_id="s1",
+            template_id="test_judge",
+            variables={"content": "test"},
+            evidence_dir=tmp_path / "ev",
+        )
+
+        assert mock_client.chat.call_count == 2
+        assert scores == {"clarity": 8.0, "depth": 7.0}
+        assert record.raw_response == '{"clarity": 8.0, "depth": 7.0}'
+
+    def test_parse_retry_exhausted_raises_last_error(self, tmp_path: Path) -> None:
+        """重试耗尽抛末次 LLMResponseError：调用 max_retries+1 次。"""
+        mock_client = self._make_client()
+        mock_client.chat.return_value = LLMResponse(
+            content="not json at all", provider_name="ds", model="m"
+        )
+        orchestrator = self._make_orchestrator(tmp_path, mock_client)
+
+        with pytest.raises(LLMResponseError):
+            self._judge(orchestrator, tmp_path)
+
+        assert mock_client.chat.call_count == 4  # 1 次首发 + 3 次重试（默认 max_retries=3）
+
+    def test_failure_evidence_persisted(self, tmp_path: Path) -> None:
+        """judge 失败也落证据：judge_*_failed.json 含错误摘要/raw 尾部/生效参数。"""
+        mock_client = self._make_client(max_tokens=8192)
+        bad = "{" + "x" * 500  # 末次原始响应（畸形形态）
+        mock_client.chat.return_value = LLMResponse(
+            content=bad,
+            provider_name="ds",
+            model="m",
+            usage=TokenUsage(100, 50, 150),
+        )
+        orchestrator = self._make_orchestrator(tmp_path, mock_client)
+        evidence_dir = tmp_path / "ev"
+
+        with pytest.raises(LLMResponseError):
+            self._judge(orchestrator, tmp_path)
+
+        files = list(evidence_dir.glob("judge_*_failed.json"))
+        assert len(files) == 1
+        data = json.loads(files[0].read_text(encoding="utf-8"))
+        assert data["error"].startswith("LLMResponseError")
+        assert data["raw_response"] == bad
+        assert data["max_tokens"] == 8192  # 生效参数随失败证据透出
+        assert data["num_samples"] == 4  # 已收到原始响应的调用次数
+        assert data["token_usage"]["total_tokens"] == 600  # 失败尝试的消耗同样累计
