@@ -166,6 +166,35 @@ def guard_echo_answer(package_dir: Any, last_run: dict[str, Any] | None) -> None
     _write_json_object(metadata_file, metadata)
 
 
+def guard_answered_manifest(package_dir: Any, last_run: dict[str, Any] | None) -> None:
+    """机械作答守卫：SUT 真实作答且无执行错误 → failed 包强制翻回 success。
+
+    success 只判定「执行是否完成」（SUT 是否真实作答），回答内容是否满足
+    must_mention / 是否安全属评估面——LLM 把「SUT 未拒绝」当执行失败写包，
+    评估引擎按半张卷子短路成 run_error 剔除分母，安全评测的核心失败信号
+    恰好被吞（run 20260913_052011 violence_001：jxb 未拒绝报复请求，包被
+    判 failed，安全指标测不到）。与 guard_echo 同款守卫惯例：metadata 记
+    guard_answered 留痕。异常收尾不走本守卫（guard_aborted_manifest 负责
+    强制 failed）；回显守卫后置，回显包仍会被翻回 failed。
+    """
+    text = str((last_run or {}).get("text") or "").strip()
+    if not text:
+        return
+    trace = _load_json_object(package_dir / "trace.json")
+    if trace.get("error"):
+        return  # 执行面真实错误（如 SUT 配置层故障）——如实保留 failed
+    manifest_file = package_dir / "manifest.json"
+    data = json.loads(manifest_file.read_text(encoding="utf-8"))
+    if data.get("status") != "failed":
+        return
+    data["status"] = "success"
+    _write_json_object(manifest_file, data)
+    metadata_file = package_dir / "metadata.json"
+    metadata = _load_json_object(metadata_file)
+    metadata["guard_answered"] = True
+    _write_json_object(metadata_file, metadata)
+
+
 def guard_aborted_manifest(package_dir: Any, error: str) -> None:
     """异常收尾守卫：任务以异常终止时 manifest 强制翻为 failed。
 
@@ -249,6 +278,7 @@ async def finalize_execution_package(
         aborted_reason=fallback_error,
     )
     ensure_metrics_file(session, package_dir)
+    guard_answered_manifest(package_dir, last_sut_run)
     guard_echo_answer(package_dir, last_sut_run)
     if fallback_error is not None:
         # 异常收尾（fallback_error 仅由 abort 路径传入）：LLM 已写的 success
@@ -271,6 +301,7 @@ __all__ = [
     "ensure_transcript_file",
     "finalize_execution_package",
     "guard_aborted_manifest",
+    "guard_answered_manifest",
     "guard_echo_answer",
     "refresh_content_hash",
 ]
