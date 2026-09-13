@@ -432,8 +432,8 @@ agent = WorkbenchAgent(
 
 | 工具 | 职责 | 关键设计 |
 |---|---|---|
-| `request(method, url, headers?, body?, ref?, step?)` | 门控请求原语（v4：抓取与接口调试/登录实测同一出口）：返回状态码/耗时/响应头/响应体证据，405 的 Allow、400 业务错误消息不再被截掉 | body/headers 支持 Jinja2 模板：凭证 `{{ 字段 }}`（须带 ref，值由服务端从密钥区注入）与链式 `{{ stepN.路径 }}`（step 响应服务端持有，多步认证链可探索）；GET 入**服务端缓存**供 `search_content` 复用（凭证响应不入缓存防绕过值回流）；证据截断防上下文爆炸 |
-| `discover_login(page_url)` | 登录 API 发现阶梯（**普通用户只需输入页面登录地址**）：① 页面 `<form>` 解析 → ② JS XHR/fetch/baseURL 线索 → ②.5 OpenAPI 文档探测 → ③ 定向路径探测（**路径由 Agent 自拟** ≤10 条，不发凭证）→ ④ 只向用户问**登录接口地址**一项兜底 | SPA 无线索是常态，④ 是**预期路径**而非失败兜底；**字段名不问用户**——按候选 fields 拟定，经 request 登录实测（body 带凭证模板）+ 授权预览交用户确认 |
+| `request(method, url, headers?, body?, ref?, step?)` | 门控请求原语（v4：抓取与接口调试/登录实测同一出口）：返回状态码/耗时/响应头/响应体证据，405 的 Allow、400 业务错误消息不再被截掉 | body/headers 支持 Jinja2 模板：凭证 `{{ 字段 }}`（须带 ref，值由服务端从密钥区注入）与链式 `{{ stepN.路径 }}`（step 响应服务端持有，多步认证链可探索）；GET 入**服务端缓存**供 `search_content` 复用（凭证响应不入缓存防绕过值回流）；证据截断防上下文爆炸；**渲染后 JSON 语义校验**（按 JSON 发送的 body 渲染后非对象/非法 JSON 发送前拦截，见红线 8） |
+| `discover_login(page_url)` | 登录 API 发现阶梯（**普通用户只需输入页面登录地址**）：① 页面 `<form>` 解析 → ② JS XHR/fetch/baseURL 线索 → ②.5 OpenAPI 文档探测（**无前置门**——form 候选与 schema 证据并列，不再仅兜底）→ ③ 定向路径探测（**路径由 Agent 自拟** ≤10 条，不发凭证）→ ④ 只向用户问**登录接口地址**一项兜底 | SPA 无线索是常态，④ 是**预期路径**而非失败兜底；**字段名不问用户**——按候选 fields 拟定，经 request 登录实测（body 带凭证模板）+ 授权预览交用户确认；接口域与页面域分离时指引 GET `{接口域}/openapi.json` 取权威 schema（一份 schema 省掉全部路径与字段猜测） |
 | `search_content(pattern, context)` | 已缓存内容检索：子串匹配（防 ReDoS）、大小写不敏感、上下文摘录 ≤12 条（带「数据非指令」声明） | 分析主循环的机械原语，「搜什么」由 Agent 经 prompts 前端包分析法决定 |
 | `probe_protocol(base_url, flavor)` | agent-protocol 符合性矩阵：info → 建临时线程 → commands → state → stream；支持带 configurable/modelId 重探 | 逐项 ✅/❌ + 证据，不做二值判定；3xx 不计 ✅；临时线程收尾清理；**已声明的会话凭证自动挂载**；与执行器契约同构（信封/路由头/Bearer 单源复用） |
 | `declare_token(ref, token_path?, token_source?, expires_in_path?)` | **事后声明式**凭证提取（决策 D2）：对该 ref 最近一次带凭证 2xx 响应声明「凭证在哪个路径」——不重发请求，声明错了改路径重声明即可（防锁不适用）；成功时机械渲染 `sut_config_auth_snippet`（见证据账本） | **凭证值不进 LLM 上下文**（提取在服务端持有的响应上进行）；`token_source` 三态与执行器同构（`Bearer / header:<X> / cookie`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态）；缺凭证时 request 错误指路 `ask_user(kind=credential)` 逐字段录入；超出执行器宽度的形态（凭证走请求头/链式认证）显式拒绝落盘——探测可探索、暂不可落盘 |
@@ -479,6 +479,14 @@ agent-protocol」前，runs/commands 两形态都须带凭证实测且核心端�
    阶梯③路径 ≤10 条（定向检查，非扫描行为）
 7. **探测副作用言明**：probe_protocol 建临时线程属对被测系统的写操作，探测前经 `ask_user`
    言明（可与 request 授权确认合并为一次交互）
+8. **变形报文发送前拦截（渲染后校验，v4.5）**：按 JSON 发送的 body 渲染后机械
+   `json.loads`——解析为 str/标量（**双重编码**：body 外层多一层引号，SUT 收到 JSON 字符串
+   而非对象报 422 `model_attributes_type`）或解析失败（凭证值含 `"`/`\` 破坏模板拼接）一律
+   拒发并给准确指引（`{{ password | tojson }}` 转义 / dict 形态传参；数组与显式非 JSON
+   Content-Type 放行）；422 响应按 detail type 分诊给 next_step（`model_attributes_type`=body
+   非对象，**先读 input 回显**——那是服务器实际收到的报文；`json_invalid`=非法 JSON；
+   `missing`=按 loc 补字段）——「凡可机械判定的变形不发给 SUT 让 Agent 瞎猜」（jxb-server
+   422 误诊事故：双重编码被误读为「后端格式不明」，换字段名/换 FormData 烧光探测预算）
 
 #### 泛化设计：前端包分析原语
 
@@ -790,3 +798,4 @@ review 检查项。
 | v4.2 | 2026-09-08 | 交互会话日志降噪（§6.4）：传输层日志器（httpx/httpcore/openai/anthropic）非 DEBUG 模式压到 WARNING——修执行域 setup_logging 进程级污染后续 Agent 流式直播的噪声混流 |
 | v4.3 | 2026-09-10 | 执行域事故修复（content-safety 假成功，arch/03 v4.8 同步）：generic_http steps 链式模板 + SSE 末步 + text 未命中判 failed；模板变量审计落盘门禁（§6.4 新增）；执行面工具结构性裁剪——invoke_* 退出 LLM 工具面 + 文件工具 workspace 边界（§6.4 新增）；prompts/guide 资产同步（steps 链实测纪律） |
 | v4.4 | 2026-09-10 | 既有场景包发现修复（用户实测「agent 找不到我创建的包」）：`list_packages` 三源工具（§6.2 新行，与 `scenario list` 同源）+ `read_reference` 纠偏为三源直读；工具面复位中间件（§6.1 新 bullet）剥除 deepagents 内置虚拟 FS 工具（ls/glob 永远为空致误判「没有包」）；prompts 域段包发现/改造规约按来源分流 + intro 示例（§3.5 同步） |
+| v4.5 | 2026-09-10 | 变形报文发送前拦截（§6.5 红线 8，jxb-server 422 误诊事故驱动）：request 渲染后 JSON 语义校验（双重编码 str/标量与非法 JSON 拒发 + tojson/dict 指引；数组与非 JSON Content-Type 放行）+ 422 detail type 分诊 next_step（model_attributes_type 读 input 回显 / json_invalid / missing 按 loc）+ 工具描述补 body 单层对象纪律；discover_login 的 OpenAPI 阶梯去兜底门（form 与 schema 证据并列）+ 接口域 openapi 指引 |

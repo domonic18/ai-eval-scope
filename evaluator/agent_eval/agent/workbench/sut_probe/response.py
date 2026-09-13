@@ -103,4 +103,44 @@ def structure_response(
                 "接口无效的结论——先用 request(ref=…) 实测登录接口，成功后 "
                 "declare_token 声明提取（凭证自动挂载）再重试"
             )
+    if response.status_code == 422 and "next_step" not in result:
+        # FastAPI/Pydantic 校验拒绝分诊（422 未到业务/认证层）：body 层错误
+        # （非对象/非法 JSON）换字段名无解，字段级错误才轮到改字段——先看
+        # detail 的 type 与 input 回显（input = 服务器实际收到的报文）再动手。
+        # 实测事故：model_attributes_type 被误读为「后端不要 dictionary」，在
+        # 换字段名/换 FormData 上烧光预算
+        first: Any = None
+        try:
+            payload = response.json()
+            detail = payload.get("detail") if isinstance(payload, dict) else None
+            first = detail[0] if isinstance(detail, list) and detail else None
+        except Exception:  # noqa: BLE001 — 非 JSON 422 走兜底指引
+            first = None
+        vtype = str(first.get("type", "")) if isinstance(first, dict) else ""
+        loc = first.get("loc") if isinstance(first, dict) else None
+        if vtype == "model_attributes_type":
+            result["next_step"] = (
+                "422 body 类型错误：服务器收到的不是 JSON 对象——多为双重编码"
+                "（body 外层多一层引号/转义，发出的是 JSON 字符串）。detail 的 "
+                "input 字段回显了实际收到的报文，先读它确认形态；body 以单层对象"
+                "形态重传即为新组合（防锁不拦）"
+            )
+        elif vtype == "json_invalid":
+            result["next_step"] = (
+                '422 body 非法 JSON：渲染后报文解析失败——常见于凭证值含 " 或 \\ '
+                "破坏模板拼接（字段值写 {{ password | tojson }} 渲染时自动转义），"
+                "或 form 文本被当 JSON 发送（本工具只支持 JSON body）。修正后重试"
+                "即为新组合（防锁不拦）"
+            )
+        elif vtype == "missing":
+            result["next_step"] = (
+                f"422 字段缺失（loc={loc}）：字段级错误——按 loc 补齐缺失字段后重试"
+                "（新组合）；字段名与报文形态以前端代码或 openapi schema 为准"
+            )
+        else:
+            result["next_step"] = (
+                "422 请求校验被拒（未到业务/认证层）：通读 detail 的 type/loc/msg "
+                "定位问题——body 层错误（type=model_attributes_type/json_invalid）"
+                "修 body 形态，字段级错误按 loc 修字段；改 body 即新组合（防锁不拦）"
+            )
     return result

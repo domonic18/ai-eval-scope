@@ -171,6 +171,33 @@ class RequestTool:
                     " {{{{ 字段 }}}}（凭证字段配 ref；链式变量以声明过的 step 名为根）"
                 )
             }
+        # 渲染后 JSON 语义校验（body 非空且按 JSON 发送时）：变形报文发送前拦截。
+        # 双重编码（body 外层多一层引号，SUT 收到 JSON 字符串而非对象）与凭证值
+        # 含 " / \ 破坏模板拼接，SUT 都只回一句 422——把我方参数变形伪装成「后端
+        # 格式不明」，实测烧掉整轮探测预算（jxb-server 422 误诊事故）。与占位符
+        # 守卫同哲学：凡可机械判定的变形不发给 SUT 让 Agent 瞎猜。显式非 JSON
+        # Content-Type（text/plain 等原始报文探测）不适用本校验；数组 body 合法放行
+        content_type = next((v for k, v in req_headers.items() if k.lower() == "content-type"), "")
+        if rendered_body and "json" in content_type.lower():
+            try:
+                parsed_body = json.loads(rendered_body)
+            except ValueError:
+                return {
+                    "error": (
+                        "body 渲染后不是合法 JSON，请求未发送。常见原因：凭证值含"
+                        ' " 或 \\ 字符破坏了模板拼接——字段值写 {{ password | tojson }} '
+                        "形态（渲染时自动 JSON 转义）后重试"
+                    )
+                }
+            if not isinstance(parsed_body, (dict, list)):
+                return {
+                    "error": (
+                        f"body 渲染后解析为 {type(parsed_body).__name__} 而非 JSON 对象，"
+                        "请求未发送——疑似双重编码（body 外层多了一层引号/转义，SUT 会收到"
+                        " JSON 字符串并报 422「Input should be a valid dictionary」）。去掉"
+                        "外层引号层以单层对象形态重传；body 直接传 dict 参数会机械序列化"
+                    )
+                }
         # 凭证注入请求的门禁面（非凭证请求只过 host 门禁）
         if cred_fields:
             if not ref.strip():
