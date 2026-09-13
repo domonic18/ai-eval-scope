@@ -529,6 +529,8 @@ interface ObjectStorage {
 
 工厂按 `PLATFORM_OBJECT_STORAGE`（`minio`/`s3`/`cos`）返回实现；三者均兼容 S3 协议，差别仅在 endpoint/签名版本配置。COS/SCF 场景下 presigned URL 的签名 host 与浏览器可达域名可能不一致，故 S3 实现内部维护 `client`（内部读写）与 `presignClient`（对外签名，`externalEndpoint`）两个 S3Client。
 
+> **本地 compose 的 `PLATFORM_S3_EXTERNAL_ENDPOINT` 是权衡开关**（run 20260913_052011 教训）：签出的上传 URL 全体上传方共用一个 host——`http://localhost:9100`（本地默认，宿主 CLI/浏览器可达）与 `http://minio:9000`（容器内 executor 可达，宿主不可解析，经系统代理还会 502）二选一；生产 COS 用公网域名则天然两侧可达。误配成内部端点的症状：事件摄取正常、制品 0/N 上传（502），CLI 日志刷 `sink.artifact.upload_failed`。
+
 ### 5.2 布局与隔离
 
 ```
@@ -1238,3 +1240,4 @@ volumes: { pgdata: {} }
 | v1.9 | 2026-09-12 | 摄取自动注册场景资产：run 事件携 scenario_id 时补缺建 scenarios 行 + defaults（快照只补缺、文件导入可覆盖）——CLI 主链路零手工导入；ingest project_id 兼容 slug 形态；useScenarioDefaults 失败清空回退运行快照 |
 | v1.10 | 2026-09-13 | 场景来源标记与配置中心视角分流：scenarios.source（official/auto_ingest）+ 列表 ?source= 过滤与 _count；配置中心默认只列官方场景包，补缺注册产物带「自动注册」徽标经开关显式展开；清理存量 auto-scn-*/content-safety 空壳 |
 | v1.11 | 2026-09-13 | 公开项目登录非成员语义修复：runGuard/artifactGuard 公开只读对登录非成员与匿名同权（此前匿名可读、登录反 404 倒挂）；写操作与 projectGuard 不受影响，转私后恢复 404 |
+| v1.12 | 2026-09-13 | 本地制品上传 502 归因与配置修正（run 20260913_050312/052011：事件摄取正常、制品 0/N）：§5.1 presign 对外端点为权衡开关——本地 `.env` 误配 `PLATFORM_S3_EXTERNAL_ENDPOINT=http://minio:9000`（容器内可达、宿主不可解析，叠加 macOS 系统代理经 httpx trust_env 拦截即 502），恢复模板默认 `http://localhost:9100`；权衡说明落 §5.1 注记 |
