@@ -33,6 +33,14 @@ def _downloads_enabled_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(protocol_tools, "SUT_FILE_DOWNLOAD_ENABLED", True)
 
 
+def _permissive_ledger(**policy_kwargs: Any) -> ResourceLedger:
+    """宽裕额度账本：成功路径测试的注入件（账本未注入=fail-closed 拒绝）。
+    dispatch 默认 1 太紧（多数测试连调两次 agent_run），放宽到 4。"""
+    return ResourceLedger(
+        InteractionPolicy(**{"sut_calls_total": 8, "dispatch": 4, "nudges": 2, **policy_kwargs})
+    )
+
+
 def _server(workspace_dir: Path | None = None, **sut_kwargs) -> AgentProtocolToolServer:
     defaults: dict[str, Any] = dict(
         name="cw",
@@ -51,11 +59,13 @@ def _server(workspace_dir: Path | None = None, **sut_kwargs) -> AgentProtocolToo
         SUTSystemConfig(**defaults),
         http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     )
-    return AgentProtocolToolServer(
+    server = AgentProtocolToolServer(
         channel,
         default_metadata={"eval_run_id": "run_x", "sut_name": "cw"},
         workspace_dir=workspace_dir,
     )
+    server.ledger = _permissive_ledger()
+    return server
 
 
 def test_semantic_tools_registered_in_order() -> None:
@@ -98,6 +108,7 @@ def test_metadata_merged_into_run_body() -> None:
     server = AgentProtocolToolServer(
         channel, default_metadata={"eval_run_id": "run_x", "sut_name": "cw"}
     )
+    server.ledger = _permissive_ledger()
     asyncio.run(server.agent_run("input", metadata={"task_id": "t-9"}))
     # §4.0.6-e：metadata 携带 eval_run_id/task_id/sut_name 供被测系统侧审计
     assert captured["metadata"] == {"eval_run_id": "run_x", "sut_name": "cw", "task_id": "t-9"}
@@ -137,6 +148,7 @@ def test_tool_guard_converts_channel_error_to_failed_result() -> None:
             raise AgentProtocolError("run.start 失败: 必须指定模型(modelId)")
 
     server = AgentProtocolToolServer(_BoomChannel())  # type: ignore[arg-type]
+    server.ledger = _permissive_ledger()
     result = asyncio.run(server.agent_run("hi"))
     assert result["status"] == "failed"
     assert result["error"]["type"] == "AgentProtocolError"
@@ -165,6 +177,7 @@ def test_agent_run_records_last_run_summary() -> None:
         http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     )
     server = AgentProtocolToolServer(channel)
+    server.ledger = _permissive_ledger()
     asyncio.run(server.agent_run("问题"))
     assert server.last_run == {
         "status": "success",
@@ -254,7 +267,9 @@ def _commands_server(
         ),
         http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     )
-    return AgentProtocolToolServer(channel)
+    server = AgentProtocolToolServer(channel)
+    server.ledger = _permissive_ledger()
+    return server
 
 
 def test_agent_run_interrupted_records_pending() -> None:
@@ -371,7 +386,9 @@ def test_read_thread_state_missing_thread_reports_not_found() -> None:
         ),
         http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     )
-    result = asyncio.run(AgentProtocolToolServer(channel).read_thread_state("t-404"))
+    server = AgentProtocolToolServer(channel)
+    server.ledger = _permissive_ledger()
+    result = asyncio.run(server.read_thread_state("t-404"))
     assert result["status"] == "not_found" and result["thread_id"] == "t-404"
 
 
@@ -614,7 +631,9 @@ def _download_server(handler, tmp_path: Path, **sut_kwargs) -> AgentProtocolTool
         SUTSystemConfig(**defaults),
         http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     )
-    return AgentProtocolToolServer(channel, workspace_dir=tmp_path)
+    server = AgentProtocolToolServer(channel, workspace_dir=tmp_path)
+    server.ledger = _permissive_ledger()
+    return server
 
 
 def test_download_relative_path_lands_in_package_output(
@@ -788,6 +807,7 @@ def test_download_requires_workspace(tmp_path: Path) -> None:
         ),
     )
     server = AgentProtocolToolServer(channel)  # workspace_dir 缺省 None
+    server.ledger = _permissive_ledger()
     result = asyncio.run(server.download_sut_file("/f/a.pdf", "t1"))
     assert result["status"] == "failed"
     assert "workspace" in result["error"]["message"]
@@ -1117,15 +1137,32 @@ def test_briefing_injected_and_refreshed_on_action_tools() -> None:
 
 
 def test_briefing_absent_without_ledger_and_on_ungated_tools() -> None:
-    """直连使用（无账本）恒等返回；取证收尾类工具不注入简报。"""
+    """无账本拒绝载荷不带简报（简报属账本挂件）；取证收尾类工具不注入简报。"""
     server = _commands_server([RESUMED_STATE])
+    server.ledger = None  # 显式撕掉 helper 默认账本：验证 fail-closed 原始形态
     result = asyncio.run(server.agent_run("生成课件"))
+    assert result["status"] == "failed"
     assert "briefing" not in result
 
     gated_server = _commands_server([RESUMED_STATE])
     gated_server.ledger = ResourceLedger(InteractionPolicy())
     info = asyncio.run(gated_server.get_agent_info())
     assert "briefing" not in info
+
+
+def test_budget_fail_closed_when_ledger_uninjected() -> None:
+    """账本未注入即拒绝（fail-closed）：装配链遗漏注入时闸门收紧而非静默放行
+    ——「无账本」不能等于「无额度」（AI 审查硬化项）。拒绝在触网之前。"""
+    captured: dict = {}
+    server = _commands_server([RESUMED_STATE], captured=captured)
+    server.ledger = None  # 显式撕掉 helper 默认账本
+
+    result = asyncio.run(server.agent_run("生成课件"))
+    assert result["status"] == "failed"
+    assert result["error"]["type"] == "BudgetExhausted"
+    assert result["error"]["budget"] == "ledger_missing"
+    assert "write_package" in result["error"]["guidance"]
+    assert "posts" not in captured  # 拒绝在触网之前
 
 
 def test_gate_refusal_carries_briefing() -> None:

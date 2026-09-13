@@ -26,7 +26,7 @@ from agent_eval.agent.executor.briefing import (
     SutStateTracker,
     build_briefing,
 )
-from agent_eval.agent.executor.ledger import ResourceLedger
+from agent_eval.agent.executor.ledger import ResourceLedger, uninjected_ledger_refusal
 from agent_eval.core.exceptions import (
     AgentEvalError,
     AgentProtocolError,
@@ -218,8 +218,8 @@ class AgentProtocolToolServer(ToolExporterMixin):
         self.last_run: dict[str, Any] | None = None
         # 本任务 SUT 调用超时留证（reset_task_state 逐任务清账）
         self._timeout_errors: list[str] = []
-        # 交互预算账本（arch/16 §4.3）——缺省 None=闸门全放行（直连使用本注册表
-        # 的旧路径不受影响）；ExecutionAgent 逐任务注入新实例（账本随任务生灭，
+        # 交互预算账本（arch/16 §4.3）——缺省 None=fail-closed（未注入即拒绝，
+        # 见 _budget）；ExecutionAgent 逐任务注入新实例（账本随任务生灭，
         # reset_task_state 不清它——换新即清零）
         self.ledger: ResourceLedger | None = None
         # SUT 状态观察时间线（arch/16 §5.1 决策简报素材）——reset_task_state
@@ -293,9 +293,13 @@ class AgentProtocolToolServer(ToolExporterMixin):
         }
 
     def _budget(self, action: str) -> dict[str, Any] | None:
-        """交互预算闸门（arch/16 §4.3）：拒绝载荷（含 guidance）或 None 放行。"""
+        """交互预算闸门（arch/16 §4.3）：拒绝载荷（含 guidance）或 None 放行。
+
+        账本未注入即拒绝（fail-closed）：装配链遗漏注入时闸门收紧而非静默
+        放行——「无账本」不能等于「无额度」。
+        """
         if self.ledger is None:
-            return None
+            return uninjected_ledger_refusal(action)
         return self.ledger.authorize(action)
 
     def _ledger_record(

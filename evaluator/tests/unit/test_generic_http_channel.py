@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import Any
 
 import httpx
 import pytest
@@ -189,11 +190,38 @@ def test_health_check_rejects_bad_template_syntax() -> None:
 # ── GenericHttpToolServer：sut_request 语义工具（与 agent_run 同约定） ────────
 
 
+def _permissive_ledger() -> Any:
+    """宽裕额度账本：成功路径测试的注入件（账本未注入=fail-closed 拒绝）。"""
+    from agent_eval.agent.executor.ledger import ResourceLedger
+    from agent_eval.execution.models import InteractionPolicy
+
+    return ResourceLedger(InteractionPolicy(sut_calls_total=8, dispatch=4, nudges=2))
+
+
+def test_sut_request_uninjected_ledger_fails_closed() -> None:
+    """账本未注入即拒绝（fail-closed）：无账本不能等于无额度——装配遗漏时
+    闸门收紧而非静默放行成无限额调用口（AI 审查硬化项）。拒绝在触网之前。"""
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover — 不应到达
+        calls["n"] += 1
+        return httpx.Response(200, json=RESPONSE)
+
+    server = GenericHttpToolServer(_channel(_sut(), handler))
+    result = asyncio.run(server.sut_request("hi"))
+    assert result["status"] == "failed"
+    assert result["error"]["type"] == "BudgetExhausted"
+    assert result["error"]["budget"] == "ledger_missing"
+    assert "write_package" in result["error"]["guidance"]
+    assert calls["n"] == 0  # 拒绝在触网之前
+
+
 def test_sut_request_returns_result_and_records_last_run() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=RESPONSE)
 
     server = GenericHttpToolServer(_channel(_sut(), handler), default_metadata={"task_id": "t0"})
+    server.ledger = _permissive_ledger()
     result = asyncio.run(server.sut_request("帮我生成课件"))
     assert result["status"] == "success"
     assert result["text"] == "课件正文"
@@ -214,6 +242,7 @@ def test_sut_request_merges_default_and_call_metadata() -> None:
         return httpx.Response(200, json=RESPONSE)
 
     server = GenericHttpToolServer(_channel(_sut(), handler), default_metadata={"task_id": "t0"})
+    server.ledger = _permissive_ledger()
     asyncio.run(server.sut_request("hi", metadata={"turn": 2}))
     assert captured["headers"]["x-trace"] == "t0"  # 模板吃到合并后的 metadata
 
@@ -230,6 +259,7 @@ def test_sut_request_channel_error_guarded_as_failed_result() -> None:
         return httpx.Response(200, json=RESPONSE)
 
     server = GenericHttpToolServer(_channel(sut, handler))
+    server.ledger = _permissive_ledger()
     result = asyncio.run(server.sut_request("hi"))
     assert result["status"] == "failed"
     assert "渲染失败" in result["error"]["message"]
@@ -457,6 +487,7 @@ def test_sut_request_session_continues_across_calls() -> None:
 
     server = GenericHttpToolServer(_once_channel(handler))
     server.current_session_key = "t1"
+    server.ledger = _permissive_ledger()
     first = asyncio.run(server.sut_request("第一问"))
     second = asyncio.run(server.sut_request("第二问"))
     assert first["text"] == "回:第一问"
@@ -480,6 +511,7 @@ def test_sut_request_new_session_rebuilds_conversation() -> None:
 
     server = GenericHttpToolServer(_once_channel(handler))
     server.current_session_key = "t1"
+    server.ledger = _permissive_ledger()
     asyncio.run(server.sut_request("hi"))
     captured.clear()
     asyncio.run(server.sut_request("hi", new_session=True))

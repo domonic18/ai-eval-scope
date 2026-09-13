@@ -103,6 +103,28 @@ _GUIDANCE = {
 }
 
 
+def uninjected_ledger_refusal(action: str) -> dict[str, Any]:
+    """账本未注入时的 fail-closed 拒绝载荷（AI 审查硬化项，run 20260913_064226）。
+
+    「无账本」不能等于「无额度」：装配链遗漏 _inject_ledger 时闸门收紧而非
+    静默放行（放行即对被测系统无限额探测口）。载荷与 BudgetExhausted 同构，
+    LLM 无需感知差异；无 evidence 可落 gate_refusal——链路缺失本身即证据。
+    """
+    return {
+        "status": "failed",
+        "error": {
+            "type": "BudgetExhausted",
+            "budget": "ledger_missing",
+            "action": action,
+            "message": "资源账本未注入（fail-closed 兜底拒绝）——执行器装配可能遗漏账本",
+            "guidance": (
+                "这是装配缺陷而非正常额度耗尽，重试同样会被拒。基于已掌握的信息 "
+                "write_package 收尾（success=false，error 写明本拒绝）。"
+            ),
+        },
+    }
+
+
 class ResourceLedger:
     """单任务资源账本 —— 交互预算的仲裁与记账（随任务生灭，不跨任务复用）。"""
 

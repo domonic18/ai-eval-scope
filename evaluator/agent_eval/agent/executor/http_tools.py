@@ -12,7 +12,7 @@ import time
 from typing import Any
 
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec
-from agent_eval.agent.executor.ledger import ResourceLedger
+from agent_eval.agent.executor.ledger import ResourceLedger, uninjected_ledger_refusal
 from agent_eval.agent.executor.protocol_tools import bounded_result, tool_guard
 from agent_eval.execution.channels.generic_http import GenericHttpChannel
 
@@ -52,8 +52,8 @@ class GenericHttpToolServer(ToolExporterMixin):
         self.default_metadata = default_metadata or {}
         # 最近一次 SUT 请求摘要（ExecutionPackage trace 回填 SUT 回答文本用）
         self.last_run: dict[str, Any] | None = None
-        # 交互预算账本（arch/16 §4.3）——缺省 None=闸门全放行；由 ExecutionAgent
-        # 逐任务注入新实例
+        # 交互预算账本（arch/16 §4.3）——缺省 None=fail-closed（未注入即拒绝，
+        # 见 sut_request）；由 ExecutionAgent 逐任务注入新实例
         self.ledger: ResourceLedger | None = None
         # once 步会话键（plan/06 M1）——ExecutionAgent.run_task 逐任务注入
         # task.id，多任务隔离由键空间机械保证（不依赖 Agent 在 metadata 自觉传）
@@ -89,10 +89,13 @@ class GenericHttpToolServer(ToolExporterMixin):
         （登录/提交/取件），不受 dispatch 单发限制；once 步次轮命中缓存跳过
         请求但仍计一次（授权=尝试语义）。
         """
-        if self.ledger is not None:
-            refused = self.ledger.authorize("sut_call")
-            if refused is not None:
-                return refused
+        if self.ledger is None:
+            # fail-closed：账本未注入（装配遗漏）时拒绝而非放行——无账本不能
+            # 等于无额度，否则该工具即成对被测系统的无限额调用口
+            return uninjected_ledger_refusal("sut_call")
+        refused = self.ledger.authorize("sut_call")
+        if refused is not None:
+            return refused
         started = time.monotonic()
         result = await self.channel.run(
             input,
