@@ -23,6 +23,7 @@ from agent_eval.core.exceptions import (
     LLMNetworkError,
     LLMQuotaExceededError,
     LLMRateLimitError,
+    LLMResponseError,
 )
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
@@ -89,6 +90,11 @@ class OpenAICompatClient(LLMClient):
         )
 
     @property
+    def max_tokens(self) -> int | None:
+        """生效的最大输出 tokens（线路配置值，随 provider_info 透出）。"""
+        return self._config.max_tokens
+
+    @property
     def provider_name(self) -> str:
         return self._name
 
@@ -140,6 +146,17 @@ class OpenAICompatClient(LLMClient):
 
         # 重试循环要么 break（response 已赋值）要么在 except 内抛出——此处恒非 None
         assert response is not None
+
+        # 截断/内容过滤显式报错——静默返回半截 JSON 只会把症状推迟到解析层
+        finish_reason = response.choices[0].finish_reason if response.choices else None
+        if finish_reason == "length":
+            out = response.usage.completion_tokens if response.usage else 0
+            raise LLMResponseError(
+                f"LLM 输出被截断（finish_reason=length，已完成 {out} 输出 tokens）"
+                "——请调大该线路 max_tokens 或精简评审输出"
+            )
+        if finish_reason == "content_filter":
+            raise LLMResponseError("LLM 拒绝回答（finish_reason=content_filter），无法完成评审")
 
         content = response.choices[0].message.content or ""
         usage = None
@@ -206,6 +223,17 @@ class OpenAICompatClient(LLMClient):
             ) from e
 
         duration_ms = (time.monotonic() - start) * 1000
+
+        # 截断/内容过滤显式报错——静默返回半截 JSON 只会把症状推迟到解析层
+        finish_reason = response.choices[0].finish_reason if response.choices else None
+        if finish_reason == "length":
+            out = response.usage.completion_tokens if response.usage else 0
+            raise LLMResponseError(
+                f"LLM 输出被截断（finish_reason=length，已完成 {out} 输出 tokens）"
+                "——请调大该线路 max_tokens 或精简评审输出"
+            )
+        if finish_reason == "content_filter":
+            raise LLMResponseError("LLM 拒绝回答（finish_reason=content_filter），无法完成评审")
 
         content = response.choices[0].message.content or ""
         usage = None

@@ -529,6 +529,8 @@ interface ObjectStorage {
 
 工厂按 `PLATFORM_OBJECT_STORAGE`（`minio`/`s3`/`cos`）返回实现；三者均兼容 S3 协议，差别仅在 endpoint/签名版本配置。COS/SCF 场景下 presigned URL 的签名 host 与浏览器可达域名可能不一致，故 S3 实现内部维护 `client`（内部读写）与 `presignClient`（对外签名，`externalEndpoint`）两个 S3Client。
 
+> **本地 compose 的 `PLATFORM_S3_EXTERNAL_ENDPOINT` 是权衡开关**（run 20260913_052011 教训）：签出的上传 URL 全体上传方共用一个 host——`http://localhost:9100`（本地默认，宿主 CLI/浏览器可达）与 `http://minio:9000`（容器内 executor 可达，宿主不可解析，经系统代理还会 502）二选一；生产 COS 用公网域名则天然两侧可达。误配成内部端点的症状：事件摄取正常、制品 0/N 上传（502），CLI 日志刷 `sink.artifact.upload_failed`。
+
 ### 5.2 布局与隔离
 
 ```
@@ -630,6 +632,10 @@ Authorization: Bearer eval-xxxxx
 ### 6.4 隔离实现
 
 - **中间件 `tenantGuard`**：解析 `req.user`（JWT）或 `req.tenant`（API Key），解析出 `{ orgId?, projectId?, role? }` 挂到 `req.tenant`；Query/管理路由据此校验"用户是否属于该组织/有权访问该项目"，越权直接 403/404（不泄露存在性）。
+  **公开只读例外（v1.11）**：`runGuard` / `artifactGuard` 对公开项目（`isPublic`）的读端点，
+  匿名与**登录非成员**同权放行（`tenant.kind=public`，只读）——公开语义 = 「任何人可读运行数据」，
+  不因登录收窄；写操作（DELETE 等 owner 守卫）与 `projectGuard`（项目元数据/Key 管理）不受影响，
+  转私后非成员恢复 404 不泄露存在性。
 - **Repository 强制过滤**：`base.repository.js` 构造接收 `tenant`，所有 `find*` 自动追加 `WHERE org_id/project_id`；约束在数据层，业务层无法绕过。
 - **对象存储**：下载签发前校验 `object_key` 的 `project_id` 前缀属于 `req.tenant`。
 - **API Key 跨项目写**：`ingest.service` 以 `req.tenant.projectId`（来自 Key）为准，忽略/拒绝 payload 里的他项目 `project_id`（`403 PROJECT_FORBIDDEN`）。
@@ -684,8 +690,22 @@ Authorization: Bearer eval-xxxxx
 > `metrics` 为动态键值对象，键由对应 scenario 的 `MetricDefinition.id` 定义，不再强制固定 `DR/CPR/avg_reward/condR`。courseware 场景仍上报这些指标 id，但 Web 后端不再把它们映射到 `Run` 的固定列，而是存入 `Run.metrics` JSONB；同时回填 `dr/cpr/avgReward/...` 遗留列以兼容旧版查询（迁移完成后可删除回填逻辑）。
 > `run_config_snapshot_id` 必须在 run 事件到达前由评估器通过 `POST /api/v1/run-config-snapshots` 预创建并上传快照内容。
 - `tier` 枚举须与评估器 `ConstraintTier` 四档完全一致：`hard_gate | hard_score | soft | preference`（`hard_score` = 硬性评分，失败归零；曾因 schema 漏列该档导致真实评估被拒，已纳入回归测试）。
+- `artifact.kind` 枚举：`screenshot | judge_record | output | trace | manifest | transcript`。
+  `transcript`（v1.8 新增）= 样本执行对话记录（包根 `transcript.md`，markdown）——前端按
+  kind 分流到「对话过程」tab 渲染；枚举只增不改，旧版评估器不受影响。
 - `project_id`/`batch_id` 可为 `null`（未指定项目时用 Key 所属项目）。
 **该 schema 文件同时拷贝到评估器 `evaluator/agent_eval/observability/schemas/`，作为双方契约并由 CI 校验一致性**（NF-O-13 防漂移）。
+- **run 事件自动注册场景资产（v1.9）**：run 事件携带 `scenario_id` 时摄取侧补缺注册——
+  `scenarios` 行不存在才建；defaults（`metric_definitions` + `aggregation_policy`）仅当该场景
+  尚无任何版本时从 `run_config_snapshot` 创建（labels=`auto-ingest`，version=包版本），
+  并发撞唯一键静默吞掉不拖垮事件事务。快照只补缺、文件导入可覆盖（arch/13 §5.3）——
+  「CLI 建包 → 评测 → 上传 → Web 看结果」主链路零手工导入，场景即资产台可见；
+  已有 defaults 的场景不受影响，run 明细页指标展示以运行快照为准（平台 defaults 仅作最新版覆盖）。
+- **场景来源标记与配置中心视角分流（v1.10）**：`scenarios.source` ∈ `official`（管理员创建/
+  脚本导入，默认）/ `auto_ingest`（补缺注册时写入）——补缺注册机制服务可观测（趋势按场景聚合、
+  defaults 回退），但其产物不进配置中心默认视图：`GET /api/v1/scenarios?source=official` 过滤，
+  配置中心默认只列 official，管理员可展开「显示自动注册 (N)」（卡片带「自动注册」徽标）；
+  列表附带各资产 `_count`。观测侧（趋势/运行/defaults API）不受影响。
 
 ### 7.2 幂等去重
 
@@ -822,7 +842,7 @@ Web /api/public/ingest + /api/public/artifacts/url → PG + 对象存储
 | POST | `/api/v1/jobs` | Bearer API Key | 提交评测任务（`package_id` / `package_version` 指定场景包），202 返回 `job_id` |
 | GET | `/api/v1/jobs/:id` | Bearer API Key | 查询任务态（含 `metrics`、`error`、`web_run_url`） |
 | GET | `/api/v1/jobs/:id/overview` | Bearer API Key | 速览：运行摘要 + 失败项 + 关键扣分点 + 涉及文件（verdict 由快照 `metricDefinitions` 动态判定） |
-| GET | `/api/v1/scenarios` | Bearer API Key | 列出场景 |
+| GET | `/api/v1/scenarios` | Bearer API Key | 列出场景；`?source=official\|auto_ingest` 按来源过滤（缺省全量），响应附 `_count` 资产计数 |
 | GET | `/api/v1/scenarios/:id/catalog` | Bearer API Key | 场景下可用资产目录：**五类聚合**（rule-sets / prompts / datasets / task-sets / sut-configs，DB 资产优先、构建期静态兜底） |
 | GET | `/api/v1/health` | 公开 | eval 子系统健康 |
 
@@ -858,6 +878,7 @@ evaluator/agent_eval/observability/
 | `SampleResult` + `scores.json` | `sample` | `sample_id → external_sample_id`；`metrics → Record<metric_id/stage_id, number>`（替代固定 `s_format/s_common/s_soft/s_pref/reward`）；`dimensions` 从 scores.json |
 | `ConstraintResult`（rule_results.json 元素） | `constraint` | `constraint_id/rule_id/name/tier/status/passed/score/reason/details/duration_ms/judge_*` 直传；`judge_record_path → judge_record_object_key`（制品上传后替换） |
 | 截图 / 原始产出物 / JudgeRecord / trace.json | `artifact` | 上传后生成 `object_key`，附 `kind/md5/size/content_type` |
+| 包根 `transcript.md`（执行对话记录） | `artifact` | `kind="transcript"`（v1.8）；上传白名单三组之一（`output/*`、包根技术 json、transcript.md）——文件不存在（手动 pack 包）自动跳过，eval_only 不受影响 |
 | Langfuse `trace_id` | run 字段 | `tracing.get_current_trace_id()` 透传 |
 
 > **字段名对齐**：评估器序列化的 `passed`/`rule_id`（见现状 `rule_results.json`）与 dataclass `to_dict` 的 `status`/`constraint_id` 存在差异——`events.py` 统一以**事件 schema**为准输出，兼容两种来源，确保后端只认 schema。
@@ -1068,6 +1089,10 @@ LIMIT $4;
 - **页面映射**：ProjectList/ProjectDetail/RunDetail/TaskDetail 等页面**新建**（Sprint 7a 的本地查看器前端已移除），数据源为 Query API；目录模式（DirectoryTree/ModuleScoreTable）按 `module_results` 字段切换。
 - **样本 Tab（项目页）**：项目页新增「样本」Tab——样本清单表（`externalSampleId` / 最近评估时间 / 最近 Reward / 评估次数 / 状态 / 内容版本）；点样本进入样本走势视图：该样本 `reward` 跨 run 走势图（复用 LineChart）+ 历次评估明细表（时间 / run / reward / s_format / s_common / 状态 / `content_hash`）。与运行视图互补：运行视图看「每次评估评了什么」，样本视图看「每个样本随时间的演进」。
 - **制品预览**：任务详情页对 `artifact.kind`（screenshot/judge_record/output）提供预览，经 `GET /api/artifacts/:id/preview` 取 URL——image 走 presigned 直链，html/text/trace 走同源 raw 代理（`/raw?token=`，见 §5.4）。
+- **样本明细证据扩展（原始问题 + 对话过程，v1.8）**：SampleDetail 右栏 `PreviewPane` 由三 tab（原始文档/渲染截图/执行 Trace）扩为五 tab：
+  - 「原始问题」：`kind="trace"` 且 `originalName == "task.json"` 的制品特判归组——渲染 `input.instruction` 主文本 + `expected`（reference / must_mention）折叠区。task.json 此前已随技术文件上传（kind=trace），但被埋没在 Trace tab 的 JSON 下拉里；数据零新增，只补语义位。
+  - 「对话过程」：`kind="transcript"` 制品（evaluator sink 上传包根 transcript.md）按 markdown 渲染——transcript.md 本为分节人读结构（任务提示 → 执行 Agent → 工具结果 → 反问应答），直接渲染即可，不引入结构化气泡（YAGNI，验证阅读体验后再议）。
+  - **eval_only 兼容**：tab 由制品列表动态生成——手动 pack 包无 transcript 制品则「对话过程」tab 不出现；task.json 由 pack 一并写入，「原始问题」tab 照常可用（eval_only 同样能看到被评估的原始题目）。「执行 Trace」tab 保持现状。
 - **扣分项文件定位与制品联动**：
   - 数据：`ConstraintResult.details.source_files` 标注约束涉及的课件文件（`filename`、`artifact_kind`、`page`、`snippet`）。
   - 匹配：前端用 `matchArtifactByFilename(artifacts, filename)` 将 `filename` 匹配到 sample 制品的 `originalName`。
@@ -1211,3 +1236,8 @@ volumes: { pgdata: {} }
 | v1.5 | 2026-07-13 | 合并结果文件定位与制品联动方案 |
 | v1.6 | 2026-07-13 | 对接 13：Run/Sample 增场景化指标 |
 | v1.7 | 2026-08-27 | 资产化同步：Secrets 拉取与结构重写 |
+| v1.8 | 2026-09-12 | 样本明细证据扩展：artifact.kind 增 transcript（执行对话记录上传）+ SampleDetail「原始问题/对话过程」tab（eval_only 条件渲染兼容） |
+| v1.9 | 2026-09-12 | 摄取自动注册场景资产：run 事件携 scenario_id 时补缺建 scenarios 行 + defaults（快照只补缺、文件导入可覆盖）——CLI 主链路零手工导入；ingest project_id 兼容 slug 形态；useScenarioDefaults 失败清空回退运行快照 |
+| v1.10 | 2026-09-13 | 场景来源标记与配置中心视角分流：scenarios.source（official/auto_ingest）+ 列表 ?source= 过滤与 _count；配置中心默认只列官方场景包，补缺注册产物带「自动注册」徽标经开关显式展开；清理存量 auto-scn-*/content-safety 空壳 |
+| v1.11 | 2026-09-13 | 公开项目登录非成员语义修复：runGuard/artifactGuard 公开只读对登录非成员与匿名同权（此前匿名可读、登录反 404 倒挂）；写操作与 projectGuard 不受影响，转私后恢复 404 |
+| v1.12 | 2026-09-13 | 本地制品上传 502 归因与配置修正（run 20260913_050312/052011：事件摄取正常、制品 0/N）：§5.1 presign 对外端点为权衡开关——本地 `.env` 误配 `PLATFORM_S3_EXTERNAL_ENDPOINT=http://minio:9000`（容器内可达、宿主不可解析，叠加 macOS 系统代理经 httpx trust_env 拦截即 502），恢复模板默认 `http://localhost:9100`；权衡说明落 §5.1 注记 |

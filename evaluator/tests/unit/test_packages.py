@@ -168,6 +168,10 @@ def test_cli_init_creates_scaffold(tmp_path: Path) -> None:
     assert (root / "agent_eval.yaml").exists()
     for sub in ("rules", "prompts", "datasets"):
         assert (root / sub).is_dir()
+    # 聚合策略起始文件必含（guide §8「脚手架已含」）——TODO 注释须点出
+    # skip_tiers_in_reward（judge 0 分静默事故的关键防线字段）
+    policy = (root / "metrics" / "policy.yaml").read_text(encoding="utf-8")
+    assert "aggregation_policy" in policy and "skip_tiers_in_reward" in policy
     manifest = load_manifest(root)
     assert manifest.id == "quality" and manifest.scenario == "travel-itinerary"
 
@@ -189,6 +193,21 @@ def test_cli_validate_missing_dir(tmp_path: Path) -> None:
     result = runner.invoke(scenario_app, ["validate", str(tmp_path)])
     assert result.exit_code == 1
     assert "缺少资源目录" in result.output
+
+
+def test_cli_validate_online_requires_task_sets(tmp_path: Path) -> None:
+    # 在线形态（清单声明 default_task_set）考卷必需——缺失此前一路绿灯到运行时才炸
+    runner.invoke(
+        scenario_app, ["new", "demo/pkg", "--mode", "skeleton", "--output", str(tmp_path / "p")]
+    )
+    manifest_path = tmp_path / "p" / "agent_eval.yaml"
+    manifest_path.write_text(
+        manifest_path.read_text(encoding="utf-8") + "  default_task_set: default\n",
+        encoding="utf-8",
+    )
+    result = runner.invoke(scenario_app, ["validate", str(tmp_path / "p")])
+    assert result.exit_code == 1
+    assert "task_sets" in result.output
 
 
 def test_cli_list_builtin() -> None:

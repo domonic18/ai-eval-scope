@@ -852,11 +852,28 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         passed = combined_score >= threshold and len(rule_errors) == 0
         score = 1.0 if passed else 0.0
 
-        # 构建 reason（面向用户可读，不暴露内部 LLM 维度分数细节）
+        # 构建 reason（面向用户可读：分数型失败透出维度评分与通过线，规则型失败列出具体错误）
         if passed:
             reason = "知识准确性（LLM + 规则）：通过"
         else:
             reason = "知识准确性（LLM + 规则）：未通过"
+            # 分数型失败（无规则错误、纯 LLM 评分不达标）必须给出可解释信息，
+            # 否则用户只见「未通过」三个字无从定位（对齐兄弟评估器透出维度分的惯例）。
+            # 分数过线但被规则错误致败时不拼分数条款——「加权 8.6 低于通过线 8.0」
+            # 属自相矛盾文案，失败归因已由下方「发现错误」条款承载（run 20260913_050312）
+            if scores and combined_score < threshold:
+                dim_names = (
+                    {d.dim_id: d.name for d in template.dimensions}
+                    if template and template.dimensions
+                    else {}
+                )
+                dim_desc = "、".join(
+                    f"{dim_names.get(k, k)} {float(v):g}" for k, v in scores.items()
+                )
+                reason += (
+                    f"；LLM 评分：{dim_desc}"
+                    f"（加权 {combined_score * 10:.1f}/10，低于通过线 {threshold * 10:.1f}）"
+                )
         if rule_errors:
             # 列出 LLM 二次确认的具体错误（_llm_reason 优先，回退规则描述），最多 5 条
             err_descs = [

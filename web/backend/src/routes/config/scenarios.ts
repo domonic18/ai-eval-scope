@@ -30,8 +30,10 @@ function injectLatest(labels: string[]): string[] {
   return labels.includes("latest") ? labels : [...labels, "latest"]
 }
 
-router.get("/", async (_req, res) => {
-  res.json({ scenarios: await repo().listScenarios() })
+router.get("/", async (req, res) => {
+  // ?source=official|auto_ingest：配置中心默认视角取 official（补缺注册场景不进默认视图）
+  const source = typeof req.query.source === "string" && req.query.source ? req.query.source : undefined
+  res.json({ scenarios: await repo().listScenarios(source) })
 })
 
 /** 创建场景（admin）。 */

@@ -14,7 +14,7 @@ def test_import_sut_tools() -> None:
     from agent_eval.agent.executor.sut_tools import SUTToolServer
 
     server = SUTToolServer()
-    assert len(server.get_tool_names()) == 7
+    assert len(server.get_tool_names()) == 5  # 默认安全集（invoke_* 不进 LLM 面）
     assert "write_package" in server.describe_tools()
 
 

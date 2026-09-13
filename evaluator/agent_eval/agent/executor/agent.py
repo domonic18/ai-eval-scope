@@ -4,52 +4,45 @@
 生成 ExecutionPackage。底座为 deepagents 的 create_deep_agent（惰性导入，
 [agent] optional extra）；模型经 build_chat_model 从角色注册表双协议桥接；
 BudgetGuard/SessionLogCallback 以 LangGraph 回调注入（预算/结构化日志）。
+
+本模块只保留装配与执行循环；prompt 构建见 executor/prompts.py，
+包物化与机械守卫见 executor/package_writer.py，transcript 渲染见
+executor/transcript.py（plan/07 G4 拆分）。
 """
 
 from __future__ import annotations
 
-import json
+import time
 from datetime import UTC, datetime
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import yaml
+import structlog
 
 from agent_eval.agent.core.callbacks import BudgetGuard, SessionLogCallback
 from agent_eval.agent.core.model_bridge import build_chat_model
 from agent_eval.agent.core.session import AgentSession
 from agent_eval.agent.core.session_log import SessionLogger
+from agent_eval.agent.core.tool_filter import build_toolset_filter
+from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
+from agent_eval.agent.executor.package_writer import finalize_execution_package
+from agent_eval.agent.executor.policy import (
+    derive_recursion_limit,
+    resolve_interaction_policy,
+)
+from agent_eval.agent.executor.prompts import (
+    build_system_prompt,
+    build_task_prompt,
+    extract_instruction,
+)
 from agent_eval.agent.executor.sut_tools import SUTToolServer
-from agent_eval.config.paths import PACKAGE_ROOT
 from agent_eval.core.exceptions import (
     AgentError,
     AgentTimeoutError,
     BudgetExceededError,
 )
-from agent_eval.execution.models import AgentConfig, ProcessMetrics, Task, TaskSet
+from agent_eval.execution.models import AgentConfig, Task, TaskSet
 from agent_eval.storage.package import ExecutionPackage, generate_run_id
-
-# 执行 Agent 提示词资产（prompt 在 YAML 中维护，不 hardcode；对齐 summary_prompt.yaml 惯例）
-_PROMPTS_PATH = PACKAGE_ROOT / "assets" / "configs" / "execution_agent_prompts.yaml"
-
-
-@lru_cache(maxsize=1)
-def _load_prompts() -> dict[str, Any]:
-    """加载 execution_agent_prompts.yaml → {system_prompt, task_prompt}。"""
-    try:
-        data = yaml.safe_load(_PROMPTS_PATH.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as e:
-        raise AgentError(
-            f"执行 Agent 提示词资产损坏: {_PROMPTS_PATH}（{e}）",
-            details={"path": str(_PROMPTS_PATH)},
-        ) from e
-    if not isinstance(data, dict) or not data.get("system_prompt") or not data.get("task_prompt"):
-        raise AgentError(
-            f"执行 Agent 提示词资产结构不完整（需 system_prompt/task_prompt 两段）: {_PROMPTS_PATH}",
-            details={"path": str(_PROMPTS_PATH)},
-        )
-    return data
 
 
 def _now_iso() -> str:
@@ -89,11 +82,38 @@ class ExecutionAgent:
         self.sut_tools = sut_tools or SUTToolServer(
             config.sut_tools_config, workspace_dir=config.workspace_dir
         )
-        # 外部注入的注册表（如 AgentProtocolToolServer）同样以 config.workspace_dir
-        # 为落盘根——write_package/collect_results 的目的地不交给 LLM 决定
-        self.sut_tools.workspace_dir = Path(config.workspace_dir)
         self.tool_servers: list[Any] = [self.sut_tools, *(extra_tool_servers or [])]
+        # 落盘根统一注入：凡有 workspace_dir 属性的注册表（SUTToolServer /
+        # AgentProtocolToolServer 等）同以 config.workspace_dir 为根——
+        # write_package/collect_results/download_sut_file 的目的地不交给 LLM 决定
+        self._inject_workspace(Path(config.workspace_dir))
         self._graph: Any = None
+
+    def _inject_workspace(self, workspace_dir: Path) -> None:
+        """向所有带 workspace_dir 属性的工具注册表注入落盘根。"""
+        for server in self.tool_servers:
+            if hasattr(server, "workspace_dir"):
+                server.workspace_dir = workspace_dir
+
+    def _inject_ledger(self, ledger: ResourceLedger) -> None:
+        """向所有带 ledger 属性的工具注册表注入交互预算账本（arch/16 §4.3）。
+
+        逐任务注入新实例（账本随任务生灭，跨任务计数不串）；协议与
+        generic_http 注册表共享同一账本——SUT 交互总额跨通道统一计量。
+        """
+        for server in self.tool_servers:
+            if hasattr(server, "ledger"):
+                server.ledger = ledger
+
+    def _inject_session_key(self, session_key: str) -> None:
+        """向 generic_http 语义工具面注入 once 步会话键（plan/06 M1）。
+
+        键=task.id：once 步会话缓存的多任务隔离由键空间机械保证——与
+        workspace_dir/ledger 同一注入模式，不依赖 Agent 在 metadata 自觉传。
+        """
+        for server in self.tool_servers:
+            if hasattr(server, "current_session_key"):
+                server.current_session_key = session_key
 
     # ─── 对外入口 ───
 
@@ -103,13 +123,69 @@ class ExecutionAgent:
         """批量执行任务集（共享 run_id），返回 (run_id, 执行包列表)。
 
         run_id 可由调用方（CLI）注入——用于运行清单登记与外部关联。
+
+        任务隔离（arch/16 Phase 1 收尾）：单任务异常终止不再烧掉整场——
+        两次 staging 重放实测（run 20260911_050015 / 073626）首个任务熔断后
+        其余考卷从未执行。失败包已由 _abort 补齐链物化，从包根恢复登记后
+        继续下一任务；包缺失（收尾链自身故障）才向上抛。
         """
         run_id = run_id or generate_run_id()
-        packages = [await self.run_task(task, run_id=run_id) for task in task_set.tasks]
+        packages: list[ExecutionPackage] = []
+        total = len(task_set.tasks)
+        for idx, task in enumerate(task_set.tasks, start=1):
+            # 逐任务进度上终端（stderr）：执行域只有一根转轮，单任务数十分钟时
+            # 表现为「卡住不动」（SUT 反问循环实测 2026-09）——开始/结束都要可见
+            structlog.get_logger("executor").info(
+                "任务开始",
+                task_id=task.id,
+                progress=f"{idx}/{total}",
+            )
+            started = time.monotonic()
+            try:
+                package = await self.run_task(task, run_id=run_id, task_set=task_set)
+            except (AgentTimeoutError, AgentError, BudgetExceededError) as e:
+                structlog.get_logger("executor").error(
+                    "任务异常，隔离后继续下一任务",
+                    task_id=task.id,
+                    progress=f"{idx}/{total}",
+                    error=type(e).__name__,
+                )
+                package = self._load_failed_package(
+                    Path(self.config.workspace_dir), run_id, task.id
+                )
+                if package is None:
+                    raise  # 失败包都没落盘=收尾链自身故障，隔离无意义
+            structlog.get_logger("executor").info(
+                "任务结束",
+                task_id=task.id,
+                progress=f"{idx}/{total}",
+                status=package.manifest.status,
+                elapsed_s=round(time.monotonic() - started, 1),
+            )
+            packages.append(package)
+        failed = sum(1 for p in packages if p.manifest.status == "failed")
+        if failed:
+            structlog.get_logger("executor").warning("任务集部分失败", failed=failed, total=total)
         return run_id, packages
 
-    async def run_task(self, task: Task, *, run_id: str | None = None) -> ExecutionPackage:
+    def _load_failed_package(
+        self, workspace: Path, run_id: str, task_id: str
+    ) -> ExecutionPackage | None:
+        """从包根恢复异常任务的失败包（_abort 补齐链已物化五件套 + ledger）。"""
+        package_dir = workspace / "runs" / run_id / "packages" / task_id
+        if not (package_dir / "manifest.json").exists():
+            return None
+        return ExecutionPackage.load(package_dir)
+
+    async def run_task(
+        self, task: Task, *, run_id: str | None = None, task_set: TaskSet | None = None
+    ) -> ExecutionPackage:
         """执行单个任务，返回 ExecutionPackage。
+
+        Args:
+            task: 待执行任务。
+            run_id: 运行标识（缺省自动生成）。
+            task_set: 所属任务集——interaction_policy 声明的继承来源（arch/16 §4.1）。
 
         Raises:
             AgentTimeoutError: 超过轮次限制（已写入含部分结果的执行包）。
@@ -123,7 +199,25 @@ class ExecutionAgent:
         # 互相覆盖且无法归属运行）。write_package 的目的地由
         # sut_tools.workspace_dir 决定，逐 run 注入包根。
         run_packages_root = workspace / "runs" / run_id / "packages"
-        self.sut_tools.workspace_dir = run_packages_root
+        # 逐 run 注入包根（SUTToolServer 与语义工具注册表同根，产物落同一执行包）
+        self._inject_workspace(run_packages_root)
+        # 目录模式机械白名单：task.directory_path 由任务作者配置（非 LLM 运行时
+        # 决定），注入为文件工具允许根——workspace 边界不挡目录模式扫描
+        self.sut_tools.extra_allowed_roots = (
+            [Path(task.directory_path)] if task.directory_path else []
+        )
+        self._clear_stale_tool_state()
+        # 机械壳任务装配（arch/16 §4）：预算/账本/证据随任务生灭——逐任务新实例，
+        # 跨任务计数不串（v4.12 同因）；解析失败静默落缺省（闸门兜运行期额度，
+        # 不做配置期报错）
+        policy = resolve_interaction_policy(task, task_set)
+        evidence = EvidenceLedger()
+        self._inject_ledger(ResourceLedger(policy, evidence))
+        # once 步会话键随任务换新（plan/06 M1）——跨任务不串由键空间保证
+        self._inject_session_key(task.id)
+        # 单轨（arch/16 §七 Phase 2）：保险丝恒由 policy 推导——max_turns
+        # 旧链退役，constraints.max_turns 声明不再生效（解析层有全局缺省兜底）
+        recursion_limit = derive_recursion_limit(policy)
         package_dir = run_packages_root / task.id
         log_dir = workspace / "runs" / run_id / "agent_logs"
 
@@ -135,29 +229,34 @@ class ExecutionAgent:
             graph = self._ensure_graph()
             result = await graph.ainvoke(
                 {"messages": [{"role": "user", "content": self._build_task_prompt(task)}]},
+                # 保险丝语义（arch/16 §4.1）：宽于语义预算、只兜图失控；仍假设
+                # 「1 轮 ≈ 2 step（模型 + 工具节点）」——给执行图加会推进 step
+                # 的中间件时须同步校准此倍数
                 config={
-                    "recursion_limit": self.config.max_turns * 2,
+                    "recursion_limit": recursion_limit,
                     "callbacks": [SessionLogCallback(logger), guard],
                 },
             )
         except (BudgetExceededError, AgentTimeoutError, AgentError) as e:
-            await self._abort(logger, guard, task, package_dir, e)
+            await self._abort(logger, guard, task, package_dir, e, evidence=evidence)
             raise
         except Exception as e:
             error: AgentError
             if _is_recursion_error(e):
                 error = AgentTimeoutError(
-                    f"Agent 执行超过轮次限制（max_turns={self.config.max_turns}）"
+                    f"Agent 执行保险丝触发：图步数超出上限 {recursion_limit}"
+                    f"（预算 sut_calls_total={policy.sut_calls_total}，"
+                    "交互明细见执行包 ledger.jsonl）"
                 )
             else:
                 error = AgentError(f"Agent 会话异常中断: {e}")
-            await self._abort(logger, guard, task, package_dir, error)
+            await self._abort(logger, guard, task, package_dir, error, evidence=evidence)
             raise error from e
 
         session = AgentSession.from_messages(result.get("messages", []))
         session.started_at = logger.started_at or _now_iso()
         session.finished_at = _now_iso()
-        package = await self._build_package(session, task, package_dir)
+        package = await self._build_package(session, task, package_dir, evidence=evidence)
         logger.log_end(
             cost_usd=guard.spent_usd,
             tokens_used=guard.total_tokens,
@@ -196,171 +295,43 @@ class ExecutionAgent:
             model=build_chat_model(self.config.llm_role, self.config.model),
             tools=tools,
             system_prompt=self._build_system_prompt(),
+            # 工具面复位：create_deep_agent 对内置工具 additive 合并——不清则
+            # StateBackend 虚拟 FS 的 ls/read_file 等混进模型可见面（真实路径
+            # 返回 "No files found"，run 20260911_010507 最后两轮烧在其上），
+            # 且内置 read_file 与自研白名单 read_file 同名歧义。共享实现见
+            # agent/core/tool_filter.py（工作台域同款，中间件名按域区分）
+            middleware=[build_toolset_filter(tools, middleware_name="ExecutionToolsetFilter")],
         )
 
-    # ─── Prompt 构建 ───
-
-    def _describe_all_tools(self) -> str:
-        """汇总全部工具注册表（SUT Tools + 追加注册表）的描述清单。"""
-        return "\n".join(server.describe_tools() for server in self.tool_servers)
+    # ─── Prompt 构建（拼装见 executor/prompts.py，本类仅传参委托） ───
 
     def _build_system_prompt(self) -> str:
-        """System Prompt：角色职责 + 可用工具 + 执行规则 + 输出规范（模板见 execution_agent_prompts.yaml）。"""
-        template: str = _load_prompts()["system_prompt"]
-        return template.format(
-            tools=self._describe_all_tools(),
-            max_turns=self.config.max_turns,
-            max_retries=self.config.max_retries,
-        )
+        """System Prompt（模板见 execution_agent_prompts.yaml，构建见 executor/prompts.py）。"""
+        return build_system_prompt(tool_servers=self.tool_servers)
 
     def _build_task_prompt(self, task: Task) -> str:
-        """Task Prompt：任务输入/转发指令/预期/约束 + 目录模式 + 写包指令（模板见 execution_agent_prompts.yaml）。
+        """Task Prompt（模板见 execution_agent_prompts.yaml，构建见 executor/prompts.py）。"""
+        return build_task_prompt(task, workspace_dir=Path(self.config.workspace_dir))
 
-        forward 段提供确定性的纯文本转发内容——执行 Agent 不再依赖 LLM
-        自行从 JSON 结构中提取 instruction（此前行为不一致，有时传整个 dict）。
+    _extract_instruction = staticmethod(extract_instruction)
+
+    # ─── 工具注册表状态 ───
+
+    def _clear_stale_tool_state(self) -> None:
+        """跨任务清账：last_run 是语义工具注册表上的单槽缓存，而实例整个任务集共享
+        ——本任务 SUT 调用全部失败时不产生新记录，兜底回填/物化会拿到上一任务
+        的残留（2026-09-10 实测串台：physics 四次尝试全超时，answer.md 与评估
+        对象是 chinese 留下的《春》完成通知，答非所问全 0 分）。
+
+        实现 reset_task_state 的注册表（AgentProtocolToolServer，含超时计数）
+        走统一清账入口；其余仅清 last_run。
         """
-        segments: dict[str, str] = _load_prompts()["task_prompt"]
-        package_dir = Path(self.config.workspace_dir) / task.id
-        instruction_text = self._extract_instruction(task)
-        parts = [
-            segments["header"].format(task_id=task.id),
-            segments["input"].format(
-                task_input=json.dumps(task.input, ensure_ascii=False, indent=2)
-            ),
-            segments["forward"].format(instruction_text=instruction_text),
-        ]
-        if task.expected:
-            parts.append(
-                segments["expected"].format(
-                    expected=json.dumps(task.expected, ensure_ascii=False, indent=2)
-                )
-            )
-        if task.constraints:
-            parts.append(
-                segments["constraints"].format(
-                    constraints=json.dumps(task.constraints, ensure_ascii=False, indent=2)
-                )
-            )
-        if task.input_mode == "directory" and task.directory_path:
-            parts.append(
-                segments["directory_mode"].format(
-                    directory_path=task.directory_path,
-                    file_patterns=task.file_patterns,
-                )
-            )
-        parts.append(segments["footer"].format(package_dir=package_dir))
-        return "\n\n".join(p.rstrip("\n") for p in parts)
-
-    @staticmethod
-    def _extract_instruction(task: Task) -> str:
-        """从 task.input 提取纯文本指令（agent_run 的确定转发内容）。
-
-        - dict 型 input：取 instruction 字段（缺失时取第一个字符串值）
-        - str 型 input：直接返回
-        """
-        if isinstance(task.input, dict):
-            text = task.input.get("instruction", "")
-            if not text:
-                # 兼容无 instruction 键的 input：取第一个非空字符串值
-                for v in task.input.values():
-                    if isinstance(v, str) and v.strip():
-                        text = v
-                        break
-            return str(text).strip()
-        return str(task.input).strip()
-
-    # ─── ExecutionPackage 构建 ───
-
-    async def _build_package(
-        self,
-        session: AgentSession,
-        task: Task,
-        package_dir: Path,
-    ) -> ExecutionPackage:
-        """从 Agent 会话构建 ExecutionPackage。
-
-        Agent 已调用 write_package 时直接加载其产物；否则写入兜底失败包
-        （status=failed，error=未写包说明），再补齐 task/trace/metrics。
-        """
-        if not (package_dir / "manifest.json").exists():
-            await self.sut_tools.write_package(
-                task_id=task.id,
-                success=False,
-                error="Agent 未调用 write_package，已由 ExecutionAgent 兜底写包",
-            )
-        self._ensure_task_file(task, package_dir)
-        self._ensure_trace_file(session, package_dir)
-        self._ensure_answer_file(package_dir)
-        self._ensure_metrics_file(session, package_dir)
-        return ExecutionPackage.load(package_dir)
-
-    async def _abort(
-        self,
-        logger: SessionLogger,
-        guard: BudgetGuard,
-        task: Task,
-        package_dir: Path,
-        error: BaseException,
-    ) -> None:
-        """异常路径统一收尾：日志 + 错误执行包（保留 Agent 已写的部分结果）。"""
-        logger.log_error(type(error).__name__, str(error))
-        if not (package_dir / "manifest.json").exists():
-            await self.sut_tools.write_package(
-                task_id=task.id,
-                success=False,
-                error=str(error),
-            )
-        logger.log_end(cost_usd=guard.spent_usd, tokens_used=guard.total_tokens)
-        logger.close()
-
-    def _ensure_task_file(self, task: Task, package_dir: Path) -> None:
-        task_file = package_dir / "task.json"
-        if not task_file.exists():
-            task_file.write_text(task.model_dump_json(indent=2), encoding="utf-8")
-
-    def _ensure_trace_file(self, session: AgentSession, package_dir: Path) -> None:
-        """写/补全 trace.json（merge 语义）。
-
-        LLM 经 write_package 工具已写入 SUT-run 形态（run_id/thread_id/sut_response/
-        turns_used…）时保留其字段，仅以 setdefault 补充 Agent 过程统计
-        （messages/tool_calls/turns/duration_ms，过程指标数据源）；未写时创建
-        完整骨架并回填 SUT 最终回答。
-        """
-        trace_file = package_dir / "trace.json"
-        trace: dict[str, Any] = {}
-        if trace_file.exists():
-            try:
-                loaded = json.loads(trace_file.read_text(encoding="utf-8"))
-                if isinstance(loaded, dict):
-                    trace = loaded
-            except (OSError, ValueError):
-                trace = {}
-        duration_ms = 0.0
-        try:
-            start = datetime.fromisoformat(session.started_at)
-            end = datetime.fromisoformat(session.finished_at or _now_iso())
-            duration_ms = (end - start).total_seconds() * 1000
-        except ValueError:
-            pass
-        response = trace.setdefault("response", {})
-        if not isinstance(response, dict):
-            response = trace["response"] = {}
-        response.setdefault("messages", len(session.messages))
-        response.setdefault("tool_calls", session.tool_call_count)
-        response.setdefault("turns", session.turns_used)
-        response.setdefault("duration_ms", duration_ms)
-        # 回填 SUT 最终回答（trace 只存计数时下游 eval 拿不到评估对象）
-        if "sut" not in response:
-            sut_run = self._last_sut_run()
-            if sut_run is not None:
-                response["sut"] = sut_run
-        trace.setdefault(
-            "request", {"executor": "ExecutionAgent", "llm_role": self.config.llm_role}
-        )
-        trace.setdefault("started_at", session.started_at)
-        trace.setdefault("finished_at", session.finished_at or _now_iso())
-        trace.setdefault("error", None)
-        trace_file.write_text(json.dumps(trace, ensure_ascii=False, indent=2), encoding="utf-8")
+        for server in self.tool_servers:
+            reset = getattr(server, "reset_task_state", None)
+            if reset is not None:
+                reset()
+            elif getattr(server, "last_run", None) is not None:
+                server.last_run = None
 
     def _last_sut_run(self) -> dict[str, Any] | None:
         """取工具注册表记录的最近一次 SUT run 摘要（AgentProtocolToolServer.last_run）。"""
@@ -370,40 +341,75 @@ class ExecutionAgent:
                 return last
         return None
 
-    def _ensure_answer_file(self, package_dir: Path) -> None:
-        """SUT 回答物化为 output/answer.md（对话型任务无产物文件；评估器按文件收集文本）。"""
-        text = (self._last_sut_run() or {}).get("text") or ""
-        if not text.strip():
-            return
-        output_dir = package_dir / "output"
-        if output_dir.exists() and any(output_dir.iterdir()):
-            return  # SUT 已有产物文件，不重复物化
-        output_dir.mkdir(parents=True, exist_ok=True)
-        (output_dir / "answer.md").write_text(text, encoding="utf-8")
+    async def _refresh_sut_final_state(self) -> None:
+        """freeze 前终局快照刷新（arch/16 §4.5 snapshot/reconcile）。
 
-    def _ensure_metrics_file(self, session: AgentSession, package_dir: Path) -> None:
-        """写/补全 metrics.json（merge 语义：保留 LLM 已写字段，setdefault 补过程统计）。"""
-        metrics_file = package_dir / "metrics.json"
-        metrics: dict[str, Any] = {}
-        if metrics_file.exists():
-            try:
-                loaded = json.loads(metrics_file.read_text(encoding="utf-8"))
-                if isinstance(loaded, dict):
-                    metrics = loaded
-            except (OSError, ValueError):
-                metrics = {}
-        duration_ms = 0.0
-        try:
-            start = datetime.fromisoformat(session.started_at)
-            end = datetime.fromisoformat(session.finished_at or _now_iso())
-            duration_ms = (end - start).total_seconds() * 1000
-        except ValueError:
-            pass
-        agent_metrics = ProcessMetrics(
-            total_duration_ms=duration_ms,
-            steps=len(session.messages),
-            tool_calls=session.tool_call_count,
-        ).model_dump()
-        for k, v in agent_metrics.items():
-            metrics.setdefault(k, v)
-        metrics_file.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+        answer.md 物化的输入是 last_run.text，而 run 工具返回时刻 ≠ SUT 最终
+        发言时刻（run 20260912_000410：answer 冻结在中间播报）。包物化前机械
+        确认线程空闲并回写最新回答——正常路径（_build_package）与异常路径
+        （_abort）共用。仅对提供 refresh_final_state 的工具面生效（generic_http
+        无线程概念自然跳过）；server 内部静默降级，取证失败不阻塞包物化。
+        """
+        for server in self.tool_servers:
+            refresh = getattr(server, "refresh_final_state", None)
+            if refresh is not None:
+                await refresh()
+
+    # ─── ExecutionPackage 构建（物化编排见 executor/package_writer.py） ───
+
+    async def _build_package(
+        self,
+        session: AgentSession,
+        task: Task,
+        package_dir: Path,
+        *,
+        evidence: EvidenceLedger | None = None,
+    ) -> ExecutionPackage:
+        """从 Agent 会话构建 ExecutionPackage（补齐/守卫细节见 executor/package_writer.py）。"""
+        await self._refresh_sut_final_state()
+        return await finalize_execution_package(
+            package_dir,
+            task,
+            session,
+            sut_tools=self.sut_tools,
+            llm_role=self.config.llm_role,
+            last_sut_run=self._last_sut_run(),
+            evidence=evidence,
+        )
+
+    async def _abort(
+        self,
+        logger: SessionLogger,
+        guard: BudgetGuard,
+        task: Task,
+        package_dir: Path,
+        error: BaseException,
+        *,
+        evidence: EvidenceLedger,
+    ) -> None:
+        """异常路径统一收尾（arch/16 §4.5 CLOSE）：走补齐链物化完整失败包。
+
+        图抛异常时无 result——以空 session 过 finalize：trace 以 last_sut_run
+        回填 SUT 侧证据（status/text/thread_id），answer.md 据此物化——修
+        「SUT 已交付但失败包空白」（run 20260911_050015：SUT 已写完全部课件，
+        失败包只有 manifest+metadata，评估对象丢失）。manifest 带真实错误
+        （fallback_error），任务失败语义不变（仍 raise），但包完整可评可排查。
+        """
+        logger.log_error(type(error).__name__, str(error))
+        session = AgentSession()
+        session.started_at = logger.started_at or _now_iso()
+        session.finished_at = _now_iso()
+        await self._refresh_sut_final_state()
+        await finalize_execution_package(
+            package_dir,
+            task,
+            session,
+            sut_tools=self.sut_tools,
+            llm_role=self.config.llm_role,
+            last_sut_run=self._last_sut_run(),
+            evidence=evidence,
+            fallback_error=str(error),
+            close_reason=f"aborted:{type(error).__name__}",
+        )
+        logger.log_end(cost_usd=guard.spent_usd, tokens_used=guard.total_tokens)
+        logger.close()

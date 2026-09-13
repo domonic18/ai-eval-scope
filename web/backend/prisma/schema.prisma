@@ -326,6 +326,9 @@ model Scenario {
   id                       String   @id
   name                     String
   description              String?
+  // 来源：official = 管理员创建 / 脚本导入（配置中心可见）；
+  // auto_ingest = run 事件补缺注册（arch/09 §7.5 方向1，仅可观测，不进配置中心默认视图）
+  source                   String   @default("official")
   createdAt                DateTime @default(now()) @map("created_at")
 
   packages    ScenarioPackage[]

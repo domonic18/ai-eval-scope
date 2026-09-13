@@ -27,6 +27,13 @@ from agent_eval.core.exceptions import AgentError
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
 # evaluator 须为注册 ID（llm_judge 是 method 枚举值——规则引用对账门禁会打回）
 RULES = "rules:\n  - id: r1\n    evaluator: format.response_format\n"
+# 聚合策略必选（落盘门禁对账）；r1 无 stage 字段，空 stage_weights 即覆盖通过
+POLICY = (
+    "aggregation_policy:\n"
+    "  id: p\n  scenario_id: demo\n"
+    "  stage_weights: []\n"
+    "  normalize_to: [0.0, 1.0]\n"
+)
 
 
 def _seed_valid_package(root: Path) -> None:
@@ -37,6 +44,8 @@ def _seed_valid_package(root: Path) -> None:
     (root / "rules" / "quality.yaml").write_text(RULES, encoding="utf-8")
     (root / "prompts" / "judge.yaml").write_text("prompts: []\n", encoding="utf-8")
     (root / "datasets" / "ref.yaml").write_text("data: []\n", encoding="utf-8")
+    (root / "metrics").mkdir(parents=True, exist_ok=True)
+    (root / "metrics" / "policy.yaml").write_text(POLICY, encoding="utf-8")
 
 
 def _ai(text: str) -> SimpleNamespace:
@@ -69,6 +78,7 @@ async def _write_valid(server: PackageToolServer) -> str:
     await server.write_file("rules/quality.yaml", RULES)
     await server.write_file("prompts/judge.yaml", "prompts: []\n")
     await server.write_file("datasets/ref.yaml", "data: []\n")
+    await server.write_file("metrics/policy.yaml", POLICY)
     return "已生成完整场景包"
 
 
@@ -197,9 +207,25 @@ class TestSandbox:
             await server.write_file("rules/quality.yaml", RULES)
             await server.write_file("prompts/judge.yaml", "template_id: j1\nsystem_prompt: x\n")
             await server.write_file("task_sets/default.yaml", "id: t1\nname: 考卷\ntasks: []\n")
+            await server.write_file("metrics/policy.yaml", POLICY)
             result = await server.validate_package()
             assert result["ok"], result["errors"]
             assert not any("datasets" in e for e in result["errors"])
+
+        asyncio.run(run())
+
+    def test_validate_online_requires_task_sets(self, tmp_path: Path) -> None:
+        # 在线形态缺考卷在落盘前打回——此前一路绿灯到运行时才炸（指南 §1 task_sets/ 必需）
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await server.write_file("agent_eval.yaml", MANIFEST + "  default_task_set: default\n")
+            await server.write_file("rules/quality.yaml", RULES)
+            await server.write_file("prompts/judge.yaml", "template_id: j1\nsystem_prompt: x\n")
+            await server.write_file("metrics/policy.yaml", POLICY)
+            result = await server.validate_package()
+            assert not result["ok"]
+            assert any("task_sets" in e for e in result["errors"])
 
         asyncio.run(run())
 
@@ -306,6 +332,91 @@ class TestSandbox:
 
         asyncio.run(stage())
         assert server.staged_manifest_id() == "demo-pkg"
+
+    # ── list_packages / read_reference 三源发现（arch/15 v4.4） ──
+
+    def _isolate_package_roots(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """三源发现根全部钉到 tmp：local 缺省 ~/.agent_eval（开发者真机有包）也要隔离。"""
+        monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "project"))
+        monkeypatch.setenv("AGENT_EVAL_PACKAGE_DIR", str(tmp_path / "local"))
+
+    def test_list_packages_three_sources(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._isolate_package_roots(tmp_path, monkeypatch)
+        # project 包：<id>-package/agent_eval.yaml 一级子目录
+        proj = tmp_path / "project" / "courseware-reasonableness-package"
+        _seed_valid_package(proj)
+        (proj / "agent_eval.yaml").write_text(
+            "package:\n  id: courseware-reasonableness\n  scenario: courseware\n"
+            "  version: 0.1.0\n  name: 课件合理性评测\n  description: 多维合理性\n",
+            encoding="utf-8",
+        )
+        # local 包：<scenario>/<id>/<version>/agent_eval.yaml
+        local = tmp_path / "local" / "code" / "my-pkg" / "1.2.3"
+        _seed_valid_package(local)
+        (local / "agent_eval.yaml").write_text(
+            "package:\n  id: my-pkg\n  scenario: code\n  version: 1.2.3\n",
+            encoding="utf-8",
+        )
+
+        result = asyncio.run(PackageToolServer(tmp_path).list_packages())
+        by_ref = {p["ref"]: p for p in result["packages"]}
+        assert result["total"] == len(result["packages"]) >= 3  # builtin 3 + project + local
+        proj_pkg = by_ref["courseware/courseware-reasonableness:0.1.0"]
+        assert proj_pkg["source"] == "project" and proj_pkg["editable"] is True
+        assert proj_pkg["path"] == str(proj)
+        assert proj_pkg["name"] == "课件合理性评测" and proj_pkg["description"] == "多维合理性"
+        assert by_ref["code/my-pkg:1.2.3"]["source"] == "local"
+        builtin = by_ref["chat/chat:1.0.0"]
+        assert builtin["source"] == "builtin" and builtin["editable"] is False
+
+    def test_list_packages_source_filter_and_invalid(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._isolate_package_roots(tmp_path, monkeypatch)
+        proj = tmp_path / "project" / "solo-package"
+        _seed_valid_package(proj)
+        server = PackageToolServer(tmp_path)
+        only_project = asyncio.run(server.list_packages("project"))
+        assert [p["ref"] for p in only_project["packages"]] == ["demo/demo:0.1.0"]
+        only_builtin = asyncio.run(server.list_packages("builtin"))
+        assert all(p["source"] == "builtin" for p in only_builtin["packages"])
+        assert "未知 source" in asyncio.run(server.list_packages("telepathy"))["error"]
+
+    def test_list_packages_notes_guide_edit_paths(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._isolate_package_roots(tmp_path, monkeypatch)
+        server = PackageToolServer(tmp_path)
+        notes = asyncio.run(server.list_packages())["notes"]
+        assert "scenario edit" in notes and "换新 scenario/id" in notes
+        assert "read_reference" in notes
+        # 空结果给创建指引（project/local 隔离为空，仍剩 builtin → 需显式过滤 project）
+        empty = asyncio.run(server.list_packages("project"))
+        assert empty["total"] == 0 and "scenario new" in empty["notes"]
+
+    def test_read_reference_project_package(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """项目包可经 read_reference 按 ref 直读（描述纠偏后链路不被破坏）。"""
+        self._isolate_package_roots(tmp_path, monkeypatch)
+        proj = tmp_path / "project" / "my-pack-package"
+        _seed_valid_package(proj)
+        result = asyncio.run(
+            PackageToolServer(tmp_path).read_reference("demo/demo", "rules/quality.yaml")
+        )
+        assert "error" not in result and "format.response_format" in result["content"]
+        assert result["package"] == "demo/demo:0.1.0"
+
+    def test_reference_notes_mention_list_packages(self) -> None:
+        result = asyncio.run(PackageToolServer(Path()).search_reference("chat"))
+        assert "list_packages" in result["notes"]
+
+    def test_tool_specs_include_list_packages(self) -> None:
+        names = PackageToolServer(Path()).get_tool_names()
+        assert "list_packages" in names
+        assert len(PackageToolServer.TOOL_SPECS) == 12
 
 
 # ── WorkbenchAgent 会话状态机（mock _invoke 回放） ────────────────────────
@@ -1652,6 +1763,25 @@ class TestAgentConfig:
         msgs = dict(WorkbenchAgent.__dict__) and _resume_messages(dialogue, cfg)
         joined = "\n".join(m[1] for m in msgs)
         assert "y" in joined and "xxx…" not in joined
+
+
+class TestPromptAssets:
+    """提示词资产——包发现引导（list_packages / scenario edit / 换新 id）随资产走。"""
+
+    def test_domain_segment_guides_discovery_and_edit(self) -> None:
+        from agent_eval.agent.workbench.prompts import load_prompts
+
+        segment = load_prompts()["domain_segments"]["scenario_package"]
+        assert "list_packages" in segment  # 「有哪些包」第一查询入口
+        assert "scenario edit" in segment  # project/local 首选原位编辑
+        assert "换新" in segment and "scenario/id" in segment  # fork 归位冲突避坑
+        assert "read_reference" in segment
+
+    def test_intro_mentions_package_listing(self) -> None:
+        from agent_eval.agent.workbench.prompts import load_prompts
+
+        intro = str(load_prompts()["intro"])  # intro 是多行字符串而非 mapping
+        assert "有哪些评测场景包" in intro
 
 
 class TestSessionMachine:

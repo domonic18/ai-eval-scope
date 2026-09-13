@@ -180,6 +180,11 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
     # 目录模式（大单元）评估粒度：module=按模块（模块内自洽类，默认）；package=整单元一次
     # （跨模块类如 content_diversity/logical/chronological 覆盖为 package）。详见 docs/arch/04 §5.5。
     default_granularity: str = "module"
+    # 判官模板变量契约（落盘对账用，与 _build_variables 保持一致）：包内模板引用了
+    # 契约外变量时落盘门禁直接打回（否则运行时 StrictUndefined 报「模板渲染失败，
+    # 变量缺失」该规则 0 分——实测 courseware-reasonableness {{ instruction }} 事故，
+    # 2026-09-10 run 20260910_112237 四样本全灭）。覆盖了扩展变量的子类须覆写本契约。
+    prompt_variables = frozenset({"content", "title", "subject"})
 
     def _effective_granularity(self) -> str:
         """优先规则层 params.directory_granularity，回退类默认。"""
@@ -297,11 +302,22 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 duration_ms=elapsed,
             )
         except Exception as e:
+            # reason 只取异常消息本体——str(e) 会拼接 details（含 raw_response 原文），
+            # 污染前端展示（run 20260912_111958 半截 JSON 直接进了 reason）
+            error_message = getattr(e, "message", None) or str(e)
             elapsed = (time.monotonic() - start) * 1000
+            failure_details: dict[str, Any] = {
+                "error": f"{type(e).__name__}: {error_message}"[:500],
+                # orchestrator 已在 evidence 目录落失败溯源（judge_*_failed.json）
+                "evidence_dir": str(evidence_dir),
+            }
+            if getattr(e, "details", None):
+                failure_details["exception_details"] = e.details
             return self._make_result(
                 status=EvalStatus.ERROR,
                 score=0.0,
-                reason=f"LLM Judge 调用失败: {e}",
+                reason=f"LLM Judge 调用失败（{type(e).__name__}）：{error_message[:300]}",
+                details=failure_details,
                 duration_ms=elapsed,
             )
 
@@ -591,6 +607,16 @@ class ContentDiversityEvaluator(BaseLLMJudgeEvaluator):
     template_id = "content_diversity"
     # 内容多样性语义上需全局视野（跨模块聚合），保持整单元单次评估
     default_granularity = "package"
+    # 契约扩宽：_build_variables 注入媒体特征四键（collect_media_features 同源）
+    prompt_variables = frozenset(
+        {
+            *BaseLLMJudgeEvaluator.prompt_variables,
+            "has_formula",
+            "has_table",
+            "has_image",
+            "has_list",
+        }
+    )
 
     def _build_variables(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
         variables = super()._build_variables(text, context)
@@ -636,6 +662,10 @@ class RequestFulfillmentEvaluator(BaseLLMJudgeEvaluator):
     tier = ConstraintTier.PREFERENCE
     method = EvalMethod.LLM_JUDGE
     template_id = "request_fulfillment"
+    # 契约扩宽：_build_variables 注入原始需求与预期输出描述
+    prompt_variables = frozenset(
+        {*BaseLLMJudgeEvaluator.prompt_variables, "original_request", "expected_output"}
+    )
 
     def _build_variables(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
         variables = super()._build_variables(text, context)

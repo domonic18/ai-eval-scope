@@ -71,6 +71,7 @@ def _reference_notes() -> str:
         files = sorted(p.relative_to(pkg.root).as_posix() for p in pkg.root.rglob("*.yaml"))
         lines.append(f"- {pkg.manifest.ref}（{len(files)} 个 yaml）: " + ", ".join(files))
     lines.append("read_reference 的 path 直接复制上面清单中的文件名（相对包根）")
+    lines.append("内置包只是三源之一——全部包（含项目目录 *-package/）用 list_packages 查询")
     return "\n".join(lines)
 
 
@@ -120,6 +121,13 @@ class PackageToolServer(ToolExporterMixin):
             "validate_package",
         ),
         ToolSpec(
+            "list_packages",
+            "列出全部已发现的场景包（builtin 内置 / local 本地缓存 / project 项目目录"
+            "三源，与 scenario list 同源）——回答「有哪些包 / 有没有现成包」先调此工具，"
+            "不要凭记忆或目录列举判断；读包内文件走 read_reference（按 ref）",
+            "list_packages",
+        ),
+        ToolSpec(
             "search_reference",
             "检索内置包（chat/code/courseware）按文件名匹配，返回命中文件与各包真实"
             "文件清单（read_reference 的 path 以此为准）",
@@ -127,8 +135,8 @@ class PackageToolServer(ToolExporterMixin):
         ),
         ToolSpec(
             "read_reference",
-            "只读内置包文件内容（ref 如 chat；path 为包内相对路径）——参照真实格式，"
-            "read_file 仅限本包",
+            "只读已发现包（三源）的文件内容（ref 如 chat 或项目包 scenario/id，见 "
+            "list_packages；path 为包内相对路径）——参照真实格式，read_file 仅限本包",
             "read_reference",
         ),
         ToolSpec(
@@ -390,10 +398,13 @@ class PackageToolServer(ToolExporterMixin):
                 manifest = None
             # 资源目录按包形态判定（运行时真相，与 scenario validate 同源）：清单声明
             # default_task_set = 在线 SUT 形态，考卷来自 task_sets/、datasets 不参与
-            # （内置 chat 包即无 datasets/）；未声明 = 离线文件形态，datasets/ 必需
+            # （内置 chat 包即无 datasets/）；未声明 = 离线文件形态，datasets/ 必需。
+            # 在线形态 task_sets/ 同样必需（指南 §1）——缺失此前到运行时才炸
             required_dirs = ["rules", "prompts"]
             if manifest is not None and manifest.default_task_set is None:
                 required_dirs.append("datasets")
+            elif manifest is not None:
+                required_dirs.append("task_sets")
             for sub in required_dirs:
                 if not (tmp_root / sub).is_dir() or not any((tmp_root / sub).iterdir()):
                     errors.append(f"缺少资源目录或为空: {sub}/")
@@ -431,6 +442,44 @@ class PackageToolServer(ToolExporterMixin):
                     ]
         return {"ok": not errors, "errors": errors}
 
+    async def list_packages(self, source: str = "") -> dict[str, Any]:
+        """列出全部已发现场景包（builtin/local/project 三源，PackageManager 同源发现）。
+
+        「当前有哪些包」的机械真相源（与 CLI ``scenario list``、执行域选包同一
+        枚举）——项目根（cwd）一级子目录含 agent_eval.yaml 的都算 project 包。
+        只读无授权需求：包根 path 是发现元数据，读包内文件仍走分级授权
+        （read_reference 按 ref 直读 / read_file 外部路径申请授权）。
+        """
+        from agent_eval.packages import PackageManager
+
+        if source and source not in ("builtin", "local", "project"):
+            return {"error": f"未知 source: {source}（可选 builtin / local / project，缺省全部）"}
+        packages = [
+            {
+                "ref": pkg.manifest.ref,
+                "source": pkg.source,
+                "path": str(pkg.root),
+                "name": pkg.manifest.name,
+                "version": pkg.manifest.version,
+                "description": truncate(pkg.manifest.description, 80),
+                "editable": pkg.source != "builtin",
+            }
+            for pkg in PackageManager().list(source=source or None)
+        ]
+        notes = (
+            "改已有 project/local 包首选原位编辑：退出本会话后 agent-eval scenario edit <ref>"
+            "（或主菜单 2「场景包管理 → 用 Agent 修改选中的包」），会话根即包目录、原位生效。"
+            "在本会话内 fork 改造须换新 scenario/id——沿用原 id 会在会话结束归位 "
+            "cwd/<id>-package/ 时与既有目录冲突。builtin 包只读，改造即 fork（scenario new）。"
+            "读任意包内容用 read_reference（ref 取上面 ref 串的 scenario 或 scenario/id 段）。"
+        )
+        if not packages:
+            notes = (
+                "未发现任何场景包——确认项目根下存在 <id>-package/agent_eval.yaml，"
+                "或用 scenario new 创建。"
+            ) + notes
+        return {"packages": packages, "total": len(packages), "notes": notes}
+
     async def search_reference(self, query: str) -> dict[str, Any]:
         """检索内置包（只读）匹配文件 + 方法论要点。"""
         from agent_eval.packages import PackageManager
@@ -445,16 +494,17 @@ class PackageToolServer(ToolExporterMixin):
     async def read_reference(
         self, ref: str, path: str, max_chars: int = _DEFAULT_REFERENCE_CHARS
     ) -> dict[str, Any]:
-        """只读内置/本地缓存包的文件内容（Agent 参照真实格式的合法通道，免沙盒逃逸）。
+        """只读已发现包（三源）的文件内容（Agent 参照真实格式的合法通道，免沙盒逃逸）。
 
-        ref 走 PackageManager 解析（如 ``chat`` / ``courseware``）；path 限目标包根内。
+        ref 走 PackageManager 解析（如 ``chat`` / 项目包 ``courseware/courseware-reasonableness``，
+        可用 ref 见 list_packages）；path 限目标包根内。
         """
         from agent_eval.packages import PackageManager
 
         try:
             pkg = PackageManager().resolve_ref(ref)
         except Exception as e:  # noqa: BLE001 — 错误交 Agent 自修复
-            return {"error": f"参考包不存在: {ref}（{e}；先 search_reference 检索可用包）"}
+            return {"error": f"参考包不存在: {ref}（{e}；先 list_packages 查可用包）"}
         available = sorted(p.relative_to(pkg.root).as_posix() for p in pkg.root.rglob("*.yaml"))
         try:
             target = (pkg.root / path).resolve()

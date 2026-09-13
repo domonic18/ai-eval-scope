@@ -39,7 +39,9 @@ def run(
     llm_role: str | None = typer.Option(
         None, "--llm-role", help="执行侧 LLM 角色（text|vision|agent，默认 agent）"
     ),
-    max_turns: int | None = typer.Option(None, "--max-turns", help="单任务最大交互轮次"),
+    max_turns: int | None = typer.Option(
+        None, "--max-turns", help="已废弃：轮次预算由 interaction_policy 声明，此参数不再生效"
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """执行被测 Agent（ExecutionAgent/DeepAgents 驱动），生成 ExecutionPackage。"""
@@ -220,7 +222,9 @@ def pipeline(
     llm_role: str | None = typer.Option(
         None, "--llm-role", help="执行侧 LLM 角色（text|vision|agent，默认 agent）"
     ),
-    max_turns: int | None = typer.Option(None, "--max-turns", help="单任务最大交互轮次"),
+    max_turns: int | None = typer.Option(
+        None, "--max-turns", help="已废弃：轮次预算由 interaction_policy 声明，此参数不再生效"
+    ),
     project: str | None = typer.Option(None, "--project", help="项目 ID"),
     upload: bool | None = typer.Option(
         None,

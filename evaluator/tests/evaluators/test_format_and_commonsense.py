@@ -618,6 +618,31 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
 
+    def test_llm_score_fail_reason_explainable(self, tmp_path: Path) -> None:
+        """分数型失败（零规则错误）reason 透出维度评分与通过线，不再只有「未通过」。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("一些教学内容\n", encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_ia_005", errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 6.0, "statement_accuracy": 6.0}, record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
+
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+        assert "LLM 评分" in result.reason
+        assert "事实正确性" in result.reason  # 维度中文名
+        assert "低于通过线" in result.reason
+
     def test_llm_rule_errors_override(self, tmp_path: Path) -> None:
         """LLM 高分但规则检查有 error → FAIL。"""
         out = _prepare_output(tmp_path)
@@ -642,6 +667,10 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
         assert "算术错误" in result.reason
+        # 分数过线时不得拼「低于通过线」条款（run 20260913_050312：加权 8.6/10
+        # 高于通过线 8.0 却自称低于，失败归因应由「发现错误」条款承载）
+        assert "低于通过线" not in result.reason
+        assert "发现错误" in result.reason
 
     def test_constant_false_positive_filtered_by_llm(self, tmp_path: Path) -> None:
         """规则误报（金/信息密度误匹配"金的密度"）经 LLM 二次确认过滤 → PASS。"""

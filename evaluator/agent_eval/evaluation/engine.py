@@ -13,14 +13,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from agent_eval.config import PIPELINE_DEFAULTS
-from agent_eval.core.exceptions import EvaluationError
-from agent_eval.core.types import ConstraintTier, EvalStatus
+from agent_eval.core.exceptions import EvaluationError, ScenarioError
+from agent_eval.core.types import ConstraintTier, EvalStatus, PackageStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.models import MetricsReport, SampleResult, StageResult
 from agent_eval.evaluation.registry import EvaluatorRegistry
 from agent_eval.evaluation.scenario import (
     COURSEWARE_SCENARIO_CONFIG,
-    COURSEWARE_SCENARIO_ID,
     ScenarioMetricsCalculator,
     ScenarioScoreAggregator,
 )
@@ -79,6 +78,7 @@ class EvaluatorConfig:
 
     name: str  # 评估器 ID，如 "format.response_format"
     params: dict[str, Any] = field(default_factory=dict)
+    tier: str | None = None  # 规则声明的约束层级覆盖；None=评估器内置层级
 
 
 @dataclass
@@ -143,6 +143,10 @@ class PipelineEngine:
             for ev_conf in stage_conf.evaluators:
                 try:
                     evaluator = self.registry.create(ev_conf.name, ev_conf.params)
+                    if ev_conf.tier is not None:
+                        # 规则声明层级覆盖（如 judge 规则升 hard_score：0 分须翻转样本
+                        # status，而非只扣分）。实例属性遮蔽类属性，不影响其他规则
+                        evaluator.tier = ConstraintTier(ev_conf.tier)
                     evaluators.append(evaluator)
                 except Exception as e:
                     # 评估器创建失败时记录但不中断（可能该评估器尚未实现）
@@ -201,6 +205,21 @@ class PipelineEngine:
                 return cached
 
         sample_id = context.get("sample_id", "unknown")
+
+        # 执行失败包短路（失败语义分层：执行失败 ≠ 评得低分）
+        # manifest.status=failed 表示包未执行完成（半张卷子）——残留产物打出的分数
+        # 只会误导，不进 stage 评估、reward 0.0，由 metrics 侧从分母剔除。
+        # partial（部分产物）仍有评估价值，照常评估。
+        pkg_status = getattr(getattr(sample, "manifest", None), "status", None)
+        if pkg_status == PackageStatus.FAILED:
+            result = SampleResult(
+                sample_id=sample_id,
+                status=EvalStatus.RUN_ERROR,
+                content_hash=context.get("content_hash"),
+            )
+            self._cache[cache_key] = result
+            return result
+
         result = SampleResult(
             sample_id=sample_id,
             status=EvalStatus.PASS,
@@ -345,6 +364,12 @@ class PipelineEngine:
     ) -> MetricsReport:
         """从样本结果计算运行级指标并组装 MetricsReport（场景化 metrics dict）。"""
         metrics = self.metrics_calculator.compute(results)
+        # 执行失败率（失败语义分层）：run_error 样本已被指标分母剔除，此处单独暴露
+        # 规模，供报告与可观测面呈现「多少卷子没跑完」。代码侧附加，不动 policy 表达式体系。
+        run_error_count = sum(1 for r in results if r.status == EvalStatus.RUN_ERROR)
+        if results:
+            metrics["run_error_count"] = float(run_error_count)
+            metrics["error_rate"] = run_error_count / len(results)
         return self._build_report(results, metrics, run_id=run_id)
 
     def _build_report(
@@ -451,7 +476,24 @@ def build_pipeline(
             stage_order.append(stage)
             by_stage[stage] = []
             stage_policy.setdefault(stage, "continue_all")
-        by_stage[stage].append(EvaluatorConfig(evaluator, _rule_params(rule)))
+        by_stage[stage].append(
+            EvaluatorConfig(evaluator, _rule_params(rule), tier=getattr(rule, "tier", None))
+        )
+
+    scenario_config = _resolve_scenario_config(rule_set, package_dir)
+    # 聚合覆盖度 fail-loud：规则阶段未被聚合策略声明 → 该阶段分数被静默丢弃
+    # （实测：run 20260910_034232，judge 打 0 分样本仍 reward=1.0）。policy.yaml
+    # 缺失已在 _resolve_scenario_config 打回；此处防的是「有 policy 但漏声明阶段」。
+    # 阶段名不 hardcode——「规则集声明了的阶段必须在策略里」对任意场景成立。
+    declared = {sw.stage_id for sw in scenario_config.aggregation_policy.stage_weights}
+    missing = [s for s in stage_order if s not in declared]
+    if missing:
+        raise ScenarioError(
+            f"规则集阶段 {missing} 未在聚合策略中声明（policy={scenario_config.scenario_id}，"
+            f"已声明: {sorted(declared)}）——这些阶段的评估分数不会计入 reward。"
+            "请在场景包补 metrics/policy.yaml 声明全部阶段（含 stage_weights）",
+            details={"missing": missing, "declared": sorted(declared)},
+        )
 
     config = PipelineConfig(
         stages=[
@@ -463,45 +505,43 @@ def build_pipeline(
             for s in stage_order
         ]
     )
-    return PipelineEngine(
-        config, registry, scenario_config=_resolve_scenario_config(rule_set, package_dir)
-    )
+    return PipelineEngine(config, registry, scenario_config=scenario_config)
 
 
 def _resolve_scenario_config(rule_set: Any, package_dir: Any = None) -> ScenarioConfig:
-    """从 rule_set.scenario_id + package_dir 解析 ScenarioConfig（缺省 courseware）。
+    """从 package_dir 的 metrics/policy.yaml 解析 ScenarioConfig（必选，不降级）。
 
-    package_dir 命中 ``metrics/policy.yaml`` → 数据驱动构造该场景的 ScenarioConfig
-    （多场景加载，解除恒返回 courseware 的占位）；否则回退 COURSEWARE_SCENARIO_CONFIG。
+    场景包是聚合策略的唯一入口：缺包或缺 ``metrics/policy.yaml`` 即 ``ScenarioError``
+    ——不再回退 courseware 默认（降级会把规则集未声明阶段的评估分数静默丢弃，
+    run 20260910_034232 事故根因）。courseware 自身的默认策略同样来自其包内
+    policy.yaml（#60 单一源），经 ``build_default_pipeline`` 显式传入。
     """
-    if package_dir is not None:
-        from agent_eval.evaluation.evaluators.plugins import load_package_entry_points
-        from agent_eval.evaluation.scenario.defaults import load_scenario_config_from_package
+    from agent_eval.evaluation.evaluators.plugins import load_package_entry_points
+    from agent_eval.evaluation.scenario.defaults import load_scenario_config_from_package
 
-        # 先注册包声明的评估器（entry_points），再构造场景配置（评估器在 evaluate 时才 create）
-        load_package_entry_points(package_dir)
-        cfg = load_scenario_config_from_package(package_dir)
-        if cfg is not None:
-            return cfg
-
-    sid = getattr(rule_set, "scenario_id", None) or COURSEWARE_SCENARIO_ID
-    if sid != COURSEWARE_SCENARIO_ID:
-        import structlog
-
-        structlog.get_logger("pipeline").warning(
-            "scenario 包无 policy.yaml，回退 courseware 默认", scenario_id=sid
+    if package_dir is None:
+        raise ScenarioError(
+            "未提供场景包（package_dir=None）——聚合策略必须由场景包 metrics/policy.yaml "
+            "显式声明，不再回退 courseware 默认（降级会静默丢弃未声明阶段的评估分数）"
         )
-    return COURSEWARE_SCENARIO_CONFIG
+
+    # 先注册包声明的评估器（entry_points），再构造场景配置（评估器在 evaluate 时才 create）
+    load_package_entry_points(package_dir)
+    return load_scenario_config_from_package(package_dir)
 
 
 def build_default_pipeline(registry: EvaluatorRegistry) -> PipelineEngine:
-    """加载内置默认规则集并构建管线（``build_pipeline`` 的便捷封装）。
+    """加载内置 courseware 包（coursework-quality）并构建管线（``build_pipeline`` 的便捷封装）。
 
     默认采用 ``coursework-quality``（门控 + 质量评估，无视觉）——安全默认，不依赖 Chromium。
+    场景配置同样取自该包的 metrics/policy.yaml（默认场景也是显式声明，无隐式回退）。
     评估器集合的唯一来源是规则集。
     """
+    from pathlib import Path
+
     from agent_eval.config.loader import ConfigLoader
     from agent_eval.config.paths import paths
 
+    package_dir = Path(paths.rules_dir).parent  # 内置 courseware 包根（含 metrics/policy.yaml）
     rule_set = ConfigLoader.load_rule_set(paths.rules_dir / "coursework-quality.yaml")
-    return build_pipeline(registry, rule_set)
+    return build_pipeline(registry, rule_set, package_dir=package_dir)

@@ -64,6 +64,16 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
     tier = ConstraintTier.SOFT
     method = EvalMethod.VISION
     template_id = "visual_quality"
+    # 契约与 _judge_each 的内联注入对齐（视觉路径逐文档截图评估，不走基类
+    # _build_variables；覆写同名方法仅为契约对账单一事实源，运行时不经此路径）
+    prompt_variables = frozenset({"title", "num_documents"})
+
+    def _build_variables(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
+        """镜像 _judge_each 的内联 variables（契约对账用；视觉运行时不经此路径）。"""
+        return {
+            "title": context.get("task_input", {}).get("title", "未知标题"),
+            "num_documents": 1,
+        }
 
     def evaluate(self, sample: Any, context: dict[str, Any]) -> ConstraintResult:
         """视觉评估入口 — 逐文档渲染截图 → 逐文档多模态评分 → 均值聚合。"""

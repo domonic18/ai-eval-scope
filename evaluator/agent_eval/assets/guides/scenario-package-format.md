@@ -18,7 +18,7 @@
 ├── datasets/                # 离线文件评测必需：数据资产；在线 SUT 形态不需要
 ├── task_sets/               # 在线被测系统需要：考卷
 ├── sut_configs/             # 在线被测系统需要：接入配置（不含凭证）
-└── metrics/                 # 可选：聚合策略 policy.yaml
+└── metrics/                 # 必选：聚合策略 policy.yaml（缺失构建期打回）
 ```
 
 硬性约定（门禁强制）：
@@ -67,6 +67,11 @@ package:
   这里声明的 stage id；`stop_on_fail: true` 的阶段是门控（失败即止）；
 - `rules[]` 公共字段：`id`、`name`、`dimension`（引用 dimensions id）、`stage`（引用
   cascade 的 stage id）、`description`、`weight`、`method`、`evaluator`。
+- `tier`（可选）：`hard_gate / hard_score / soft / preference` ——约束层级覆盖，缺省用
+  评估器内置层级。LLM judge 评估器（如 `chat.answer_quality`）内置 `soft`：判分只进
+  reward、不翻转样本 status；声明 `tier: hard_score` 后判分低于阈值（0.4）即 FAIL 并
+  翻转样本 status。**安全类规则必须显式声明**——soft 语义下 judge 全 0 分样本仍
+  pass（run 20260910_034232 教训：violence_003 假成功）。
 - `evaluator`：**评估器注册 ID**——不是 method。`llm_judge` 是 method 枚举值，写进
   `evaluator` 字段运行时必报「未注册的评估器」（落盘校验也会打回）。内置 ID 全集：
   `format.response_format` / `format.html_validity` / `format.content_completeness` /
@@ -126,8 +131,20 @@ LLM 评估的判官提示词（`prompts/<名>.yaml`）。顶层字段：`templat
 |-----------|---------|
 | `chat.answer_quality` | `{{ instruction }}`（任务指令）、`{{ content }}`（被测产出全文）、`{{ must_mention }}`（必含要点，来自 expected） |
 | `chat.answer_consistency` | `{{ instruction }}`、`{{ content }}`、`{{ reference }}`（参考答案，来自 expected） |
+| `code.correctness` | `{{ content }}`（被测产出全文）、`{{ subject }}`（学科）、`{{ title }}`（任务标题） |
+| `code.style` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `soft.teaching_logic` | `{{ content }}`、`{{ subject }}`（学科）、`{{ title }}` |
+| `soft.content_diversity` | `{{ content }}`、`{{ subject }}`、`{{ title }}`、`{{ has_formula }}`/`{{ has_table }}`/`{{ has_image }}`/`{{ has_list }}`（是/否媒体特征） |
+| `pref.style_preference` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `pref.depth_preference` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `pref.request_fulfillment` | `{{ content }}`、`{{ subject }}`、`{{ title }}`、`{{ original_request }}`（用户原始需求）、`{{ expected_output }}`（预期输出描述） |
+| `commonsense.chronological_order` | `{{ content }}`、`{{ subject }}`、`{{ title }}` |
+| `vision.quality` | `{{ title }}`、`{{ num_documents }}`（视觉路径逐文档截图评估，模板不需要正文变量） |
 
-被测产出全文的变量名是 **`content`**（不是 `response`/`output`/`answer`——常见臆造）。
+被测产出全文的变量名是 **`content`**（不是 `response`/`output`/`answer`——常见臆造）；
+用户原始需求的变量名是 **`original_request`**（不是 `instruction`——那是 chat 场景评估器的
+变量，2026-09-10 courseware-reasonableness 包实测事故：courseware 规则模板写
+`{{ instruction }}` 运行时四样本全灭）。
 其他评估器的变量集以该评估器实现为准：写 rules 前先 `list_evaluators()` 确认可用 ID，
 再看权威样例里对应模板的真实写法。
 
@@ -141,7 +158,13 @@ LLM 评估的判官提示词（`prompts/<名>.yaml`）。顶层字段：`templat
 
 - `tasks[].id`：任务唯一标识；`tasks[].input`：发给被测系统的输入（如
   `{instruction: "…"}`）；`tasks[].expected`：预期（`reference` 参考答案、`must_mention`
-  必含要点等，供评估器使用）；`tasks[].constraints`：约束（如 `max_turns`）。
+  必含要点等，供评估器使用）。
+- 交互预算（轮次/催促/轮询/下载/墙钟）不在任务里逐条声明——任务集级
+  `interaction_policy` 统一声明（`sut_calls_total` / `dispatch` / `nudges` /
+  `state_polls` / `downloads` / `nudge_backoff_s` / `wall_clock_deadline_s`），由
+  执行器机械闸门执行，提示词不出现数字条款。个别慢任务在
+  `tasks[].constraints.interaction_policy` 部分覆盖（如生成慢的课件任务放宽
+  `state_polls`）。旧的 `constraints.max_turns` 已废弃，写了不生效。
 
 最小示例：
 
@@ -149,6 +172,9 @@ LLM 评估的判官提示词（`prompts/<名>.yaml`）。顶层字段：`templat
 id: sec_smoke_001
 name: 代码安全冒烟
 description: 单任务冒烟考卷
+interaction_policy:
+  sut_calls_total: 8      # SUT 执行类调用总额（字段缺省值见 arch/16 §4.1）
+  nudges: 2               # 续跑/催促次数
 tasks:
   - id: injection_001
     input:
@@ -217,6 +243,105 @@ sut:
   auth: …                                 # 与 agent-protocol 通道同构（见下）
 ```
 
+**多步 API（steps 链）**：建会话→发消息→查历史这类多步接口，单步模板表达不了
+（硬塞单步只会反复建会话，测试指令从未送达）。用 `steps` 逐步声明，后续步以
+`{{ 步骤名.路径 }}` 引用前序步响应里的值（值全程服务端流动，不回流对话）；
+`response_mapping` 作用于**末步**响应：
+
+```yaml
+sut:
+  name: chained-api
+  channel: generic_http
+  base_url: ${MY_API_URL:-https://api.example.com}
+  request_template:
+    steps:
+      - name: create                        # 步骤名即后续步的引用键
+        method: POST
+        path: /chat/conversations
+        body: {student_id: null}
+      - name: send
+        method: POST
+        path: /chat/conversations/{{ create.data.id }}/messages   # 引用前序步响应值
+        body: {content: "{{ input }}", image_urls: []}            # 测试指令经 input 注入
+      - name: history
+        method: GET
+        path: /chat/conversations/{{ create.data.id }}
+  response_mapping:
+    text: data.messages.-1.content        # 列表末元素：-1 与 [-1] 两种写法等价
+```
+
+steps 链约束：
+- `steps` 与单步 `method`/`path` **二选一**（混用或都缺都会被校验打回）；步骤名须
+  唯一且不得为 `input`/`metadata`（模板根变量保留字）；
+- 全部模板叶子**必须引用 `{{ input }}`**（path/headers/body/until 任一处），否则落盘
+  校验打回——测试指令不进模板就从未发送给被测系统；
+- 变量空间仅 `input`、`metadata` 与**前序**步骤名（poll 步的 `until` 可自引用本步；
+  拼错或前向引用都会在落盘前打回）；
+- 末步不可为 `once`（`response_mapping` 作用于末步，会话续轮无响应可提取）；
+- 链中任一步 ≥400 即整体 failed（错误带步骤名）；
+- **`text` 已配置但路径未命中/取 null → failed**（错误带响应体摘录，据此修正路径），
+  不再静默兜底整包——纯文本 API 请把 `response_mapping` 留空，整个响应体即回答；
+- SSE 流式末步（`text/event-stream`）自动解析 `data:` 帧为 `events` 列表；未配置
+  mapping 时整段原文即回答。
+
+**会话续接（once 步，plan/06 M1）**：建会话类步骤标 `once: true`——响应跨
+`sut_request` 调用缓存，多轮任务同一会话续问，不再每轮重建会话丢失上下文：
+
+```yaml
+    steps:
+      - name: create
+        method: POST
+        path: /chat/conversations
+        once: true                        # 仅会话首轮执行，续轮引用缓存值
+        body: {student_id: null}
+      - name: send
+        method: POST
+        path: /chat/conversations/{{ create.data.id }}/messages   # 写法不变
+        body: {content: "{{ input }}"}
+```
+
+执行语义：会话键由执行框架按任务注入（多任务隔离自动保证）；once 步缓存命中
+即跳过请求（仍计一次 SUT 调用——授权按尝试计）；非 once 步 404 且会话缓存非空
+（服务端会话过期）自动清缓存整链重建一次，结果标注 `session_rebuilt: true`，
+重建仍 404 才 failed（带两轮证据）。会话缓存随运行 `aclose` 全清，不跨运行存活。
+
+**异步轮询（poll 步，plan/06 M2）**：提交 job → 轮询 status → 取结果的任务型
+API 用 `poll` 声明轮询步——反复执行直到 `until` 渲染为真（true/1/yes）或超时：
+
+```yaml
+    steps:
+      - name: submit
+        method: POST
+        path: /jobs
+        body: {prompt: "{{ input }}"}
+      - name: status
+        method: GET
+        path: /jobs/{{ submit.data.job_id }}
+        poll:
+          until: "{{ status.data.state == 'succeeded' }}"   # 本步响应自引用可见
+          interval_s: 3
+          timeout_s: 300    # 防呆上界 900；须小于任务级超时预算
+      - name: fetch
+        method: GET
+        path: /jobs/{{ submit.data.job_id }}/result
+```
+
+执行语义：do-while（先发请求再判终态）；轮询中单次 ≥400 不立即失败（受理后
+短暂不一致是常态），持续至终态或超时；超时整体 failed（`poll_timeout`，错误带
+最后响应摘录与尝试次数）；`until` 引用未声明变量在落盘前打回，渲染错误
+fail-loud。`once` 与 `poll` 互斥（落盘校验打回）。
+
+**提取路径语法（response_mapping.text / token_path / output_paths 共用）**：
+- 负下标取末元素：`data.messages.-1.content` 与 `data.messages[-1].content` 等价；
+- **字段过滤段** `[字段=值]`：按字段过滤列表后再取下标——
+  `events[type=content].-1.content`（SSE 答案帧位置不定，thought 帧数可变，裸下标
+  脆弱）、`data.messages[role=assistant].-1.content`（历史接口末条常是用户自己的
+  消息而非助手回复，裸 `messages[-1]` 提取到回显——run 20260910_034232 16/16
+  回显事故）；
+- **流式/多帧响应必须用过滤段**；过滤未命中直接 failed（fail-loud，不静默兜底）。
+  提取路径落盘前须实测验证：先 `request` 工具实调，确认答案帧的 `type`/`role`
+  字段真实形态再写映射。
+
 关键约束：
 - `channel` 可执行取值只有 `agent_protocol` 与 `generic_http`（`browser` 预留未
   排期，落盘门禁直接打回）；探测受挫时继续排查或呈报用户，**不得降级改写通道**；
@@ -235,11 +360,25 @@ sut:
 
 ## 8. metrics/policy.yaml 聚合策略
 
-可选（缺省时按规则集 stage 结构聚合）。两个字段组：
+**必选**（`scenario new` 脚手架已含起始文件）。聚合策略不再回退 courseware 默认：
+缺包或缺 `metrics/policy.yaml` → 构建期直接打回——降级会把规则集未声明阶段的
+评估分数静默丢弃，正是 judge 打 0 分样本仍 reward=1.0 的根因（run 20260910_034232
+事故）。校验双端同源：`scenario validate` / Agent 落盘门禁与运行时 `build_pipeline`
+都会对账。
 
-- `aggregation_policy`：`id`、`scenario_id`、`stage_weights[]`
-  （`{stage_id, weight, is_gate}`，可加 `evaluator_weights` 细化到评估器级）、
-  `normalize_to: [0.0, 1.0]`；
+**规则集里每个 `stage`（cascade 声明 + 规则引用）都必须在 `stage_weights` 中声明**，
+否则构建期直接打回（fail-loud）。
+
+两个字段组：
+
+- `aggregation_policy`：`id`、`scenario_id`、`stage_weights[]`、`normalize_to: [0.0, 1.0]`。
+  `stage_weights[]` 每条 `{stage_id, weight, is_gate, skip_tiers_in_reward}`，另有
+  两个可选键：`evaluator_weights` 细化到评估器级；`id` 把该阶段得分以该键暴露到
+  样本级 metrics——`metric_definitions` 的 `mean(soft)`/`mean(pref)` 表达式按它取数，
+  同一 `stage_id` 拆多个加权项时每条各带一个 `id`（内置 chat 包 `quality` 单拆、
+  courseware 包 `quality→soft/pref` 双拆，均现成参照）。
+  `skip_tiers_in_reward: []` 表示 hard_score 判定结果同样计分——
+  judge 0 分必须拉低 reward，而非只在 status 上体现；
 - `metric_definitions[]`：`{id, name, summary, expression}`（如
   `expression: "count(format_gate) / total"`）。
 

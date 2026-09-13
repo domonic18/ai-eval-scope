@@ -26,6 +26,7 @@ agent-eval-system/
 - 第三方系统对接：[`docs/arch/12第三方系统对接方案.md`](docs/arch/12第三方系统对接方案.md)
 - 评估指标与方法：[`docs/arch/07评估指标与方法.md`](docs/arch/07评估指标与方法.md)
 - 配置管理：[`docs/arch/13配置管理设计.md`](docs/arch/13配置管理设计.md)
+- 执行器目标架构：[`docs/arch/16执行器健壮性架构设计.md`](docs/arch/16执行器健壮性架构设计.md)（机械壳 + 决策体，Phase 1 + Phase 2 已实施（Phase 2 待 staging 验收）——执行器相关工作的主入口）
 - 编码规范索引：[`docs/standard/README.md`](docs/standard/README.md)
 - 贡献指南（提交 / 分支 / PR）：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 

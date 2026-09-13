@@ -10,6 +10,7 @@ import { getPrisma } from "../src/infra/prisma"
 
 const prisma = getPrisma()
 const SCENARIO_ID = `test-catalog-${Date.now()}`
+const AUTO_SCENARIO_ID = `test-catalog-auto-${Date.now()}`
 
 async function seed() {
   await prisma.scenario.create({
@@ -74,7 +75,7 @@ afterEach(async () => {
   await prisma.ruleSetAsset.deleteMany({ where: { scenarioId: SCENARIO_ID } })
   await prisma.promptTemplateAsset.deleteMany({ where: { scenarioId: SCENARIO_ID } })
   await prisma.datasetAsset.deleteMany({ where: { scenarioId: SCENARIO_ID } })
-  await prisma.scenario.deleteMany({ where: { id: SCENARIO_ID } })
+  await prisma.scenario.deleteMany({ where: { id: { in: [SCENARIO_ID, AUTO_SCENARIO_ID] } } })
 })
 
 describe("GET /api/v1/scenarios", () => {
@@ -85,6 +86,35 @@ describe("GET /api/v1/scenarios", () => {
     expect(res.status).toBe(200)
     const ids = res.body.scenarios.map((s: { id: string }) => s.id)
     expect(ids).toContain(SCENARIO_ID)
+  })
+
+  it("按 source 过滤，官方场景带资产 _count（配置中心视角分流）", async () => {
+    const app = createApp()
+    await seed()
+    await prisma.scenario.create({
+      data: { id: AUTO_SCENARIO_ID, name: AUTO_SCENARIO_ID, source: "auto_ingest" },
+    })
+
+    const all = await request(app).get("/api/v1/scenarios")
+    const allIds = all.body.scenarios.map((s: { id: string }) => s.id)
+    expect(allIds).toContain(SCENARIO_ID)
+    expect(allIds).toContain(AUTO_SCENARIO_ID)
+
+    const official = await request(app).get("/api/v1/scenarios?source=official")
+    const officialIds = official.body.scenarios.map((s: { id: string }) => s.id)
+    expect(officialIds).toContain(SCENARIO_ID)
+    expect(officialIds).not.toContain(AUTO_SCENARIO_ID)
+
+    const auto = await request(app).get("/api/v1/scenarios?source=auto_ingest")
+    const autoIds = auto.body.scenarios.map((s: { id: string }) => s.id)
+    expect(autoIds).toContain(AUTO_SCENARIO_ID)
+    expect(autoIds).not.toContain(SCENARIO_ID)
+
+    const row = all.body.scenarios.find((s: { id: string }) => s.id === SCENARIO_ID)
+    expect(row.source).toBe("official")
+    expect(row._count.ruleSets).toBe(2)
+    expect(row._count.prompts).toBe(1)
+    expect(row._count.datasets).toBe(1)
   })
 })
 

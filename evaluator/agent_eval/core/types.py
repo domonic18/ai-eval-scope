@@ -28,6 +28,7 @@ class EvalStatus(str, Enum):
     FAIL = "fail"  # 未通过
     SKIP = "skip"  # 前置阶段失败导致跳过
     ERROR = "error"  # 执行异常
+    RUN_ERROR = "run_error"  # 执行失败（AgentCompass P0-1：包未执行完成，非内容质量问题）
 
 
 class ConstraintTier(str, Enum):

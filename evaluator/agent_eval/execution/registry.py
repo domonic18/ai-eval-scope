@@ -16,7 +16,16 @@ import re
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from jinja2 import Environment, TemplateError
+from jinja2 import meta as jinja2_meta
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from agent_eval.config.loader import ConfigLoader
 from agent_eval.core.exceptions import SUTChannelError
@@ -34,6 +43,12 @@ EXEC_MODES = ("wait", "background", "stream")
 STREAM_MODES = ("values", "messages", "updates", "custom")
 AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
 # Agent Protocol 两种部署形态：runs（/runs/wait 族）| commands（/threads/{id}/commands + state）
+# Agent Protocol 两种部署形态（plan/07 G5 显式化）：
+# - runs：协议标准的 POST /runs/wait 族（通用默认）
+# - commands：POST /threads/{id}/commands + GET state 轮询（AG-UI 网关族官方
+#   Streaming 端点形态）。注意 commands 的信封/中断/终态语义目前以 sasan
+#   实测为基准（ask_question 反问中断、input.respond 应答、lifecycle 事件均
+#   为该实现的前端契约）——接入其他 AG-UI 网关前先核对其方言差异
 PROTOCOL_FLAVORS = ("runs", "commands")
 
 # ${VAR} / ${VAR:-默认值}（不支持嵌套占位；默认值内不含 '}'）
@@ -128,28 +143,129 @@ class OutputPathsConfig(BaseModel):
     )
 
 
-class RequestTemplateConfig(BaseModel):
-    """generic_http 通道的请求模板（arch/03 §4.2）。
+def _normalize_http_method(v: str) -> str:
+    upper = v.strip().upper()
+    if upper not in HTTP_METHODS:
+        raise ValueError(f"HTTP method 必须为 {HTTP_METHODS} 之一，得到: {v!r}")
+    return upper
 
-    body/headers 的字符串值支持 Jinja2 模板（变量空间 ``input``/``metadata``，
-    由通道渲染）；凭证字段不得写在模板里——由 auth 会话自动挂载。
+
+class PollConfig(BaseModel):
+    """链式请求模板的轮询步配置（plan/06 M2，异步任务型 API）。
+
+    do-while 语义：先发请求再判终态——``until`` 渲染结果（strip+lower）为
+    true/1/yes 即通过；轮询中 ≥400 不立即失败（受理后短暂不一致是常态），
+    超时整体 failed 并带最后响应证据。
     """
 
-    method: str = Field(default="POST", description=f"HTTP 方法，{HTTP_METHODS} 之一")
+    until: str = Field(
+        description="终态判定 Jinja2 表达式（本步响应自引用可见，如"
+        " {{ status.data.state == 'succeeded' }}）；渲染为 true/1/yes 即通过"
+    )
+    interval_s: float = Field(default=3.0, gt=0, description="轮询间隔（秒）")
+    timeout_s: float = Field(
+        default=300.0, gt=0, le=900, description="轮询超时（秒；防呆上界 900）"
+    )
+
+
+class RequestStepConfig(BaseModel):
+    """链式请求模板的单步定义（arch/03 §4.2）。
+
+    每步响应（JSON）进入渲染上下文，后续步以 ``{{ 步骤名.路径 }}`` 引用其值
+    （值全程服务端流动，不经 LLM 转述）——jxb 类「建会话 → 发消息 → 查历史」
+    的多步 API 靠它表达。
+    """
+
+    name: str = Field(description="步骤名（后续步以 {{ 步骤名.路径 }} 引用本步响应）")
+    method: str = Field(description=f"HTTP 方法，{HTTP_METHODS} 之一")
     path: str = Field(description="请求路径（相对 base_url；跨域接口可填完整 http(s):// URL）")
     headers: dict[str, str] = Field(default_factory=dict, description="附加请求头（值支持模板）")
     body: Any = Field(
         default=None,
         description="请求体：dict 直发 JSON；str 须为合法 JSON 文本；字符串值支持模板",
     )
+    once: bool = Field(
+        default=False,
+        description="会话步（plan/06 M1）：响应跨 sut_request 调用缓存，仅会话首轮执行"
+        "（建会话类步骤标 true，多轮续接由通道会话存储保证）",
+    )
+    poll: PollConfig | None = Field(
+        default=None,
+        description="轮询步（plan/06 M2）：反复执行直到 until 渲染为真或超时（异步任务型 API）",
+    )
+
+    @field_validator("name")
+    @classmethod
+    def _validate_name(cls, v: str) -> str:
+        name = v.strip()
+        # 步骤名进入 Jinja2 变量空间，须为合法标识符且不得遮蔽根变量
+        if not re.fullmatch(r"\w+", name):
+            raise ValueError(f"request_template.steps[].name 须为标识符（\\w+），得到: {v!r}")
+        if name in ("input", "metadata"):
+            raise ValueError(f"步骤名 {name!r} 与模板根变量冲突，请改名")
+        return name
 
     @field_validator("method")
     @classmethod
     def _normalize_method(cls, v: str) -> str:
-        upper = v.strip().upper()
-        if upper not in HTTP_METHODS:
-            raise ValueError(f"request_template.method 必须为 {HTTP_METHODS} 之一，得到: {v!r}")
-        return upper
+        return _normalize_http_method(v)
+
+    @model_validator(mode="after")
+    def _check_once_poll_mutual(self) -> RequestStepConfig:
+        if self.once and self.poll is not None:
+            raise ValueError(
+                f"步骤 {self.name}: once 与 poll 互斥（once=只执行一次，poll=反复执行到终态）"
+            )
+        return self
+
+
+class RequestTemplateConfig(BaseModel):
+    """generic_http 通道的请求模板（arch/03 §4.2）。
+
+    body/headers 的字符串值支持 Jinja2 模板（变量空间 ``input``/``metadata``，
+    由通道渲染）；凭证字段不得写在模板里——由 auth 会话自动挂载。
+    多步 API 用 ``steps``（与单步 method/path 二选一），``response_mapping``
+    作用于末步响应。
+    """
+
+    method: str | None = Field(
+        default=None, description=f"单步形态的 HTTP 方法，{HTTP_METHODS} 之一"
+    )
+    path: str | None = Field(
+        default=None,
+        description="单步形态的请求路径（相对 base_url；跨域接口可填完整 http(s):// URL）",
+    )
+    headers: dict[str, str] = Field(default_factory=dict, description="附加请求头（值支持模板）")
+    body: Any = Field(
+        default=None,
+        description="请求体：dict 直发 JSON；str 须为合法 JSON 文本；字符串值支持模板",
+    )
+    steps: list[RequestStepConfig] = Field(
+        default_factory=list,
+        description="链式多步请求（与单步 method/path 二选一）：逐步执行，"
+        "后续步可 {{ 前序步骤名.路径 }} 引用其响应；response_mapping 作用于末步",
+    )
+
+    @field_validator("method")
+    @classmethod
+    def _normalize_method(cls, v: str | None) -> str | None:
+        return None if v is None else _normalize_http_method(v)
+
+    @model_validator(mode="after")
+    def _check_shape(self) -> RequestTemplateConfig:
+        if self.steps:
+            if self.path is not None:
+                raise ValueError("request_template 的 steps 与单步 method/path 不可混用——二选一")
+        elif self.path is None:
+            raise ValueError("request_template 需要单步（method/path）或 steps 列表（二选一）")
+        if len({s.name for s in self.steps}) != len(self.steps):
+            raise ValueError("request_template.steps 存在重复步骤名")
+        if self.steps and self.steps[-1].once:
+            raise ValueError(
+                f"request_template.steps 末步 {self.steps[-1].name!r} 不可为 once——"
+                "response_mapping 作用于末步，会话续轮末步命中缓存即无响应可提取"
+            )
+        return self
 
 
 class SUTSystemConfig(BaseModel):
@@ -164,8 +280,8 @@ class SUTSystemConfig(BaseModel):
     )
     protocol_flavor: str = Field(
         default="runs",
-        description="runs（POST /runs/wait 族）| commands（POST /threads/{id}/commands"
-        " + GET state 轮询，官方 Streaming 端点形态）",
+        description="runs（POST /runs/wait 族，协议标准）| commands（POST /threads/{id}/commands"
+        " + GET state 轮询；信封与中断语义以 sasan 实测方言为基准，见 PROTOCOL_FLAVORS 注）",
     )
     configurable: dict[str, Any] = Field(
         default_factory=dict,
@@ -176,7 +292,22 @@ class SUTSystemConfig(BaseModel):
     stream_mode: str = Field(default="messages", description="exec_mode=stream 时的事件模式")
     auth: AuthConfig = Field(default_factory=AuthConfig)
     output_paths: OutputPathsConfig = Field(default_factory=OutputPathsConfig)
+    artifact_hosts: list[str] = Field(
+        default_factory=list,
+        description=(
+            "产物下载额外放行域（download_sut_file 白名单 = base_url 域 ∪ 此列表；"
+            "仅加产物实际所在的域，缺省只允许 SUT 同域下载）"
+        ),
+    )
     on_completion: str | None = Field(default=None, description="如 delete（临时线程用完即删）")
+    interrupt_types: list[str] = Field(
+        default_factory=lambda: ["ask_question"],
+        description=(
+            "终态轮询识别为「反问挂起」的 interrupt value.type 集合（human-in-the-loop"
+            "中断形态因 SUT 而异，接入新 SUT 时按其前端契约扩展）——集合外的中断不"
+            "识别，轮询超时错误会透出未识别类型便于补配"
+        ),
+    )
     request_template: RequestTemplateConfig | None = Field(
         default=None, description="generic_http 请求模板（channel=generic_http 必填）"
     )
@@ -244,6 +375,74 @@ def _unknown_key_errors(data: dict[str, Any], model: type[BaseModel], path: str)
     ]
 
 
+def _collect_template_strings(value: Any) -> list[str]:
+    """递归收集模板字符串叶子（path / headers 值 / body 树内字符串）。"""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [s for item in value.values() for s in _collect_template_strings(item)]
+    if isinstance(value, list):
+        return [s for item in value for s in _collect_template_strings(item)]
+    return []
+
+
+def _template_variables(shape: dict[str, Any]) -> set[str]:
+    """提取单个请求步模板的未声明变量根名集（语法错误叶子跳过——执行侧
+    health_check 专项报告语法，此处只做变量可解析性审计）。"""
+    strings = _collect_template_strings(shape.get("path"))
+    strings += _collect_template_strings(shape.get("headers") or {})
+    strings += _collect_template_strings(shape.get("body"))
+    strings += _collect_template_strings(shape.get("poll") or {})  # 含 until 终态表达式
+    variables: set[str] = set()
+    for source in strings:
+        try:
+            variables |= jinja2_meta.find_undeclared_variables(Environment().parse(source))
+        except TemplateError:
+            continue
+    return variables
+
+
+def _template_audit_errors(rt: dict[str, Any]) -> list[str]:
+    """generic_http 模板变量审计：变量引用必须可解析，且必须消费 {{ input }}。
+
+    实测事故（jxb，v4.8）：request_template 连 {{ input }} 都没写——16 条
+    测试指令从未发给被测系统，每次调用只是「创建会话」，status=success 假成功
+    烧穿执行轮次。凡可机械判定的配置变形在落盘前打回，不留给运行时让执行
+    Agent 猜。
+    """
+    errors: list[str] = []
+    raw_steps = rt.get("steps")
+    step_shapes: list[tuple[str | None, dict[str, Any]]] = (
+        [(str(s.get("name") or f"#{i}"), s) for i, s in enumerate(raw_steps) if isinstance(s, dict)]
+        if isinstance(raw_steps, list)
+        else [(None, rt)]
+    )
+    declared: set[str] = set()
+    all_variables: set[str] = set()
+    for step_name, shape in step_shapes:
+        is_poll = isinstance(shape.get("poll"), dict)
+        if step_name and is_poll:
+            # poll 步 until 可自引用本步响应（do-while 先发请求再判终态）
+            declared.add(step_name)
+        variables = _template_variables(shape)
+        all_variables |= variables
+        for bad in sorted(variables - {"input", "metadata", *declared}):
+            where = f"（步骤 {step_name}）" if step_name else ""
+            declared_list = f"、前序步骤名 {sorted(declared)}" if declared else ""
+            errors.append(
+                f"sut.request_template{where} 引用未定义变量 {bad!r}"
+                f"（合法变量: input、metadata{declared_list}）"
+            )
+        if step_name:
+            declared.add(step_name)
+    if "input" not in all_variables:
+        errors.append(
+            "sut.request_template 未引用 {{ input }}——测试指令不会发送给被测系统"
+            "（body/path 须含 {{ input }} 或 {{ input.字段 }}）"
+        )
+    return errors
+
+
 def _brief_validation_errors(err: ValidationError) -> str:
     parts = [
         f"{'.'.join(str(loc) for loc in item['loc']) or 'sut'}: {item['msg']}"
@@ -285,9 +484,12 @@ def validate_sut_config_document(data: Any) -> list[str]:
         # 通道必需段前置报缺（模型层 request_template 可空——agent_protocol 包不该被迫填它）
         if not isinstance(sut.get("request_template"), dict):
             errors.append(
-                "channel=generic_http 需配置 request_template（method/path，可选 headers/body；"
+                "channel=generic_http 需配置 request_template（单步 method/path 或 steps 链"
+                "——多步 API 用 steps，后续步以 {{ 前序步骤名.路径 }} 引用其响应；"
                 "body 与 headers 值支持 Jinja2 模板，变量空间 input/metadata）"
             )
+        else:
+            errors += _template_audit_errors(sut["request_template"])
         bad_keys = sorted(set(sut.get("response_mapping") or {}) - set(RESPONSE_MAPPING_KEYS))
         if bad_keys:
             errors.append(

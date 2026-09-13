@@ -89,6 +89,24 @@ def check_rule_references(pkg_root: Path | str) -> list[str]:
     template_vars = _prompt_template_vars(root)
 
     errors: list[str] = []
+    # 聚合策略必选 + 覆盖度对账（与运行时 build_pipeline 同源打回）：policy.yaml
+    # 缺失/缺 aggregation_policy 在此拦截；规则集 stage 未在 stage_weights 声明 →
+    # 该阶段评估分数被静默丢弃（run 20260910_034232：judge 全 0 分样本仍 reward=1.0）
+    policy_doc = _load_yaml(root / "metrics" / "policy.yaml")
+    declared_stages: set[str] | None = None
+    if not isinstance(policy_doc, dict) or not isinstance(
+        policy_doc.get("aggregation_policy"), dict
+    ):
+        errors.append(
+            "缺少 metrics/policy.yaml（或其中缺 aggregation_policy）——聚合策略必选，"
+            "不再回退 courseware 默认（降级会把未声明阶段的评估分数静默丢弃）。"
+            "字段契约参照内置包 courseware/1.0.0/metrics/policy.yaml"
+        )
+    else:
+        weights = policy_doc["aggregation_policy"].get("stage_weights") or []
+        declared_stages = {
+            str(w.get("stage_id")) for w in weights if isinstance(w, dict) and w.get("stage_id")
+        }
     # 判官模板级采样次数（num_samples）防呆：声明时必须为 ≥1 的整数——0/负数运行时
     # 炸出难懂的「no median for empty data」（该规则 0 分），落盘前拦截（缺省 3，
     # 成本敏感场景设 1）
@@ -108,6 +126,7 @@ def check_rule_references(pkg_root: Path | str) -> list[str]:
             continue
         dim_ids = {d.get("id") for d in doc.get("dimensions") or [] if isinstance(d, dict)}
         stage_ids = {c.get("stage") for c in doc.get("cascade") or [] if isinstance(c, dict)}
+        used_stages: set[str] = set()
         for rule in doc.get("rules") or []:
             if not isinstance(rule, dict) or rule.get("enabled") is False:
                 continue
@@ -165,6 +184,17 @@ def check_rule_references(pkg_root: Path | str) -> list[str]:
             if stage := rule.get("stage"):
                 if stage not in stage_ids:
                     errors.append(f"{rf.name} 规则 {rid}: stage {stage!r} 未在 cascade[] 声明")
+                used_stages.add(str(stage))
+        # 覆盖度：该规则集用到的阶段必须全部在聚合策略 stage_weights 声明（与
+        # build_pipeline 同源语义——只查 enabled 规则，与运行时跳过语义一致）
+        if declared_stages is not None:
+            uncovered = used_stages - declared_stages
+            if uncovered:
+                errors.append(
+                    f"{rf.name}: 阶段 {sorted(uncovered)} 未在 metrics/policy.yaml 的 "
+                    "stage_weights 声明——这些阶段的评估分数不会计入 reward。"
+                    f"请在 policy.yaml 补 stage_weights（已声明: {sorted(declared_stages)}）"
+                )
     return errors
 
 

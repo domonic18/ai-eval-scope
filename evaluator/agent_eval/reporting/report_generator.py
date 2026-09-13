@@ -63,6 +63,9 @@ class ReportGenerator:
         lines.append(f"**状态**: {status_icon} {sample_result.status.value}")
         lines.append(f"**Reward**: {sample_result.reward:.2f}")
         lines.append(f"**耗时**: {sample_result.total_duration_ms:.0f}ms")
+        if sample_result.status == EvalStatus.RUN_ERROR:
+            lines.append("")
+            lines.append("> ⛔ 执行失败——包未完成执行，未进入内容质量评估（不计入指标分母）。")
         lines.append("")
 
         # 场景化样本指标（stage_metrics：key = StageWeight.id + reward）
@@ -174,6 +177,9 @@ class ReportGenerator:
         lines.append("")
         lines.append(f"**运行 ID**: `{metrics_report.run_id}`")
         lines.append(f"**样本总数**: {metrics_report.total_samples}")
+        run_error_count = int(metrics_report.metrics.get("run_error_count", 0))
+        if run_error_count:
+            lines.append(f"**执行失败**: {run_error_count} 个样本（run_error，不计入指标分母）")
         lines.append("")
 
         # 指标概览（从 metrics dict + metric_definitions 动态渲染）

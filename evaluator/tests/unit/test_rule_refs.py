@@ -25,9 +25,17 @@ from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.rule_refs import check_rule_references
 
 MANIFEST = "package:\n  id: demo\n  scenario: demo\n  version: 0.1.0\n"
+# 聚合策略必选（缺省注入声明 quality 阶段的合法 policy；测试可覆盖/省略以验证门禁）
+POLICY = (
+    "aggregation_policy:\n"
+    "  id: p\n  scenario_id: demo\n"
+    "  stage_weights:\n    - {stage_id: quality, weight: 1.0, is_gate: false}\n"
+    "  normalize_to: [0.0, 1.0]\n"
+)
 
 
 def _seed(tmp_path: Path, files: dict[str, str]) -> Path:
+    files = {"metrics/policy.yaml": POLICY, **files}
     for rel, content in files.items():
         p = tmp_path / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -209,6 +217,7 @@ def test_guide_variable_contract_table_matches_registry() -> None:
     """meta 钉死（防文档副本漂移）：guide §4 变量契约表与评估器类声明双向一致。"""
     import agent_eval.evaluation.evaluators  # noqa: F401
     import agent_eval.evaluation.evaluators.scenario.chat  # noqa: F401
+    import agent_eval.evaluation.evaluators.scenario.code  # noqa: F401 — guide 表亦收 code.*
     from agent_eval.config.paths import PACKAGE_ROOT
     from agent_eval.evaluation.registry import registry
 
@@ -252,6 +261,42 @@ def test_prompt_variables_contract_matches_build_variables() -> None:
             f"{eid} 的 prompt_variables {sorted(contract)} 与 _build_variables 实际注入"
             f"{sorted(injected)} 漂移——落盘对账以声明为准，声明错 = 门禁失明"
         )
+
+
+def test_llm_judge_base_contract_catches_instruction_misuse(tmp_path: Path) -> None:
+    """回归（2026-09-10 courseware-reasonableness 事故）：courseware 判官模板把
+    chat 场景的 {{ instruction }} 写进 pref.request_fulfillment 规则——运行时
+    StrictUndefined 四样本全灭。BaseLLMJudgeEvaluator 声明契约后落盘即打回；
+    正确变量 {{ original_request }} 通过。"""
+    root = _seed(
+        tmp_path,
+        {
+            "agent_eval.yaml": MANIFEST,
+            "rules/r.yaml": _rule_set(evaluator="pref.request_fulfillment", prompt_id="p1"),
+            "prompts/p1.yaml": (
+                "template_id: p1\nsystem_prompt: x\n"
+                'user_prompt_template: "需求：{{ instruction }}\\n内容：{{ content }}"\n'
+            ),
+        },
+    )
+    errors = check_rule_references(root)
+    assert len(errors) == 1 and "'instruction'" in errors[0]
+    assert "original_request" in errors[0]  # 打回文案带契约清单（copy, don't recall）
+
+    (root / "prompts" / "p1.yaml").write_text(
+        "template_id: p1\nsystem_prompt: x\n"
+        'user_prompt_template: "需求：{{ original_request }}\\n内容：{{ content }}"\n',
+        encoding="utf-8",
+    )
+    assert check_rule_references(root) == []
+
+
+def test_builtin_packages_pass_contract_gate() -> None:
+    """内置三包随包资产与新契约零冲突（防契约收紧误伤存量参照包）。"""
+    from agent_eval.config.paths import PACKAGE_ROOT
+
+    for pkg in sorted((PACKAGE_ROOT / "assets" / "packages").glob("*/*/")):
+        assert check_rule_references(pkg) == [], f"内置包 {pkg} 落盘对账失败"
 
 
 def test_prompt_num_samples_validated(tmp_path: Path) -> None:
@@ -370,3 +415,23 @@ def test_stage_without_evaluators_is_legal_empty_pipeline() -> None:
     )
     engine = PipelineEngine(config, registry)
     assert engine.stages[0].evaluators == []
+
+
+def test_missing_policy_yaml_reported(tmp_path: Path) -> None:
+    """聚合策略必选：无 metrics/policy.yaml（或缺 aggregation_policy）落盘前打回。"""
+    root = _seed(tmp_path, {"metrics/policy.yaml": ""})  # 覆盖缺省注入为空文件
+    errors = check_rule_references(root)
+    assert any("metrics/policy.yaml" in e and "courseware" in e for e in errors)
+
+
+def test_stage_not_declared_in_policy_reported(tmp_path: Path) -> None:
+    """规则阶段未在 stage_weights 声明 → 覆盖度打回（静默丢分教训前置到落盘门禁）。"""
+    root = _seed(
+        tmp_path,
+        {
+            "metrics/policy.yaml": POLICY,  # 只声明 quality
+            "rules/r.yaml": _rule_set(stage="safety"),
+        },
+    )
+    errors = check_rule_references(root)
+    assert any("'safety'" in e and "stage_weights" in e for e in errors)

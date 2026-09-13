@@ -1,10 +1,14 @@
-"""SUT Tools — SUT 交互工具集。
+"""SUT Tools — 执行域通用工具集。
 
-提供 invoke_http_sut、invoke_cli_sut、scan_directory、read_file、
-collect_results、write_package、list_files 七个工具。SUTToolServer 是
-**工具注册表**：工具实现为普通异步方法（可直接调用与测试，不依赖任何
-Agent 框架），ToolExporterMixin（agent/tools.py）惰性导出 LangChain Tool
-显式绑定给 DeepAgents；MCP 封装为可选能力（未在本期排期）。
+工具实现为普通异步方法（可直接调用与测试，不依赖任何 Agent 框架），
+ToolExporterMixin（agent/tools.py）惰性导出 LangChain Tool 显式绑定给
+DeepAgents；MCP 封装为可选能力（未在本期排期）。
+
+工具面白名单（v4.8 安全裁剪）：默认仅导出通用工具（DEFAULT_EXECUTION_TOOLS），
+invoke_http_sut/invoke_cli_sut **退出 LLM 工具面**——SUT 交互唯一出口是通道
+语义工具（agent_run 族 / sut_request）。实测 generic_http 任务中 LLM 借
+invoke_cli_sut（任意 shell 无沙箱）cat 凭证与 .env，prompts 禁令拦不住，
+结构性裁剪才有效。
 """
 
 from __future__ import annotations
@@ -15,7 +19,7 @@ import os
 import re
 import shutil
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -79,6 +83,38 @@ TOOL_SPECS: list[ToolSpec] = [
     ),
 ]
 
+# 执行面默认工具集：裸调用工具（invoke_http_sut/invoke_cli_sut）不入选——
+# 语义工具是唯一 SUT 出口，方法本体保留（服务端直调/测试/显式恢复可达）
+DEFAULT_EXECUTION_TOOLS: tuple[str, ...] = (
+    "scan_directory",
+    "read_file",
+    "list_files",
+    "collect_results",
+    "write_package",
+)
+
+
+def content_fingerprint(package_dir: Path) -> str:
+    """聚合包内全部内容文件的 sha256（排序稳定，跳过 manifest 自身与隐藏文件）。
+
+    write_package 时 answer/trace/metrics 尚未由 ExecutionAgent 物化，指纹只反映
+    当时内容；物化完成后须由 ExecutionAgent 重算（见 _refresh_content_hash）。
+    """
+    import hashlib
+
+    h = hashlib.sha256()
+    files = sorted(
+        p
+        for p in package_dir.rglob("*")
+        if p.is_file() and p.name != "manifest.json" and not p.name.startswith(".")
+    )
+    for f in files:
+        h.update(f.relative_to(package_dir).as_posix().encode("utf-8"))
+        h.update(b"\x00")
+        h.update(f.read_bytes())
+        h.update(b"\x00")
+    return h.hexdigest()
+
 
 class SUTToolServer(ToolExporterMixin):
     """SUT 交互工具注册表，为 ExecutionAgent 提供工具集。
@@ -95,19 +131,37 @@ class SUTToolServer(ToolExporterMixin):
         *,
         workspace_dir: str | Path | None = None,
         http_client_factory: Callable[[], httpx.AsyncClient] | None = None,
+        enabled_tools: Sequence[str] | None = None,
     ) -> None:
         """初始化 SUTToolServer。
 
         Args:
             config: SUT Tools 配置（超时/默认请求头/文件模式等）。
-            workspace_dir: workspace 根目录（collect_results/write_package 落盘位置）。
-                目的地路径属执行器基础设施，不由 LLM 决定——实测 LLM 会幻觉
-                绝对路径（/workspace/...）导致 OS 错误击穿图执行。
+            workspace_dir: workspace 根目录（collect_results/write_package 落盘位置，
+                同时是文件工具的读取边界）。目的地路径属执行器基础设施，不由 LLM
+                决定——实测 LLM 会幻觉绝对路径（/workspace/...）导致 OS 错误击穿图执行。
             http_client_factory: 注入自定义 httpx.AsyncClient（测试用 MockTransport）。
+            enabled_tools: 导出进 LLM 工具面的工具名白名单；None → 安全默认集
+                （DEFAULT_EXECUTION_TOOLS，不含 invoke_* 裸调用工具）。
         """
         self.config = config or SUTToolsConfig()
         self.workspace_dir: Path | None = Path(workspace_dir) if workspace_dir else None
+        # 任务配置允许的额外读取根（目录模式：task.directory_path 是任务作者
+        # 配置的 SUT 产出目录，不在 workspace 内）——执行循环逐任务注入
+        self.extra_allowed_roots: list[Path] = []
         self._http_client_factory = http_client_factory
+        names = set(enabled_tools) if enabled_tools is not None else set(DEFAULT_EXECUTION_TOOLS)
+        unknown = sorted(names - {spec.name for spec in TOOL_SPECS})
+        if unknown:
+            raise ToolExecutionError(
+                f"enabled_tools 含未知工具名: {unknown}"
+                f"（可用: {', '.join(spec.name for spec in TOOL_SPECS)}）",
+                details={"unknown": unknown},
+            )
+        # 实例属性遮蔽类属性：工具面 100% 由 TOOL_SPECS 决定（to_langchain_tools/
+        # describe_tools/get_tool_names 同源）。默认即安全——ExecutionAgent 的
+        # 兜底构造（未显式装配的调用方）同样收窄，无需装配点记得传参
+        self.TOOL_SPECS = [spec for spec in TOOL_SPECS if spec.name in names]
 
     def _package_root(self, task_id: str) -> Path:
         """校验 task_id 并解析包目录（workspace/{task_id}，防路径逃逸）。"""
@@ -226,12 +280,35 @@ class SUTToolServer(ToolExporterMixin):
 
     # ─── 目录 / 文件 ───
 
+    def _within_workspace(self, path: Path) -> bool:
+        """文件工具读取边界：路径 resolve 后须位于 workspace 子树或允许根内。
+
+        纵深防御（v4.8）：裸调用工具裁撤后 read_file 是唯一的任意路径读取面——
+        实测 LLM 曾读取 .secret/.env 与凭证文件并回流上下文。未设 workspace_dir
+        不限制（纯方法级使用/测试兼容）。
+        """
+        if self.workspace_dir is None:
+            return True
+        resolved = path.resolve()
+        for root in (self.workspace_dir, *self.extra_allowed_roots):
+            try:
+                resolved.relative_to(root.resolve())
+            except ValueError:
+                continue
+            return True
+        return False
+
     async def scan_directory(
         self,
         directory_path: str,
         file_patterns: list[str] | None = None,
     ) -> dict[str, Any]:
         """遍历目录树收集匹配文件，返回 DirectoryManifest 的 JSON 序列化结果。"""
+        if not self._within_workspace(Path(directory_path)):
+            raise ToolExecutionError(
+                f"路径越界: {directory_path}——目录工具仅允许访问 workspace 内路径",
+                details={"path": directory_path},
+            )
         collector = DirectoryCollector(
             root_dir=directory_path,
             file_patterns=file_patterns or self.config.file_patterns,
@@ -245,6 +322,11 @@ class SUTToolServer(ToolExporterMixin):
     async def read_file(self, file_path: str, encoding: str = "utf-8") -> str:
         """读取指定文件的内容并返回。"""
         path = Path(file_path)
+        if not self._within_workspace(path):
+            raise ToolExecutionError(
+                f"路径越界: {file_path}——read_file 仅允许访问 workspace 内路径",
+                details={"path": file_path},
+            )
         try:
             return path.read_text(encoding=encoding)
         except OSError as e:
@@ -258,6 +340,11 @@ class SUTToolServer(ToolExporterMixin):
     ) -> list[str]:
         """列出目录中匹配指定模式的文件（recursive 时返回相对路径）。"""
         base = Path(directory_path)
+        if not self._within_workspace(base):
+            raise ToolExecutionError(
+                f"路径越界: {directory_path}——目录工具仅允许访问 workspace 内路径",
+                details={"path": directory_path},
+            )
         if not base.is_dir():
             raise ToolExecutionError(f"不是目录: {directory_path}")
         try:
@@ -372,20 +459,7 @@ class SUTToolServer(ToolExporterMixin):
 
     def _content_fingerprint(self, package_dir: Path) -> str:
         """聚合 output/ + task/trace/metrics 内容的 sha256（排序稳定，跳过 manifest 自身）。"""
-        import hashlib
-
-        h = hashlib.sha256()
-        files = sorted(
-            p
-            for p in package_dir.rglob("*")
-            if p.is_file() and p.name != "manifest.json" and not p.name.startswith(".")
-        )
-        for f in files:
-            h.update(f.relative_to(package_dir).as_posix().encode("utf-8"))
-            h.update(b"\x00")
-            h.update(f.read_bytes())
-            h.update(b"\x00")
-        return h.hexdigest()
+        return content_fingerprint(package_dir)
 
     def _resolve_url(self, url: str) -> str:
         """相对 URL 拼接配置的 http_base_url；无 base_url 的相对路径直接报错。

@@ -62,6 +62,7 @@ from agent_eval.agent.workbench.prompts import (
     render_intro,
 )
 from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
+from agent_eval.agent.workbench.tool_filter import build_toolset_filter
 from agent_eval.agent.workbench.tools import PackageToolServer
 from agent_eval.agent.workbench.types import TurnResult, WorkbenchAgentConfig
 from agent_eval.config.paths import paths
@@ -190,6 +191,10 @@ class WorkbenchAgent:
             tools=tools,
             system_prompt=self._build_system_prompt(),
             checkpointer=self._checkpointer,
+            # 复位模型可见工具面 = 宿主装配清单：deepagents 内置 ls/glob 跑
+            # StateBackend 虚拟 FS（与磁盘无关），曾致「没有场景包」误判
+            # （arch/15 v4.4；为何不用全局 harness profile 见 tool_filter 模块注释）
+            middleware=[build_toolset_filter(tools)],
         )
 
     # ─── 会话（宿主循环调用） ──────────────────────────────────────

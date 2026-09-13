@@ -80,7 +80,12 @@
           "additionalProperties": { "type": "number" }
         },
         "total_samples": { "type": ["integer", "null"], "minimum": 0 },
-        "scenario_id": { "type": ["string", "null"] },
+        "scenario_id": {
+          "type": ["string", "null"],
+          "description": "场景 id（slug）：小写字母/数字/下划线/连字符，1-64 字符。白名单拦截控制字符/超长串注入 ensureScenarioAssets 的 scenarios 行（MR !67 AI 审查硬化项）",
+          "pattern": "^[a-z0-9_-]{1,64}$",
+          "maxLength": 64
+        },
         "package_id": { "type": ["string", "null"] },
         "package_version": { "type": ["string", "null"] },
         "run_config_snapshot_id": { "type": ["string", "null"] },
@@ -171,7 +176,7 @@
         "external_sample_id": { "type": ["string", "null"] },
         "kind": {
           "type": "string",
-          "enum": ["screenshot", "judge_record", "output", "trace", "manifest"]
+          "enum": ["screenshot", "judge_record", "output", "trace", "manifest", "transcript"]
         },
         "object_key": { "type": "string", "minLength": 1 },
         "content_type": { "type": "string" },

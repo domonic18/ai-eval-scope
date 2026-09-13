@@ -12,9 +12,11 @@ from agent_eval.config.evaluation import (
 )
 from agent_eval.config.execution import (
     AGENT_DEFAULTS,
+    INTERACTION_POLICY_DEFAULTS,
     SUT_TOOLS_DEFAULTS,
     TASK_DEFAULTS,
     AgentDefaults,
+    InteractionPolicyDefaults,
     SUTToolsDefaults,
     TaskDefaults,
 )
@@ -67,6 +69,7 @@ __all__ = [
     "REPORTING_DEFAULTS",
     # 执行默认值
     "AGENT_DEFAULTS",
+    "INTERACTION_POLICY_DEFAULTS",
     "SUT_TOOLS_DEFAULTS",
     "TASK_DEFAULTS",
     # 默认值类（便于类型提示和扩展）
@@ -80,6 +83,7 @@ __all__ = [
     "PipelineDefaults",
     "EvaluatorDefaults",
     "AgentDefaults",
+    "InteractionPolicyDefaults",
     "SUTToolsDefaults",
     "TaskDefaults",
     "ReportingDefaults",

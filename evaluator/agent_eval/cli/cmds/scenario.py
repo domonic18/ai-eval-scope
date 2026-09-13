@@ -28,7 +28,7 @@ def _scaffold(ref: str, output: Path | None, template: str, force: bool) -> Path
         rprint(f"[red]❌ 目标目录非空: {root}（用 --force 覆盖）[/red]")
         raise typer.Exit(code=1)
 
-    for sub in ("rules", "prompts", "datasets"):
+    for sub in ("rules", "prompts", "datasets", "metrics"):
         (root / sub).mkdir(parents=True, exist_ok=True)
 
     manifest = (
@@ -43,6 +43,22 @@ def _scaffold(ref: str, output: Path | None, template: str, force: bool) -> Path
         f"  labels: [latest]\n"
     )
     (root / "agent_eval.yaml").write_text(manifest, encoding="utf-8")
+    # 聚合策略必选（不回退 courseware 默认——降级会静默丢分）；stage_weights 由
+    # 作者按 rules/ 的 cascade 逐阶段补齐，validate 与 build_pipeline 双端对账打回
+    policy = (
+        "# 聚合策略与指标定义（必选；字段契约参照内置包 courseware/1.0.0/metrics/policy.yaml）\n"
+        "aggregation_policy:\n"
+        f"  id: {package_id}-default\n"
+        f"  scenario_id: {scenario}\n"
+        "  stage_weights: []         # TODO: rules/ cascade 的每个 stage 各声明一条\n"
+        "                            # {stage_id, weight, is_gate, skip_tiers_in_reward}\n"
+        "                            # ——未声明的阶段分数不计入 reward；软约束阶段\n"
+        "                            # （LLM 质量分）声明 skip_tiers_in_reward:\n"
+        "                            # [hard_gate, hard_score] 只按软分计入 reward\n"
+        "  normalize_to: [0.0, 1.0]\n"
+        "metric_definitions: []      # TODO: 按需声明场景指标（expression 表达式）\n"
+    )
+    (root / "metrics" / "policy.yaml").write_text(policy, encoding="utf-8")
     return root
 
 
@@ -77,7 +93,9 @@ def scenario_new(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
     max_turns: int = typer.Option(
-        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+        40,
+        "--max-turns",
+        help="已废弃：轮次预算由 interaction_policy 声明，此参数不再生效",
     ),
     max_segments: int = typer.Option(
         3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"
@@ -134,7 +152,9 @@ def scenario_edit(
         False, "--trust-agent", help="非交互放行写盘（CI 用；默认关闭，交互确认）"
     ),
     max_turns: int = typer.Option(
-        40, "--max-turns", help="Agent 单段步数安全阀基数（缺省 40，安全阀非天花板）"
+        40,
+        "--max-turns",
+        help="已废弃：轮次预算由 interaction_policy 声明，此参数不再生效",
     ),
     max_segments: int = typer.Option(
         3, "--max-segments", help="Agent 自动分段续跑上限（缺省 3；1 = 撞线即暂停交还）"
@@ -358,10 +378,13 @@ def scenario_validate(
     problems: list[str] = []
     # 资源目录按包形态判定（运行时真相）：清单声明 default_task_set = 在线 SUT
     # 形态，考卷来自 task_sets/、datasets 不参与（内置 chat 包即无 datasets/）；
-    # 未声明 = 离线文件形态，datasets/ 必需
+    # 未声明 = 离线文件形态，datasets/ 必需。在线形态 task_sets/ 同样必需——
+    # 缺失此前一路绿灯到运行时才炸（指南 §1：task_sets/ 在线必需）
     required_dirs = ["rules", "prompts"]
     if manifest.default_task_set is None:
         required_dirs.append("datasets")
+    else:
+        required_dirs.append("task_sets")
     for sub in required_dirs:
         d = path / sub
         if not d.is_dir():
@@ -371,6 +394,16 @@ def scenario_validate(
         d = path / sub
         if d.is_dir() and not any(d.glob("*.yaml")):
             problems.append(f"{sub}/ 缺少 YAML 资产（提示词/规则集须为 .yaml）")
+    ts_dir = path / "task_sets"
+    if (
+        manifest.default_task_set is not None
+        and ts_dir.is_dir()
+        and not any([*ts_dir.glob("*.yaml"), *ts_dir.glob("*.yml")])
+    ):
+        problems.append(
+            "task_sets/ 缺少 YAML 考卷（清单声明了 default_task_set: "
+            f"{manifest.default_task_set}，运行时按名加载 task_sets/{manifest.default_task_set}.yaml）"
+        )
 
     rule_files = sorted((path / "rules").glob("*.yaml")) if (path / "rules").is_dir() else []
     for rf in rule_files:

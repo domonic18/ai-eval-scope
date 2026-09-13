@@ -145,6 +145,37 @@ class TestUploadCommand:
         assert result.exit_code == 0, result.output
         assert "回填完成" in result.output
 
+    def test_upload_project_override_reaches_config(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """--project 必须并入 load_config 的 env（env_override 曾构造后未传入——--project 不生效）。"""
+        self._make_run(tmp_path, "20260101_000000")
+        self._patch_sink(monkeypatch)
+        import agent_eval.observability as obs
+
+        captured: dict = {}
+
+        def _fake_load_config(**k):
+            captured.update(k)
+            return SimpleNamespace(has_credentials=lambda: True)
+
+        monkeypatch.setattr(obs, "load_config", _fake_load_config)
+        result = runner.invoke(
+            app,
+            [
+                "upload",
+                "--run",
+                "20260101_000000",
+                "--workspace",
+                str(tmp_path),
+                "--project",
+                "demo-courseware",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert captured.get("upload_override") is True
+        assert (captured.get("env") or {}).get("AGENT_EVAL_PROJECT") == "demo-courseware"
+
     def test_upload_missing_run_dir(self, tmp_path: Path) -> None:
         result = runner.invoke(app, ["upload", "--run", "nope", "--workspace", str(tmp_path)])
         assert result.exit_code == 1
