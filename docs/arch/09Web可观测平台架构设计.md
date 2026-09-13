@@ -695,6 +695,11 @@ Authorization: Bearer eval-xxxxx
   并发撞唯一键静默吞掉不拖垮事件事务。快照只补缺、文件导入可覆盖（arch/13 §5.3）——
   「CLI 建包 → 评测 → 上传 → Web 看结果」主链路零手工导入，场景即资产台可见；
   已有 defaults 的场景不受影响，run 明细页指标展示以运行快照为准（平台 defaults 仅作最新版覆盖）。
+- **场景来源标记与配置中心视角分流（v1.10）**：`scenarios.source` ∈ `official`（管理员创建/
+  脚本导入，默认）/ `auto_ingest`（补缺注册时写入）——补缺注册机制服务可观测（趋势按场景聚合、
+  defaults 回退），但其产物不进配置中心默认视图：`GET /api/v1/scenarios?source=official` 过滤，
+  配置中心默认只列 official，管理员可展开「显示自动注册 (N)」（卡片带「自动注册」徽标）；
+  列表附带各资产 `_count`。观测侧（趋势/运行/defaults API）不受影响。
 
 ### 7.2 幂等去重
 
@@ -831,7 +836,7 @@ Web /api/public/ingest + /api/public/artifacts/url → PG + 对象存储
 | POST | `/api/v1/jobs` | Bearer API Key | 提交评测任务（`package_id` / `package_version` 指定场景包），202 返回 `job_id` |
 | GET | `/api/v1/jobs/:id` | Bearer API Key | 查询任务态（含 `metrics`、`error`、`web_run_url`） |
 | GET | `/api/v1/jobs/:id/overview` | Bearer API Key | 速览：运行摘要 + 失败项 + 关键扣分点 + 涉及文件（verdict 由快照 `metricDefinitions` 动态判定） |
-| GET | `/api/v1/scenarios` | Bearer API Key | 列出场景 |
+| GET | `/api/v1/scenarios` | Bearer API Key | 列出场景；`?source=official\|auto_ingest` 按来源过滤（缺省全量），响应附 `_count` 资产计数 |
 | GET | `/api/v1/scenarios/:id/catalog` | Bearer API Key | 场景下可用资产目录：**五类聚合**（rule-sets / prompts / datasets / task-sets / sut-configs，DB 资产优先、构建期静态兜底） |
 | GET | `/api/v1/health` | 公开 | eval 子系统健康 |
 
@@ -1227,3 +1232,4 @@ volumes: { pgdata: {} }
 | v1.7 | 2026-08-27 | 资产化同步：Secrets 拉取与结构重写 |
 | v1.8 | 2026-09-12 | 样本明细证据扩展：artifact.kind 增 transcript（执行对话记录上传）+ SampleDetail「原始问题/对话过程」tab（eval_only 条件渲染兼容） |
 | v1.9 | 2026-09-12 | 摄取自动注册场景资产：run 事件携 scenario_id 时补缺建 scenarios 行 + defaults（快照只补缺、文件导入可覆盖）——CLI 主链路零手工导入；ingest project_id 兼容 slug 形态；useScenarioDefaults 失败清空回退运行快照 |
+| v1.10 | 2026-09-13 | 场景来源标记与配置中心视角分流：scenarios.source（official/auto_ingest）+ 列表 ?source= 过滤与 _count；配置中心默认只列官方场景包，补缺注册产物带「自动注册」徽标经开关显式展开；清理存量 auto-scn-*/content-safety 空壳 |

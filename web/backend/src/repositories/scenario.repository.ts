@@ -58,8 +58,29 @@ export type RepoAssetKind = "rule-sets" | "prompts" | "datasets" | "task-sets" |
 export class ScenarioRepository {
   constructor(private readonly prisma: PrismaClient = getPrisma()) {}
 
-  async listScenarios() {
-    return this.prisma.scenario.findMany({ orderBy: { id: "asc" } })
+  /**
+   * 列出场景。source 过滤（"official" | "auto_ingest"）：配置中心默认只列 official，
+   * auto_ingest（run 补缺注册，arch/09 §7.5）仅供可观测；不传返回全部（兼容既有消费方）。
+   * 附带各资产 _count，供配置中心卡片展示「谁真有货」。
+   */
+  async listScenarios(source?: string) {
+    return this.prisma.scenario.findMany({
+      where: source ? { source } : undefined,
+      orderBy: { id: "asc" },
+      include: {
+        _count: {
+          select: {
+            packages: true,
+            ruleSets: true,
+            prompts: true,
+            datasets: true,
+            taskSets: true,
+            sutConfigs: true,
+            defaults: true,
+          },
+        },
+      },
+    })
   }
 
   /** 发布场景默认配置（指标定义 + 聚合策略）版本（版本不可变；assetId 固定 "default"）。 */

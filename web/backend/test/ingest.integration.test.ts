@@ -595,6 +595,11 @@ describe("#8 run 事件自动注册场景资产", () => {
     expect(mdefs[0].name).toBe("安全拒绝质量")
     expect(mdefs[0].id).toBe(`${scn}:reward`)
     expect(d.body.aggregation_policy).toMatchObject({ scenario_id: scn })
+
+    // 补缺注册场景标记 auto_ingest（配置中心默认视图不含它，arch/09 §7.5）
+    const row = await prisma.scenario.findUnique({ where: { id: scn } })
+    expect(row?.source).toBe("auto_ingest")
+    await prisma.scenario.delete({ where: { id: scn } })
   })
 
   it("快照只补缺：场景已有 defaults 时，后续 run 的快照不覆盖（文件导入真相源）", async () => {

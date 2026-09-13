@@ -79,7 +79,10 @@ export class IngestRepository {
         select: { id: true },
       })
       if (!existing) {
-        await tx.scenario.create({ data: { id: scenarioId, name: scenarioId } })
+        // source=auto_ingest：补缺注册的场景仅供可观测，不进配置中心默认视图（arch/09 §7.5）
+        await tx.scenario.create({
+          data: { id: scenarioId, name: scenarioId, source: "auto_ingest" },
+        })
       }
       if (!snapshot) return
       const hasDefaults = await tx.defaultsAsset.findFirst({
