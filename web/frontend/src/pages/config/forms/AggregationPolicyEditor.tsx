@@ -34,7 +34,15 @@ const normalize = (raw: Record<string, unknown> | null | undefined): AggPolicy =
   if (!Array.isArray(p.stage_weights)) p.stage_weights = []
   return p
 }
-const STAGE_COLORS = ["#3d6ff", "#2fe6c8", "#d29922", "#f85149", "#a78bfa", "#3fb950"]
+// 阶段序列色：走 chart token（浅深两态自适应，globals.css --chart-*；与图表第六序列一致）
+const STAGE_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-6)",
+  "var(--chart-5)",
+]
 
 export function AggregationPolicyEditor({
   scenarioId,
