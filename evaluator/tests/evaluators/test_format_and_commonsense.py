@@ -667,6 +667,10 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
         assert "算术错误" in result.reason
+        # 分数过线时不得拼「低于通过线」条款（run 20260913_050312：加权 8.6/10
+        # 高于通过线 8.0 却自称低于，失败归因应由「发现错误」条款承载）
+        assert "低于通过线" not in result.reason
+        assert "发现错误" in result.reason
 
     def test_constant_false_positive_filtered_by_llm(self, tmp_path: Path) -> None:
         """规则误报（金/信息密度误匹配"金的密度"）经 LLM 二次确认过滤 → PASS。"""

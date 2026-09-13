@@ -858,8 +858,10 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         else:
             reason = "知识准确性（LLM + 规则）：未通过"
             # 分数型失败（无规则错误、纯 LLM 评分不达标）必须给出可解释信息，
-            # 否则用户只见「未通过」三个字无从定位（对齐兄弟评估器透出维度分的惯例）
-            if scores:
+            # 否则用户只见「未通过」三个字无从定位（对齐兄弟评估器透出维度分的惯例）。
+            # 分数过线但被规则错误致败时不拼分数条款——「加权 8.6 低于通过线 8.0」
+            # 属自相矛盾文案，失败归因已由下方「发现错误」条款承载（run 20260913_050312）
+            if scores and combined_score < threshold:
                 dim_names = (
                     {d.dim_id: d.name for d in template.dimensions}
                     if template and template.dimensions
