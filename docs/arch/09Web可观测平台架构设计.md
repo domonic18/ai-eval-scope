@@ -630,6 +630,10 @@ Authorization: Bearer eval-xxxxx
 ### 6.4 隔离实现
 
 - **中间件 `tenantGuard`**：解析 `req.user`（JWT）或 `req.tenant`（API Key），解析出 `{ orgId?, projectId?, role? }` 挂到 `req.tenant`；Query/管理路由据此校验"用户是否属于该组织/有权访问该项目"，越权直接 403/404（不泄露存在性）。
+  **公开只读例外（v1.11）**：`runGuard` / `artifactGuard` 对公开项目（`isPublic`）的读端点，
+  匿名与**登录非成员**同权放行（`tenant.kind=public`，只读）——公开语义 = 「任何人可读运行数据」，
+  不因登录收窄；写操作（DELETE 等 owner 守卫）与 `projectGuard`（项目元数据/Key 管理）不受影响，
+  转私后非成员恢复 404 不泄露存在性。
 - **Repository 强制过滤**：`base.repository.js` 构造接收 `tenant`，所有 `find*` 自动追加 `WHERE org_id/project_id`；约束在数据层，业务层无法绕过。
 - **对象存储**：下载签发前校验 `object_key` 的 `project_id` 前缀属于 `req.tenant`。
 - **API Key 跨项目写**：`ingest.service` 以 `req.tenant.projectId`（来自 Key）为准，忽略/拒绝 payload 里的他项目 `project_id`（`403 PROJECT_FORBIDDEN`）。
@@ -1233,3 +1237,4 @@ volumes: { pgdata: {} }
 | v1.8 | 2026-09-12 | 样本明细证据扩展：artifact.kind 增 transcript（执行对话记录上传）+ SampleDetail「原始问题/对话过程」tab（eval_only 条件渲染兼容） |
 | v1.9 | 2026-09-12 | 摄取自动注册场景资产：run 事件携 scenario_id 时补缺建 scenarios 行 + defaults（快照只补缺、文件导入可覆盖）——CLI 主链路零手工导入；ingest project_id 兼容 slug 形态；useScenarioDefaults 失败清空回退运行快照 |
 | v1.10 | 2026-09-13 | 场景来源标记与配置中心视角分流：scenarios.source（official/auto_ingest）+ 列表 ?source= 过滤与 _count；配置中心默认只列官方场景包，补缺注册产物带「自动注册」徽标经开关显式展开；清理存量 auto-scn-*/content-safety 空壳 |
+| v1.11 | 2026-09-13 | 公开项目登录非成员语义修复：runGuard/artifactGuard 公开只读对登录非成员与匿名同权（此前匿名可读、登录反 404 倒挂）；写操作与 projectGuard 不受影响，转私后恢复 404 |
