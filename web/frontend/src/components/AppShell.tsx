@@ -27,6 +27,7 @@ import {
 } from "@/components/shadcn/dropdown-menu"
 import { useToast } from "@/hooks/useToast"
 import { CrumbsContext, OrgContext, type Crumb } from "@/context/navigation"
+import { useTheme } from "@/context/theme"
 import {
   Bell,
   BookOpen,
@@ -35,9 +36,11 @@ import {
   Activity,
   Lock,
   LogOut,
+  Moon,
   Users,
   Plus,
   Search,
+  Sun,
   Trash2,
   Boxes,
 } from "lucide-react"
@@ -76,6 +79,7 @@ export function AppShell() {
   const [inviting, setInviting] = useState(false)
   const [platformAdmin, setPlatformAdmin] = useState(!!loadSession()?.user?.platformAdmin)
   const toast = useToast()
+  const { theme, toggle } = useTheme()
   const nav = useNavigate()
   const loc = useLocation()
   const session = loadSession()
@@ -334,6 +338,14 @@ export function AppShell() {
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title={theme === "dark" ? "切换到浅色模式" : "切换到深色模式"}
+                  onClick={toggle}
+                >
+                  {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                </Button>
                 <Button variant="ghost" size="icon" title="搜索">
                   <Search className="size-4" />
                 </Button>

@@ -1,40 +1,105 @@
-/* Tailwind v4 + shadcn 暗色主题。旧自研 CSS 已全部移除。 */
+/* Tailwind v4 + shadcn 双主题。:root=浅色（白底可读），.dark=深色（全局默认 <html class="dark">）。
+   主题决策（00-设计规范.md §9）：显式选择（localStorage es-theme）> 系统偏好 > 默认深色；
+   首帧前由 index.html 内联脚本落 .dark 类，运行时由 context/theme.tsx 接管。 */
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
-/* shadcn HSL 主题 token。暗色为主调（全局 <html class="dark">）。
-   品牌主色沿用 EvalScope 电蓝 #3d6dff；数据辅色信号青 #2fe6c8 映射到 chart-2。 */
+/* 浅色调色板（锚定 GitHub Light + docs/design 浅色段，白底对比全部 ≥ 4.7:1）。
+   品牌电蓝白底下加深 #3d6dff→#2e5be0（对比 5.7:1）；信号青映射 chart-2 同步加深。 */
 :root {
   --radius: 0.625rem;
 
-  /* 表面色对齐原型 theme.css「仪器级深色仪表盘」（hex 1:1）。
-     Tailwind v4 经 @theme inline 派生 bg-card / bg-background / border-border … 全站生效。 */
-  --background: #0a0c10; /* --bg */
-  --foreground: #eef1f6; /* --text-primary */
-  --card: #0f1116; /* --bg-elevated */
+  --background: #f5f7fa;
+  --foreground: #1c2433;
+  --card: #ffffff;
+  --card-foreground: #1c2433;
+  --popover: #ffffff;
+  --popover-foreground: #1c2433;
+  --primary: #2e5be0;
+  --primary-foreground: #ffffff;
+  --secondary: #edf0f5;
+  --secondary-foreground: #1c2433;
+  --muted: #edf0f5;
+  --muted-foreground: #5a6372;
+  --accent: #e5e9f0;
+  --accent-foreground: #1c2433;
+  --destructive: #cf222e;
+  --destructive-foreground: #ffffff;
+  --border: #dde2eb;
+  --input: #edf0f5;
+  --ring: #2e5be0;
+  --chart-1: #2e5be0; /* 电蓝（Reward） */
+  --chart-2: #0a7f72; /* 信号青（CPR） */
+  --chart-3: #9a6700; /* 黄（Soft） */
+  --chart-4: #cf222e; /* 红（Pref/危险） */
+  --chart-5: #1a7f37; /* 绿（DR/成功） */
+  --chart-6: #8250df; /* 紫（第六序列） */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1c2433;
+  --sidebar-primary: #2e5be0;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e5e9f0;
+  --sidebar-accent-foreground: #1c2433;
+  --sidebar-border: #dde2eb;
+  --sidebar-ring: #2e5be0;
+
+  /* 语义色别名（白底加深变体） */
+  --success: #1a7f37;
+  --warning: #9a6700;
+  --danger: #cf222e;
+  --info: #0969da;
+  --signal: #0a7f72;
+  --accent-brand: #2e5be0;
+
+  /* 柔和底色（徽标 pill 背景，低透明度品牌色两态通用） */
+  --success-soft: rgba(26, 127, 55, 0.1);
+  --warning-soft: rgba(154, 103, 0, 0.1);
+  --danger-soft: rgba(207, 34, 46, 0.08);
+  --info-soft: rgba(9, 105, 218, 0.1);
+  --accent-soft: rgba(46, 91, 224, 0.1);
+
+  /* 评估约束层级色（tier chip） */
+  --tier-hard: #cf222e;
+  --tier-soft: #9a6700;
+  --tier-pref: #0969da;
+
+  /* 更深的内嵌表面（右侧预览面板等） */
+  --bg-inset: #eef1f6;
+
+  /* 兼容别名（lib/eval 等处仍用 --text-primary / --text-secondary 引用）：间接层两态通用 */
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+}
+
+/* 深色（默认，html.dark）：仪器级深色仪表盘，hex 与原型 theme.css 1:1。 */
+.dark {
+  --background: #0a0c10;
+  --foreground: #eef1f6;
+  --card: #0f1116;
   --card-foreground: #eef1f6;
   --popover: #0f1116;
   --popover-foreground: #eef1f6;
-  --primary: #3d6dff; /* 电蓝 --accent */
+  --primary: #3d6dff;
   --primary-foreground: #ffffff;
-  --secondary: #161922; /* --bg-surface */
+  --secondary: #161922;
   --secondary-foreground: #eef1f6;
   --muted: #161922;
-  --muted-foreground: #8b919e; /* --text-secondary */
-  --accent: #1b1f29; /* hover 底 --bg-hover */
+  --muted-foreground: #8b919e;
+  --accent: #1b1f29;
   --accent-foreground: #eef1f6;
-  --destructive: #f85149; /* --danger */
+  --destructive: #f85149;
   --destructive-foreground: #ffffff;
-  --border: #20242e; /* --border */
+  --border: #20242e;
   --input: #161922;
   --ring: #3d6dff;
-  --chart-1: #3d6dff; /* 电蓝（Reward） */
-  --chart-2: #2fe6c8; /* 信号青（CPR） */
-  --chart-3: #d29922; /* 黄（Soft） */
-  --chart-4: #f85149; /* 红（Pref/危险） */
-  --chart-5: #3fb950; /* 绿（DR/成功） */
+  --chart-1: #3d6dff;
+  --chart-2: #2fe6c8;
+  --chart-3: #d29922;
+  --chart-4: #f85149;
+  --chart-5: #3fb950;
+  --chart-6: #a78bfa;
   --sidebar: #0f1116;
   --sidebar-foreground: #eef1f6;
   --sidebar-primary: #3d6dff;
@@ -44,7 +109,6 @@
   --sidebar-border: #20242e;
   --sidebar-ring: #3d6dff;
 
-  /* 语义色别名（对齐原型） */
   --success: #3fb950;
   --warning: #d29922;
   --danger: #f85149;
@@ -52,27 +116,17 @@
   --signal: #2fe6c8;
   --accent-brand: #3d6dff;
 
-  /* 柔和底色（徽标 pill 背景，移植原型 *-soft） */
   --success-soft: rgba(63, 185, 80, 0.12);
   --warning-soft: rgba(210, 153, 34, 0.12);
   --danger-soft: rgba(248, 81, 73, 0.12);
   --info-soft: rgba(88, 166, 255, 0.12);
   --accent-soft: rgba(61, 109, 255, 0.12);
 
-  /* 评估约束层级色（tier chip） */
   --tier-hard: #f85149;
   --tier-soft: #d29922;
   --tier-pref: #58a6ff;
 
-  /* 更深的内嵌表面（右侧预览面板等） */
   --bg-inset: #0c0e13;
-}
-
-/* 暗色为默认（html.dark）。:root 已是深色 token，这里仅保留旧 token 名兼容别名
-   （lib/eval 等处仍用 --text-primary / --text-secondary 引用）。 */
-.dark {
-  --text-primary: var(--foreground);
-  --text-secondary: var(--muted-foreground);
 }
 
 @theme inline {
@@ -106,6 +160,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -130,7 +185,7 @@
 
 @layer components {
   /* CRT 扫描线纹理：极低强度横条，pointer-events:none 不挡交互。
-     原稿见 docs/design/assets/theme.css（仪表台质感背景层）。 */
+     原稿见 docs/design/assets/theme.css（仪表台质感背景层）；浅色下换深色细线。 */
   .scanlines {
     position: fixed;
     inset: 0;
@@ -138,6 +193,9 @@
     z-index: 0;
     background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px);
     mix-blend-mode: overlay;
+  }
+  html:not(.dark) .scanlines {
+    background: repeating-linear-gradient(0deg, rgba(13, 20, 33, 0.014) 0 1px, transparent 1px 3px);
   }
 
   /* 原生 select 统一外观：去默认箭头、加 chevron、右留白（对齐原型 .select） */
