@@ -1,3 +1,58 @@
+## v0.3.1 (2026-09-13)
+
+### Feat
+
+- **web**: 配置中心视角分流——scenarios.source 标记补缺注册场景（arch/09 v1.10）
+- **web**: 摄取自动注册场景资产——run 快照补缺 scenarios/defaults（arch/09 v1.9）
+- **web**: 样本明细五栏证据视图——原始问题/对话过程独立 tab（arch/09 v1.8）
+- **observability**: transcript.md 入制品链——样本「对话过程」数据源（arch/09 v1.8）
+- **evaluation**: 失败语义分层——RUN_ERROR 状态与分母剔除（AgentCompass P0-1）
+- **channels**: generic_http 多轮会话续接与轮询步——once 步/会话存储/自愈 + poll do-while（plan/06 M1+M2）
+- **executor**: 提示词瘦身与 max_turns 降格单轨——行为法典转判断标准（arch/16 §5.3+§七）
+- **executor**: 决策简报与完成仲裁——SutStateTracker/挂点b注入/rationale 资格闸门（arch/16 P5+P2）
+- **executor**: 异常收尾机械守卫——LLM 已写 success 判定强制翻 failed（P2）
+- **executor**: 机械壳 Phase 1——预算声明/资源账本/动作闸门/统一收尾（arch/16）
+- **executor**: 提示词五段重组——通道纪律与工具面同源
+- **execution**: 反问中断识别配置化 + channels 传输域拆分
+- **executor**: download_sut_file 产物落包与 askQuestion 反问应答闭环
+- **workbench**: 工作台 Agent 既有场景包发现——list_packages 三源工具与内置工具隐藏
+- **executor**: 执行对话记录落包——transcript.md（任务指令+对话+工具调用）
+- **evaluation**: 聚合策略必选——移除 courseware 隐式回退与覆盖 fail-loud
+
+### Fix
+
+- **web**: ingest scenario_id 白名单校验——slug 格式与长度拦截注入
+- **evaluator**: 工具面账本 fail-closed——未注入即拒绝，不静默放行
+- **evaluator**: 规则评估 reason 自相矛盾文案——分数过线不再拼「低于通过线」
+- **evaluator**: 执行成功语义机械收口——真实作答守卫翻转误判 failed（arch/16 v1.5）
+- **web**: 公开项目登录非成员语义倒挂——公开只读与匿名同权（arch/09 v1.11）
+- **evaluator**: 评测证据链契约六缺口系统性修复——失败路径显式可观测
+- **web**: run 页指标定义脏状态——场景切换/拉取失败清空，回退运行快照
+- **web**: ingest 项目校验兼容 slug——AGENT_EVAL_PROJECT 文档契约允许 slug
+- **cli**: upload --project 覆盖失效——env_override 并入进程 env 传入 load_config
+- **validate**: 在线形态 task_sets/ 缺失双端落盘前打回
+- **executor**: 收尾终局快照刷新——answer.md 回写收尾时刻最新 SUT 事实
+- **channels**: 终态判定稳定窗——连续 2 次采样防空窗误判（run 20260912_000410）
+- **executor**: 仲裁依从性收口——拒绝载荷可操作化 + 连续拒绝升级（arch/16 Phase 2.1）
+- **executor**: 任务集级任务隔离与 abort transcript 中断注记（arch/16 Phase 1 收尾）
+- **executor**: 保险丝轮询全额计入——1/10 折算致合法轮询熔断（staging 重放回归）
+- **execution**: agent-protocol 终态判定修正与超时类型化（v4.16/v4.17 通道层）
+- **executor**: 催促循环防线——摘要保尾弃头与应答后产物获取纪律
+- **executor**: input.respond 恢复载荷勘误——反问应答改发前端同款 answers 形状
+- **evaluation**: 判官模板变量契约通电——包模板引用契约外变量落盘即打回
+- **executor**: 跨任务 last_run 串台清账——任务起点统一置空单槽缓存
+- **agent**: SUT 反问卡死修复——SSE 行级 deadline + LLM 请求上限 + 逐任务进度日志
+- **executor**: 回显机械守卫落地——提取过滤段与指纹时序修复
+- **workbench**: 执行域提示词与包格式指南同步链式模板与工具裁剪
+- **agent**: 执行面工具结构性裁剪——invoke_* 退出 LLM 面 + 文件工具 workspace 边界
+- **executor**: generic_http 链式多步模板落地——steps 链/SSE 末步/提取失败语义/负索引
+- **cicd**: 空跑演练校验段 RELEASE_TAG 未绑定崩溃——set -u 下空值兜底
+
+### Refactor
+
+- **executor**: agent.py 拆分回补 300 行红线 + P3 打磨
+- **agent**: 工具面复位中间件上移 agent/core 共享
+
 ## v0.3.0 (2026-09-09)
 
 ### Feat
