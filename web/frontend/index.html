@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EvalScope — Agent 能力评估可观测平台</title>
+    <script>
+      // 首帧主题决策（阻塞，防闪烁）：显式选择（localStorage es-theme）> 系统偏好（浅色）> 默认深色。
+      // 静态 class="dark" 为无 JS 兜底；运行时由 context/theme.tsx 接管（规范：docs/design/00-设计规范.md §9）。
+      try {
+        var t = localStorage.getItem("es-theme")
+        if (t !== "light" && t !== "dark") {
+          t =
+            window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark"
+        }
+        document.documentElement.classList.toggle("dark", t === "dark")
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

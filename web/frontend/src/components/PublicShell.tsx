@@ -1,5 +1,8 @@
 import { Link, Outlet } from "react-router-dom"
+import { Moon, Sun } from "lucide-react"
 import { Badge } from "@/components/shadcn/badge"
+import { Button } from "@/components/shadcn/button"
+import { useTheme } from "@/context/theme"
 
 /**
  * 公开访问外壳（docs/arch/12 §3.5）：
@@ -10,6 +13,7 @@ import { Badge } from "@/components/shadcn/badge"
  * - 页面内的 Query 调用走匿名（axios 无 token）；非公开项目会 401 → 由 axios 拦截器跳登录。
  */
 export function PublicShell() {
+  const { theme, toggle } = useTheme()
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="flex h-12 items-center justify-between border-b px-4">
@@ -22,12 +26,19 @@ export function PublicShell() {
             公开预览
           </Badge>
         </Link>
-        <Link
-          to="/login"
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          登录查看更多 →
-        </Link>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            title={theme === "dark" ? "切换到浅色模式" : "切换到深色模式"}
+            onClick={toggle}
+          >
+            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </Button>
+          <Link to="/login" className="text-xs text-muted-foreground hover:text-foreground">
+            登录查看更多 →
+          </Link>
+        </div>
       </header>
       <main className="flex-1">
         <Outlet />
