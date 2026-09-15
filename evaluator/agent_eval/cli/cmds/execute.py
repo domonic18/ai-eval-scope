@@ -239,6 +239,16 @@ def pipeline(
     no_cache: bool = typer.Option(
         False, "--no-cache", help="跳过评估缓存，强制重新评估（含 LLM 调用）"
     ),
+    gate: str = typer.Option(
+        "off",
+        "--gate",
+        help="质量门禁：off=不判定（默认）| strict=逐项声明阈值卡点 | <float>=reward 综合得分卡点",
+    ),
+    report_formats: list[str] = typer.Option(
+        None,
+        "--report-formats",
+        help="追加报告格式（可重复/逗号分隔）：junit=reports/junit.xml，txt=reports/summary.txt",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
 ) -> None:
     """一体化流水线：执行被测 Agent → 评估 → 报告/上传（单 run_id 贯通，Sprint 9）。"""
@@ -256,8 +266,27 @@ def pipeline(
         upload=upload,
         on_missing=on_missing,
         no_cache=no_cache,
+        gate=gate,
+        report_formats=list(report_formats) if report_formats else None,
         verbose=verbose,
     )
+
+
+def _parse_report_formats(raw: list[str] | None) -> list[str]:
+    """解析 --report-formats（可重复/逗号分隔），合法值 junit/txt，非法即 BadParameter。"""
+    formats: list[str] = []
+    for item in raw or []:
+        for part in item.split(","):
+            fmt = part.strip().lower()
+            if not fmt:
+                continue
+            if fmt not in ("junit", "txt"):
+                raise typer.BadParameter(
+                    f"不支持的报告格式: {part!r}（合法值: junit, txt）",
+                )
+            if fmt not in formats:
+                formats.append(fmt)
+    return formats
 
 
 def execute_pipeline(
@@ -274,9 +303,15 @@ def execute_pipeline(
     upload: bool | None = None,
     on_missing: str = "skip",
     no_cache: bool = False,
+    gate: str = "off",
+    report_formats: list[str] | None = None,
     verbose: bool = False,
 ) -> None:
-    """流水线动作（纯函数，向导/工作台复用；组织约定见 arch/15 §2.2）。"""
+    """流水线动作（纯函数，向导/工作台复用；组织约定见 arch/15 §2.2）。
+
+    退出码契约（requirement/06 FR-3，CI 按此映射构建状态）：
+    0=成功（含门禁通过）| 1=配置/执行失败 | 3=质量门禁未达标。
+    """
     from agent_eval.cli._stages import (
         build_judge_context,
         evaluate_stage,
@@ -287,14 +322,23 @@ def execute_pipeline(
     )
     from agent_eval.cli.console.output import emit_json, is_json
     from agent_eval.cli.console.render import print_task_table, stage_progress
-    from agent_eval.core.exceptions import AgentEvalError
+    from agent_eval.core.exceptions import AgentEvalError, GateConfigError
     from agent_eval.core.logging import setup_logging
+    from agent_eval.reporting.gate import normalize_gate
     from agent_eval.storage.package import generate_run_id
 
     setup_logging(level="DEBUG" if verbose else "INFO")
     strict = on_missing == "strict"
+    formats = _parse_report_formats(report_formats)
 
     # ── 阶段 0：场景包一次解析（run 与 eval 共享 resolved_pkg）──
+    # 门禁取值语法校验前置（语义校验——float 模式无 reward——在评估后由
+    # evaluate_gate 抛 GateConfigError，同样映射退出码 1）
+    try:
+        normalize_gate(gate)
+    except GateConfigError as e:
+        rprint(f"[red]门禁配置错误:[/red] {e}")
+        raise typer.Exit(code=1) from e
     try:
         inputs = resolve_run_inputs(
             package,
@@ -379,6 +423,9 @@ def execute_pipeline(
                 mode="pipeline",
                 scenario_package_dir=scenario_pkg_dir,
                 manifest_extra=run_manifest_extra,
+                gate=gate,
+                report_formats=formats,
+                package_id=(inputs.resolved_pkg.manifest.id if inputs.resolved_pkg else ""),
             )
             sp.advance("上报 / 收尾")
             finalize_eval(result, upload_override=upload, package_dir=str(packages_root))
@@ -395,7 +442,18 @@ def execute_pipeline(
                 inputs=inputs,
                 packages=packages,
                 run_dir=run_dir,
-                metrics=dict(result.metrics),
-                total_samples=result.total_samples,
+                # EvalResult 的指标真相在 .report（MetricsReport）——曾误写
+                # result.metrics 致终态渲染 AttributeError（requirement/06 FR-4）
+                metrics=dict(result.report.metrics),
+                total_samples=result.report.total_samples,
             )
         )
+    # 质量门禁退出码（在报告落盘与平台上报之后判定，门禁失败不阻断上报）
+    gate_info = getattr(result, "gate", None) or {}
+    if gate_info.get("enabled") and not gate_info.get("passed", True):
+        failures = "；".join(gate_info.get("failures") or [])
+        rprint(
+            f"[red]❌ 质量门禁未达标[/red]（--gate {gate_info.get('mode')}）: "
+            f"{failures or '详见 summary.json gate 字段'}"
+        )
+        raise typer.Exit(code=3)

@@ -154,9 +154,10 @@ def execute_eval(
                     "package_dir": package_dir,
                     "run_id": result.run_id,
                     "mode": run_mode,
-                    "total_samples": result.total_samples,
-                    "metrics": dict(result.metrics),
-                    "failure_breakdown": dict(result.failure_breakdown),
+                    # EvalResult 指标真相在 .report（同 execute.py FR-4 修复）
+                    "total_samples": result.report.total_samples,
+                    "metrics": dict(result.report.metrics),
+                    "failure_breakdown": dict(result.report.failure_breakdown),
                 }
             )
 

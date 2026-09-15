@@ -312,6 +312,9 @@ def evaluate_stage(
     mode: str = "eval_only",
     scenario_package_dir: Path | None = None,
     manifest_extra: dict[str, Any] | None = None,
+    gate: str = "off",
+    report_formats: list[str] | None = None,
+    package_id: str = "",
 ) -> Any:
     """评估（原 eval 命令 5 段）。
 
@@ -319,6 +322,7 @@ def evaluate_stage(
     - run=(ws_root, run_id)：复用既有 RunWorkspace（pipeline 单 run_id 贯通），
       并补建 reports/results（执行阶段不创建）。
     - manifest_extra：pipeline 传执行阶段绑定字段，eval_only 写清单时合并（单次原子写）。
+    - gate / report_formats / package_id：CI 集成（requirement/06），透传 eval_only。
     """
     from agent_eval.orchestrator.orchestrator import Orchestrator
     from agent_eval.storage.workspace import Workspace
@@ -348,6 +352,9 @@ def evaluate_stage(
             mode=mode,
             run_workspace=run_workspace,
             manifest_extra=manifest_extra,
+            gate=gate,
+            report_formats=report_formats,
+            package_id=package_id,
         )
     finally:
         if judge_ctx.renderer is not None:

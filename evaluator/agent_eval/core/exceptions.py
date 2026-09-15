@@ -227,6 +227,17 @@ class OrchestratorError(AgentEvalError):
     """编排调度异常。"""
 
 
+# ─── 质量门禁相关（CI 集成 --gate，requirement/06）───
+
+
+class GateError(AgentEvalError):
+    """质量门禁异常。"""
+
+
+class GateConfigError(GateError):
+    """门禁配置错误（阈值不可解析 / float 模式无 reward 指标）——退出码 1。"""
+
+
 # ─── Workspace 相关 ───
 
 

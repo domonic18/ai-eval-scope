@@ -341,6 +341,40 @@ uv run agent-eval pipeline --package chat --upload
 
 `pipeline` 是 `run` + `eval` 的参数并集（`--package/--task-set/--task/--sut-name/--rule-set/--upload/--project` 等），复用同一 `runs/{run_id}/` 目录，适合日常回归与 CI 定时任务。
 
+### CI 集成：--report-formats 与 --gate（质量门禁）
+
+面向 Jenkins / GitLab CI 等通用 CI 的原生报告与门禁（requirement/06）：
+
+```bash
+# CI 典型用法：追加 junit/纯文本报告 + strict 门禁
+uv run agent-eval pipeline --package edu --report-formats junit,txt --gate strict
+```
+
+**`--report-formats`**（追加报告格式，默认不追加、不产生新文件）：
+
+| 取值 | 产物 | 说明 |
+|------|------|------|
+| `junit` | `runs/<run_id>/reports/junit.xml` | JUnit XML 标准格式，CI 的 junit 步骤原生消费；指标/样本逐条用例，门禁失败与样本缺 reward 显形为 `<failure>` |
+| `txt` | `runs/<run_id>/reports/summary.txt` | 首行单行摘要（CI 直接作构建描述）+ 控制台友好块（`cat` 进构建日志）；Groovy 沙箱无法解析 JSON 时的可靠通道 |
+
+**`--gate`**（质量门禁，默认 `off` 与历史行为一致；`0` 按处理）：
+
+| 取值 | 行为 |
+|------|------|
+| `off`（默认） | 不判定，仅出报告 |
+| `strict` | 逐项卡点：规则集/指标声明了 threshold 的每个指标，值 ≥ threshold 方为通过 |
+| `<float>` | 综合得分卡点：所有 reward 指标（`reward` / `*:reward`）值 ≥ float 方为通过（同量纲直接比较） |
+
+**退出码契约**（CI 按此映射构建状态，如 Jenkins：`3 → UNSTABLE`）：
+
+| 退出码 | 含义 |
+|--------|------|
+| 0 | 成功（含门禁通过） |
+| 1 | 配置/执行失败（含门禁取值不可解析、float 模式无 reward 指标） |
+| 3 | 质量门禁未达标（`summary.json` 顶层 `gate` 对象携带 `failures`/`failed_metrics` 明细） |
+
+门禁未达标**不阻断**报告落盘与平台上报（`--upload` 照常完成），仅在收尾时以退出码 3 退出。
+
 ### 其他相关参数
 
 | 参数 | 说明 |

@@ -391,7 +391,9 @@ class _WizardStubs:
     def __init__(self, tmp_path: Path) -> None:
         from types import SimpleNamespace
 
-        pkg = SimpleNamespace(manifest=SimpleNamespace(ref="chat/chat:1.0.0"), root=tmp_path)
+        pkg = SimpleNamespace(
+            manifest=SimpleNamespace(ref="chat/chat:1.0.0", id="chat"), root=tmp_path
+        )
         self.inputs = SimpleNamespace(
             task_set_path=str(tmp_path / "default.yaml"),
             task_set_model=SimpleNamespace(tasks=[{}, {}]),
