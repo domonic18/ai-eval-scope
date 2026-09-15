@@ -15,7 +15,7 @@ ask_user 桥接 CLI 交互原语（文本/单选/凭证隐藏输入直写 secret
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec
 from agent_eval.agent.workbench.sut_probe.ask_user import AskUserTool
@@ -31,7 +31,8 @@ from agent_eval.agent.workbench.sut_probe.tokens import TokenTool
 class SUTProbeToolServer(ToolExporterMixin):
     """受控网络探测工具面：host 边界 + 注入防护 + 防锁 + 轮内预算。"""
 
-    TOOL_SPECS: ClassVar[list[ToolSpec]] = PROBE_TOOL_SPECS
+    # 与基类同形态（非 ClassVar）：ClassVar 遮蔽实例变量声明会被 mypy 拒绝
+    TOOL_SPECS: list[ToolSpec] = PROBE_TOOL_SPECS
 
     def __init__(
         self,

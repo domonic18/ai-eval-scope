@@ -150,11 +150,12 @@ class ExecutionAgent:
                     progress=f"{idx}/{total}",
                     error=type(e).__name__,
                 )
-                package = self._load_failed_package(
+                failed_pkg = self._load_failed_package(
                     Path(self.config.workspace_dir), run_id, task.id
                 )
-                if package is None:
+                if failed_pkg is None:
                     raise  # 失败包都没落盘=收尾链自身故障，隔离无意义
+                package = failed_pkg
             structlog.get_logger("executor").info(
                 "任务结束",
                 task_id=task.id,

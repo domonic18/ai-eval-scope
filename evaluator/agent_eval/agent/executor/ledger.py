@@ -169,8 +169,9 @@ class ResourceLedger:
         if refusal is not None:
             return self._refuse(action, refusal)
 
-        if action == "nudge" and not self._nudge_backoff_elapsed():
-            wait_s = self.policy.nudge_backoff_s - (time.monotonic() - self.last_nudge_at)
+        last_nudge = self.last_nudge_at
+        if action == "nudge" and last_nudge is not None and not self._nudge_backoff_elapsed():
+            wait_s = self.policy.nudge_backoff_s - (time.monotonic() - last_nudge)
             return self._refuse(
                 action,
                 {
