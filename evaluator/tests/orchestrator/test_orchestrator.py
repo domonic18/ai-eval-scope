@@ -542,9 +542,14 @@ class TestEvalOnlyCiIntegration:
         for name in ("summary.md", "summary.json", "junit.xml", "summary.txt"):
             assert (reports / name).is_file(), name
 
-        # 单格式：仅追加 junit.xml
+        # 单格式：仅追加 junit.xml（显式新 run——generate_run_id 秒级时间戳，
+        # CI 机器上两次 eval 可能同秒，共享 reports 目录会让上一次的 summary.txt 泄入）
         orch2 = Orchestrator(workspace=workspace)
-        result2 = orch2.eval_only(golden_package, report_formats=["junit"])
+        result2 = orch2.eval_only(
+            golden_package,
+            run_workspace=workspace.create_run("20260915_000002"),
+            report_formats=["junit"],
+        )
         reports2 = sorted(p.name for p in result2.run_workspace.reports_dir.iterdir())
         assert reports2 == ["junit.xml", "summary.json", "summary.md"]
 
