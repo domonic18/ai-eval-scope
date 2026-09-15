@@ -590,3 +590,53 @@ class TestProgressView:
         stubs = _FlowStubs(tmp_path)
         print_task_table(stubs.pkg_objs)  # rprint 输出（stdout）
         assert True  # 冒烟：不抛异常即通过（表格渲染已由真机验证）
+
+
+class TestFlushObservability:
+    def test_queue_dir_follows_run_workspace(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """回归（CI 构建 #10-#18）：load_config 无 workspace 时回退 CWD 相对路径
+        ``.ingest_queue``，容器 CWD 为只读场景包挂载（:ro）时创建即炸，整个推送被
+        跳过且构建仍绿（平台无数据）。_flush_observability 必须把 run workspace
+        根传给 load_config，让队列目录落在可写 workspace 内。"""
+        import agent_eval.observability as obs
+        from agent_eval.cli._common import _flush_observability
+
+        real_cfg = obs.load_config(
+            workspace=tmp_path,
+            env={
+                "AGENT_EVAL_HOST": "https://platform.example.com",
+                "AGENT_EVAL_API_KEY": "eval-k",
+                "AGENT_EVAL_UPLOAD": "true",
+            },
+        )
+        captured: dict[str, object] = {}
+
+        def fake_load_config(**kwargs: object) -> object:
+            captured.update(kwargs)
+            return real_cfg
+
+        class FakeSink:
+            def __init__(self, cfg: object) -> None:
+                self.cfg = cfg
+
+            def flush(self, result: object, **kwargs: object) -> SimpleNamespace:
+                return SimpleNamespace(
+                    error="",
+                    sent=1,
+                    queued=0,
+                    artifacts_uploaded=0,
+                    artifacts_failed=0,
+                    replayed=0,
+                )
+
+        monkeypatch.setattr(obs, "load_config", fake_load_config)
+        monkeypatch.setattr(obs, "ResultSink", FakeSink)
+
+        rw_root = tmp_path / "runs" / "20260915_000000"
+        result = SimpleNamespace(
+            run_id="20260915_000000", run_workspace=SimpleNamespace(root=rw_root)
+        )
+        _flush_observability(result, upload_override=None)
+        assert captured["workspace"] == rw_root

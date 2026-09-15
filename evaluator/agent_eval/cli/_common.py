@@ -201,15 +201,18 @@ def _flush_observability(
     """
     from agent_eval.observability import ResultSink, load_config
 
-    cfg = load_config(upload_override=upload_override)
-    if not cfg.enabled:
-        return
-
-    rprint("[blue]可观测平台:[/blue] 推送结果中…")
+    # 队列目录必须随 run workspace：config 的回退是 CWD 相对路径（.ingest_queue），
+    # 而容器里 CWD 常是只读的场景包挂载（:ro）——创建即炸会吞掉整个推送，
+    # 且表现为「构建绿但平台无数据」（构建 #10-#18 实录）。先取 workspace 再建配置。
     run_workspace = None
     rw = getattr(result, "run_workspace", None)
     if rw is not None:
         run_workspace = getattr(rw, "root", None) or (rw.path if hasattr(rw, "path") else None)
+    cfg = load_config(workspace=run_workspace, upload_override=upload_override)
+    if not cfg.enabled:
+        return
+
+    rprint("[blue]可观测平台:[/blue] 推送结果中…")
     # 查看页地址确定性拼装（/run/:id，后端按 externalRunId 兼容查询）——Jenkins
     # console 正则提取进构建描述；URL 不依赖推送成败，离线重放成功后同样有效
     run_id = str(getattr(result, "run_id", "") or "")
