@@ -132,3 +132,16 @@ class TestConsoleBlock:
             "failed_metrics": [],
         }
         assert render_summary_txt(_report(), gate, "0.3.2").endswith("\n")
+
+    def test_run_url_line_only_when_provided(self) -> None:
+        """平台查看页：上报开启时有「平台报告」行；未开启（空串）整行不渲染。"""
+        gate = {
+            "mode": "off",
+            "enabled": False,
+            "passed": True,
+            "failures": [],
+            "failed_metrics": [],
+        }
+        assert "平台报告" not in render_summary_txt(_report(), gate, "0.3.2")
+        text = render_summary_txt(_report(), gate, "0.3.2", run_url="https://p.example.com/run/r1")
+        assert "平台报告:     https://p.example.com/run/r1" in text

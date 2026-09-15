@@ -30,16 +30,19 @@ def _failures_by_metric(gate: dict[str, Any]) -> dict[str, str]:
     return {f.split("=", 1)[0]: f for f in (gate.get("failures") or []) if "=" in f}
 
 
-def _add_properties(parent: ET.Element, run_id: str, package_id: str) -> None:
+def _add_properties(parent: ET.Element, run_id: str, package_id: str, run_url: str = "") -> None:
     props = ET.SubElement(parent, "properties")
     ET.SubElement(props, "property", name="run_id", value=run_id)
     ET.SubElement(props, "property", name="package_id", value=package_id)
+    if run_url:
+        ET.SubElement(props, "property", name="run_url", value=run_url)
 
 
 def render_junit_xml(
     report: MetricsReport,
     gate: dict[str, Any],
     package_id: str,
+    run_url: str = "",
 ) -> str:
     """渲染 JUnit XML 字符串（UTF-8，带 xml declaration）。
 
@@ -47,13 +50,14 @@ def render_junit_xml(
         report: 内存 MetricsReport（metrics / sample_scores / thresholds）。
         gate: :func:`~agent_eval.reporting.gate.evaluate_gate` 输出的 gate 对象。
         package_id: 场景包 id（classname 前缀，如 ``edu``）。
+        run_url: 平台运行详情页地址（根节点 properties；上报未开启时为空）。
     """
     run_id = report.run_id or "unknown"
     failed_metrics = set(gate.get("failed_metrics") or [])
     failure_msg = _failures_by_metric(gate)
 
     root = ET.Element("testsuites", name=f"agent-eval {run_id}")
-    _add_properties(root, run_id, package_id)
+    _add_properties(root, run_id, package_id, run_url=run_url)
     suites: list[ET.Element] = []
 
     # ── metrics 套件：每指标一条用例，值/阈值写 system-out ───────────────

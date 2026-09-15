@@ -565,6 +565,51 @@ class TestEvalOnlyCiIntegration:
         assert summary["gate"]["mode"] == "off"
         assert summary["gate"]["enabled"] is False
 
+    def test_run_url_absent_when_upload_disabled(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """上报未开启：summary.json 不注入 run_url（平台无此 run，URL 无意义）。"""
+        monkeypatch.delenv("AGENT_EVAL_UPLOAD", raising=False)
+        monkeypatch.delenv("AGENT_EVAL_API_KEY", raising=False)
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package, report_formats=["junit", "txt"])
+
+        summary = json.loads(
+            (result.run_workspace.reports_dir / "summary.json").read_text(encoding="utf-8"),
+        )
+        assert "run_url" not in summary
+        txt = (result.run_workspace.reports_dir / "summary.txt").read_text(encoding="utf-8")
+        assert "平台报告" not in txt
+
+    def test_run_url_injected_when_upload_enabled(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """上报开启（env）：summary.json/summary.txt/junit properties 注入查看页 URL。"""
+        monkeypatch.setenv("AGENT_EVAL_UPLOAD", "true")
+        monkeypatch.setenv("AGENT_EVAL_API_KEY", "eval-test")
+        monkeypatch.setenv("AGENT_EVAL_HOST", "https://platform.example.com")
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package, report_formats=["junit", "txt"])
+
+        expected = f"https://platform.example.com/run/{result.run_id}"
+        summary = json.loads(
+            (result.run_workspace.reports_dir / "summary.json").read_text(encoding="utf-8"),
+        )
+        assert summary["run_url"] == expected
+        txt = (result.run_workspace.reports_dir / "summary.txt").read_text(encoding="utf-8")
+        assert f"平台报告:     {expected}" in txt
+        import xml.etree.ElementTree as ET
+
+        root = ET.parse(result.run_workspace.reports_dir / "junit.xml").getroot()
+        props = {p.get("name"): p.get("value") for p in root.findall("properties/property")}
+        assert props["run_url"] == expected
+
     def test_gate_strict_fail_verdict(
         self,
         golden_package: Path,

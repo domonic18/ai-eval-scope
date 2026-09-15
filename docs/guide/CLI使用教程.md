@@ -375,6 +375,25 @@ uv run agent-eval pipeline --package edu --report-formats junit,txt --gate stric
 
 门禁未达标**不阻断**报告落盘与平台上报（`--upload` 照常完成），仅在收尾时以退出码 3 退出。
 
+**平台查看页地址**（上报开启时自动输出）：平台页路由固定 `/run/:id`（后端按
+`externalRunId` 兼容查询），URL 确定性拼装、无需平台握手返回——三处原生携带，
+CI 无需自行拼接：
+
+- **控制台**：上传成功后打印 `平台报告: <WEB_BASE>/run/<run_id>`（失败入离线队列时注明「重放成功后可访问」），Jenkins console 正则提取即可；
+- **summary.txt**：控制台块含 `平台报告:     <URL>` 行（`readFile` 一并读入构建描述）；
+- **junit.xml / summary.json**：根 properties 与顶层 `run_url` 键。
+
+页面基址取 `AGENT_EVAL_WEB_BASE`（缺省 = `AGENT_EVAL_HOST`，UI 与 ingest 同域部署
+零配置；UI 独立域名时才需设置）。上报未开启时不输出该地址（平台无此 run）。
+Jenkins 消费示例（构建列表页直接显示可点链接）：
+
+```groovy
+// 评测步骤（含 --report-formats txt）之后：
+def line = readFile('runs/xxx/reports/summary.txt')
+    .readLines().find { it.startsWith('平台报告') }
+if (line) currentBuild.description = "<a href='${line.split(/:\s+/, 2)[1]}'>评测报告</a>"
+```
+
 ### 其他相关参数
 
 | 参数 | 说明 |

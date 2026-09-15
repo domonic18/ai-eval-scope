@@ -48,6 +48,7 @@ def render_summary_txt(
     report: MetricsReport,
     gate: dict[str, Any],
     tool_version: str,
+    run_url: str = "",
 ) -> str:
     """渲染纯文本摘要（首行 + 控制台块）。
 
@@ -55,14 +56,17 @@ def render_summary_txt(
         report: 内存 MetricsReport。
         gate: :func:`~agent_eval.reporting.gate.evaluate_gate` 输出的 gate 对象。
         tool_version: 工具自身版本（``agent_eval.__version__``）。
+        run_url: 平台运行详情页地址（上报未开启时为空，不渲染该行）。
     """
     lines = [
         _first_line(report, gate, tool_version),
         _SEPARATOR,
         f"评测 Run:     {report.run_id}",
         f"样本总数:     {report.total_samples}",
-        "指标概览:",
     ]
+    if run_url:
+        lines.append(f"平台报告:     {run_url}")
+    lines.append("指标概览:")
     for mid, value in report.metrics.items():
         declared = report.thresholds.get(mid)
         threshold = declared.get("threshold") if isinstance(declared, dict) else declared

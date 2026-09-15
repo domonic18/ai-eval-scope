@@ -210,6 +210,10 @@ def _flush_observability(
     rw = getattr(result, "run_workspace", None)
     if rw is not None:
         run_workspace = getattr(rw, "root", None) or (rw.path if hasattr(rw, "path") else None)
+    # 查看页地址确定性拼装（/run/:id，后端按 externalRunId 兼容查询）——Jenkins
+    # console 正则提取进构建描述；URL 不依赖推送成败，离线重放成功后同样有效
+    run_id = str(getattr(result, "run_id", "") or "")
+    view_url = cfg.run_view_url(run_id)
 
     try:
         sink = ResultSink(cfg)
@@ -220,11 +224,15 @@ def _flush_observability(
         )
         if report.error:
             rprint(f"[yellow]⚠ 推送异常（已入离线队列，后续自动重放）: {report.error}[/yellow]")
+            if view_url:
+                rprint(f"[yellow]平台报告（重放成功后可访问）: {view_url}[/yellow]")
         else:
             rprint(
                 f"[green]✓ 已推送[/green] 事件 {report.sent}、入队 {report.queued}、"
                 f"制品 {report.artifacts_uploaded}/{report.artifacts_uploaded + report.artifacts_failed}、"
                 f"重放 {report.replayed}"
             )
+            if view_url:
+                rprint(f"[green]平台报告: {view_url}[/green]")
     except Exception as exc:  # noqa: BLE001 — 推送失败不影响评估结论
         rprint(f"[yellow]⚠ 可观测平台推送初始化失败（结果仍在本地 workspace）: {exc}[/yellow]")

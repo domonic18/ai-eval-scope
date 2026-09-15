@@ -320,14 +320,23 @@ class Orchestrator:
         pkg_id = package_id or getattr(scenario_cfg, "scenario_id", "") or "agent-eval"
         formats = {f.strip().lower() for f in (report_formats or []) if f.strip()}
         gate_result = evaluate_gate(metrics_report, gate)
+        # 平台查看页 URL（确定性拼装 /run/:id，后端按 externalRunId 兼容查询）：
+        # 上报开启才注入——未上报时平台无此 run，URL 无意义。CLI 的 --upload 显式
+        # 覆盖不进本层（控制台 URL 由 _flush_observability 按真实 cfg 打印，不受影响）
+        from agent_eval.observability.config import load_config
+
+        obs_cfg = load_config()
+        run_url = obs_cfg.run_view_url(run_id) if obs_cfg.enabled else ""
         if "junit" in formats:
             (run_workspace.reports_dir / "junit.xml").write_text(
-                render_junit_xml(metrics_report, gate_result, package_id=pkg_id),
+                render_junit_xml(metrics_report, gate_result, package_id=pkg_id, run_url=run_url),
                 encoding="utf-8",
             )
         if "txt" in formats:
             (run_workspace.reports_dir / "summary.txt").write_text(
-                render_summary_txt(metrics_report, gate_result, tool_version=tool_version),
+                render_summary_txt(
+                    metrics_report, gate_result, tool_version=tool_version, run_url=run_url
+                ),
                 encoding="utf-8",
             )
 
@@ -338,6 +347,8 @@ class Orchestrator:
         summary_json["gate"] = gate_result
         summary_json["package_id"] = pkg_id
         summary_json["tool_version"] = tool_version
+        if run_url:
+            summary_json["run_url"] = run_url
         (run_workspace.reports_dir / "summary.json").write_text(
             json.dumps(summary_json, ensure_ascii=False, indent=2),
             encoding="utf-8",

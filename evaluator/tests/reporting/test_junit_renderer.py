@@ -167,3 +167,18 @@ class TestProperties:
             props = {p.get("name"): p.get("value") for p in elem.findall("properties/property")}
             assert props["run_id"] == "20260914_135901"
             assert props["package_id"] == "edu"
+
+    def test_run_url_property_on_root_only(self) -> None:
+        """run_url 只进根 properties（run 级信息）；不传时无该属性。"""
+        root = ET.fromstring(
+            render_junit_xml(
+                _report(), _OFF_GATE, "edu", run_url="https://p.example.com/run/20260914_135901"
+            )
+        )
+        props = {p.get("name"): p.get("value") for p in root.findall("properties/property")}
+        assert props["run_url"] == "https://p.example.com/run/20260914_135901"
+        for su in root.findall("testsuite"):
+            names = {p.get("name") for p in su.findall("properties/property")}
+            assert "run_url" not in names
+        bare = ET.fromstring(render_junit_xml(_report(), _OFF_GATE, "edu"))
+        assert "run_url" not in {p.get("name") for p in bare.findall("properties/property")}
