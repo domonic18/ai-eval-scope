@@ -1,3 +1,18 @@
+## v0.3.2 (2026-09-15)
+
+### Feat
+
+- **evaluator**: CI 原生输出平台查看页地址（run_url 三通道）
+- **evaluator**: CI 集成原生报告与质量门禁——junit.xml/summary.txt + --gate + FR-4 修复
+- **web**: 浅色主题落地——token 双块迁移 + 三态决策 + 顶栏切换
+- **design**: 原型浅色模式——系统跟随 + 手动切换 + 白底可读调色板
+
+### Fix
+
+- **evaluator**: 清零 CI 质量门禁 mypy 告警 + 子进程 transport 回收
+- **web**: 硬编码色治理——阶段序列色与滚动条改 token 化
+- **workbench**: 变形报文发送前拦截——探测面 422 误诊事故防线
+
 ## v0.3.1 (2026-09-13)
 
 ### Feat
