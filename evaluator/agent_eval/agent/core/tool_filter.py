@@ -58,6 +58,9 @@ def build_toolset_filter(allowed_tools: Sequence[Any], *, middleware_name: str) 
         # 类属性覆盖：AgentMiddleware.name 是只读 property，只能类级定义
         name = middleware_name
 
+        # 工厂注入的宿主清单（声明以满足静态检查；实例在工厂内赋值）
+        _allowed: list[Any]
+
         def wrap_model_call(
             self,
             request: ModelRequest[Any],  # type: ignore[name-defined]

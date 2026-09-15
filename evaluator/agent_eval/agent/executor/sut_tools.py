@@ -272,6 +272,12 @@ class SUTToolServer(ToolExporterMixin):
             }
         except TimeoutError:
             proc.kill()
+            # kill 后必须 wait 回收：子进程 transport 若留到事件 loop 关闭后才被
+            # GC，__del__ 里 close() 会撞 "Event loop is closed"（unraisable 告警源）
+            try:
+                await proc.wait()
+            except Exception:
+                pass
             return {
                 "exit_code": -1,
                 "stdout": "",

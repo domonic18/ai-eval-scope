@@ -186,9 +186,11 @@ def build_briefing(
         },
         "sut_state": {
             "thread_busy": tracker.last_busy if tracker else None,
-            "idle_for_s": round(tracker.idle_for_s())
-            if tracker and tracker.idle_for_s() is not None
-            else None,
+            "idle_for_s": (
+                round(idle_s)
+                if tracker is not None and (idle_s := tracker.idle_for_s()) is not None
+                else None
+            ),
             "pending_questions": len(((last_run.get("pending") or {}).get("questions")) or []),
             "artifact_candidates": candidates,
             "activity": _activity_line(ledger),

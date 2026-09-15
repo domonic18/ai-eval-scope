@@ -491,3 +491,158 @@ class TestCachePersistence:
         orch2._load_cache(workspace, engine)
 
         assert len(engine._cache) > 0
+
+
+class TestEvalOnlyCiIntegration:
+    """CI 集成：门禁判定 + 按需追加报告格式（requirement/06）。"""
+
+    @staticmethod
+    def _tool_version() -> str:
+        from agent_eval import __version__
+
+        return __version__
+
+    @staticmethod
+    def _fake_metrics_report() -> Any:
+        from agent_eval.evaluation.models import MetricsReport
+
+        return MetricsReport(
+            run_id="20260914_135901",
+            total_samples=1,
+            metrics={"edu:reward": 4.5},
+            thresholds={"edu:reward": {"threshold": 7.0, "unit": "score"}},
+            sample_scores=[{"sample_id": "task_001", "reward": 4.5}],
+        )
+
+    def test_default_reports_unchanged(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """默认（无参）不产生新文件：reports/ 仅 summary.md/json 两文件。"""
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package)
+
+        reports = sorted(p.name for p in result.run_workspace.reports_dir.iterdir())
+        assert reports == ["summary.json", "summary.md"]
+
+    def test_report_formats_opt_in(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """report_formats 指定后四文件齐备（验收 #1）；单格式只增对应文件。"""
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(
+            golden_package,
+            report_formats=["junit", "txt"],
+            package_id="edu",
+        )
+        reports = result.run_workspace.reports_dir
+        for name in ("summary.md", "summary.json", "junit.xml", "summary.txt"):
+            assert (reports / name).is_file(), name
+
+        # 单格式：仅追加 junit.xml
+        orch2 = Orchestrator(workspace=workspace)
+        result2 = orch2.eval_only(golden_package, report_formats=["junit"])
+        reports2 = sorted(p.name for p in result2.run_workspace.reports_dir.iterdir())
+        assert reports2 == ["junit.xml", "summary.json", "summary.md"]
+
+    def test_summary_json_ci_keys(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """summary.json 顶层含 gate / package_id / tool_version（FR-3 联动）。"""
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package, package_id="edu")
+
+        summary = json.loads(
+            (result.run_workspace.reports_dir / "summary.json").read_text(encoding="utf-8"),
+        )
+        assert summary["package_id"] == "edu"
+        assert summary["tool_version"] == self._tool_version()
+        assert summary["gate"]["mode"] == "off"
+        assert summary["gate"]["enabled"] is False
+
+    def test_run_url_absent_when_upload_disabled(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """上报未开启：summary.json 不注入 run_url（平台无此 run，URL 无意义）。"""
+        monkeypatch.delenv("AGENT_EVAL_UPLOAD", raising=False)
+        monkeypatch.delenv("AGENT_EVAL_API_KEY", raising=False)
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package, report_formats=["junit", "txt"])
+
+        summary = json.loads(
+            (result.run_workspace.reports_dir / "summary.json").read_text(encoding="utf-8"),
+        )
+        assert "run_url" not in summary
+        txt = (result.run_workspace.reports_dir / "summary.txt").read_text(encoding="utf-8")
+        assert "平台报告" not in txt
+
+    def test_run_url_injected_when_upload_enabled(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """上报开启（env）：summary.json/summary.txt/junit properties 注入查看页 URL。"""
+        monkeypatch.setenv("AGENT_EVAL_UPLOAD", "true")
+        monkeypatch.setenv("AGENT_EVAL_API_KEY", "eval-test")
+        monkeypatch.setenv("AGENT_EVAL_HOST", "https://platform.example.com")
+        orch = Orchestrator(workspace=workspace)
+        result = orch.eval_only(golden_package, report_formats=["junit", "txt"])
+
+        expected = f"https://platform.example.com/run/{result.run_id}"
+        summary = json.loads(
+            (result.run_workspace.reports_dir / "summary.json").read_text(encoding="utf-8"),
+        )
+        assert summary["run_url"] == expected
+        txt = (result.run_workspace.reports_dir / "summary.txt").read_text(encoding="utf-8")
+        assert f"平台报告:     {expected}" in txt
+        import xml.etree.ElementTree as ET
+
+        root = ET.parse(result.run_workspace.reports_dir / "junit.xml").getroot()
+        props = {p.get("name"): p.get("value") for p in root.findall("properties/property")}
+        assert props["run_url"] == expected
+
+    def test_gate_strict_fail_verdict(
+        self,
+        golden_package: Path,
+        workspace: Workspace,
+    ) -> None:
+        """strict 门禁构造未达标数据（验收 #4）：gate 未达标 + junit/summary.txt 落判。"""
+        orch = Orchestrator(workspace=workspace)
+        fake = self._fake_metrics_report()
+        with patch.object(orch.pipeline_engine, "compute_metrics", return_value=fake):
+            result = orch.eval_only(
+                golden_package,
+                gate="strict",
+                report_formats=["junit", "txt"],
+                package_id="edu",
+            )
+
+        # EvalResult 携带门禁结论 → CLI 据此 exit 3
+        assert result.gate["enabled"] is True
+        assert result.gate["passed"] is False
+        assert result.gate["failed_metrics"] == ["edu:reward"]
+
+        reports = result.run_workspace.reports_dir
+        # summary.json 持久化门禁结论
+        summary = json.loads((reports / "summary.json").read_text(encoding="utf-8"))
+        assert summary["gate"]["passed"] is False
+        # junit 失败用例 message = 门禁失败原文
+        import xml.etree.ElementTree as ET
+
+        root = ET.parse(reports / "junit.xml").getroot()
+        failure = root.find(".//testcase[@name='edu:reward']/failure")
+        assert failure is not None
+        assert failure.get("message") == "edu:reward=4.5 < 阈值7.0"
+        # summary.txt 门禁结论 ❌
+        txt = (reports / "summary.txt").read_text(encoding="utf-8")
+        assert "❌" in txt.splitlines()[0]
+        assert "门禁结论:     ❌ 未通过" in txt

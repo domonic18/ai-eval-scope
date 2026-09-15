@@ -42,6 +42,30 @@ def test_config_upload_override(tmp_path: Path):
     assert load_config(workspace=tmp_path, env=env, upload_override=True).enabled is True
 
 
+def test_config_web_base_defaults_to_host(tmp_path: Path):
+    # 页面基址缺省同 host（UI 与 ingest 同域部署）；run_view_url 拼确定性查看页
+    cfg = load_config(
+        workspace=tmp_path,
+        env={"AGENT_EVAL_HOST": "https://platform.example.com", "AGENT_EVAL_API_KEY": "eval-abc"},
+    )
+    assert cfg.web_base == "https://platform.example.com"
+    assert cfg.run_view_url("20260915_000001") == "https://platform.example.com/run/20260915_000001"
+
+
+def test_config_web_base_override_and_empty_run_id(tmp_path: Path):
+    # UI 独立域名时 AGENT_EVAL_WEB_BASE 覆盖（尾斜杠归一）；空 run_id 不拼 URL
+    cfg = load_config(
+        workspace=tmp_path,
+        env={
+            "AGENT_EVAL_HOST": "https://api.example.com",
+            "AGENT_EVAL_WEB_BASE": "https://ui.example.com/",
+            "AGENT_EVAL_API_KEY": "eval-abc",
+        },
+    )
+    assert cfg.web_base == "https://ui.example.com"
+    assert cfg.run_view_url("") == ""
+
+
 # ── 离线队列 ──
 def test_queue_enqueue_and_size(tmp_path: Path):
     q = IngestQueue(tmp_path / "q")

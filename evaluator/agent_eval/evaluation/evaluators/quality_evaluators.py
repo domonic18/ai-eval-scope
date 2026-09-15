@@ -311,8 +311,9 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 # orchestrator 已在 evidence 目录落失败溯源（judge_*_failed.json）
                 "evidence_dir": str(evidence_dir),
             }
-            if getattr(e, "details", None):
-                failure_details["exception_details"] = e.details
+            exc_details = getattr(e, "details", None)
+            if exc_details:
+                failure_details["exception_details"] = exc_details
             return self._make_result(
                 status=EvalStatus.ERROR,
                 score=0.0,

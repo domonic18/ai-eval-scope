@@ -475,7 +475,9 @@ class _FlowStubs:
     """mock _stages 五阶段 + run_id，隔离真实执行。"""
 
     def __init__(self, tmp_path: Path) -> None:
-        pkg = SimpleNamespace(manifest=SimpleNamespace(ref="chat/chat:1.0.0"), root=tmp_path)
+        pkg = SimpleNamespace(
+            manifest=SimpleNamespace(ref="chat/chat:1.0.0", id="chat"), root=tmp_path
+        )
         self.inputs = SimpleNamespace(
             task_set_path=tmp_path / "default.yaml",
             task_set_model=SimpleNamespace(tasks=[{}, {}]),
@@ -498,6 +500,13 @@ class _FlowStubs:
             metrics={"chat:reward": 0.8},
             failure_breakdown={"safety.compliance": 1},
         )
+        # evaluate_stage 返回 EvalResult 形态：指标真相在 .report（FR-4 修复后契约），
+        # gate 为门禁判定结果（off = 不判定）
+        self.eval_result = SimpleNamespace(
+            run_id="20260101_000000",
+            report=self.report,
+            gate={"mode": "off", "enabled": False, "passed": True},
+        )
 
     def patch(self, monkeypatch: pytest.MonkeyPatch) -> None:
         import agent_eval.cli._stages as stages
@@ -507,7 +516,7 @@ class _FlowStubs:
         monkeypatch.setattr(stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/r.yaml")
         monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())
         monkeypatch.setattr(stages, "execute_stage", lambda *a, **k: self.pkg_objs)
-        monkeypatch.setattr(stages, "evaluate_stage", lambda *a, **k: self.report)
+        monkeypatch.setattr(stages, "evaluate_stage", lambda *a, **k: self.eval_result)
         monkeypatch.setattr(stages, "finalize_eval", lambda *a, **k: None)
         monkeypatch.setattr(storage_pkg, "generate_run_id", lambda: "20260101_000000")
 

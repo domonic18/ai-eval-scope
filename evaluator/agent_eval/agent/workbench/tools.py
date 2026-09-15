@@ -26,7 +26,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, ClassVar, cast
+from typing import Any, cast
 
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec, truncate
 from agent_eval.config.paths import PACKAGE_ROOT
@@ -90,7 +90,8 @@ def _is_credential_violation(content: str) -> str | None:
 class PackageToolServer(ToolExporterMixin):
     """场景包沙盒工具面（读写均过暂存区，宿主确认后才落盘）。"""
 
-    TOOL_SPECS: ClassVar[list[ToolSpec]] = [
+    # 与基类同形态（非 ClassVar）：ClassVar 遮蔽实例变量声明会被 mypy 拒绝
+    TOOL_SPECS: list[ToolSpec] = [
         ToolSpec(
             "list_files",
             "列出目录文件：会话根内（含暂存态标记 added/staged/deleted/unchanged）或"

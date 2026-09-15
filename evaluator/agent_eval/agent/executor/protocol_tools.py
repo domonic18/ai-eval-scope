@@ -111,7 +111,9 @@ def briefing_enriched(
     @functools.wraps(fn)
     async def wrapper(self: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
         result = await fn(self, *args, **kwargs)
-        return self._enrich_result(result, tool=fn.__name__)
+        # _enrich_result 契约恒返回 dict（非 dict 结果恒等返回不会走到此处）
+        enriched: dict[str, Any] = self._enrich_result(result, tool=fn.__name__)
+        return enriched
 
     return wrapper
 
@@ -610,7 +612,7 @@ class AgentProtocolToolServer(ToolExporterMixin):
             )
         response = {"answers": [_normalize_answer(a) for a in answers]}
         result = await self.channel.answer_interrupt(
-            self.last_run.get("thread_id") or "", pending["interrupt_id"], response
+            (self.last_run or {}).get("thread_id") or "", pending["interrupt_id"], response
         )
         self._record_last_run(result, answers)
         return bounded_result(result)
