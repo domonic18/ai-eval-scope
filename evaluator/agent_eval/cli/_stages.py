@@ -14,12 +14,17 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
+from urllib.parse import urlparse
 
 from rich import print as rprint
 
 from agent_eval.core.exceptions import AgentEvalError
 from agent_eval.packages.manifest import ResolvedPackage
+
+if TYPE_CHECKING:
+    from agent_eval.agent.executor.http_tools import GenericHttpToolServer
+    from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
 
 
 @dataclass
@@ -145,8 +150,10 @@ def resolve_eval_inputs(package: str | None, rule_set: str | None) -> str:
             )
     path = rules_dir / f"{name}.yaml"
     if not path.exists():
-        avail = ", ".join(sorted(p.stem for p in rules_dir.glob("*.yaml"))) or "（无）"
-        raise typer.BadParameter(f"包 {pkg.manifest.ref} 内未找到规则集 '{name}'；可用: {avail}")
+        avail_text = ", ".join(sorted(p.stem for p in rules_dir.glob("*.yaml"))) or "（无）"
+        raise typer.BadParameter(
+            f"包 {pkg.manifest.ref} 内未找到规则集 '{name}'；可用: {avail_text}"
+        )
     return str(path)
 
 
@@ -214,23 +221,56 @@ def execute_stage(
     max_turns: int | None = None,
 ) -> list[Any]:
     """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。"""
-    from agent_eval.agent.execution_agent import ExecutionAgent
-    from agent_eval.agent.protocol_tools import AgentProtocolToolServer
+    from agent_eval.agent.executor.agent import ExecutionAgent
+    from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
+    from agent_eval.agent.executor.sut_tools import SUTToolServer
+    from agent_eval.execution.auth.credentials import preflight_sut_credentials
+    from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
     from agent_eval.execution.channels.base import create_channel
-    from agent_eval.execution.models import AgentConfig
+    from agent_eval.execution.channels.generic_http import GenericHttpChannel
+    from agent_eval.execution.models import AgentConfig, SUTToolsConfig
 
     sut = run_inputs.sut
+    # 凭证缺失 fail fast（不进 Agent 循环烧轮次）。本层零交互（arch/15 组织
+    # 约定 5）：交互补录在命令层进度视图启动前完成（_common.ensure_sut_credentials）——
+    # 放这里会被 stage_progress 转轮刷掉输入提示行（实测反馈）
+    preflight_sut_credentials(sut)
     channel = create_channel(sut)
-    protocol_tools = AgentProtocolToolServer(
-        channel, default_metadata={"eval_run_id": run_id, "sut_name": sut.name}
-    )
+    # 语义工具面按通道分支：agent_protocol 走 agent_run 族；generic_http 走
+    # sut_request（模板渲染/响应提取在通道内完成，last_run 契约两者同构）
+    sut_tools: AgentProtocolToolServer | GenericHttpToolServer
+    if sut.channel == "generic_http":
+        from agent_eval.agent.executor.http_tools import GenericHttpToolServer
+
+        sut_tools = GenericHttpToolServer(
+            cast(GenericHttpChannel, channel),
+            default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
+        )
+    elif sut.channel == "agent_protocol":
+        sut_tools = AgentProtocolToolServer(
+            # create_channel 静态返回基类；agent_protocol 恒为该子类
+            cast(AgentProtocolChannel, channel),
+            default_metadata={"eval_run_id": run_id, "sut_name": sut.name},
+        )
+    else:
+        # CHANNEL_TYPES 含预留通道（browser 等）——通道排期外不静默装配工具面
+        raise AgentEvalError(
+            f"通道 {sut.channel!r} 未接入执行 Agent 工具面（已接入：generic_http / agent_protocol）"
+        )
+    # 文件工具面用安全默认集（invoke_* 裸调用工具不进 LLM 面，SUT 交互唯一
+    # 出口是通道语义工具）；allowed_hosts 仅在显式恢复 invoke_http_sut 时生效
+    sut_host = urlparse(sut.base_url).hostname if sut.base_url else None
     agent = ExecutionAgent(
         AgentConfig(
             llm_role=llm_role or "agent",
             max_turns=max_turns or 20,
             workspace_dir=workspace_root,
         ),
-        extra_tool_servers=[protocol_tools],
+        sut_tools=SUTToolServer(
+            SUTToolsConfig(allowed_hosts=[sut_host] if sut_host else []),
+            workspace_dir=workspace_root,
+        ),
+        extra_tool_servers=[sut_tools],
     )
 
     async def _run_and_close() -> tuple[str, list[Any]]:
@@ -272,6 +312,9 @@ def evaluate_stage(
     mode: str = "eval_only",
     scenario_package_dir: Path | None = None,
     manifest_extra: dict[str, Any] | None = None,
+    gate: str = "off",
+    report_formats: list[str] | None = None,
+    package_id: str = "",
 ) -> Any:
     """评估（原 eval 命令 5 段）。
 
@@ -279,6 +322,7 @@ def evaluate_stage(
     - run=(ws_root, run_id)：复用既有 RunWorkspace（pipeline 单 run_id 贯通），
       并补建 reports/results（执行阶段不创建）。
     - manifest_extra：pipeline 传执行阶段绑定字段，eval_only 写清单时合并（单次原子写）。
+    - gate / report_formats / package_id：CI 集成（requirement/06），透传 eval_only。
     """
     from agent_eval.orchestrator.orchestrator import Orchestrator
     from agent_eval.storage.workspace import Workspace
@@ -308,6 +352,9 @@ def evaluate_stage(
             mode=mode,
             run_workspace=run_workspace,
             manifest_extra=manifest_extra,
+            gate=gate,
+            report_formats=report_formats,
+            package_id=package_id,
         )
     finally:
         if judge_ctx.renderer is not None:

@@ -15,7 +15,7 @@ import httpx
 
 from agent_eval.core.exceptions import SUTAuthError, SUTChannelError
 from agent_eval.execution.auth.provider import AuthProvider
-from agent_eval.execution.registry import SUTSystemConfig
+from agent_eval.execution.registry import SCHEDULED_CHANNELS, SUTSystemConfig
 
 
 class SUTChannel(ABC):
@@ -124,12 +124,18 @@ def create_channel(
     *,
     http_client_factory: Callable[[], httpx.AsyncClient] | None = None,
 ) -> SUTChannel:
-    """按 sut.channel 构建通道实例（工厂；预留通道给出友好错误）。"""
+    """按 sut.channel 构建通道实例（工厂；排期面见 registry.SCHEDULED_CHANNELS）。"""
     if sut.channel == "agent_protocol":
         from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 
         return AgentProtocolChannel(sut, http_client_factory=http_client_factory)
+    if sut.channel == "generic_http":
+        # 函数级延迟导入：generic_http 经 base 上的 SUTChannel 回引，模块级会成环
+        from agent_eval.execution.channels.generic_http import GenericHttpChannel
+
+        return GenericHttpChannel(sut, http_client_factory=http_client_factory)
     raise SUTChannelError(
-        f"通道 {sut.channel!r} 预留未排期（本期唯一排期通道为 agent_protocol，arch/03 §4.0.6）",
+        f"通道 {sut.channel!r} 预留未排期（本期排期通道 {'、'.join(SCHEDULED_CHANNELS)}，"
+        "arch/03 §4.0.6/§4.2）",
         details={"sut": sut.name, "channel": sut.channel},
     )

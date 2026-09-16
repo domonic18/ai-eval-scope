@@ -8,19 +8,28 @@ threads 多轮、cancel、agents 能力发现；RunStatus → 执行引擎状态
 from __future__ import annotations
 
 import json
+import time
 import uuid
 from collections.abc import Callable
 from typing import Any
 
 import httpx
 
-from agent_eval.core.exceptions import AgentProtocolError
+from agent_eval.core.exceptions import AgentProtocolError, AgentProtocolTimeoutError
 from agent_eval.execution.channels.base import SUTChannel
+from agent_eval.execution.channels.commands_stream import (
+    SSE_DEADLINE_EXTRA_S,
+    commands_stream,
+)
+from agent_eval.execution.channels.sse import SSEDeadlineError, iter_sse
 from agent_eval.execution.channels.thread_commands import (
-    _iter_sse,  # noqa: F401 — SSE 解析迁至 thread_commands，此处重导出保持兼容
+    _get_state,
+    _poll_state,
     commands_agent_info,
     commands_run,
-    commands_stream,
+    conversation_headers,
+    finalize_run_result,
+    respond_input_envelope,
 )
 from agent_eval.execution.registry import SUTSystemConfig
 from agent_eval.execution.utils import extract_by_path
@@ -83,7 +92,7 @@ class AgentProtocolChannel(SUTChannel):
         except Exception as e:  # noqa: BLE001 — 超时与网络异常都要走取消路径
             if isinstance(getattr(e, "__cause__", None), httpx.TimeoutException):
                 await self._safe_cancel(run_id)
-                raise AgentProtocolError(
+                raise AgentProtocolTimeoutError(
                     f"run pending 超过超时，已主动 cancel(interrupt): {run_id}",
                     details={"sut": self.sut.name, "run_id": run_id},
                 ) from e
@@ -121,7 +130,8 @@ class AgentProtocolChannel(SUTChannel):
                         f"runs/stream 失败（HTTP {response.status_code}）",
                         details={"sut": self.sut.name, "body": response.text[:500]},
                     )
-                async for event_name, data_text in _iter_sse(response):
+                sse_deadline = time.monotonic() + self.sut.timeout + SSE_DEADLINE_EXTRA_S
+                async for event_name, data_text in iter_sse(response, sse_deadline):
                     try:
                         data: Any = json.loads(data_text) if data_text else {}
                     except json.JSONDecodeError:
@@ -137,6 +147,13 @@ class AgentProtocolChannel(SUTChannel):
                     message = data.get("message")
                     if isinstance(message, dict) and isinstance(message.get("content"), str):
                         text_parts.append(message["content"])
+        except SSEDeadlineError as e:
+            # keepalive 心跳喂住连接时 read timeout 永不触发——行级 deadline 是
+            # 唯一上限；runs 形态无 state 轮询兜底，超限即失败
+            raise AgentProtocolTimeoutError(
+                f"runs/stream 超时：{self.sut.timeout}s 内无终态事件（连接被心跳喂住已截止）",
+                details={"sut": self.sut.name, "events": len(events)},
+            ) from e
         except httpx.HTTPError as e:
             raise AgentProtocolError(
                 f"runs/stream 传输失败: {e}", details={"sut": self.sut.name}
@@ -153,8 +170,16 @@ class AgentProtocolChannel(SUTChannel):
 
     async def create_thread(self, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
         if self.sut.protocol_flavor == "commands":
-            # commands 形态线程由客户端生成 UUID（首个 run.start 隐式建线程）
-            return {"thread_id": str(uuid.uuid4())}
+            # commands 形态线程由客户端生成 UUID（首个 run.start 隐式建线程）——
+            # 本地构造值须显式标注，防止被当作服务端可达的证据
+            return {
+                "thread_id": str(uuid.uuid4()),
+                "source": "local-simulated",
+                "note": (
+                    "线程 ID 由客户端生成（首个 run.start 隐式建线程）——"
+                    "本次未访问服务器，不能作为服务端可达的证据"
+                ),
+            }
         response = await self.request("POST", "/threads", json_body={"metadata": metadata or {}})
         thread_id = self._json(response).get("thread_id")
         if not thread_id:
@@ -175,12 +200,74 @@ class AgentProtocolChannel(SUTChannel):
         )
         return self._parse_wait_response(response)
 
+    async def thread_state(self, thread_id: str) -> dict[str, Any] | None:
+        """GET 线程当前状态（只读取证，不向会话注入消息）；线程未创建（404）返回 None。
+
+        run 超时/产物缺失时的取证入口：执行 Agent 据此判断 SUT 是否已完成、
+        values 里有无产物线索，避免用 run_on_thread 催促污染会话
+        （2026-09-11 事故：误报超时后连发追问，产物被追问应答覆盖）。
+        """
+        if self.sut.protocol_flavor != "commands":
+            raise AgentProtocolError(
+                "线程状态查看仅 commands 形态支持（runs 形态无 threads/{id}/state 端点）",
+                details={"sut": self.sut.name, "thread_id": thread_id},
+            )
+        return await _get_state(self, thread_id)
+
+    async def answer_interrupt(
+        self, thread_id: str, interrupt_id: str, response: dict[str, Any]
+    ) -> dict[str, Any]:
+        """应答线程上挂起的中断（askQuestion 反问）并续跑至终态（仅 commands 形态）。
+
+        恢复契约（2026-09 对 sasan 实测闭环）：POST /threads/{id}/commands
+        method=input.respond → 200 {type: success, result: {run_id}}，图恢复推进；
+        直接下发新消息会被 PENDING_QUESTION 拒绝。应答后继续轮询到终态（跳过
+        刚应答的 interrupt——受理与推进间存在竞态窗口，旧中断短暂仍在 state 上）。
+        """
+        if self.sut.protocol_flavor != "commands":
+            raise AgentProtocolError(
+                "runs 形态暂不支持中断应答（askQuestion 仅 commands 形态暴露）",
+                details={"sut": self.sut.name, "thread_id": thread_id},
+            )
+        prior = await _get_state(self, thread_id)
+        baseline = len((prior or {}).get("values", {}).get("messages") or [])
+        resp = await self.request(
+            "POST",
+            f"/threads/{thread_id}/commands",
+            json_body=respond_input_envelope(interrupt_id, response),
+            headers=conversation_headers(thread_id),
+        )
+        payload = self._json(resp)
+        if resp.status_code >= 400 or payload.get("type") == "error" or "error" in payload:
+            raise AgentProtocolError(
+                f"input.respond 失败: {payload.get('error')}",
+                details={"sut": self.sut.name, "thread_id": thread_id, "body": str(payload)[:500]},
+            )
+        run_id = (payload.get("result") or {}).get("run_id")
+        values, pending = await _poll_state(
+            self,
+            thread_id,
+            baseline,
+            resolved_interrupt=interrupt_id,
+            interrupt_types=self.sut.interrupt_types,
+        )
+        return finalize_run_result(
+            self, run_id=run_id, thread_id=thread_id, values=values, pending=pending
+        )
+
     async def cancel_run(self, run_id: str, action: str = "interrupt") -> dict[str, Any]:
         """主动取消（interrupt / rollback——rollback 仅在系统声明支持时使用）。"""
         response = await self.request(
             "POST", f"/runs/{run_id}/cancel", json_body={"action": action}
         )
-        return {"run_id": run_id, "action": action, "response": self._json(response)}
+        try:
+            payload: dict[str, Any] = self._json(response)
+        except AgentProtocolError:
+            # staging 实测 cancel 2xx 可能返回空体/非 JSON——请求已受理即视为成功
+            if response.status_code >= 400:
+                raise
+            payload = {"raw": response.text[:200]}
+        return {"run_id": run_id, "action": action, "response": payload}
 
     # ─── 能力发现与接入自检（§4.0.6-f） ───
 

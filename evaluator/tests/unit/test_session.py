@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 
-from agent_eval.agent.session import AgentSession, WorkspaceCheckpointer
+from agent_eval.agent.core.session import AgentSession, WorkspaceCheckpointer
 
 
 def _messages() -> list[SimpleNamespace]:

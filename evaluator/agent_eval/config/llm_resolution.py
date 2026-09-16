@@ -2,7 +2,7 @@
 
 优先级（两形态互不感知，仅共享本解析接口）：
 
-  1. 本地 `~/.agent_eval/llm.json`（CLI 形态，`agent-eval models login` 写入）
+  1. 本地 `~/.agent_eval/llm.json`（CLI 形态，`agent-eval models set` 写入）
   2. 平台拉取（云端形态）：`AGENT_EVAL_HOST`/`AGENT_EVAL_API_KEY` 已配置时调
      `GET /api/public/llm-config`，返回 `{roles: {text: {...含解密 api_key}, ...}}`
   3. 均不可用 → ConfigError（报缺什么、在哪补）
@@ -23,7 +23,13 @@ from typing import Any
 import httpx
 
 from agent_eval.config.llm import LLMConfig, ProviderConfig
-from agent_eval.config.llm_file import DEFAULT_ROLE, ROLES, LLMFileConfig, load_llm_file
+from agent_eval.config.llm_file import (
+    DEFAULT_ROLE,
+    ROLES,
+    LLMFileConfig,
+    effective_protocol,
+    load_llm_file,
+)
 from agent_eval.core.exceptions import ConfigError
 
 
@@ -102,10 +108,16 @@ def _finalize(providers: dict[str, ProviderConfig]) -> LLMConfig:
 
 
 def _from_file(cfg: LLMFileConfig) -> LLMConfig:
-    """llm.json → LLMConfig。"""
+    """llm.json → LLMConfig（provider 归一为线路协议分发键，厂商键存于文件展示层）。"""
     providers = {
         role: _build_provider(
-            rc.provider, rc.model, rc.api_key, rc.base_url, rc.max_tokens, rc.temperature, rc.seed
+            effective_protocol(rc.provider, rc.protocol),
+            rc.model,
+            rc.api_key,
+            rc.base_url,
+            rc.max_tokens,
+            rc.temperature,
+            rc.seed,
         )
         for role in ROLES
         if (rc := cfg.roles.get(role)) is not None
@@ -151,7 +163,7 @@ def resolve_llm_config(
         if roles:
             return _from_roles(roles)
     raise ConfigError(
-        "LLM 配置不可用：本地未找到 ~/.agent_eval/llm.json（运行 `agent-eval models login` "
+        "LLM 配置不可用：本地未找到 ~/.agent_eval/llm.json（运行 `agent-eval models set` "
         "交互配置），且平台拉取未启用或无角色配置（需 AGENT_EVAL_HOST/AGENT_EVAL_API_KEY）"
     )
 

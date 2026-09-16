@@ -10,7 +10,9 @@ import pytest
 
 from agent_eval.core.exceptions import AgentProtocolError, SUTAuthError
 from agent_eval.execution.auth.session import SUTSession
-from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel, _iter_sse
+from agent_eval.execution.channels import agent_protocol
+from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
+from agent_eval.execution.channels.sse import iter_sse
 from agent_eval.execution.registry import (
     AuthConfig,
     AuthExtractConfig,
@@ -123,6 +125,32 @@ def test_run_stream_aggregates_sse_with_unknown_events() -> None:
     # 未知事件原样保留（非 JSON data 兜底为 {"raw": ...}）
     assert ("custom-weird", {"raw": "not-json"}) in kinds
     assert any(e is None for e, _ in kinds)  # data-only 事件
+
+
+def test_run_stream_deadline_raises_when_keepalive_feeds_connection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """runs 形态无 state 轮询兜底：SSE 行级 deadline 超限必须失败而非静默挂死。
+
+    keepalive 注释帧不产生事件且喂住连接（read timeout 永不触发）——回归
+    SUT 反问暂停场景（2026-09 卡死事故同类）。
+    """
+    # runs 形态 stream 定义在 agent_protocol 模块，常量 patch 其自身命名空间
+    monkeypatch.setattr(agent_protocol, "SSE_DEADLINE_EXTRA_S", 0.0)
+
+    async def endless_keepalive():
+        while True:
+            yield b": keepalive\n\n"
+            await asyncio.sleep(0.02)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, content=endless_keepalive(), headers={"Content-Type": "text/event-stream"}
+        )
+
+    channel = _channel(_sut(exec_mode="stream", timeout=0.15), handler)
+    with pytest.raises(AgentProtocolError, match="runs/stream 超时"):
+        asyncio.run(channel.run("input"))
 
 
 def test_on_completion_passed_through() -> None:
@@ -257,9 +285,7 @@ def test_iter_sse_parses_blocks() -> None:
     async def _collect():
         return [
             item
-            async for item in _iter_sse(
-                FakeStream(["event: a", 'data: {"x": 1}', "", "data: tail"])
-            )
+            async for item in iter_sse(FakeStream(["event: a", 'data: {"x": 1}', "", "data: tail"]))
         ]
 
     events = asyncio.run(_collect())
@@ -289,3 +315,21 @@ def test_session_store_unused_when_not_configured(tmp_path) -> None:
     channel = _channel(_sut(), handler)
     asyncio.run(channel.run("x"))
     assert not (tmp_path / "any").exists()
+
+
+def test_commands_flavor_local_tools_marked_simulated() -> None:
+    """commands 形态 create_thread / get_agent_info 为本地构造——必须带
+    local-simulated 标注（实测：执行 Agent 曾把该「成功」当服务端可达证据，
+    commands 端点 404 后反复重试不撒手）。"""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError(f"不应产生网络请求: {request.url}")
+
+    channel = _channel(_sut(protocol_flavor="commands"), handler)
+    thread = asyncio.run(channel.create_thread())
+    assert thread["source"] == "local-simulated"
+    assert thread["thread_id"]
+    assert "不能作为服务端可达的证据" in thread["note"]
+    info = asyncio.run(channel.get_agent_info())
+    assert info["source"] == "local-simulated"
+    assert info["endpoints"]["commands"] == "/threads/{thread_id}/commands"

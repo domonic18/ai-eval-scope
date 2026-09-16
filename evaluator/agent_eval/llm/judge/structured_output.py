@@ -48,7 +48,7 @@ class StructuredOutputParser:
         json_str = self._extract_json(raw_response)
 
         try:
-            data = json.loads(json_str)
+            data: dict[str, Any] = json.loads(json_str)
         except json.JSONDecodeError as e:
             raise LLMResponseError(
                 f"JSON 解析失败: {e}",

@@ -11,9 +11,10 @@ OpenAI 官方、DeepSeek、Moonshot（OpenAI 端点）、vLLM、Together 等。
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
 import openai
+from openai.types.chat import ChatCompletionMessageParam
 
 from agent_eval.config import ProviderConfig
 from agent_eval.core.exceptions import (
@@ -22,6 +23,7 @@ from agent_eval.core.exceptions import (
     LLMNetworkError,
     LLMQuotaExceededError,
     LLMRateLimitError,
+    LLMResponseError,
 )
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.models import LLMResponse, Message, TokenUsage
@@ -88,6 +90,11 @@ class OpenAICompatClient(LLMClient):
         )
 
     @property
+    def max_tokens(self) -> int | None:
+        """生效的最大输出 tokens（线路配置值，随 provider_info 透出）。"""
+        return self._config.max_tokens
+
+    @property
     def provider_name(self) -> str:
         return self._name
 
@@ -119,7 +126,10 @@ class OpenAICompatClient(LLMClient):
             try:
                 response = self._client.chat.completions.create(
                     model=self._config.model,
-                    messages=[m.to_dict() for m in messages],
+                    # Message.to_dict 的 Any-dict 结构即 SDK 消息参数（运行时逐键一致）
+                    messages=cast(
+                        list[ChatCompletionMessageParam], [m.to_dict() for m in messages]
+                    ),
                     max_tokens=kwargs.get("max_tokens", self._config.max_tokens),
                     temperature=kwargs.get("temperature", self._config.temperature),
                     seed=kwargs.get("seed", self._config.seed),
@@ -133,6 +143,20 @@ class OpenAICompatClient(LLMClient):
                 raise _map_openai_error(e, self._name, self._config.model) from e
 
         duration_ms = (time.monotonic() - start) * 1000
+
+        # 重试循环要么 break（response 已赋值）要么在 except 内抛出——此处恒非 None
+        assert response is not None
+
+        # 截断/内容过滤显式报错——静默返回半截 JSON 只会把症状推迟到解析层
+        finish_reason = response.choices[0].finish_reason if response.choices else None
+        if finish_reason == "length":
+            out = response.usage.completion_tokens if response.usage else 0
+            raise LLMResponseError(
+                f"LLM 输出被截断（finish_reason=length，已完成 {out} 输出 tokens）"
+                "——请调大该线路 max_tokens 或精简评审输出"
+            )
+        if finish_reason == "content_filter":
+            raise LLMResponseError("LLM 拒绝回答（finish_reason=content_filter），无法完成评审")
 
         content = response.choices[0].message.content or ""
         usage = None
@@ -160,7 +184,7 @@ class OpenAICompatClient(LLMClient):
         将图片作为 image_url content block 附加到最后一条用户消息。
         """
         # 构建包含图片的消息
-        openai_messages: list[dict[str, Any]] = []
+        openai_messages: list[ChatCompletionMessageParam] = []
         for i, msg in enumerate(messages):
             if i == len(messages) - 1 and msg.role == "user" and images:
                 # 最后一条用户消息附带图片
@@ -174,9 +198,14 @@ class OpenAICompatClient(LLMClient):
                             "image_url": {"url": img},
                         }
                     )
-                openai_messages.append({"role": msg.role, "content": content_parts})
+                openai_messages.append(
+                    cast(
+                        ChatCompletionMessageParam,
+                        {"role": msg.role, "content": content_parts},
+                    )
+                )
             else:
-                openai_messages.append(msg.to_dict())
+                openai_messages.append(cast(ChatCompletionMessageParam, msg.to_dict()))
 
         start = time.monotonic()
         try:
@@ -194,6 +223,17 @@ class OpenAICompatClient(LLMClient):
             ) from e
 
         duration_ms = (time.monotonic() - start) * 1000
+
+        # 截断/内容过滤显式报错——静默返回半截 JSON 只会把症状推迟到解析层
+        finish_reason = response.choices[0].finish_reason if response.choices else None
+        if finish_reason == "length":
+            out = response.usage.completion_tokens if response.usage else 0
+            raise LLMResponseError(
+                f"LLM 输出被截断（finish_reason=length，已完成 {out} 输出 tokens）"
+                "——请调大该线路 max_tokens 或精简评审输出"
+            )
+        if finish_reason == "content_filter":
+            raise LLMResponseError("LLM 拒绝回答（finish_reason=content_filter），无法完成评审")
 
         content = response.choices[0].message.content or ""
         usage = None

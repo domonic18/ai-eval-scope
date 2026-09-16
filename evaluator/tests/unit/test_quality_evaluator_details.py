@@ -1,4 +1,4 @@
-"""quality_evaluators details 组装契约（docs/arch/14 §五.3）。
+"""quality_evaluators details 组装契约。
 
 mock _invoke_judge 返回带 dim_details 的 record，断言 ConstraintResult.details.dimensions[]
 含 band（由分派生）+ 透传 reason/issues/highlights。
@@ -79,3 +79,35 @@ def test_quality_details_dimensions_carry_issues_band_highlights(tmp_path, monke
     # judge 溯源
     assert cr.judge_provider == "deepseek_judge"
     assert cr.judge_model == "deepseek-chat"
+
+
+def test_quality_error_result_semantic_reason_and_details(tmp_path, monkeypatch):
+    """judge 异常 → ERROR：reason 语义化（raw 原文不进 reason），details 带错误与原始负载。
+
+    run 20260912_111958：str(e) 拼接 details 把半截 JSON 原文带进了前端 reason。
+    """
+    from agent_eval.core.exceptions import LLMResponseError
+    from agent_eval.core.types import EvalStatus
+
+    (tmp_path / "output").mkdir()
+    (tmp_path / "output" / "index.md").write_text("# 分数入门\n教学设计内容……")
+
+    ev = TeachingLogicEvaluator()
+    orchestrator = SimpleNamespace(templates=SimpleNamespace(get=lambda *a: None))
+
+    def _boom(*a, **k):
+        raise LLMResponseError(
+            "JSON 解析失败: Expecting ',' delimiter",
+            details={"raw_response": '{"a": 1'},
+        )
+
+    monkeypatch.setattr(ev, "_invoke_judge", _boom)
+
+    cr = ev.evaluate(tmp_path, {"judge_orchestrator": orchestrator, "evidence_dir": tmp_path})
+
+    assert cr.status == EvalStatus.ERROR
+    assert "LLMResponseError" in cr.reason
+    assert "raw_response" not in cr.reason  # 原文不进 reason
+    assert cr.details["error"].startswith("LLMResponseError")
+    assert cr.details["exception_details"] == {"raw_response": '{"a": 1'}
+    assert cr.details["evidence_dir"] == str(tmp_path)

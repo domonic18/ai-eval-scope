@@ -118,7 +118,7 @@ def get_remote_client() -> RemotePackageClient | None:
     """返回远端包客户端。
 
     若配置了环境变量 ``AGENT_EVAL_REGISTRY_URL``（Web 平台基址），返回真实
-    :class:`HttpRemotePackageClient`；否则返回 ``None``（CLI ``package pull`` 据此
+    :class:`HttpRemotePackageClient`；否则返回 ``None``（CLI ``scenario pull`` 据此
     提示未配置）。测试可 monkeypatch 本函数注入假客户端。
     """
     base_url = os.environ.get("AGENT_EVAL_REGISTRY_URL")

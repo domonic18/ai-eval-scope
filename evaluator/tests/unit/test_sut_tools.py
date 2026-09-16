@@ -12,18 +12,18 @@ import types
 import httpx
 import pytest
 
-from agent_eval.agent.sut_tools import SUTToolServer
+from agent_eval.agent.executor.sut_tools import SUTToolServer
 from agent_eval.core.exceptions import AgentError, CollectionError, ToolExecutionError
 from agent_eval.execution.models import SUTToolsConfig
 
 
-def _mock_server(handler, config: SUTToolsConfig | None = None) -> SUTToolServer:
+def _mock_server(handler, config: SUTToolsConfig | None = None, **kwargs) -> SUTToolServer:
     factory = lambda: httpx.AsyncClient(  # noqa: E731
         transport=httpx.MockTransport(handler)
     )
     if config is None:
         config = SUTToolsConfig(http_base_url="https://sut.example.com")
-    return SUTToolServer(config, http_client_factory=factory)
+    return SUTToolServer(config, http_client_factory=factory, **kwargs)
 
 
 # ─── invoke_http_sut ───
@@ -266,20 +266,74 @@ def _install_fake_langchain_core(monkeypatch) -> dict[str, dict]:
     return {"created": created}
 
 
-def test_to_langchain_tools_exports_seven(monkeypatch) -> None:
+def test_to_langchain_tools_default_five_excludes_invoke(monkeypatch, tmp_path) -> None:
+    """默认工具面 = 安全默认集：invoke_* 裸调用工具不进 LLM 面（v4.8 裁剪）。"""
     import asyncio
 
     _install_fake_langchain_core(monkeypatch)
     server = _mock_server(lambda request: httpx.Response(200, text="ok"))
     tools = server.to_langchain_tools()
     assert [t["name"] for t in tools] == server.get_tool_names()
-    assert len(tools) == 7
-    # 包装器可实际调用且 JSON 文本化（走 MockTransport，零联网）
+    assert [t["name"] for t in tools] == [
+        "scan_directory",
+        "read_file",
+        "list_files",
+        "collect_results",
+        "write_package",
+    ]
+    # 包装器可实际调用且 JSON 文本化（本地临时目录，零联网）
     first = tools[0]
-    assert first["name"] == "invoke_http_sut"
-    output = asyncio.run(first["coroutine"](method="GET", url="/health"))
-    assert isinstance(output, str)
-    assert "status_code" in output
+    assert first["name"] == "scan_directory"
+    (tmp_path / "a.txt").write_text("x", encoding="utf-8")
+    output = asyncio.run(first["coroutine"](directory_path=str(tmp_path)))
+    assert "total_files" in output
+
+
+def test_enabled_tools_restores_invoke_and_rejects_unknown(monkeypatch) -> None:
+    """显式 enabled_tools 可恢复 invoke_*；未知名打回（typo 防护）。"""
+    _install_fake_langchain_core(monkeypatch)
+    server = _mock_server(
+        lambda request: httpx.Response(200, text="ok"),
+        enabled_tools=["invoke_http_sut", "write_package"],
+    )
+    assert server.get_tool_names() == ["invoke_http_sut", "write_package"]
+    with pytest.raises(ToolExecutionError, match="未知工具名"):
+        _mock_server(lambda request: httpx.Response(200, text="ok"), enabled_tools=["invoke_sut"])
+
+
+def test_read_file_outside_workspace_rejected(tmp_path) -> None:
+    """read_file 边界：workspace 外路径拒绝（凭证/.env 泄漏面，v4.8）。"""
+    import asyncio
+
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    (ws / "answer.md").write_text("ok", encoding="utf-8")
+    secret = tmp_path / "secret.env"
+    secret.write_text("TOKEN=1", encoding="utf-8")
+    server = SUTToolServer(workspace_dir=ws)
+    assert asyncio.run(server.read_file(str(ws / "answer.md"))) == "ok"
+    with pytest.raises(ToolExecutionError, match="路径越界"):
+        asyncio.run(server.read_file(str(secret)))
+
+
+def test_file_tools_extra_allowed_roots_permits_directory_mode(tmp_path) -> None:
+    """目录模式：extra_allowed_roots 注入 task.directory_path 后，扫描/列举放行。"""
+    import asyncio
+
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    sut_out = tmp_path / "sut_out"
+    sut_out.mkdir()
+    (sut_out / "index.html").write_text("<html/>", encoding="utf-8")
+    server = SUTToolServer(workspace_dir=ws)
+    with pytest.raises(ToolExecutionError, match="路径越界"):
+        asyncio.run(server.scan_directory(str(sut_out), ["*.html"]))
+    with pytest.raises(ToolExecutionError, match="路径越界"):
+        asyncio.run(server.list_files(str(sut_out)))
+    # 执行循环逐任务注入（agent.run_task）后放行
+    server.extra_allowed_roots = [sut_out]
+    assert asyncio.run(server.scan_directory(str(sut_out), ["*.html"]))["total_files"] == 1
+    assert asyncio.run(server.list_files(str(sut_out))) == ["index.html"]
 
 
 def test_to_langchain_tools_without_langchain_raises(monkeypatch) -> None:
@@ -296,3 +350,72 @@ def test_describe_tools_lists_all() -> None:
     text = server.describe_tools()
     for name in server.get_tool_names():
         assert name in text
+
+
+# ─── 工具异常兜底与 host 边界（实测迭代：执行评测失败分析后的修复） ────
+
+
+def test_invoke_http_sut_render_error_hints_jinja_syntax() -> None:
+    """渲染异常（含 TypeError 级）转纠正提示——实测曾以「Undefined is not JSON
+    serializable」击穿整个会话（模板把工具参数名当变量 + tojson 序列化）。"""
+    import asyncio
+
+    server = _mock_server(lambda request: httpx.Response(200, text="ok"))
+    with pytest.raises(ToolExecutionError) as ei:
+        asyncio.run(
+            server.invoke_http_sut(
+                method="POST",
+                url="/run",
+                body_template='{"input": "{{ input }}", "metadata": {{ template_vars | tojson }}}',
+                template_vars={"input": "hi"},
+            )
+        )
+    assert "渲染失败" in str(ei.value)
+    assert "Jinja2" in str(ei.value)
+
+
+def test_exported_tool_exception_becomes_failed_result(monkeypatch) -> None:
+    """导出层兜底：未捕获异常转 failed 结果交 Agent 决策，不再中断图
+    （方法级直接调用仍抛异常，见上例）。"""
+    import asyncio
+
+    _install_fake_langchain_core(monkeypatch)
+    server = _mock_server(
+        lambda request: httpx.Response(200, text="ok"), enabled_tools=["invoke_http_sut"]
+    )
+    tools = {t["name"]: t for t in server.to_langchain_tools()}
+    output = asyncio.run(
+        tools["invoke_http_sut"]["coroutine"](
+            method="POST", url="/run", body_template="{{ missing | tojson }}"
+        )
+    )
+    payload = json.loads(output)
+    assert payload["status"] == "failed"
+    assert "Jinja2" in payload["error"]["message"]
+    # 正常路径不受兜底影响
+    ok = asyncio.run(tools["invoke_http_sut"]["coroutine"](method="GET", url="/health"))
+    assert "status_code" in json.loads(ok)
+
+
+def test_invoke_http_sut_blocks_out_of_scope_host() -> None:
+    """host 边界：绝对 URL 越出被测系统配置域被拒——实测协议通道 404 后 LLM
+    曾臆测 localhost:8000/8080 乱试（被本机代理吞成 502）。"""
+    import asyncio
+
+    config = SUTToolsConfig(
+        http_base_url="https://sut.example.com", allowed_hosts=["sut.example.com"]
+    )
+    server = _mock_server(lambda request: httpx.Response(200, text="ok"), config)
+    with pytest.raises(ToolExecutionError, match="越界"):
+        asyncio.run(server.invoke_http_sut(method="POST", url="http://localhost:8000/agent/run"))
+    ok = asyncio.run(server.invoke_http_sut(method="GET", url="https://sut.example.com/api"))
+    assert ok["status_code"] == 200  # 白名单内正常放行
+
+
+def test_invoke_http_sut_without_allowed_hosts_is_permissive() -> None:
+    """allowed_hosts 空 = 不限制（兼容既有 http 通道流程）。"""
+    import asyncio
+
+    server = _mock_server(lambda request: httpx.Response(200, text="ok"))
+    result = asyncio.run(server.invoke_http_sut(method="GET", url="http://other.example.com/x"))
+    assert result["status_code"] == 200

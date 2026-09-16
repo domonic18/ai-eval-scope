@@ -85,7 +85,8 @@ def _get_knowledge_manager() -> Any:
 
 def _load_fact_db(subjects: list[str] | None = None) -> dict:
     """加载事实知识库（兼容旧接口，委托给 KnowledgeBaseManager）。"""
-    return _get_knowledge_manager().load(subjects)
+    fact_db: dict = _get_knowledge_manager().load(subjects)
+    return fact_db
 
 
 def _reset_fact_db_cache() -> None:
@@ -339,19 +340,19 @@ class InfoAccuracyEvaluator(BaseEvaluator):
                 except ValueError:
                     continue
 
-                expected = _eval_simple_expr(lhs_expr)
-                if expected is None:
+                expected_val = _eval_simple_expr(lhs_expr)
+                if expected_val is None:
                     continue
 
                 checks += 1
-                if abs(expected - result_val) > EVALUATOR_DEFAULTS.arith_tolerance:
+                if abs(expected_val - result_val) > EVALUATOR_DEFAULTS.arith_tolerance:
                     findings.append(
                         {
                             "file": filename,
                             "check_type": "arithmetic",
                             "severity": "error",
                             "message": (
-                                f"算术错误: {lhs_expr.strip()} = {result_s}（应为 {expected:g}）"
+                                f"算术错误: {lhs_expr.strip()} = {result_s}（应为 {expected_val:g}）"
                             ),
                         }
                     )
@@ -851,11 +852,28 @@ class InfoAccuracyEvaluator(BaseEvaluator):
         passed = combined_score >= threshold and len(rule_errors) == 0
         score = 1.0 if passed else 0.0
 
-        # 构建 reason（面向用户可读，不暴露内部 LLM 维度分数细节）
+        # 构建 reason（面向用户可读：分数型失败透出维度评分与通过线，规则型失败列出具体错误）
         if passed:
             reason = "知识准确性（LLM + 规则）：通过"
         else:
             reason = "知识准确性（LLM + 规则）：未通过"
+            # 分数型失败（无规则错误、纯 LLM 评分不达标）必须给出可解释信息，
+            # 否则用户只见「未通过」三个字无从定位（对齐兄弟评估器透出维度分的惯例）。
+            # 分数过线但被规则错误致败时不拼分数条款——「加权 8.6 低于通过线 8.0」
+            # 属自相矛盾文案，失败归因已由下方「发现错误」条款承载（run 20260913_050312）
+            if scores and combined_score < threshold:
+                dim_names = (
+                    {d.dim_id: d.name for d in template.dimensions}
+                    if template and template.dimensions
+                    else {}
+                )
+                dim_desc = "、".join(
+                    f"{dim_names.get(k, k)} {float(v):g}" for k, v in scores.items()
+                )
+                reason += (
+                    f"；LLM 评分：{dim_desc}"
+                    f"（加权 {combined_score * 10:.1f}/10，低于通过线 {threshold * 10:.1f}）"
+                )
         if rule_errors:
             # 列出 LLM 二次确认的具体错误（_llm_reason 优先，回退规则描述），最多 5 条
             err_descs = [

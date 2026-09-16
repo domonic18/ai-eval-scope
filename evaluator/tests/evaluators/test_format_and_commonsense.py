@@ -6,11 +6,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
 from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.evaluators import *  # trigger registration
-from agent_eval.evaluation.evaluators.commonsense_evaluators import _reset_fact_db_cache
 from agent_eval.evaluation.registry import registry
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
@@ -151,14 +148,12 @@ class TestHtmlValidityEvaluator:
 
 
 class TestInfoAccuracyEvaluator:
-    """知识准确性评估器测试 — 三层检查架构。"""
+    """知识准确性评估器测试 — 三层检查架构。
 
-    @pytest.fixture(autouse=True)
-    def _reset_cache(self):
-        """每个测试前重置事实知识库缓存。"""
-        _reset_fact_db_cache()
-        yield
-        _reset_fact_db_cache()
+    知识库缓存全程共享（不再每测重置）：本文件不改写知识资产，
+    逐测 invalidate 只会让 ~0.9s 的全学科 YAML 解析重复 ~20 次。
+    需要缓存隔离的测试自行调用 _reset_fact_db_cache()。
+    """
 
     # ─── 向后兼容：原有 3 个测试 ───
 
@@ -623,6 +618,31 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
 
+    def test_llm_score_fail_reason_explainable(self, tmp_path: Path) -> None:
+        """分数型失败（零规则错误）reason 透出维度评分与通过线，不再只有「未通过」。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.md").write_text("一些教学内容\n", encoding="utf-8")
+
+        record = self._make_mock_record(judge_id="judge_ia_005", errors_found=[])
+        orch = self._make_mock_orchestrator(
+            {"factual_correctness": 6.0, "statement_accuracy": 6.0}, record
+        )
+
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+            },
+        )
+
+        assert result.status == EvalStatus.FAIL
+        assert result.score == 0.0
+        assert "LLM 评分" in result.reason
+        assert "事实正确性" in result.reason  # 维度中文名
+        assert "低于通过线" in result.reason
+
     def test_llm_rule_errors_override(self, tmp_path: Path) -> None:
         """LLM 高分但规则检查有 error → FAIL。"""
         out = _prepare_output(tmp_path)
@@ -647,6 +667,10 @@ class TestInfoAccuracyLLM:
         assert result.status == EvalStatus.FAIL
         assert result.score == 0.0
         assert "算术错误" in result.reason
+        # 分数过线时不得拼「低于通过线」条款（run 20260913_050312：加权 8.6/10
+        # 高于通过线 8.0 却自称低于，失败归因应由「发现错误」条款承载）
+        assert "低于通过线" not in result.reason
+        assert "发现错误" in result.reason
 
     def test_constant_false_positive_filtered_by_llm(self, tmp_path: Path) -> None:
         """规则误报（金/信息密度误匹配"金的密度"）经 LLM 二次确认过滤 → PASS。"""

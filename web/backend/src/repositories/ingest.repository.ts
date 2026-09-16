@@ -6,6 +6,7 @@
  * - 依赖解析：resolveRunId / resolveSampleId（缺失返回 null → service 计 DEPENDENCY_MISSING）。
  */
 
+import { createHash } from "crypto"
 import { Prisma, type PrismaClient } from "@prisma/client"
 import { getPrisma } from "../infra/prisma"
 import { PlatformError } from "../middleware/errorHandler"
@@ -18,6 +19,11 @@ import type {
 } from "../schemas/events"
 
 type Tx = Prisma.TransactionClient
+
+/** 快照侧 defaults 指纹——与 scenario.repository.hashContent 同约定（"sha256:" + JSON 摘要）。 */
+function hashDefaultsContent(content: unknown): string {
+  return "sha256:" + createHash("sha256").update(JSON.stringify(content)).digest("hex")
+}
 
 export class DependencyMissingError extends Error {
   constructor(msg: string) {
@@ -54,8 +60,73 @@ export class IngestRepository {
     return s?.id ?? null
   }
 
+  /**
+   * 方向1（arch/09 §7.5 / arch/13 §5.3）：run 事件顺带补缺注册场景资产——只建缺，不动已有。
+   *
+   * - scenarios 行：不存在才建（name=scenarioId）；文件导入后续可覆盖元数据
+   * - defaults（metric_definitions + aggregation_policy）：场景尚无任何 defaults 版本时，
+   *   以快照内容建 auto-ingest 版本；已有任一版本则跳过——文件导入为真相源，快照只补缺
+   * - P2002（并发撞 (scenarioId, assetId, version) 唯一键）静默吞掉：注册失败不拖垮 run 事件事务
+   */
+  private async ensureScenarioAssets(
+    tx: Tx,
+    scenarioId: string,
+    snapshot: Record<string, unknown> | null,
+  ): Promise<void> {
+    try {
+      const existing = await tx.scenario.findUnique({
+        where: { id: scenarioId },
+        select: { id: true },
+      })
+      if (!existing) {
+        // source=auto_ingest：补缺注册的场景仅供可观测，不进配置中心默认视图（arch/09 §7.5）
+        await tx.scenario.create({
+          data: { id: scenarioId, name: scenarioId, source: "auto_ingest" },
+        })
+      }
+      if (!snapshot) return
+      const hasDefaults = await tx.defaultsAsset.findFirst({
+        where: { scenarioId, assetId: "default" },
+        select: { id: true },
+      })
+      if (hasDefaults) return
+      const content = {
+        ...(Array.isArray(snapshot.metric_definitions)
+          ? { metric_definitions: snapshot.metric_definitions }
+          : {}),
+        ...(snapshot.aggregation_policy != null
+          ? { aggregation_policy: snapshot.aggregation_policy }
+          : {}),
+      }
+      if (!Object.keys(content).length) return
+      await tx.defaultsAsset.create({
+        data: {
+          scenarioId,
+          assetId: "default",
+          version:
+            ((snapshot.package as { version?: string } | undefined)?.version) ?? "0.0.0-snapshot",
+          labels: ["auto-ingest"],
+          content: content as Prisma.InputJsonValue,
+          contentHash: hashDefaultsContent(content),
+          createdBy: "ingest:auto",
+        },
+      })
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return
+      throw e
+    }
+  }
+
   /** run：按 (projectId, externalRunId) upsert。返回 runId。 */
   async upsertRun(tx: Tx, d: RunEventData): Promise<string> {
+    // 方向1：先补缺注册场景资产（scenarios 行 + defaults 首版本），再落 run
+    if (d.scenario_id) {
+      await this.ensureScenarioAssets(
+        tx,
+        d.scenario_id,
+        (d.run_config_snapshot ?? null) as Record<string, unknown> | null,
+      )
+    }
     // Phase 5：inline 运行配置快照 → 建 RunConfigSnapshot 行（按 contentHash 去重），关联 run
     let snapshotId = d.run_config_snapshot_id ?? null
     if (d.run_config_snapshot) {

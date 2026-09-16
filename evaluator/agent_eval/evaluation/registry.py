@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from agent_eval.core.exceptions import EvaluatorNotFoundError
@@ -30,7 +31,7 @@ class EvaluatorRegistry:
     def __init__(self) -> None:
         self._registry: dict[str, type[BaseEvaluator]] = {}
 
-    def register(self, evaluator_id: str):
+    def register(self, evaluator_id: str) -> Callable[[type[BaseEvaluator]], type[BaseEvaluator]]:
         """装饰器：注册评估器类。
 
         Args:
@@ -49,6 +50,10 @@ class EvaluatorRegistry:
             return cls
 
         return decorator
+
+    def class_of(self, evaluator_id: str) -> type[BaseEvaluator] | None:
+        """按 ID 取评估器类（未注册返回 None）——包校验层读取类级契约（如模板变量集）用。"""
+        return self._registry.get(evaluator_id)
 
     def create(self, evaluator_id: str, params: dict[str, Any] | None = None) -> BaseEvaluator:
         """工厂方法：根据 ID 创建评估器实例。

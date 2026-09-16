@@ -16,6 +16,7 @@ from pathlib import Path
 from agent_eval.config.paths import paths
 from agent_eval.core.exceptions import DatasetError, DatasetNotFoundError
 from agent_eval.core.logging import get_logger
+from agent_eval.datasets.registry import DatasetEntry
 
 logger = get_logger(__name__)
 
@@ -111,7 +112,7 @@ class DatasetManager:
         logger.info("dataset.download.done", name=name, target=str(target))
         return target
 
-    def _resolve_source(self, source: str | None, entry) -> str:
+    def _resolve_source(self, source: str | None, entry: DatasetEntry) -> str:
         if source:
             return _normalize_source(source)
         env = os.environ.get("AGENT_EVAL_DATASET_SOURCE")
@@ -134,7 +135,7 @@ class DatasetManager:
     def _write_manifest(
         self,
         target: Path,
-        entry,
+        entry: DatasetEntry,
         source: str,
         repo_id: str,
         revision: str | None,

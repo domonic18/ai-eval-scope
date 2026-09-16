@@ -149,3 +149,54 @@ describe("公开项目匿名访问（docs/arch/12 §3.5）", () => {
     expect(r.status).toBe(401)
   })
 })
+
+describe("公开项目登录非成员访问（与匿名同权只读，修语义倒挂）", () => {
+  beforeAll(async () => {
+    // 上一组用例末尾把 isPublic 关了，这里重新打开
+    await request(app)
+      .patch(`/api/v1/projects/${projectId}`)
+      .set("Authorization", `Bearer ${owner.accessToken}`)
+      .send({ isPublic: true })
+      .expect(200)
+  })
+
+  it("登录非成员访问运行详情 → 200（此前误 404）", async () => {
+    const r = await request(app)
+      .get(`/api/v1/runs/${extRun}`)
+      .set("Authorization", `Bearer ${stranger.accessToken}`)
+    expect(r.status).toBe(200)
+    expect(r.body.run.externalRunId).toBe(extRun)
+    expect(r.body.run.samples.length).toBeGreaterThan(0)
+  })
+
+  it("登录非成员访问样本详情 → 200", async () => {
+    const r = await request(app)
+      .get(`/api/v1/runs/${extRun}/samples/${sampleDbId}`)
+      .set("Authorization", `Bearer ${stranger.accessToken}`)
+    expect(r.status).toBe(200)
+    expect(r.body.sample.externalSampleId).toBe(extSample)
+  })
+
+  it("登录非成员删除运行仍被拒（写操作不因公开放行）→ 404", async () => {
+    const r = await request(app)
+      .delete(`/api/v1/runs/${extRun}`)
+      .set("Authorization", `Bearer ${stranger.accessToken}`)
+    expect(r.status).toBe(404)
+  })
+
+  it("项目转私后：登录非成员 → 404（不泄露存在性），owner → 200", async () => {
+    await request(app)
+      .patch(`/api/v1/projects/${projectId}`)
+      .set("Authorization", `Bearer ${owner.accessToken}`)
+      .send({ isPublic: false })
+      .expect(200)
+    const strangerView = await request(app)
+      .get(`/api/v1/runs/${extRun}`)
+      .set("Authorization", `Bearer ${stranger.accessToken}`)
+    expect(strangerView.status).toBe(404)
+    const ownerView = await request(app)
+      .get(`/api/v1/runs/${extRun}`)
+      .set("Authorization", `Bearer ${owner.accessToken}`)
+    expect(ownerView.status).toBe(200)
+  })
+})

@@ -1,13 +1,33 @@
 # Agent Eval 评估器
 
-本目录是评估器自包含、pip-installable 组件（对称于 `web/` 可观测平台）。
+[![PyPI](https://img.shields.io/pypi/v/ai-eval-scope.svg)](https://pypi.org/project/ai-eval-scope/)
+[![Python](https://img.shields.io/pypi/pyversions/ai-eval-scope.svg)](https://pypi.org/project/ai-eval-scope/)
+[![License: MIT](https://img.shields.io/pypi/l/ai-eval-scope.svg)](https://pypi.org/project/ai-eval-scope/)
+
+Agent 能力评估框架（`agent-eval` CLI）——基于 Agent-Driven 架构，支持课件生成、
+代码生成、RAG、对话等多类 Agent 评估。
+
+## 安装（发布后）
+
+```bash
+pip install ai-eval-scope                 # 基础：规则评估（无 LLM 依赖）
+pip install "ai-eval-scope[llm]"          # + LLM Judge（OpenAI/Anthropic 兼容）
+pip install "ai-eval-scope[agent]"        # + ExecutionAgent 执行引擎（DeepAgents 底座）
+pip install "ai-eval-scope[vision]"       # + 视觉评估（playwright 截图渲染）
+pip install "ai-eval-scope[datasets]"     # + 数据集下载（HuggingFace/ModelScope）
+
+uv tool install "ai-eval-scope[agent]"    # uv：全局 CLI 工具安装
+uvx --from "ai-eval-scope[agent]" agent-eval --help   # 一次性运行，不落盘
+```
+
+> 包名 `ai-eval-scope`，import 名 `agent_eval`，CLI 命令 `agent-eval`（命令名≠包名）。
+> Python ≥ 3.11。LLM 与凭证配置见 [CLI 使用教程](../docs/guide/CLI使用教程.md)。
 
 ## 开发
 
 ```bash
 cd evaluator
-uv sync --extra dev
-uv sync --extra vision              # 安装 playwright（vision extra 含 LLM 依赖）
+uv sync --group dev                # 开发依赖组（PEP 735，含 llm/vision 测试依赖）
 uv run playwright install chromium  # 下载 Chromium 浏览器二进制（~150MB，装到用户缓存）
 uv run agent-eval --help
 ```

@@ -16,7 +16,7 @@ dependencies = [
     "pydantic-settings>=2.1",
     "structlog>=24.1",
     "httpx>=0.27",
-    "agent-eval[llm]",
+    "ai-eval-scope[llm]",
 ]
 
 [project.optional-dependencies]
@@ -33,7 +33,7 @@ eval-executor = "eval_executor.executor.entrypoint:main"
 
 # 评估器以路径依赖复用（同仓 ../evaluator），由 uv 解析为 editable。
 [tool.uv.sources]
-agent-eval = { path = "../evaluator", editable = true }
+ai-eval-scope = { path = "../evaluator", editable = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["eval_executor"]

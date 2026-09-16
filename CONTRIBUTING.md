@@ -27,7 +27,7 @@ git fetch upstream
 ```bash
 # Python 评估器（uv 管理）
 cd evaluator
-uv sync --extra dev          # 基础 + 开发依赖
+uv sync --group dev          # 基础 + 开发依赖
 uv sync --extra llm          # LLM Judge 依赖（可选）
 uv sync --extra vision       # 视觉评估依赖（可选）
 cd ..
@@ -120,9 +120,37 @@ git checkout -b feat/your-feature origin/develop
 
 ---
 
+## 版本发布（维护者，PyPI）
+
+评估器以 **`ai-eval-scope`** 包名发布到 PyPI（import 名 `agent_eval`、CLI 名 `agent-eval` 不变），经 Jenkins 发布流水线 `sasan-evalscope-pypi` 走完质量门禁 → 构建 → 校验 → 发布：
+
+```bash
+# ① 起版：版本单源由 commitizen 维护（一次改 pyproject + __init__.py + CHANGELOG + 打 tag）
+cd evaluator
+uv run cz bump --dry-run --increment PATCH --yes   # 先核对将变成什么版本
+uv run cz bump --increment PATCH --yes             # 实跑
+git push origin <发布分支> --tags
+```
+
+```text
+② Jenkins sasan-evalscope-pypi → Build with Parameters
+   TAG=vX.Y.Z + TEST_PYPI=true   → 演练发布到 test.pypi.org（首发前必演练）
+   验收：uv run --isolated --no-project \
+           --index-url https://test.pypi.org/simple/ \
+           --extra-index-url https://pypi.org/simple/ \
+           --with ai-eval-scope agent-eval --version
+   TAG=vX.Y.Z + TEST_PYPI=false  → 正式发布 pypi.org
+```
+
+**纪律**：PyPI 同版本号**不可重传**，发布失败修复后必须 bump 新版本；tag 必须等于包 `__version__`（流水线有硬断言）；凭证走 Jenkins 双 credential（`test-pypi-upload-token` / `pypi-upload-token`，按 `TEST_PYPI` 自动选择）。
+
+详见 [`cicd/README.md`](./cicd/README.md)（流水线阶段/凭证/本地验证序列与发布纪律）。
+
+---
+
 ## 新增评估场景（最快上手）
 
-系统是**场景无关 + 数据驱动**的——新增场景是纯配置（写场景包 + 导入），无需改代码。详见 [场景扩展指南](./docs/arch/14场景扩展指南.md)，以内置的 code（代码生成）场景为完整范例。
+系统是**场景无关 + 数据驱动**的——新增场景是纯配置（写场景包 + 导入），无需改代码。以内置的 code（代码生成）场景为完整范例，各内置场景包（`evaluator/agent_eval/assets/packages/`）均可作参照。
 
 ## 开发环境
 
@@ -157,4 +185,3 @@ git checkout -b feat/your-feature origin/develop
 | [docs/arch/04评估引擎设计](./docs/arch/04评估引擎设计.md) | 评估引擎（场景抽象 + 指标 + 聚合） |
 | [docs/arch/09Web可观测平台架构设计](./docs/arch/09Web可观测平台架构设计.md) | Web 平台架构 |
 | [docs/arch/12第三方系统对接方案](./docs/arch/12第三方系统对接方案.md) | 第三方接入（HTTP + MCP + Webhook） |
-| [docs/arch/14场景扩展指南](./docs/arch/14场景扩展指南.md) | 如何新增一个评估场景（含 entry_points 可插拔评估器） |

@@ -452,3 +452,164 @@ table.data tbody tr:last-child td { border-bottom: none; }
   .sidebar { display: none; }
   .page { padding: 20px 16px; }
 }
+
+/* ==========================================================================
+   浅色模式（Light Mode）
+   --------------------------------------------------------------------------
+   生效规则（与产品需求一致）：
+   1) 显式选择优先：html[data-theme="light"] / "dark"（ui.js 写入 localStorage，
+      顶栏太阳/月亮按钮切换）；
+   2) 未显式选择时跟随系统：prefers-color-scheme: light → 浅色；
+   3) 系统未表态（no-preference / dark）→ 深色（即 :root 原值，默认深色）。
+
+   结构原则：:root 即深色、原规则一律不动；浅色全部以覆盖形式追加在本段，
+   深色观感的回归风险为零。媒体查询块只覆盖 token 层（首帧防闪烁），
+   组件级适配在 ui.js 写入显式 data-theme 后由下方对应规则接续。
+
+   调色板原则（对应验收红线「颜色不清晰 / 配色显示不对」）：
+   - 中性色保持冷调灰，仪器感不变；
+   - 品牌电蓝加深为 #2e5be0（白底对比 5.7:1），语义色整体换白底可读的加深变体
+     （锚定 GitHub Light 调色板，全部 ≥ 4.7:1，明细见 00-设计规范.md §浅色模式）；
+   - *-soft 徽标底沿用低透明度品牌色，浅深两态通用。
+   ========================================================================== */
+
+/* --- 显式浅色：token 层 --------------------------------------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg:            #f5f7fa;
+  --bg-elevated:   #ffffff;
+  --bg-surface:    #edf0f5;
+  --bg-hover:      #e5e9f0;
+  --bg-inset:      #eef1f6;
+
+  --border:        #dde2eb;
+  --border-hover:  #c6cdd9;
+  --border-focus:  #2e5be0;
+
+  --text-primary:   #1c2433;
+  --text-secondary: #5a6372;
+  --text-tertiary:  #767f92;
+  --text-quaternary:#9aa3b5;
+
+  --accent:        #2e5be0;
+  --accent-hover:  #2449c8;
+  --accent-soft:   rgba(46,91,224,0.10);
+  --accent-line:   rgba(46,91,224,0.30);
+  --signal:        #0a7f72;
+  --signal-soft:   rgba(10,127,114,0.10);
+
+  --success:      #1a7f37;  --success-soft: rgba(26,127,55,0.10);
+  --warning:      #9a6700;  --warning-soft: rgba(154,103,0,0.10);
+  --danger:       #cf222e;  --danger-soft:  rgba(207,34,46,0.08);
+  --info:         #0969da;  --info-soft:    rgba(9,105,218,0.10);
+
+  --tier-hard:    #cf222e;
+  --tier-soft:    #9a6700;
+  --tier-pref:    #0969da;
+
+  --shadow-sm: 0 1px 2px rgba(16,24,40,0.06);
+  --shadow-md: 0 8px 24px rgba(16,24,40,0.10);
+  --shadow-lg: 0 24px 64px rgba(16,24,40,0.14);
+}
+
+/* --- 显式浅色：组件级适配（原稿为深色硬编码的少数规则） -------------------
+   选择器带 :root[data-theme="light"] 前缀：既限定生效范围，也压过各页
+   inline <style> 里的同名硬编码规则（后者在级联中更晚但特异性更低）。 */
+:root[data-theme="light"] .topbar { background: rgba(255,255,255,0.80); }
+:root[data-theme="light"] .nav { background: rgba(255,255,255,0.75); }
+:root[data-theme="light"] .scanlines {
+  background: repeating-linear-gradient(0deg, rgba(13,20,33,0.014) 0 1px, transparent 1px 3px);
+}
+:root[data-theme="light"] .ambient::before {
+  background: radial-gradient(ellipse, rgba(46,91,224,0.06) 0%, transparent 70%);
+}
+:root[data-theme="light"] .ambient::after {
+  background: radial-gradient(ellipse, rgba(10,127,114,0.05) 0%, transparent 70%);
+}
+:root[data-theme="light"] .callout-warn { color: var(--warning); border-color: rgba(154,103,0,0.28); }
+:root[data-theme="light"] .callout-info { color: var(--info); border-color: rgba(9,105,218,0.25); }
+:root[data-theme="light"] .callout-ok   { color: var(--success); border-color: rgba(26,127,55,0.28); }
+
+/* 代码 / 语法高亮：原为 Tokyo Night（深底调校），浅底换 GitHub Light 系
+   加深变体（对 #eef1f6 底对比度：6.7 / 6.3 / 6.3 / 4.7，全部达标） */
+:root[data-theme="light"] .yaml-viewer .k, :root[data-theme="light"] .jt-key  { color: #0550ae; }
+:root[data-theme="light"] .yaml-viewer .s, :root[data-theme="light"] .jt-str  { color: #116329; }
+:root[data-theme="light"] .yaml-viewer .n, :root[data-theme="light"] .jt-num  { color: #953800; }
+:root[data-theme="light"] .yaml-viewer .b, :root[data-theme="light"] .jt-bool { color: #cf222e; }
+:root[data-theme="light"] .diff-line.add { color: #116329; }
+:root[data-theme="light"] .diff-line.del { color: #cf222e; }
+
+/* 层级徽标 / 状态文字：原深色亮色值在白底不可读，换语义加深色 */
+:root[data-theme="light"] .tier-gate         { color: #cf222e; }
+:root[data-theme="light"] .tier-score        { color: #9a6700; }
+:root[data-theme="light"] .tier-soft         { color: #9a6700; }
+:root[data-theme="light"] .tier-pref         { color: #0969da; }
+:root[data-theme="light"] .tree-badge.staging { color: #9a6700; }
+:root[data-theme="light"] .inline-warn       { color: var(--warning); }
+
+/* 品牌渐变底徽标上的深墨字（#061018）：浅色语义底变深后不可读 → 白字 */
+:root[data-theme="light"] .av-ai,
+:root[data-theme="light"] .step-node.done .step-circle,
+:root[data-theme="light"] .progress-row .pr-ico.done { color: #fff; }
+
+/* 落地页 hero 渐变标题（原白→灰渐变字，浅底不可见）→ 深墨渐变 */
+:root[data-theme="light"] .hero h1 {
+  background: linear-gradient(180deg, #16203a 0%, #4a5568 130%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* 文档纸张预览（sample-detail .doc，本身恒白）：浅色页底下补描边增强分离 */
+:root[data-theme="light"] .doc { border: 1px solid var(--border); }
+
+/* --- 系统浅色且未显式选择：token 层（首帧防闪烁，组件级随后接续） --------- */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    color-scheme: light;
+
+    --bg:            #f5f7fa;
+    --bg-elevated:   #ffffff;
+    --bg-surface:    #edf0f5;
+    --bg-hover:      #e5e9f0;
+    --bg-inset:      #eef1f6;
+
+    --border:        #dde2eb;
+    --border-hover:  #c6cdd9;
+    --border-focus:  #2e5be0;
+
+    --text-primary:   #1c2433;
+    --text-secondary: #5a6372;
+    --text-tertiary:  #767f92;
+    --text-quaternary:#9aa3b5;
+
+    --accent:        #2e5be0;
+    --accent-hover:  #2449c8;
+    --accent-soft:   rgba(46,91,224,0.10);
+    --accent-line:   rgba(46,91,224,0.30);
+    --signal:        #0a7f72;
+    --signal-soft:   rgba(10,127,114,0.10);
+
+    --success:      #1a7f37;  --success-soft: rgba(26,127,55,0.10);
+    --warning:      #9a6700;  --warning-soft: rgba(154,103,0,0.10);
+    --danger:       #cf222e;  --danger-soft:  rgba(207,34,46,0.08);
+    --info:         #0969da;  --info-soft:    rgba(9,105,218,0.10);
+
+    --tier-hard:    #cf222e;
+    --tier-soft:    #9a6700;
+    --tier-pref:    #0969da;
+
+    --shadow-sm: 0 1px 2px rgba(16,24,40,0.06);
+    --shadow-md: 0 8px 24px rgba(16,24,40,0.10);
+    --shadow-lg: 0 24px 64px rgba(16,24,40,0.14);
+  }
+}
+
+/* --- 主题切换按钮（ui.js 注入顶栏 / 无顶栏页悬浮右上角） ------------------ */
+.es-theme-btn .ico-sun { display: none; }
+.es-theme-btn.is-light .ico-sun { display: block; }
+.es-theme-btn.is-light .ico-moon { display: none; }
+.es-theme-btn.es-theme-float {
+  position: fixed; top: 14px; right: 16px; z-index: 90;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+}

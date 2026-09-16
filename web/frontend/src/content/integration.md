@@ -30,7 +30,7 @@ EvalScope 提供**三种接入方式**，均使用同一把 API Key、同一套�
 
 1. **创建项目** — 登录[控制台](/dashboard) → 左侧「项目看板」→ 新建项目。
 2. **签发 API Key** — 进入项目 →「设置 & API Key」→ 新建 → 复制 **API Key**（`eval-…`）。**仅创建时明文展示一次，请妥善保存。**
-3. **Base URL（线上）** — `https://eval.bj33smarter.com`
+3. **Base URL** — 你部署的可观测平台访问地址，下文以 `https://eval.example.com` 为占位示例（本地 docker-compose 默认 `http://localhost:9000`）。
 4. **在线调试** — 登录后打开[调试台](/debug)，填 API Key + 上传文件即可在线提交、实时查看 request / response / 评估结果。
 
 > **统一鉴权**：所有方式均使用 `Authorization: Bearer <api_key>`（一把 Key 走天下：提交 / 查状态 / 取速览）。**项目归属完全由 Key 决定**，提交时无需也不接受 `project_id`。
@@ -58,14 +58,14 @@ EvalScope 提供**三种接入方式**，均使用同一把 API Key、同一套�
                                                                           └────────────────────────────┘
 ```
 
-- **Base URL**：`https://eval.bj33smarter.com`
+- **Base URL**：`https://eval.example.com`
 - **鉴权**：`Authorization: Bearer <api_key>`（无需计算签名，生产强制 HTTPS）
 - **交互**：提交后拿 `job_id` → 轮询 `GET /api/v1/jobs/{job_id}` → 读结果
 
 ### 提交评测任务
 
 ```bash
-POST https://eval.bj33smarter.com/api/v1/jobs
+POST https://eval.example.com/api/v1/jobs
 Authorization: Bearer <api_key>
 ```
 
@@ -101,7 +101,7 @@ Authorization: Bearer <api_key>
 **Step 1 · 换取上传地址**
 
 ```bash
-curl -X POST https://eval.bj33smarter.com/api/v1/jobs/request-upload \
+curl -X POST https://eval.example.com/api/v1/jobs/request-upload \
   -H "Authorization: Bearer <api_key>" \
   -H "Content-Type: application/json" \
   -d '{"filename":"courseware.zip","content_type":"application/zip"}'
@@ -139,7 +139,7 @@ curl -X PUT "<upload_url>" \
 **Step 3 · 提交评测（引用已上传对象）**
 
 ```bash
-curl -X POST https://eval.bj33smarter.com/api/v1/jobs \
+curl -X POST https://eval.example.com/api/v1/jobs \
   -H "Authorization: Bearer <api_key>" \
   -H "Content-Type: application/json" \
   -d '{"input_object_key":"<object_key>","rule_set_id":"coursework-quality"}'
@@ -171,7 +171,7 @@ curl -X POST https://eval.bj33smarter.com/api/v1/jobs \
 提交后拿 `job_id` 轮询结果；不想轮询可配置 [Webhook 回调](#webhook-结果回调)，评估完成后平台主动 POST 你的服务。
 
 ```bash
-GET https://eval.bj33smarter.com/api/v1/jobs/{job_id}
+GET https://eval.example.com/api/v1/jobs/{job_id}
 Authorization: Bearer <api_key>
 ```
 
@@ -219,7 +219,7 @@ Authorization: Bearer <api_key>
   "task_id": null,
   "task_title": null,
   "run_id": "2f8a1c...",
-  "web_run_url": "https://eval.bj33smarter.com/run/2f8a1c...",
+  "web_run_url": "https://eval.example.com/run/2f8a1c...",
   "metrics": {
     "DR": 0.962,
     "CPR": 0.914,
@@ -239,7 +239,7 @@ Authorization: Bearer <api_key>
 `GET /api/v1/jobs/{job_id}` 只回顶层指标，看不到"各项为什么没过"。速览端点一次拿到**过没过 / 多少分 + 各评测项的失败原因**：
 
 ```bash
-GET https://eval.bj33smarter.com/api/v1/jobs/{job_id}/overview
+GET https://eval.example.com/api/v1/jobs/{job_id}/overview
 Authorization: Bearer <api_key>
 ```
 
@@ -250,7 +250,7 @@ Authorization: Bearer <api_key>
   "job_id": "ed4c0834-9120-42c1-8349-7d6a8ad1a522",
   "run_id": "20260706_083721",
   "status": "completed",
-  "web_run_url": "https://eval.bj33smarter.com/run/20260706_083721",
+  "web_run_url": "https://eval.example.com/run/20260706_083721",
   "verdict": "fail",
   "score": 0.669,
   "metrics": { "DR": 1.0, "CPR": 0.0, "condR": 0.0, "avg_time_ms": 125005 },
@@ -319,7 +319,7 @@ Authorization: Bearer <api_key>
 2. 直接把运行详情页地址放进 iframe：
 
 ```html
-<iframe src="https://eval.bj33smarter.com/run/{run_id}" style="width:100%;height:800px;border:0"></iframe>
+<iframe src="https://eval.example.com/run/{run_id}" style="width:100%;height:800px;border:0"></iframe>
 ```
 
 公开 = 任何人持链接可**只读**查看该项目运行 / 样本（不含 Key / 写操作）；不公开的项目仍需登录。`run_id` 取自 `GET /jobs/{id}` 或 `/overview` 的 `run_id` / `web_run_url`。
@@ -333,7 +333,7 @@ import time
 import httpx
 
 API_KEY = "eval-..."
-BASE = "https://eval.bj33smarter.com"
+BASE = "https://eval.example.com"
 HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
 # 1) 提交（JSON 内联）
@@ -359,7 +359,7 @@ while True:
 import httpx
 
 API_KEY = "eval-..."
-BASE = "https://eval.bj33smarter.com"
+BASE = "https://eval.example.com"
 
 with open("unit.zip", "rb") as f:
     file_bytes = f.read()
@@ -377,7 +377,7 @@ print(r.status_code, r.json())  # 202 {"job_id":"…","status":"queued",…}
 
 ```ts
 const API_KEY = "eval-..."
-const BASE = "https://eval.bj33smarter.com"
+const BASE = "https://eval.example.com"
 
 const res = await fetch(`${BASE}/api/v1/jobs`, {
   method: "POST",
@@ -393,7 +393,7 @@ console.log(job.job_id)
 ```bash
 # 上传单页
 API_KEY="eval-..."
-curl -X POST "https://eval.bj33smarter.com/api/v1/jobs" \
+curl -X POST "https://eval.example.com/api/v1/jobs" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/octet-stream" \
   --data-binary @lesson.html \
@@ -401,7 +401,7 @@ curl -X POST "https://eval.bj33smarter.com/api/v1/jobs" \
 
 # 查询
 JOB="d3f1...e8a2"
-curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $API_KEY"
+curl "https://eval.example.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $API_KEY"
 ```
 
 ---
@@ -418,7 +418,7 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
 {
   "mcpServers": {
     "evalscope": {
-      "url": "https://eval.bj33smarter.com/api/v1/mcp",
+      "url": "https://eval.example.com/api/v1/mcp",
       "headers": { "Authorization": "Bearer eval-…" }
     }
   }
@@ -448,7 +448,7 @@ curl "https://eval.bj33smarter.com/api/v1/jobs/$JOB" -H "Authorization: Bearer $
        ✅ 评估完成（综合评分 0.78，通过）
          · 交付率 DR 0.96 / 约束通过率 CPR 0.91
          ⚠️ 知识准确性检查未通过：原文等式计算有误
-         详情：https://eval.bj33smarter.com/run/2f8a1c...
+         详情：https://eval.example.com/run/2f8a1c...
 ```
 
 **评估整个单元（目录或 zip）**
@@ -530,7 +530,7 @@ uv run agent-eval eval --help     # 查看评估子命令用法
 项目 **owner** 在控制台「项目设置」中填写回调地址与密钥，或调用接口：
 
 ```http
-PATCH https://eval.bj33smarter.com/api/v1/projects/{project_id}
+PATCH https://eval.example.com/api/v1/projects/{project_id}
 Authorization: Bearer <api_key>
 ```
 
@@ -594,7 +594,7 @@ payload 示例（`job.completed`）：
   "status": "completed",
   "project_id": "d288698e-ee7c-4d4e-b1fc-a2d050ce4a9b",
   "run_id": "2f8a1c...",
-  "web_run_url": "https://eval.bj33smarter.com/run/2f8a1c...",
+  "web_run_url": "https://eval.example.com/run/2f8a1c...",
   "metrics": { "DR": 0.962, "CPR": 0.914, "avg_reward": 0.781 },
   "error": null,
   "created_at": "2026-07-27T09:10:00.000Z",
@@ -644,7 +644,7 @@ function verify(body: Buffer, signature: string, secret: string): boolean {
 配置后用控制台「发送测试回调」按钮（或接口）验证链路，会投递一条 `event=webhook.test` 的 payload：
 
 ```bash
-POST https://eval.bj33smarter.com/api/v1/projects/{project_id}/test-webhook
+POST https://eval.example.com/api/v1/projects/{project_id}/test-webhook
 Authorization: Bearer <api_key>   # 需 owner 权限
 ```
 

@@ -146,7 +146,7 @@
       "properties": {
         "external_run_id": { "type": "string", "minLength": 1 },
         "external_sample_id": { "type": ["string", "null"] },
-        "kind": { "type": "string", "enum": ["screenshot", "judge_record", "output", "trace", "manifest"] },
+        "kind": { "type": "string", "enum": ["screenshot", "judge_record", "output", "trace", "manifest", "transcript"] },
         "object_key": { "type": "string", "minLength": 1 },
         "content_type": { "type": "string" },
         "size_bytes": { "type": "integer", "minimum": 0 },

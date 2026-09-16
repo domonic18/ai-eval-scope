@@ -13,6 +13,9 @@ from agent_eval.storage.workspace import Workspace
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
+# e2e：真跑评估管线（黄金样本全流程），慢——可用 -m "not e2e" 跳过做快速反馈
+pytestmark = pytest.mark.e2e
+
 
 def _build_golden_package(tmp_path: Path, golden_name: str) -> Path:
     """从 golden 样本构建 ExecutionPackage 并返回包目录。"""

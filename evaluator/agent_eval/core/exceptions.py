@@ -94,6 +94,14 @@ class AgentProtocolError(SUTChannelError):
     """Agent Protocol 通道错误（runs/threads/agents 接口调用失败，arch/03 §4.0.6）。"""
 
 
+class AgentProtocolTimeoutError(AgentProtocolError):
+    """Agent Protocol 调用超时（state 轮询/SSE deadline/pending 超时）。
+
+    类型化子类：执行工具面据此做「同任务超时重试上限」机械判定
+    （TimeoutBudgetExhausted），不靠错误文案字符串匹配。
+    """
+
+
 # ─── 评估引擎相关 ───
 
 
@@ -217,6 +225,17 @@ class LLMAuthError(LLMError):
 
 class OrchestratorError(AgentEvalError):
     """编排调度异常。"""
+
+
+# ─── 质量门禁相关（CI 集成 --gate，requirement/06）───
+
+
+class GateError(AgentEvalError):
+    """质量门禁异常。"""
+
+
+class GateConfigError(GateError):
+    """门禁配置错误（阈值不可解析 / float 模式无 reward 指标）——退出码 1。"""
 
 
 # ─── Workspace 相关 ───

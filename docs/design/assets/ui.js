@@ -61,3 +61,67 @@ document.addEventListener('keydown', function (e) {
     document.querySelectorAll('.scrim[data-open]').forEach(function (el) { el.style.display = 'none'; el.removeAttribute('data-open'); });
   }
 });
+
+/* ── 主题（浅色 / 深色）────────────────────────────────────────────────
+   决策规则：显式选择（localStorage.es-theme，顶栏按钮写入）
+           > 系统偏好（prefers-color-scheme: light）
+           > 深色（系统未表态时的默认）。
+   未显式选择时实时跟随系统切换；显式选择后不再自动跟随。
+   CSS 侧：theme.css「浅色模式」段（token 双块 + 组件级适配）。 */
+(function () {
+  var KEY = 'es-theme';
+  var mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+
+  function systemTheme() { return mql && mql.matches ? 'light' : 'dark'; }
+  function storedTheme() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function currentTheme() { return storedTheme() || systemTheme(); }
+
+  function apply(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    var btn = document.getElementById('es-theme-btn');
+    if (btn) {
+      btn.classList.toggle('is-light', t === 'light');
+      btn.title = t === 'light' ? '切换到深色模式' : '切换到浅色模式';
+      btn.setAttribute('aria-label', btn.title);
+    }
+  }
+
+  function setTheme(t) {
+    try { localStorage.setItem(KEY, t); } catch (e) { /* file:// 下可能被拒，忽略 */ }
+    apply(t);
+  }
+
+  apply(currentTheme());
+
+  if (mql) {
+    var onSystemChange = function () { if (!storedTheme()) apply(systemTheme()); };
+    if (mql.addEventListener) mql.addEventListener('change', onSystemChange);
+    else if (mql.addListener) mql.addListener(onSystemChange); // 旧 Safari
+  }
+
+  function initToggle() {
+    if (document.getElementById('es-theme-btn')) return;
+    var btn = document.createElement('button');
+    btn.id = 'es-theme-btn';
+    btn.className = 'icon-btn es-theme-btn';
+    btn.type = 'button';
+    /* 太阳 / 月亮双图标，按当前模式显隐（theme.css 控制显隐） */
+    btn.innerHTML =
+      '<svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>' +
+      '<svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+    btn.addEventListener('click', function () {
+      setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+    });
+    var host = document.querySelector('.topbar-right');
+    if (host) host.insertBefore(btn, host.firstChild);
+    else {
+      /* 无顶栏页（落地 / 登录 / 注册）：右上角悬浮 */
+      btn.classList.add('es-theme-float');
+      document.body.appendChild(btn);
+    }
+    apply(document.documentElement.getAttribute('data-theme') || currentTheme());
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initToggle);
+  else initToggle();
+})();

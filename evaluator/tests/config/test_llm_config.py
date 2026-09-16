@@ -1,8 +1,10 @@
-"""LLM 配置模型测试 — ProviderConfig, LLMConfig, resolve_api_key。"""
+"""LLM 配置模型测试 — ProviderConfig, LLMConfig, 各默认值。
+
+（resolve_api_key 随 llm_config.yaml 链路移除而废弃，a00775a 一次性
+删除不留兼容——对应测试同步清理。）
+"""
 
 from __future__ import annotations
-
-import os
 
 import pytest
 
@@ -15,47 +17,7 @@ from agent_eval.config import (
     STRUCTURED_OUTPUT_DEFAULTS,
     LLMConfig,
     ProviderConfig,
-    resolve_api_key,
 )
-
-
-class TestResolveApiKey:
-    """API Key 环境变量解析测试。"""
-
-    def test_plain_string(self) -> None:
-        """纯字符串直接返回。"""
-        assert resolve_api_key("sk-abc123") == "sk-abc123"
-
-    def test_env_var_braces(self) -> None:
-        """${VAR} 格式解析。"""
-        os.environ["TEST_API_KEY_1"] = "sk-resolved-1"
-        try:
-            assert resolve_api_key("${TEST_API_KEY_1}") == "sk-resolved-1"
-        finally:
-            del os.environ["TEST_API_KEY_1"]
-
-    def test_env_var_dollar(self) -> None:
-        """$VAR 格式解析。"""
-        os.environ["TEST_API_KEY_2"] = "sk-resolved-2"
-        try:
-            assert resolve_api_key("$TEST_API_KEY_2") == "sk-resolved-2"
-        finally:
-            del os.environ["TEST_API_KEY_2"]
-
-    def test_env_var_not_set(self) -> None:
-        """环境变量未设置时抛 ValueError。"""
-        key = "${NONEXISTENT_VAR_XYZ_12345}"
-        with pytest.raises(ValueError, match="NONEXISTENT_VAR_XYZ_12345"):
-            resolve_api_key(key)
-
-    def test_mixed_string(self) -> None:
-        """前缀 + 环境变量混合。"""
-        os.environ["TEST_SUFFIX"] = "suffix"
-        try:
-            result = resolve_api_key("prefix-${TEST_SUFFIX}")
-            assert result == "prefix-suffix"
-        finally:
-            del os.environ["TEST_SUFFIX"]
 
 
 class TestProviderConfig:

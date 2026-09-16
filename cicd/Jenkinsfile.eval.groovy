@@ -60,7 +60,7 @@ Deploy Env:  ${env.DEPLOY_ENV}
         // ============================================================
         stage('代码静态检查') {
             steps {
-                sh 'uv sync --extra dev --default-index ${PYPI_MIRROR}'
+                sh 'uv sync --group dev --default-index ${PYPI_MIRROR}'
 
                 // ---- ruff 检查 ----
                 script {

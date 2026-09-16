@@ -111,4 +111,5 @@ class KnowledgeMerger:
         """列出某学科某字段的现有条目。"""
         yaml_path = self._subject_path(subject)
         data = self._read_yaml(yaml_path)
-        return data.get(field, [])
+        entries: list[dict[str, Any]] = data.get(field, [])
+        return entries

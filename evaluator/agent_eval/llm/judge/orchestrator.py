@@ -15,16 +15,34 @@ from typing import Any
 import structlog
 
 from agent_eval.config import JUDGE_ID_DATETIME_FORMAT
-from agent_eval.core.exceptions import LLMError
+from agent_eval.core.exceptions import LLMError, LLMResponseError
 from agent_eval.llm.judge.prompt_store import PromptStore
 from agent_eval.llm.judge.recorder import JudgeRecorder
 from agent_eval.llm.judge.stability import StabilityController
 from agent_eval.llm.judge.structured_output import StructuredOutputParser
-from agent_eval.llm.models import JudgeRecord, Message, TokenUsage
+from agent_eval.llm.models import JudgeRecord, Message, ProviderInfo, TokenUsage
 from agent_eval.llm.pool import ProviderPool
 from agent_eval.llm.tracing import create_span, create_trace
 
 logger = structlog.get_logger("judge.orchestrator")
+
+# 失败证据里保留的末次原始响应尾部长度（全量原文走 raw_response 字段落盘，
+# 尾部足够定位截断点/畸形 JSON 位置）
+_FAILURE_RAW_TAIL_CHARS = 2000
+
+
+def _build_judge_id(
+    constraint_id: str, judge_id_suffix: str | None, *, failed: bool = False
+) -> str:
+    """构建 judge_id（时间戳到秒；suffix 防同秒多次调用碰撞，failed 标记失败路径）。"""
+    judge_id = f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime(JUDGE_ID_DATETIME_FORMAT)}"
+    if failed:
+        judge_id += "_failed"
+    if judge_id_suffix:
+        # 后缀只允许安全字符，避免污染文件名
+        safe_suffix = re.sub(r"[^A-Za-z0-9_.-]", "_", judge_id_suffix)
+        judge_id = f"{judge_id}_{safe_suffix}"
+    return judge_id
 
 
 def _hash_images(images: list[str]) -> list[str]:
@@ -184,63 +202,90 @@ class JudgeOrchestrator:
                 Message(role="user", content=user_prompt),
             ]
 
-            # Langfuse Generation — 记录单次 LLM 调用
-            generation = None
-            if root_span:
-                generation = root_span.start_observation(
-                    name=f"sample_{sample_index}",
-                    as_type="generation",
-                    input={
-                        "system": system_prompt,
-                        "user": user_prompt,
-                        **({"num_images": len(images)} if images else {}),
-                    },
-                    model=f"{provider_info.name}/{provider_info.model}",
-                    model_parameters={
-                        "temperature": template.temperature,
-                        "seed": template.seed + sample_index,
-                    },
-                )
+            # 解析失败重试：截断/半截 JSON 等瞬时缺陷重唤一次即可痊愈
+            # （run 20260912_111958 content_diversity 单次截断即整约束报错）。
+            # 仅重试 LLMResponseError（解析/截断类）；网络/鉴权错误不在此重试——
+            # provider 层已有瞬时错误退避，鉴权类重试无意义。重试耗尽抛末次错误。
+            last_error: LLMResponseError | None = None
+            for attempt in range(self.parser.max_retries + 1):
+                # Langfuse Generation — 记录单次 LLM 调用（重试样本带 _retryN 后缀）
+                generation = None
+                if root_span:
+                    generation = root_span.start_observation(
+                        name=(
+                            f"sample_{sample_index}"
+                            if attempt == 0
+                            else f"sample_{sample_index}_retry{attempt}"
+                        ),
+                        as_type="generation",
+                        input={
+                            "system": system_prompt,
+                            "user": user_prompt,
+                            **({"num_images": len(images)} if images else {}),
+                        },
+                        model=f"{provider_info.name}/{provider_info.model}",
+                        model_parameters={
+                            "temperature": template.temperature,
+                            "seed": template.seed + sample_index,
+                        },
+                    )
 
-            if images:
-                response = client.chat_with_vision(
-                    messages,
-                    images,
-                    seed=template.seed + sample_index,
-                    temperature=template.temperature,
-                )
-            else:
-                response = client.chat(
-                    messages,
-                    seed=template.seed + sample_index,
-                    temperature=template.temperature,
-                )
+                if images:
+                    response = client.chat_with_vision(
+                        messages,
+                        images,
+                        seed=template.seed + sample_index,
+                        temperature=template.temperature,
+                    )
+                else:
+                    response = client.chat(
+                        messages,
+                        seed=template.seed + sample_index,
+                        temperature=template.temperature,
+                    )
 
-            # Langfuse Generation — 更新输出和 token 用量
-            if generation:
-                usage_details = {}
+                # Langfuse Generation — 更新输出和 token 用量
+                if generation:
+                    usage_details = {}
+                    if response.usage:
+                        usage_details = {
+                            "prompt_tokens": response.usage.prompt_tokens,
+                            "completion_tokens": response.usage.completion_tokens,
+                            "total_tokens": response.usage.total_tokens,
+                        }
+                    generation.update(
+                        output=response.content,
+                        usage_details=usage_details,
+                    )
+                    generation.end()
+
+                all_raw_responses.append(response.content)
+
+                # 累计 token 用量（失败尝试的 tokens 同样计入——消耗是真消耗）
                 if response.usage:
-                    usage_details = {
-                        "prompt_tokens": response.usage.prompt_tokens,
-                        "completion_tokens": response.usage.completion_tokens,
-                        "total_tokens": response.usage.total_tokens,
-                    }
-                generation.update(
-                    output=response.content,
-                    usage_details=usage_details,
-                )
-                generation.end()
+                    total_tokens.prompt_tokens += response.usage.prompt_tokens
+                    total_tokens.completion_tokens += response.usage.completion_tokens
+                    total_tokens.total_tokens += response.usage.total_tokens
 
-            all_raw_responses.append(response.content)
+                # 解析结构化输出（失败可重试）
+                try:
+                    parsed = self.parser.parse(response.content, template.output_schema)
+                except LLMResponseError as e:
+                    last_error = e
+                    logger.warning(
+                        "judge.parse_retry",
+                        constraint_id=constraint_id,
+                        sample_id=sample_id,
+                        attempt=attempt,
+                        error=str(e)[:200],
+                    )
+                    continue
+                break
+            else:
+                # for-else：重试耗尽仍未成功
+                assert last_error is not None
+                raise last_error
 
-            # 累计 token 用量
-            if response.usage:
-                total_tokens.prompt_tokens += response.usage.prompt_tokens
-                total_tokens.completion_tokens += response.usage.completion_tokens
-                total_tokens.total_tokens += response.usage.total_tokens
-
-            # 解析结构化输出
-            parsed = self.parser.parse(response.content, template.output_schema)
             # 确保维度分数为 float，同时保留 summary 等非维度字段
             # 缺维度不再静默兜底 0.0 —— schema 已 required，缺失即视为异常，抛错定位
             result: dict[str, Any] = {}
@@ -265,23 +310,39 @@ class JudgeOrchestrator:
 
         # 5. 稳定性控制 — 多次采样（采样次数由模板指定，视觉模板可设 num_samples=1）
         start_time = time.monotonic()
-        stable_result = self.stability.evaluate_stable(
-            single_judge, template.dimensions, num_samples=template.num_samples
-        )
+        try:
+            stable_result = self.stability.evaluate_stable(
+                single_judge, template.dimensions, num_samples=template.num_samples
+            )
+        except Exception as e:
+            # 失败调用同样落证据后原样上抛（run 20260912_111958：约束报错时
+            # evidence 目录不留任何痕迹，排障只剩 Web reason 里的半截文案）
+            total_duration_ms = (time.monotonic() - start_time) * 1000
+            if root_span:
+                root_span.update(output={"error": f"{type(e).__name__}: {e}"[:200]})
+                root_span.end()
+            self._save_failure_record(
+                constraint_id=constraint_id,
+                sample_id=sample_id,
+                template_id=template_id,
+                provider_info=provider_info,
+                evidence_dir=evidence_dir,
+                error=e,
+                raw_responses=all_raw_responses,
+                token_usage=total_tokens,
+                duration_ms=total_duration_ms,
+                images=images,
+                judge_id_suffix=judge_id_suffix,
+            )
+            raise
         total_duration_ms = (time.monotonic() - start_time) * 1000
 
         # 6. 生成 JudgeRecord
         timestamp = datetime.now(tz=UTC).isoformat()
         last_parsed = stable_result.all_samples[-1] if stable_result.all_samples else {}
         summary_text = str(last_parsed.get("summary", ""))
-        dim_details = last_parsed.get("_dim_details", {})
-        judge_id = (
-            f"judge_{constraint_id}_{datetime.now(tz=UTC).strftime(JUDGE_ID_DATETIME_FORMAT)}"
-        )
-        if judge_id_suffix:
-            # 后缀只允许安全字符，避免污染文件名
-            safe_suffix = re.sub(r"[^A-Za-z0-9_.-]", "_", judge_id_suffix)
-            judge_id = f"{judge_id}_{safe_suffix}"
+        dim_details: dict[str, Any] = last_parsed.get("_dim_details", {})
+        judge_id = _build_judge_id(constraint_id, judge_id_suffix)
         record = JudgeRecord(
             judge_id=judge_id,
             constraint_id=constraint_id,
@@ -291,6 +352,7 @@ class JudgeOrchestrator:
             template_id=template_id,
             temperature=template.temperature,
             seed=template.seed,
+            max_tokens=provider_info.max_tokens,
             raw_response=all_raw_responses[-1] if all_raw_responses else "",
             parsed_scores=last_parsed,
             final_scores=stable_result.scores,
@@ -315,6 +377,59 @@ class JudgeOrchestrator:
         JudgeRecorder.save(record, evidence_dir)
 
         return stable_result.scores, record
+
+    def _save_failure_record(
+        self,
+        *,
+        constraint_id: str,
+        sample_id: str,
+        template_id: str,
+        provider_info: ProviderInfo,
+        evidence_dir: Path,
+        error: Exception,
+        raw_responses: list[str],
+        token_usage: TokenUsage,
+        duration_ms: float,
+        images: list[str] | None,
+        judge_id_suffix: str | None,
+    ) -> None:
+        """失败调用证据落盘——错误摘要 + 末次原始响应尾部 + 生效参数。
+
+        与成功记录同目录（judge_id 带 _failed 后缀防碰撞）。落盘失败只记日志
+        不上抛：证据写不进不能掩盖原始 LLM 异常。
+        """
+        record = JudgeRecord(
+            judge_id=_build_judge_id(constraint_id, judge_id_suffix, failed=True),
+            constraint_id=constraint_id,
+            sample_id=sample_id,
+            provider_name=provider_info.name,
+            model=provider_info.model,
+            template_id=template_id,
+            max_tokens=provider_info.max_tokens,
+            raw_response=(raw_responses[-1][-_FAILURE_RAW_TAIL_CHARS:] if raw_responses else ""),
+            error=f"{type(error).__name__}: {error}"[:500],
+            # 失败路径的尝试痕迹：已收到原始响应的调用次数（调用即抛的次数不在此列）
+            num_samples=len(raw_responses),
+            total_duration_ms=duration_ms,
+            token_usage=token_usage,
+            timestamp=datetime.now(tz=UTC).isoformat(),
+            image_hashes=_hash_images(images) if images else [],
+        )
+        try:
+            JudgeRecorder.save(record, evidence_dir)
+        except Exception as save_err:  # noqa: BLE001 —— 证据落盘失败不掩盖原始异常
+            logger.error(
+                "judge.failure_record_save_error",
+                judge_id=record.judge_id,
+                error=str(save_err),
+            )
+            return
+        logger.warning(
+            "judge.failure_recorded",
+            judge_id=record.judge_id,
+            constraint_id=constraint_id,
+            error=record.error[:200],
+        )
 
     def _build_reason(
         self,

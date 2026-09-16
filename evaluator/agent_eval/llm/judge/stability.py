@@ -5,6 +5,7 @@ from __future__ import annotations
 import statistics
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 from agent_eval.config import STABILITY_DEFAULTS
 from agent_eval.llm.judge.template_manager import JudgeDimension
@@ -16,7 +17,7 @@ class StableResult:
 
     scores: dict[str, float]  # dim_id -> 中位数得分
     confidence: dict[str, str]  # dim_id -> "high" | "low"
-    all_samples: list[dict[str, float]] = field(default_factory=list)
+    all_samples: list[dict[str, Any]] = field(default_factory=list)
     num_samples: int = 0
 
 
@@ -62,7 +63,14 @@ class StabilityController:
             StableResult 包含最终得分和置信度。
         """
         n = self.num_samples if num_samples is None else num_samples
-        all_samples: list[dict[str, float]] = []
+        if n < 1:
+            # 尾部防线：0/负数会使 range(n) 为空，炸出难懂的「no median for empty
+            # data」——在此给出语义化报错（包级防呆在落盘校验 rule_refs，双端同拦）
+            raise ValueError(
+                f"num_samples 必须 ≥ 1（收到 {n}）——该参数决定判官独立采样次数"
+                "（prompts 模板的 num_samples 字段）"
+            )
+        all_samples: list[dict[str, Any]] = []
         for i in range(n):
             scores = judge_fn(i)
             all_samples.append(scores)

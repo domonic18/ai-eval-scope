@@ -29,7 +29,10 @@ from agent_eval.evaluation.models import (
 )
 from agent_eval.evaluation.registry import registry
 from agent_eval.evaluation.summary import SummaryGenerator
+from agent_eval.reporting.gate import evaluate_gate
+from agent_eval.reporting.junit_renderer import render_junit_xml
 from agent_eval.reporting.report_generator import ReportGenerator
+from agent_eval.reporting.summary_text import render_summary_txt
 from agent_eval.storage.package import (
     EvalResultManifest,
     EvaluationResult,
@@ -68,6 +71,9 @@ class EvalResult:
     # （回归：'EvalResult' object has no attribute 'sut_version'）
     sut_name: str = ""
     sut_version: str = ""
+    # CI 质量门禁结果（requirement/06 FR-3）：evaluate_gate() 输出的 gate 对象，
+    # 供 CLI 判定退出码 3；必须是声明字段——CLI 无条件读取，缺失会 AttributeError
+    gate: dict[str, Any] | None = None
 
 
 class Orchestrator:
@@ -106,6 +112,9 @@ class Orchestrator:
         scenario_package_dir: Any = None,
         mode: str = "eval_only",
         manifest_extra: dict[str, Any] | None = None,
+        gate: str = "off",
+        report_formats: list[str] | None = None,
+        package_id: str = "",
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -255,7 +264,8 @@ class Orchestrator:
             # trace 兼容两种形态：Agent 骨架（response.turns/tool_calls）与
             # LLM write_package 直写的 SUT-run 形态（顶层 turns_used）。
             _trace = pkg.trace if isinstance(pkg.trace, dict) else {}
-            _resp = _trace.get("response") if isinstance(_trace.get("response"), dict) else {}
+            _resp_raw = _trace.get("response")
+            _resp = _resp_raw if isinstance(_resp_raw, dict) else {}
             sample_result.agent_turns = int(
                 _resp.get("turns") or _trace.get("turns_used") or _resp.get("messages") or 0
             )
@@ -298,8 +308,47 @@ class Orchestrator:
             summary_md,
             encoding="utf-8",
         )
-        # 注入运行溯源（供 upload 子命令从 summary.json 重建 run event）
+
+        # 10.1 CI 集成（requirement/06）：门禁判定 + 按需追加报告格式。
+        # 门禁始终判定（退出码判定不依赖 report_formats）；junit/txt 为 opt-in
+        # 追加格式，不传时 reports/ 维持 summary.md/json 两文件。
+        import agent_eval
+
+        tool_version = agent_eval.__version__
+        # package_id 回退链：CLI 显式传入（场景包 manifest.id）> 场景配置 scenario_id
+        scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
+        pkg_id = package_id or getattr(scenario_cfg, "scenario_id", "") or "agent-eval"
+        formats = {f.strip().lower() for f in (report_formats or []) if f.strip()}
+        gate_result = evaluate_gate(metrics_report, gate)
+        # 平台查看页 URL（确定性拼装 /run/:id，后端按 externalRunId 兼容查询）：
+        # 上报开启才注入——未上报时平台无此 run，URL 无意义。CLI 的 --upload 显式
+        # 覆盖不进本层（控制台 URL 由 _flush_observability 按真实 cfg 打印，不受影响）
+        from agent_eval.observability.config import load_config
+
+        obs_cfg = load_config()
+        run_url = obs_cfg.run_view_url(run_id) if obs_cfg.enabled else ""
+        if "junit" in formats:
+            (run_workspace.reports_dir / "junit.xml").write_text(
+                render_junit_xml(metrics_report, gate_result, package_id=pkg_id, run_url=run_url),
+                encoding="utf-8",
+            )
+        if "txt" in formats:
+            (run_workspace.reports_dir / "summary.txt").write_text(
+                render_summary_txt(
+                    metrics_report, gate_result, tool_version=tool_version, run_url=run_url
+                ),
+                encoding="utf-8",
+            )
+
+        # 注入运行溯源（供 upload 子命令从 summary.json 重建 run event）+
+        # CI 溯源键（FR-3 联动：gate/package_id/tool_version）——既有文件内增键，
+        # 平台上报走固定字段白名单（observability/events.py），不受影响。
         summary_json["rule_set_version"] = rule_set_version
+        summary_json["gate"] = gate_result
+        summary_json["package_id"] = pkg_id
+        summary_json["tool_version"] = tool_version
+        if run_url:
+            summary_json["run_url"] = run_url
         (run_workspace.reports_dir / "summary.json").write_text(
             json.dumps(summary_json, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -321,7 +370,6 @@ class Orchestrator:
                 scenario_name = project if project else ""
                 # 指标定义（含 summary）
                 metric_defs: list[dict[str, Any]] = []
-                scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
                 if scenario_cfg:
                     metric_defs = [m.model_dump() for m in scenario_cfg.metric_definitions]
                 # 仅传内容质量指标，且键须与 metric_definitions 对齐。
@@ -367,7 +415,6 @@ class Orchestrator:
             metrics=metrics_report.metrics,
         )
 
-        scenario_cfg = getattr(self.pipeline_engine, "scenario_config", None)
         return EvalResult(
             report=metrics_report,
             results=result_map,
@@ -379,6 +426,7 @@ class Orchestrator:
             scenario_config=scenario_cfg,
             summary_report=summary_report,
             mode=mode,
+            gate=gate_result,
         )
 
     def _load_packages(self, package_dir: Path) -> list[ExecutionPackage]:

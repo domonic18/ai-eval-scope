@@ -11,11 +11,15 @@ from __future__ import annotations
 import base64
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import markdown as md_lib
 
 from agent_eval.config import EVALUATOR_DEFAULTS
 from agent_eval.core.exceptions import VisionError
+
+if TYPE_CHECKING:  # playwright 为可选依赖（vision extra），仅类型检查期引入
+    from playwright.sync_api import Browser, Playwright
 
 # 内置基础 CSS — 保证不同文档/不同运行间截图可比，含 CJK 字体栈
 _BASE_CSS = """
@@ -97,9 +101,8 @@ class ScreenshotRenderer(ABC):
     def __enter__(self) -> ScreenshotRenderer:
         return self
 
-    def __exit__(self, *exc: object) -> bool:
+    def __exit__(self, *exc: object) -> None:
         self.close()
-        return False
 
 
 class PlaywrightScreenshotRenderer(ScreenshotRenderer):
@@ -110,10 +113,10 @@ class PlaywrightScreenshotRenderer(ScreenshotRenderer):
     """
 
     def __init__(self) -> None:
-        self._playwright = None
-        self._browser = None
+        self._playwright: Playwright | None = None
+        self._browser: Browser | None = None
 
-    def _ensure_browser(self) -> object:
+    def _ensure_browser(self) -> Browser:
         """懒启动 playwright 与浏览器，返回 browser 实例。"""
         if self._browser is not None:
             return self._browser

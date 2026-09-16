@@ -9,9 +9,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from agent_eval.config import AGENT_DEFAULTS, SUT_TOOLS_DEFAULTS, TASK_DEFAULTS
+from agent_eval.config import (
+    AGENT_DEFAULTS,
+    INTERACTION_POLICY_DEFAULTS,
+    SUT_TOOLS_DEFAULTS,
+    TASK_DEFAULTS,
+)
 
 
 class Task(BaseModel):
@@ -58,6 +63,74 @@ class Task(BaseModel):
     model_config = {"extra": "allow"}
 
 
+class InteractionPolicy(BaseModel):
+    """交互预算声明（arch/16 §4.1 P1）— 一等预算面，替代 max_turns 的裸轮次纪律。
+
+    声明「允许与 SUT 发生多少次交互」而非「LLM 允许思考多少步」；
+    recursion_limit 由 `derive_recursion_limit` 按此自动推导为保险丝。
+    """
+
+    sut_calls_total: int = Field(
+        default=INTERACTION_POLICY_DEFAULTS.sut_calls_total,
+        gt=0,
+        description="SUT 交互调用合计上限（agent_run / agent_run_stream / run_on_thread）",
+    )
+    dispatch: int = Field(
+        default=INTERACTION_POLICY_DEFAULTS.dispatch,
+        gt=0,
+        description="新会话首发（dispatch）上限",
+    )
+    nudges: int = Field(
+        default=INTERACTION_POLICY_DEFAULTS.nudges,
+        ge=0,
+        description="续跑 / 催促类调用上限",
+    )
+    state_polls: int = Field(
+        default=INTERACTION_POLICY_DEFAULTS.state_polls,
+        gt=0,
+        description="read_thread_state 取证上限",
+    )
+    downloads: int = Field(
+        default=INTERACTION_POLICY_DEFAULTS.downloads,
+        gt=0,
+        description="download_sut_file 上限",
+    )
+    nudge_backoff_s: float = Field(
+        default=INTERACTION_POLICY_DEFAULTS.nudge_backoff_s,
+        gt=0,
+        description="两次催促最小间隔（秒）",
+    )
+    wall_clock_deadline_s: float = Field(
+        default=INTERACTION_POLICY_DEFAULTS.wall_clock_deadline_s,
+        gt=0,
+        description="单任务墙钟预算（秒）",
+    )
+
+    @field_validator("sut_calls_total", "dispatch", "state_polls", "downloads")
+    @classmethod
+    def validate_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError(f"交互预算计数必须为正数，得到: {v}")
+        return v
+
+    @field_validator("nudges")
+    @classmethod
+    def validate_nudges(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError(f"nudges 不允许为负数，得到: {v}")
+        return v
+
+    @model_validator(mode="after")
+    def validate_nudges_within_total(self) -> InteractionPolicy:
+        if self.nudges > self.sut_calls_total - self.dispatch:
+            raise ValueError(
+                f"nudges({self.nudges}) 不得超过 sut_calls_total - dispatch"
+                f"（{self.sut_calls_total} - {self.dispatch} = "
+                f"{self.sut_calls_total - self.dispatch}）"
+            )
+        return self
+
+
 class TaskSet(BaseModel):
     """任务集 — 一组相关任务的集合。"""
 
@@ -73,6 +146,11 @@ class TaskSet(BaseModel):
     name: str = Field(description="任务集名称")
     description: str = Field(default="", description="任务集描述")
     tasks: list[Task] = Field(default_factory=list, description="任务列表")
+    # 交互预算（arch/16 P1）— 任务集级缺省，任务级 constraints.interaction_policy 可部分覆盖
+    interaction_policy: InteractionPolicy | None = Field(
+        default=None,
+        description="任务集级交互预算声明（None=继承全局缺省）",
+    )
 
     model_config = {"extra": "allow", "populate_by_name": True}
 
@@ -128,6 +206,11 @@ class SUTToolsConfig(BaseModel):
 
     # HTTP SUT 配置
     http_base_url: str | None = Field(default=None, description="默认 HTTP SUT 地址")
+    allowed_hosts: list[str] = Field(
+        default_factory=list,
+        description="invoke_http_sut 绝对 URL 的 host 白名单（空 = 不限制）；"
+        "执行侧 host 边界——LLM 只能访问被测系统配置域",
+    )
     http_default_headers: dict[str, str] = Field(
         default_factory=dict,
         description="默认请求头",
@@ -156,7 +239,8 @@ class AgentConfig(BaseModel):
     max_turns: int = Field(
         default=AGENT_DEFAULTS.max_turns,
         gt=0,
-        description="单任务最大交互轮次",
+        description="单任务最大交互轮次（已废弃：executor 不再读，轮次预算由 "
+        "interaction_policy 声明；字段仅为构造兼容保留）",
     )
     max_budget_usd: float = Field(
         default=AGENT_DEFAULTS.max_budget_usd,

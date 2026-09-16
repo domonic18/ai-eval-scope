@@ -261,8 +261,9 @@ export const api = {
   },
 
   /* ── 配置管理（场景包，Phase 3/4）─────────────────── */
-  async scenarios(): Promise<Scenario[]> {
-    return (await http.get("/scenarios")).data.scenarios as Scenario[]
+  async scenarios(source?: "official" | "auto_ingest"): Promise<Scenario[]> {
+    const params = source ? { source } : undefined
+    return (await http.get("/scenarios", { params })).data.scenarios as Scenario[]
   },
   async createScenario(id: string, name: string, description?: string): Promise<Scenario> {
     return (await http.post("/scenarios", { id, name, description })).data.scenario
@@ -536,7 +537,18 @@ export interface Scenario {
   id: string
   name: string
   description: string | null
+  /** official = 管理员创建/脚本导入；auto_ingest = run 事件补缺注册（不进配置中心默认视图） */
+  source: "official" | "auto_ingest"
   createdAt: string
+  _count?: {
+    packages: number
+    ruleSets: number
+    prompts: number
+    datasets: number
+    taskSets: number
+    sutConfigs: number
+    defaults: number
+  }
 }
 export interface CatalogEntry {
   asset_id: string

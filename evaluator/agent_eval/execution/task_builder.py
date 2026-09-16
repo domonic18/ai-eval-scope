@@ -90,4 +90,5 @@ class TaskSetBuilder:
         """
         raw = yaml.safe_dump(task_template, allow_unicode=True)
         rendered = JinjaTemplate(raw).render(**variables)
-        return yaml.safe_load(rendered)
+        rendered_task: dict[str, Any] = yaml.safe_load(rendered)
+        return rendered_task

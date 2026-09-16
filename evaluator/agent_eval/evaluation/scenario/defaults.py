@@ -61,21 +61,36 @@ COURSEWARE_SCENARIO_CONFIG: ScenarioConfig = ScenarioConfig(
 )
 
 
-def load_scenario_config_from_package(package_dir: Any) -> ScenarioConfig | None:
+def load_scenario_config_from_package(package_dir: Any) -> ScenarioConfig:
     """从场景包目录的 metrics/policy.yaml 构造 ScenarioConfig（数据驱动，任意场景）。
 
     多场景配置加载的统一入口：解析 ``<package_dir>/metrics/policy.yaml`` 的
-    aggregation_policy + metric_definitions。缺文件或格式异常 → None（调用方回退 courseware）。
-    与 courseware 默认共用同一份 policy.yaml 契约（#60 跨语言单一源）。
+    aggregation_policy + metric_definitions。缺文件或缺 ``aggregation_policy`` →
+    ``ScenarioError``（fail-loud）——**不回退 courseware 默认**：降级会把规则集
+    未声明阶段的评估分数静默丢弃（run 20260910_034232 事故：judge 全 0 分样本
+    仍 reward=1.0）。与 courseware 默认共用同一份 policy.yaml 契约（#60 跨语言单一源）。
     """
     from pathlib import Path
 
+    from agent_eval.core.exceptions import ScenarioError
+
     policy_yaml = Path(package_dir) / "metrics" / "policy.yaml"
     if not policy_yaml.exists():
-        return None
-    data = yaml.safe_load(policy_yaml.read_text(encoding="utf-8"))
+        raise ScenarioError(
+            f"场景包缺少 metrics/policy.yaml（聚合策略与指标定义；包根: {Path(package_dir)}）"
+            "——聚合策略不再回退 courseware 默认：降级会把规则集未声明阶段的评估分数"
+            "静默丢弃。请补齐 policy.yaml（字段契约参照内置包 "
+            "agent_eval/assets/packages/courseware/1.0.0/metrics/policy.yaml）"
+        )
+    try:
+        data = yaml.safe_load(policy_yaml.read_text(encoding="utf-8"))
+    except yaml.YAMLError as e:
+        raise ScenarioError(f"metrics/policy.yaml 解析失败: {policy_yaml}（{e}）") from e
     if not isinstance(data, dict) or "aggregation_policy" not in data:
-        return None
+        raise ScenarioError(
+            f"metrics/policy.yaml 缺少 aggregation_policy 字段: {policy_yaml}"
+            "——aggregation_policy 是 reward 计算的唯一契约"
+        )
     scenario_id = data["aggregation_policy"].get("scenario_id") or Path(package_dir).name
     return ScenarioConfig(
         scenario_id=str(scenario_id),

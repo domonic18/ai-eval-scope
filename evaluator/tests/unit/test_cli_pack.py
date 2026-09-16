@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_eval.cli.main import _content_hash
+from agent_eval.cli.cmds.pack import _content_hash
 
 
 def test_content_hash_stable_same_content(tmp_path: Path) -> None:

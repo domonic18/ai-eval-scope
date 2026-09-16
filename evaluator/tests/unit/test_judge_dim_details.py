@@ -1,4 +1,4 @@
-"""逐维度可解释性详情（dim_details）透传契约（docs/arch/14 §五）。
+"""逐维度可解释性详情（dim_details）透传契约。
 
 - _extract_dim_detail：从 LLM 维度对象提取 {reason, issues, highlights}（纯数值 → {}）
 - JudgeRecord.dim_details：默认空、to_dict 序列化、from_dict 往返

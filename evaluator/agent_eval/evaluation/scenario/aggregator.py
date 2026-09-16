@@ -9,7 +9,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from agent_eval.core.types import EvalStatus
+
+if TYPE_CHECKING:  # 前向类型（避免与 scenario.models 循环导入）
+    from agent_eval.evaluation.scenario.models import AggregationPolicy
 from agent_eval.evaluation.models import SampleResult, StageResult
 from agent_eval.evaluation.scenario.models import StageWeight
 
@@ -21,7 +26,7 @@ class ScenarioScoreAggregator:
     至少含 ``reward``，并为声明了 ``id`` 的 StageWeight 暴露其阶段得分。
     """
 
-    def __init__(self, policy):  # noqa: ANN001 (避免循环：用前向字符串类型)
+    def __init__(self, policy: AggregationPolicy) -> None:
         self.policy = policy
 
     def aggregate(self, result: SampleResult) -> dict[str, float]:

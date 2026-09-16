@@ -25,9 +25,8 @@ agent-eval-system/
 - Web 可观测平台：[`docs/arch/09Web可观测平台架构设计.md`](docs/arch/09Web可观测平台架构设计.md)
 - 第三方系统对接：[`docs/arch/12第三方系统对接方案.md`](docs/arch/12第三方系统对接方案.md)
 - 评估指标与方法：[`docs/arch/07评估指标与方法.md`](docs/arch/07评估指标与方法.md)
-- 数据集下载：[`docs/arch/10数据集下载设计.md`](docs/arch/10数据集下载设计.md)
 - 配置管理：[`docs/arch/13配置管理设计.md`](docs/arch/13配置管理设计.md)
-- 场景扩展：[`docs/arch/14场景扩展指南.md`](docs/arch/14场景扩展指南.md)（如何新增一个评估场景，含 entry_points 可插拔评估器）
+- 执行器目标架构：[`docs/arch/16执行器健壮性架构设计.md`](docs/arch/16执行器健壮性架构设计.md)（机械壳 + 决策体，Phase 1 + Phase 2 已实施（Phase 2 待 staging 验收）——执行器相关工作的主入口）
 - 编码规范索引：[`docs/standard/README.md`](docs/standard/README.md)
 - 贡献指南（提交 / 分支 / PR）：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 
@@ -53,7 +52,7 @@ agent-eval-system/
 make install      # 安装评估器依赖
 make dev          # 安装开发依赖（含 ruff / pytest）
 make hooks        # 安装 git hooks（pre-commit + commit-msg）
-make check        # 一键质量门禁（ruff + pytest）
-make test         # 运行测试
+make check        # 一键质量门禁（ruff + pytest tests/unit——快门禁，仅单测目录）
+make test         # 全量测试（pytest tests/，与 CI 同口径；合入/发布前必跑）
 make docker-up    # 启动本地全栈（需先 cp .env.example .env）
 ```

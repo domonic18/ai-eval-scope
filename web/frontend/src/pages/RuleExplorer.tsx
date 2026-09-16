@@ -5,11 +5,11 @@
  * 和 /scenarios/:id/defaults。只读查看（非编辑），用于理解评测如何运作。
  */
 
-/* 行业最佳实践滚动条：深色模式下高对比、宽 8px、带 track 背景 */
+/* 行业最佳实践滚动条：宽 8px、带 track 背景；颜色走 token 两态自适应 */
 <style>{`
   .scroll-area {
     scrollbar-width: auto;
-    scrollbar-color: #4a5060 var(--bg-inset);
+    scrollbar-color: var(--muted-foreground) var(--bg-inset);
   }
   .scroll-area::-webkit-scrollbar { width: 8px; height: 8px; }
   .scroll-area::-webkit-scrollbar-track {
@@ -17,12 +17,12 @@
     border-radius: 4px;
   }
   .scroll-area::-webkit-scrollbar-thumb {
-    background: #3a3f4b;
+    background: var(--border);
     border-radius: 4px;
-    border: 1px solid #4a5060;
+    border: 1px solid var(--muted-foreground);
   }
   .scroll-area::-webkit-scrollbar-thumb:hover {
-    background: #565c6a;
+    background: var(--muted-foreground);
   }
   .scroll-area::-webkit-scrollbar-corner { background: var(--bg-inset); }
 `}</style>

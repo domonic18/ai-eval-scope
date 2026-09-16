@@ -54,20 +54,25 @@ class IngestionClient:
             separators=(",", ":"),
             ensure_ascii=False,
         ).encode("utf-8")
-        return self._bearer_post(self.cfg.ingest_url, body, parse_ingest=True)
+        ingest: IngestResponse = self._bearer_post(self.cfg.ingest_url, body, parse_ingest=True)
+        return ingest
 
     def health(self) -> dict[str, Any]:
         """GET /health 启动自检（无签名）。失败抛异常。"""
         with httpx.Client(timeout=self.cfg.timeout_sec) as client:
             resp = client.get(self.cfg.health_url)
             resp.raise_for_status()
-            return resp.json()
+            health: dict[str, Any] = resp.json()
+            return health
 
     # ── 制品 presigned 上传 ──
     def presign_put(self, request: dict[str, Any]) -> dict[str, Any]:
         """POST /api/public/artifacts/url 申请 presigned PUT。返回 {object_key, upload_url, headers, expires_at}。"""
         body = json.dumps(request, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-        return self._bearer_post(self.cfg.artifacts_url, body, parse_ingest=False)  # type: ignore[return-value]
+        presigned: dict[str, Any] = self._bearer_post(
+            self.cfg.artifacts_url, body, parse_ingest=False
+        )
+        return presigned
 
     def upload_file(
         self, local_path: Path, presigned: dict[str, Any], content_type: str

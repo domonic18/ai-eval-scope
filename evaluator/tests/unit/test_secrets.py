@@ -69,7 +69,7 @@ class TestSecretsCommand:
     def test_set_list_delete_roundtrip(self, _isolated_secrets: Path) -> None:
         from typer.testing import CliRunner
 
-        from agent_eval.cli.secrets import secrets_app
+        from agent_eval.cli.cmds.secrets import secrets_app
 
         runner = CliRunner()
         result = runner.invoke(secrets_app, ["set", "sasan.username"], input="138xxx\n")
@@ -94,7 +94,7 @@ class TestSecretsCommand:
     def test_set_empty_value_cancels(self, _isolated_secrets: Path) -> None:
         from typer.testing import CliRunner
 
-        from agent_eval.cli.secrets import secrets_app
+        from agent_eval.cli.cmds.secrets import secrets_app
 
         result = CliRunner().invoke(secrets_app, ["set", "sasan.token"], input="\n")
         assert result.exit_code == 1
@@ -103,7 +103,7 @@ class TestSecretsCommand:
     def test_bad_key_format_rejected(self, _isolated_secrets: Path) -> None:
         from typer.testing import CliRunner
 
-        from agent_eval.cli.secrets import secrets_app
+        from agent_eval.cli.cmds.secrets import secrets_app
 
         result = CliRunner().invoke(secrets_app, ["set", "no-dot"], input="x\n")
         assert result.exit_code == 1

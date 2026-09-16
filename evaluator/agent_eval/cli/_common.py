@@ -5,18 +5,70 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import typer
 from rich import print as rprint
 from rich.table import Table
 
 __all__ = [
     "Table",
+    "ensure_sut_credentials",
     "rprint",
     "_check_llm_availability",
     "_flush_observability",
     "_init_judge_orchestrator",
     "_print_summary",
 ]
+
+
+# ── 执行前凭证保障（req/04 §3.5：按所选 SUT 的 credential_ref 引导补齐缺失字段）──
+
+
+def ensure_sut_credentials(sut: Any) -> None:
+    """执行前凭证保障（run/pipeline/suite 在**进度视图启动前**调用）：
+
+    缺失时交互补录，复检仍缺则 fail fast。交互终端：列出缺失字段 → 确认后
+    逐项隐藏输入 → **一次落盘**（不留半截状态）→ 复检通过；取消 / 空输入退回
+    预检原样抛 SUTAuthError（带 ``secrets set`` 引导）。``--no-input``（CI /
+    管道）不交互，行为与纯预检完全一致。字段集由 sut_config 数据推导
+    （06 §4.7 通用 KV）。**不得移进 stage_progress 内调用**——进度转轮单行
+    重绘会把输入提示行刷掉（实测：提示被「执行 N 个任务」掩盖，用户不知所措）。
+    """
+    import os
+
+    from agent_eval.execution.auth.credentials import (
+        missing_credential_fields,
+        preflight_sut_credentials,
+    )
+
+    missing = missing_credential_fields(sut)
+    if missing and not os.environ.get("AGENT_EVAL_NO_INPUT"):
+        _fill_missing_credentials(sut, missing)  # 取消/失败不在此抛，交由复检
+    preflight_sut_credentials(sut)  # 复检：仍缺（含 ref 缺失等配置错误）即原样 fail fast
+
+
+def _fill_missing_credentials(sut: Any, missing: list[str]) -> None:
+    """交互补录 sut 缺失凭证字段（隐藏输入，一次落盘；任一空输入整体取消）。"""
+    from agent_eval.cli.console.prompts import ask, confirm
+    from agent_eval.execution.auth.secrets_store import load_secrets_file, save_secrets_file
+
+    ref = str(getattr(getattr(sut, "auth", None), "credential_ref", ""))
+    keys = ", ".join(f"{ref}.{field}" for field in missing)
+    rprint(f"[yellow]⚠ SUT {sut.name} 缺少凭证: {keys}（sut_config 声明）[/yellow]")
+    if not confirm("现在录入？（隐藏输入，保存到本机密钥区 0600）", default=True):
+        return
+    values: dict[str, str] = {}
+    for field in missing:
+        value = ask(f"{ref}.{field}", hide=True)
+        if not value:
+            rprint(f"[yellow]未输入 {ref}.{field}，已取消补录。[/yellow]")
+            return
+        values[field] = value
+    secrets = load_secrets_file()
+    secrets.setdefault(ref, {}).update(values)
+    path = save_secrets_file(secrets)
+    rprint(f"[green]✅ 已保存[/green] {keys} → {path}（0600）")
 
 
 def _init_judge_orchestrator(
@@ -80,7 +132,7 @@ def _check_llm_availability(rule_set_obj: object, judge_orch: object | None, str
 
     rprint("[yellow]⚠ 以下评估器依赖 LLM 但 Judge 未配置，将跳过（不计入得分）：[/yellow]")
     rprint(f"[yellow]   {', '.join(llm_evaluators)}[/yellow]")
-    rprint("[yellow]   运行 agent-eval models login 配置 LLM 后重试。[/yellow]")
+    rprint("[yellow]   运行 agent-eval models set 配置 LLM 后重试。[/yellow]")
     if strict:
         raise typer.Exit(code=1)
 
@@ -149,15 +201,22 @@ def _flush_observability(
     """
     from agent_eval.observability import ResultSink, load_config
 
-    cfg = load_config(upload_override=upload_override)
-    if not cfg.enabled:
-        return
-
-    rprint("[blue]可观测平台:[/blue] 推送结果中…")
+    # 队列目录必须随 run workspace：config 的回退是 CWD 相对路径（.ingest_queue），
+    # 而容器里 CWD 常是只读的场景包挂载（:ro）——创建即炸会吞掉整个推送，
+    # 且表现为「构建绿但平台无数据」（构建 #10-#18 实录）。先取 workspace 再建配置。
     run_workspace = None
     rw = getattr(result, "run_workspace", None)
     if rw is not None:
         run_workspace = getattr(rw, "root", None) or (rw.path if hasattr(rw, "path") else None)
+    cfg = load_config(workspace=run_workspace, upload_override=upload_override)
+    if not cfg.enabled:
+        return
+
+    rprint("[blue]可观测平台:[/blue] 推送结果中…")
+    # 查看页地址确定性拼装（/run/:id，后端按 externalRunId 兼容查询）——Jenkins
+    # console 正则提取进构建描述；URL 不依赖推送成败，离线重放成功后同样有效
+    run_id = str(getattr(result, "run_id", "") or "")
+    view_url = cfg.run_view_url(run_id)
 
     try:
         sink = ResultSink(cfg)
@@ -168,11 +227,15 @@ def _flush_observability(
         )
         if report.error:
             rprint(f"[yellow]⚠ 推送异常（已入离线队列，后续自动重放）: {report.error}[/yellow]")
+            if view_url:
+                rprint(f"[yellow]平台报告（重放成功后可访问）: {view_url}[/yellow]")
         else:
             rprint(
                 f"[green]✓ 已推送[/green] 事件 {report.sent}、入队 {report.queued}、"
                 f"制品 {report.artifacts_uploaded}/{report.artifacts_uploaded + report.artifacts_failed}、"
                 f"重放 {report.replayed}"
             )
+            if view_url:
+                rprint(f"[green]平台报告: {view_url}[/green]")
     except Exception as exc:  # noqa: BLE001 — 推送失败不影响评估结论
         rprint(f"[yellow]⚠ 可观测平台推送初始化失败（结果仍在本地 workspace）: {exc}[/yellow]")

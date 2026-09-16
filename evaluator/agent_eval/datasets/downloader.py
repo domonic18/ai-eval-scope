@@ -50,7 +50,13 @@ class HuggingFaceDownloader(DatasetDownloader):
     ``repo_type='dataset'`` 显式声明为数据集仓库。
     """
 
-    def download(self, repo_id, target, revision=None, token=None):
+    def download(
+        self,
+        repo_id: str,
+        target: Path,
+        revision: str | None = None,
+        token: str | None = None,
+    ) -> Path:
         try:
             from huggingface_hub import snapshot_download
         except ImportError as e:  # pragma: no cover - 依赖缺失分支
@@ -73,7 +79,13 @@ class ModelScopeDownloader(DatasetDownloader):
     优先使用 ``local_dir`` 精确落盘；旧版 modelscope 不支持时回退到 cache_dir。
     """
 
-    def download(self, repo_id, target, revision=None, token=None):
+    def download(
+        self,
+        repo_id: str,
+        target: Path,
+        revision: str | None = None,
+        token: str | None = None,
+    ) -> Path:
         try:
             from modelscope.hub.snapshot_download import dataset_snapshot_download
         except ImportError as e:  # pragma: no cover - 依赖缺失分支

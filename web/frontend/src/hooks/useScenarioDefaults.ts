@@ -18,13 +18,19 @@ function fetchScenarioDefaults(scenarioId: string): Promise<MetricDef[]> {
   })
 }
 
-/** 单场景指标定义（scenarioId 必传，无 courseware 默认）。 */
-export function useScenarioDefaults(scenarioId: string): MetricDef[] {
-  const [defs, setDefs] = useState<MetricDef[]>(_cache.get(scenarioId) ?? [])
+/** 单场景指标定义（scenarioId 未定/空时不拉取；拉取失败清空——宁可回退运行快照，不留上一次的脏定义）。 */
+export function useScenarioDefaults(scenarioId: string | null | undefined): MetricDef[] {
+  const [defs, setDefs] = useState<MetricDef[]>(
+    scenarioId ? (_cache.get(scenarioId) ?? []) : [],
+  )
   useEffect(() => {
+    if (!scenarioId) {
+      setDefs([])
+      return
+    }
     fetchScenarioDefaults(scenarioId)
       .then(setDefs)
-      .catch(() => {})
+      .catch(() => setDefs([])) // 404（场景未注册）等失败 → 清空，调用方回退运行快照 defs
   }, [scenarioId])
   return defs
 }

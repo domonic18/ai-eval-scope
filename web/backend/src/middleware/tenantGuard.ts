@@ -3,8 +3,10 @@
  *
  * - orgGuard：解析 :org（org id）→ 校验 req.user 是该组织成员（及角色）→ 注入 req.tenant。
  * - projectGuard：解析 :id（project id）→ 自举项目归属 → 校验用户属其组织 → 注入 req.tenant（含 projectId）。
+ * - runGuard / artifactGuard：公开项目（isPublic）对匿名与登录非成员同权只读放行
+ *   （tenant.kind=public）；写操作与 owner 守卫不受影响。
  *
- * 越权一律 404（不泄露存在性）。
+ * 越权一律 404（不泄露存在性）；公开只读是唯一例外。
  */
 
 import type { RequestHandler } from "express"
@@ -126,9 +128,12 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
       if (!project) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
+      // 公开项目只读放行（owner 守卫的写操作不适用）：匿名与登录非成员同权——
+      // 修「匿名可看公开项目、登录非成员反被 404」的语义倒挂（产品反馈 2026-09-13）。
+      const publicRead = requiredRole !== "owner" && project.isPublic
       // 匿名访问（optionalAuth 未注入 req.user）：仅公开项目可读（只读 role）；写操作须登录。
       if (!req.user) {
-        if (requiredRole !== "owner" && project.isPublic) {
+        if (publicRead) {
           req.tenant = {
             kind: "public",
             orgId: project.orgId,
@@ -151,6 +156,15 @@ export function runGuard(opts: GuardOpts = {}): RequestHandler {
       }
       const membership = await orgRepo.findMembership(project.orgId, req.user.userId)
       if (!membership) {
+        if (publicRead) {
+          req.tenant = {
+            kind: "public",
+            orgId: project.orgId,
+            projectId: run.projectId,
+            role: "public",
+          }
+          return next()
+        }
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
       if (requiredRole === "owner" && membership.role !== "owner") {
@@ -185,9 +199,11 @@ export function artifactGuard(): RequestHandler {
       if (!art) {
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
+      // 公开项目制品只读放行：匿名与登录非成员同权（与 runGuard 同语义）。
+      const publicRead = art.project.isPublic
       // 匿名访问：仅公开项目的制品可读（制品预览/下载，只读）。
       if (!req.user) {
-        if (art.project.isPublic) {
+        if (publicRead) {
           req.tenant = {
             kind: "public",
             orgId: art.project.orgId,
@@ -210,6 +226,15 @@ export function artifactGuard(): RequestHandler {
       }
       const membership = await orgRepo.findMembership(art.project.orgId, req.user.userId)
       if (!membership) {
+        if (publicRead) {
+          req.tenant = {
+            kind: "public",
+            orgId: art.project.orgId,
+            projectId: art.project.id,
+            role: "public",
+          }
+          return next()
+        }
         return next(new PlatformError("not found", { status: 404, code: "NOT_FOUND" }))
       }
       req.tenant = {

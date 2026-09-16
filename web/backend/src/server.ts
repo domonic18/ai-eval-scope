@@ -48,6 +48,7 @@ import ingestRouter from "./routes/public/ingest"
 import publicArtifactsRouter from "./routes/public/artifacts"
 import publicLlmConfigRouter from "./routes/public/llmConfig"
 import publicSecretsRouter from "./routes/public/secrets"
+import publicWhoamiRouter from "./routes/public/whoami"
 
 // ── 平台 Secrets 管理（org 级，arch/16 §2.4）──
 import secretsRouter from "./routes/secrets"
@@ -100,6 +101,7 @@ export function createApp(): express.Application {
   app.use("/api/public/artifacts", publicArtifactsRouter) // POST /api/public/artifacts/url
   app.use("/api/public/llm-config", publicLlmConfigRouter) // GET /（executor 角色配置拉取，LLM③）
   app.use("/api/public/secrets", publicSecretsRouter) // GET /（executor 凭证拉取，W3）
+  app.use("/api/public/whoami", publicWhoamiRouter) // GET /（CLI auth 身份探测，arch/15 §5.1）
 
   // ── 前端静态托管（生产；dev 用 vite 单独跑 :5173）──
   // 以 cwd 为基准（host: web/backend/public；Docker: /app/web/backend/public）

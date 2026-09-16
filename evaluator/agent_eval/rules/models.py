@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from agent_eval.core.types import ConstraintTier
+
 
 class RuleMethod(str, Enum):
     """规则层声明的评估方式 —— 决定 UI 渲染与执行器绑定。"""
@@ -75,6 +77,10 @@ class RuleTemplate(BaseModel):
     )
     evaluator: str | None = Field(
         default=None, description="具体执行器标识；省略时由 method + 绑定资产派生"
+    )
+    tier: str | None = Field(
+        default=None,
+        description="约束层级覆盖：hard_gate / hard_score / soft / preference；缺省用评估器内置层级",
     )
     params: dict[str, Any] = Field(default_factory=dict, description="默认参数")
     weight: float = Field(default=1.0, ge=0.0, description="默认权重")
@@ -152,6 +158,10 @@ class Rule(BaseModel):
     evaluator: str | None = Field(
         default=None, description="具体执行器标识；省略时由 method + 绑定资产派生"
     )
+    tier: str | None = Field(
+        default=None,
+        description="约束层级覆盖：hard_gate / hard_score / soft / preference；缺省用评估器内置层级",
+    )
     params: dict[str, Any] = Field(default_factory=dict, description="评估器参数")
     weight: float = Field(default=1.0, ge=0.0, description="规则权重")
     # 模板继承相关
@@ -176,6 +186,10 @@ class Rule(BaseModel):
         method = self.method
         if method is None:
             raise ValueError("method 未设置（llm / llm_vision / rule_set / format）")
+        if self.tier is not None and self.tier not in ConstraintTier._value2member_map_:
+            raise ValueError(
+                f"tier '{self.tier}' 非法（可选: hard_gate / hard_score / soft / preference）"
+            )
         if method in (RuleMethod.LLM, RuleMethod.LLM_VISION):
             if not self.prompt_id:
                 raise ValueError(f"method={method.value} 时必须提供 prompt_id")

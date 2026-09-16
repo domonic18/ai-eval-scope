@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agent_eval.cli.main import _detect_run_mode
+from agent_eval.cli.cmds.evaluate import _detect_run_mode
 
 
 def _make_run(tmp_path: Path, mode: str | None) -> Path:

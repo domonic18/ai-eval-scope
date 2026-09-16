@@ -32,16 +32,30 @@ if TYPE_CHECKING:
     from agent_eval.orchestrator.orchestrator import EvalResult
 
 
+_CONTENT_TYPES: dict[str, str] = {
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".json": "application/json",
+    ".md": "text/markdown",
+    ".txt": "text/plain",
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".csv": "text/csv",
+}
+
+
 def _content_type_for(f: Path) -> str:
-    """按文件后缀给语义化 Content-Type（前端据 contentType/kind 分栏与渲染）。"""
-    suffix = f.suffix.lower()
-    if suffix in (".html", ".htm"):
-        return "text/html"
-    if suffix == ".json":
-        return "application/json"
-    if suffix == ".md":
-        return "text/markdown"
-    return "text/plain"
+    """按文件后缀给语义化 Content-Type（前端据 contentType/kind 分栏与渲染）。
+
+    未知后缀兜底 application/octet-stream——前端触发下载而非内联乱码文本。
+    """
+    return _CONTENT_TYPES.get(f.suffix.lower(), "application/octet-stream")
 
 
 @dataclass
@@ -203,7 +217,8 @@ class ResultSink:
             )
             self.client.upload_file(local_path, presigned, content_type)
             report.artifacts_uploaded += 1
-            return presigned["object_key"]
+            object_key: str | None = presigned["object_key"]
+            return object_key
         except Exception as exc:  # noqa: BLE001
             report.artifacts_failed += 1
             self.log.warning("sink.artifact.upload_failed", path=str(local_path), error=str(exc))
@@ -264,6 +279,12 @@ class ResultSink:
             if f.is_file() and f.stem in ("manifest", "metadata", "metrics", "task", "trace")
         ]
         _upload(tech_files, kind="trace")
+
+        # ③ 执行对话记录：包根 transcript.md（前端「对话过程」栏，arch/09 v1.8）。
+        # 手动 pack 包无此文件，is_file() 天然跳过——eval_only 场景不受影响
+        transcript = package_dir / "transcript.md"
+        if transcript.is_file():
+            _upload([(transcript, transcript.name, str(package_dir))], kind="transcript")
 
         # 兼容：无 output/ 且无技术文件（极简包/异常布局）→ 扫整包为 output
         if not events:
