@@ -85,5 +85,8 @@ web/backend/public/
 # evaluator/agent_eval/assets/guides/（仓库规则优先级高于全局 excludesFile）
 !evaluator/agent_eval/assets/guides/
 !evaluator/agent_eval/assets/guides/*.md
+# README / 文档引用的平台截图（部分协作者 ~/.gitignore_global 含 `*.png` 全忽略）
+!docs/assets/
+!docs/assets/*.png
 *.env.local
 
