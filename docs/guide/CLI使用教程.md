@@ -237,6 +237,20 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
 └── sut_configs/*.yaml   # 被测系统接入配置（不含凭证）
 ```
 
+### 包内五类资产
+
+场景包回答四件事：**考什么、怎么判、测谁、怎么算分**——全部来自包配置，框架代码不写死任何场景：
+
+| 资产 | 文件 | 定义内容 |
+|------|------|---------|
+| 包清单 | `agent_eval.yaml` | 包 id、场景、版本、入口评估器、默认规则集与考卷 |
+| 考卷 | `task_sets/*.yaml` | 任务列表：指令 + 金标（reference）+ 必含要点（must_mention）+ 交互预算 |
+| 判分规则 | `rules/*.yaml` | 评分维度、级联阶段（gate 顺序）、每条规则绑定哪个评估器 |
+| Judge 提示词 | `prompts/*.yaml` | LLM Judge 的判分维度、评分标准、联动封顶等条款 |
+| 聚合策略 | `metrics/policy.yaml` | 阶段权重、门控语义、指标表达式与阈值声明 |
+
+> 关键理解：考卷里的 `reference`（金标）/ `must_mention`（必含要点）**不是拿来字符串匹配的**，而是写给 LLM Judge 的「评分标准」——生成式输出无法逐字断言，判官按金标与要点做语义裁量。以内置场景包（`evaluator/agent_eval/assets/packages/`）为参照编写新包即可。
+
 ---
 
 ## 七、实战一：课件评测（courseware）
