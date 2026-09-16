@@ -68,6 +68,28 @@ def test_probe_invalid_key_raises() -> None:
     assert ei.value.kind == "invalid"
 
 
+def test_probe_non_json_body_raises_server() -> None:
+    """200 + HTML 响应体（端口被其他服务占用 / SPA 兜底页）归一为 ProbeError(server)。
+
+    实测教训：宿主 9000 被他项目容器占用，whoami 命中 SPA 兜底 index.html，
+    ``resp.json()`` 曾裸抛 JSONDecodeError 穿透 login_flow 重试与提示。
+    """
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=b'<!doctype html><html lang="zh-CN"></html>',
+            headers={"content-type": "text/html; charset=utf-8"},
+        )
+
+    from agent_eval.cli.cmds.auth import ProbeError
+
+    with pytest.raises(ProbeError) as ei:
+        probe_identity("http://p", "eval-ok", transport=httpx.MockTransport(handler))
+    assert ei.value.kind == "server"
+    assert "text/html" in str(ei.value)
+
+
 def test_probe_404_falls_back_legacy_and_returns_none() -> None:
     calls: list[str] = []
 

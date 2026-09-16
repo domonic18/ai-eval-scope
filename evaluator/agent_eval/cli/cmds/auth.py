@@ -69,7 +69,8 @@ def probe_identity(
 
     空 Key → ProbeError(invalid)；401 → invalid；404（旧平台无 whoami）→ 回退
     GET /api/public/secrets 仅验有效性、返回 None 身份；连接失败 → unreachable；
-    其余非 2xx → server。**不抛 httpx 异常**（调用方只处理 ProbeError）。
+    其余非 2xx / 非 JSON 响应体（如端口被其他服务占用、SPA 兜底页）→ server。
+    **不抛 httpx / json 异常**（调用方只处理 ProbeError）。
     """
     if not api_key or not api_key.strip():
         raise ProbeError("invalid", "Key 为空（未粘贴 / 未提供）")
@@ -84,7 +85,15 @@ def probe_identity(
         except httpx.HTTPError as e:  # 仅网络层（连接 / 超时）；ProbeError 穿透
             raise ProbeError("unreachable", f"平台不可达: {e}") from e
         _raise_for_probe(resp)
-        data = resp.json()
+        # JSONDecodeError ⊂ ValueError；200+HTML（SPA 兜底 / 端口被他服务占用）归 server
+        try:
+            data = resp.json()
+        except ValueError as e:
+            raise ProbeError(
+                "server",
+                f"平台返回了非 JSON 响应（content-type={resp.headers.get('content-type', '未知')}）"
+                "——平台地址可能指向了其他服务，请检查",
+            ) from e
     return PlatformIdentity(
         org_name=str(data["org"]["name"]),
         org_slug=str(data["org"]["slug"]),
