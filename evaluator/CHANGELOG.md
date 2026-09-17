@@ -1,3 +1,19 @@
+## v0.3.4 (2026-09-17)
+
+### Feat
+
+- **workbench**: 写包链路系统性修复——机械防线 + 跨进程续跑（arch/15 v4.10）
+- **workbench**: 场景包首次确认落盘即归位 + 沙盒重定向续改
+- **workbench**: 骨架驱动五阶段创建 + write_sut_config 机械物化
+- **registry**: sut_config 结构白名单校验双层卡口
+- **workbench**: 流式正文 markdown-lite 渲染 + Agent 任务清单
+
+### Fix
+
+- **workbench**: write_sut_config 接受裸文件名并机械归位 sut_configs/
+- **workbench**: 登录探测 422/事件循环/超时三根因修复 + 静态 token 注入通道
+- **cli**: auth 探测对非 JSON 响应体归一为 ProbeError，修端口被占用时裸崩
+
 ## v0.3.3 (2026-09-15)
 
 ### Fix
