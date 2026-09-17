@@ -60,10 +60,11 @@ def _render_outcome(result: Any, landing: Path | None = None) -> None:  # noqa: 
 
 def _render_turn(reply: str, result: Any) -> None:  # noqa: ANN001 — 非流式兜底渲染
     if reply:
-        lines = reply.splitlines()
-        rprint(f"[bold cyan]🤖 {lines[0]}[/bold cyan]")
-        for line in lines[1:6]:
-            rprint(f"   [dim]{line}[/dim]")
+        # 非流式无逐 token 约束——完整 rich.markdown 渲染（表格/嵌套列表/高亮全支持）
+        from rich.markdown import Markdown
+
+        rprint("[bold cyan]🤖[/bold cyan]")
+        rprint(Markdown(reply))
     if result.diff:
         _render_diff(result.diff)
     _render_outcome(result)
