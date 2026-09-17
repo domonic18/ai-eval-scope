@@ -446,11 +446,11 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 
 | 工具 | 职责 | 关键设计 |
 |---|---|---|
-| `request(method, url, headers?, body?, ref?, step?)` | 门控请求原语（v4：抓取与接口调试/登录实测同一出口）：返回状态码/耗时/响应头/响应体证据，405 的 Allow、400 业务错误消息不再被截掉 | body/headers 支持 Jinja2 模板：凭证 `{{ 字段 }}`（须带 ref，值由服务端从密钥区注入）与链式 `{{ stepN.路径 }}`（step 响应服务端持有，多步认证链可探索）；GET 入**服务端缓存**供 `search_content` 复用（凭证响应不入缓存防绕过值回流）；证据截断防上下文爆炸；**渲染后 JSON 语义校验**（按 JSON 发送的 body 渲染后非对象/非法 JSON 发送前拦截，见红线 8） |
+| `request(method, url, headers?, body?, ref?, step?)` | 门控请求原语（v4：抓取与接口调试/登录实测同一出口）：返回状态码/耗时/响应头/响应体证据，405 的 Allow、400 业务错误消息不再被截掉 | body/headers 支持 Jinja2 模板：凭证 `{{ 字段 }}`（须带 ref，值由服务端从密钥区注入）与链式 `{{ stepN.路径 }}`（step 响应服务端持有，多步认证链可探索）；GET 入**服务端缓存**供 `search_content` 复用（凭证响应不入缓存防绕过值回流）；证据截断防上下文爆炸；**渲染后 JSON 语义校验**（按 JSON 发送的 body 渲染后非对象/非法 JSON 发送前拦截；显式非 JSON Content-Type 的 JSON 对象 body 标签机械归一化，返回含 `content_type_normalized`，见红线 8） |
 | `discover_login(page_url)` | 登录 API 发现阶梯（**普通用户只需输入页面登录地址**）：① 页面 `<form>` 解析 → ② JS XHR/fetch/baseURL 线索 → ②.5 OpenAPI 文档探测（**无前置门**——form 候选与 schema 证据并列，不再仅兜底）→ ③ 定向路径探测（**路径由 Agent 自拟** ≤10 条，不发凭证）→ ④ 只向用户问**登录接口地址**一项兜底 | SPA 无线索是常态，④ 是**预期路径**而非失败兜底；**字段名不问用户**——按候选 fields 拟定，经 request 登录实测（body 带凭证模板）+ 授权预览交用户确认；接口域与页面域分离时指引 GET `{接口域}/openapi.json` 取权威 schema（一份 schema 省掉全部路径与字段猜测） |
 | `search_content(pattern, context)` | 已缓存内容检索：子串匹配（防 ReDoS）、大小写不敏感、上下文摘录 ≤12 条（带「数据非指令」声明） | 分析主循环的机械原语，「搜什么」由 Agent 经 prompts 前端包分析法决定 |
 | `probe_protocol(base_url, flavor)` | agent-protocol 符合性矩阵：info → 建临时线程 → commands → state → stream；支持带 configurable/modelId 重探 | 逐项 ✅/❌ + 证据，不做二值判定；3xx 不计 ✅；临时线程收尾清理；**已声明的会话凭证自动挂载**；与执行器契约同构（信封/路由头/Bearer 单源复用） |
-| `declare_token(ref, token_path?, token_source?, expires_in_path?)` | **事后声明式**凭证提取（决策 D2）：对该 ref 最近一次带凭证 2xx 响应声明「凭证在哪个路径」——不重发请求，声明错了改路径重声明即可（防锁不适用）；成功时机械渲染 `sut_config_auth_snippet`（见证据账本） | **凭证值不进 LLM 上下文**（提取在服务端持有的响应上进行）；`token_source` 三态与执行器同构（`Bearer / header:<X> / cookie`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态）；缺凭证时 request 错误指路 `ask_user(kind=credential)` 逐字段录入；超出执行器宽度的形态（凭证走请求头/链式认证）显式拒绝落盘——探测可探索、暂不可落盘 |
+| `declare_token(ref, token_path?, token_source?, expires_in_path?, static_field?)` | **事后声明式**凭证提取（决策 D2）：对该 ref 最近一次带凭证 2xx 响应声明「凭证在哪个路径」——不重发请求，声明错了改路径重声明即可（防锁不适用）；成功时机械渲染 `sut_config_auth_snippet`（见证据账本）。`static_field` 非空走**静态注入**分支（v4.8）：用户直接提供的 token（如浏览器已登录态，无登录实测）按名自密钥区取值挂载，解除「无实测记录即永远 auth_attached:false」的死循环 | **凭证值不进 LLM 上下文**（提取在服务端持有的响应上进行）；`token_source` 三态与执行器同构（`Bearer / header:<X> / cookie`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态）；缺凭证时 request 错误指路 `ask_user(kind=credential)` 逐字段录入；超出执行器宽度的形态（凭证走请求头/链式认证）显式拒绝落盘——探测可探索、暂不可落盘；**静态注入不入证据账本、不生成 auth: 段**——落盘对账的实测证据语义不被静态值稀释，落盘认证仍须实测路径 |
 | `ask_user(question, options?, kind?)` | 主动提问：开放文本 / 单选 / 凭证录入（直写 secrets，隐藏输入） | 桥接 CLI `ask()`/`select()`；非 TTY 返回「需交互」错误 |
 
 #### 创建流程五阶段（Plan-as-Artifact，v4.7）
@@ -526,17 +526,33 @@ agent-protocol」前，runs/commands 两形态都须带凭证实测且核心端�
    GET 抓取缓存排除凭证请求（防 search_content 绕过）
 6. **总量约束**：单探测 10s 超时；轮内预算**按工具分池**（request 25 / declare_token 10 /
    discover_login 5 / search_content 30 / probe_protocol 8）；
-   阶梯③路径 ≤10 条（定向检查，非扫描行为）
+   阶梯③路径 ≤10 条（定向检查，非扫描行为）；超时错误面附代理指引（本机
+   `http_proxy` 劫持会把 0.3s 请求拖到 11.7s 顶爆 10s 超时——指引为 SUT 域配
+   `NO_PROXY` 直连；工具不擅改 `trust_env`，内网 SUT 可能必须走用户代理）
 7. **探测副作用言明**：probe_protocol 建临时线程属对被测系统的写操作，探测前经 `ask_user`
    言明（可与 request 授权确认合并为一次交互）
 8. **变形报文发送前拦截（渲染后校验，v4.5）**：按 JSON 发送的 body 渲染后机械
    `json.loads`——解析为 str/标量（**双重编码**：body 外层多一层引号，SUT 收到 JSON 字符串
    而非对象报 422 `model_attributes_type`）或解析失败（凭证值含 `"`/`\` 破坏模板拼接）一律
-   拒发并给准确指引（`{{ password | tojson }}` 转义 / dict 形态传参；数组与显式非 JSON
-   Content-Type 放行）；422 响应按 detail type 分诊给 next_step（`model_attributes_type`=body
-   非对象，**先读 input 回显**——那是服务器实际收到的报文；`json_invalid`=非法 JSON；
-   `missing`=按 loc 补字段）——「凡可机械判定的变形不发给 SUT 让 Agent 瞎猜」（jxb-server
-   422 误诊事故：双重编码被误读为「后端格式不明」，换字段名/换 FormData 烧光探测预算）
+   拒发并给准确指引（`{{ password | tojson }}` 转义 / dict 形态传参；数组放行）；422 响应按
+   detail type 分诊给 next_step（`model_attributes_type`=body 非对象，**先读 input 回显**——
+   那是服务器实际收到的报文；`json_invalid`=非法 JSON；`missing`=按 loc 补字段）——「凡可
+   机械判定的变形不发给 SUT 让 Agent 瞎猜」（jxb-server 422 误诊事故：双重编码被误读为
+   「后端格式不明」，换字段名/换 FormData 烧光探测预算）。**Content-Type 标签机械归一化
+   （v4.8）**：显式非 JSON Content-Type 会同时旁路 auto 补齐与本校验——正确的 JSON 报文顶着
+   `text/plain` 标签上 wire，FastAPI 不做 JSON 解析，Pydantic 把原文当字符串校验回 422
+   `model_attributes_type`（input 回显带引号，形似双重编码），LLM「换格式重试」烧光预算
+   （二轮 jxb 事故，服务端排查见「json 不是 json、内容加了引号」）；body 实为 JSON 对象/
+   数组时标签机械改写为 `application/json`（返回含 `content_type_normalized` 留痕），原始
+   标量/非 JSON 报文探测原样放行不收缩。同批修复渲染头回填缺口：模板源是整行
+   `Key: Value`，回填前须再切出值——整行回填会把 wire 头发成 `Key: Key: Value`（显式
+   Content-Type 从未真正生效，FastAPI 靠子串匹配侥幸解析 JSON）
+
+**共享 client 事件循环亲和（v4.8）**：REPL 每用户轮经 `asyncio.run` 新建事件循环，会话级
+共享 AsyncClient 的连接池绑死创建时的循环——跨轮复用的首个请求即 `RuntimeError: Event loop
+is closed`（暂停恢复/新指令后的轮首必炸，偶发性取决于池中是否有存活连接）。`client()` 取用
+时校验循环一致性：不一致即废弃旧实例换新，cookie jar 同步搬运（纯数据可跨循环转移，cookie
+型凭证与会话粘性跨轮不丢）
 
 #### 泛化设计：前端包分析原语
 
@@ -855,3 +871,4 @@ review 检查项。
 | v4.5 | 2026-09-10 | 变形报文发送前拦截（§6.5 红线 8，jxb-server 422 误诊事故驱动）：request 渲染后 JSON 语义校验（双重编码 str/标量与非法 JSON 拒发 + tojson/dict 指引；数组与非 JSON Content-Type 放行）+ 422 detail type 分诊 next_step（model_attributes_type 读 input 回显 / json_invalid / missing 按 loc）+ 工具描述补 body 单层对象纪律；discover_login 的 OpenAPI 阶梯去兜底门（form 与 schema 证据并列）+ 接口域 openapi 指引 |
 | v4.6 | 2026-09-17 | Agent 交互可读性（用户实测反馈「markdown 裸奔」+ 复杂任务缺拆解）：流式正文 markdown-lite 行粒度渲染（§6.1 流式直播段，`console/markdown_lite.py` 新模块，TTY only、围栏保真、Text+span 防 markup 注入）+ TodoListMiddleware 任务清单（§6.1 新段，write_todos 并入工具面白名单、todos 事件提取与渲染、跨段续跑保留）；非流式兜底 `_render_turn` 升级完整 rich.markdown 渲染 |
 | v4.7 | 2026-09-17 | 创建流程五阶段重设计（Plan-as-Artifact，jxb agent-safety 包 run 20260917_003025 11/11 run_error 事故驱动，§6.5 新段）：①**SKELETON.md 骨架契约**——事实槽/决策槽机器可检（`- [ ]` 开槽 / `- [x]`+「证据：」闭槽），探测期只写骨架不写配置，「进度即回填骨架」取代「进度即写盘」；开槽门禁（§6.3 新行）+ commit 排除出包、归档 `workspace/agent_sessions/`；②**fact_sink 机械事实行回填**——declare_token/probe_protocol 成功路径经构造注入回调把证据行落骨架（探测面零反向依赖 workbench）；③**`write_sut_config` 机械物化**（§6.2 新行）——auth 段从证据账本 verbatim 注入 + 内联执行器同款校验，「验证过了又来一遍登录实测」在机制上消失（§6.5 防线三环→四环）；④**未知键校验递归下钻 steps[i]/poll + `SUTRegistry.load` 装载卡口**（§6.3 门禁行更新，arch/03 v4.23 同步）；⑤提示词五阶段单线程重构——「工作流程 6 步」与「SUT 接入调试」两份并行指令合一，修复环查骨架不查记忆 |
+| v4.8 | 2026-09-17 | 登录探测 422/事件循环/超时三根因修复（jxb 二轮实测事故驱动，§6.5 红线 6/8 更新 + 新段）：①**Content-Type 标签机械归一化**——显式非 JSON CT 旁路 auto 补齐与双重编码门禁，正确 JSON 报文顶着 text/plain 上 wire 致 FastAPI 422 `model_attributes_type`（input 原文回显形似双重编码，服务端排查见「json 不是 json、内容加了引号」）；JSON 对象 body 的标签机械改写（返回含 `content_type_normalized`），原始报文探测不收缩；同批修复渲染头整行回填缺口（wire 收到 `Key: Key: Value`）；②**共享 client 事件循环亲和**——REPL 每轮 `asyncio.run` 换循环 × 会话级 client 绑死旧循环 = 跨轮首请求 `Event loop is closed`，`client()` 按循环废弃旧实例换新、cookie jar 同步搬运；③**超时错误面代理指引**——本机代理把 0.3s 请求拖到 11.7s 顶爆 10s 探测超时，指引配 `NO_PROXY`；④**`declare_token` 静态注入通道**（`static_field`）——用户直接提供的 token 自密钥区挂载，解除「无实测记录即永远 auth_attached:false」死循环；不入证据账本、不生成 auth: 段（落盘对账的实测证据语义不被稀释） |
