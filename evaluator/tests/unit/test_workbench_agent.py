@@ -940,6 +940,44 @@ class TestAgentTurn:
         }
         assert events[1]["type"] == "tool_end" and events[1]["ok"] is True
 
+    def test_todo_items_normalize_dict_and_object(self) -> None:
+        # write_todos 落状态可能是 dict（TypedDict）也可能是对象形态——统一规范化
+        from agent_eval.agent.workbench.messages import _todo_items
+
+        assert _todo_items([{"content": "a", "status": "in_progress"}]) == [
+            {"content": "a", "status": "in_progress"}
+        ]
+        assert _todo_items([SimpleNamespace(content="b", status="pending")]) == [
+            {"content": "b", "status": "pending"}
+        ]
+        assert _todo_items(None) == []
+
+    def test_stream_collect_extracts_todo_state(self) -> None:
+        # write_todos 后 updates delta 携带 todos 键——提取成独立事件交宿主渲染
+        from agent_eval.agent.workbench.messages import stream_collect as _stream_collect
+
+        class _FakeGraph:
+            async def astream(self, inp: dict, config: dict | None = None, stream_mode: Any = None):
+                yield (
+                    "updates",
+                    {
+                        "tools": {
+                            "todos": [{"content": "探测接口", "status": "in_progress"}],
+                            "messages": [],
+                        }
+                    },
+                )
+                yield ("values", {"messages": [_ai("清单已更新")], "todos": []})
+
+        events: list[dict[str, Any]] = []
+        final = asyncio.run(
+            _stream_collect(_FakeGraph(), [], {"configurable": {"thread_id": "t"}}, events.append)
+        )
+        assert [e for e in events if e["type"] == "todos"] == [
+            {"type": "todos", "todos": [{"content": "探测接口", "status": "in_progress"}]}
+        ]
+        assert final["messages"] == [_ai("清单已更新")]  # values 收集不受影响
+
     def test_invoke_streams_block_content_and_collects_state(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1553,6 +1591,100 @@ class TestStreamRender:
         finish()
         out = capsys.readouterr().out
         assert "正文进行中" in out and "🔧 write_file · a.yaml" in out
+
+    def test_emitter_tty_renders_markdown_lite(self, capsys, monkeypatch) -> None:
+        # TTY 下正文行缓冲经 markdown-lite 渲染：markdown 标记不再裸奔
+        import re as _re
+        import sys as _sys
+
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+
+        class _Tty:
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(_sys, "stdout", _Tty(_sys.stdout))
+        emit, finish = _make_stream_emitter()
+        emit(
+            {
+                "type": "token",
+                "text": "## 执行摘要\n\n**结论**: 收到 `{}`\n- [x] 探测完成\n",
+            }
+        )
+        finish()
+        raw = capsys.readouterr().out
+        out = _re.sub(r"\x1b\[[0-9;]*m", "", raw)  # 去 ANSI 后断言纯文本形态
+        assert "## " not in out and "**" not in out  # 标记被转换
+        assert "执行摘要" in out and "结论" in out and "✓ 探测完成" in out
+
+    def test_emitter_tty_keeps_paragraph_gap_and_buffers_partial_line(
+        self, capsys, monkeypatch
+    ) -> None:
+        # 行缓冲语义：完整行才落笔（部分行挂起），段落间隔保留，工具行紧邻
+        import sys as _sys
+
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+
+        class _Tty:
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(_sys, "stdout", _Tty(_sys.stdout))
+        emit, finish = _make_stream_emitter()
+        emit({"type": "token", "text": "第一段\n\n第二段 "})
+        first = capsys.readouterr().out
+        assert "第二段" not in first  # 部分行挂起（未收到换行）
+        emit({"type": "tool_start", "name": "request", "args": {}})
+        finish()
+        out = first + capsys.readouterr().out
+        assert "第一段\n\n第二段" in out  # 段落间隔保留
+        assert "第二段" in out and "🔧 request" in out  # 部分行兜底落笔 + 工具行
+
+    def test_emitter_renders_todo_list_with_dedupe(self, capsys) -> None:
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        todos = [
+            {"content": "探测接口", "status": "completed"},
+            {"content": "修正头", "status": "in_progress"},
+            {"content": "重放断言", "status": "pending"},
+        ]
+        emit({"type": "todos", "todos": todos})
+        emit({"type": "todos", "todos": list(todos)})  # 与上次相同——去重不重画
+        emit(
+            {
+                "type": "todos",
+                "todos": [
+                    {"content": "探测接口", "status": "completed"},
+                    {"content": "修正头", "status": "completed"},
+                ],
+            }
+        )
+        finish()
+        out = capsys.readouterr().out
+        assert out.count("任务清单") == 2  # 首次 + 变化后；重复事件不重画
+        assert "✓ 探测接口" in out and "▶ 修正头" in out and "○ 重放断言" in out
+        assert "任务清单 2/2" in out  # 完成进度计数
 
 
 # ── 泛化文件工具（Claude Code 式分级授权，arch/15 §6.11.1） ─────────────

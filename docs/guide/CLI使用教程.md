@@ -209,6 +209,7 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
 
 - 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
 - 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；写大文件时显示 `⏳ write_file 生成参数中 · N 字` 单行进度（参数在生成、并非卡住）；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
+- **正文 markdown 渲染**：回复中的标题/粗体/行内代码/列表/引用在终端直接渲染为样式（围栏代码块逐字保真），无需读原始 markdown 标记；复杂任务 Agent 会先列 `📋 任务清单`（✓ 完成 / ▶ 进行中 / ○ 待办）再逐项推进，进度跨轮可见
 - Agent 需要参照格式时会用 `search_reference` / `read_reference` 只读内置包（chat/code/courseware）的真实文件——清单/规则集/提示词一律以内置包格式为准
 - 单轮失败（如 LLM 网关瞬时断流）不杀会话：CLI 打印失败原因并回滚暂存，直接重发上一条需求即可
 - 沙盒红线：仅限包内 `.yaml/.yml/.json/.md`；`sut_configs/` 禁止凭证明文（走 `credential_ref` + `agent-eval secrets set`）；落盘门禁要求 `rules/` 与 `prompts/` 各含至少一个 `.yaml` 资产（只写 `.md` 会被加载器忽略）

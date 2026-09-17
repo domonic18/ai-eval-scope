@@ -76,6 +76,14 @@ __all__ = [
     "run_turn",
 ]
 
+# 任务清单纪律（注入 TodoListMiddleware 的 system_prompt，替代其过长默认版）：
+# 单一事实源在中间件（工具与纪律同源注入），域提示词资产不重复维护
+_TODO_SYSTEM_PROMPT = (
+    "面对多步复杂任务（约 ≥3 步或跨多文件），先用 write_todos 建任务清单再动手："
+    "每项一句话、可独立验证；保持恰好一项 in_progress；每完成一项立即把整份清单"
+    "重写更新状态；过程中发现的新子任务随时补录；简单任务（一两步）不必建清单。"
+)
+
 
 class WorkbenchAgent:
     """工作台会话 Agent（一个实例 = 一次 REPL 会话，跨轮共享历史与暂存）。
@@ -179,13 +187,24 @@ class WorkbenchAgent:
                 "WorkbenchAgent 需要 deepagents（DeepAgents 底座）。请执行: uv sync --extra agent",
                 details={"missing_module": "deepagents"},
             ) from None
+        from langchain.agents.middleware import TodoListMiddleware
         from langgraph.checkpoint.memory import MemorySaver
 
         from agent_eval.agent.core.model_bridge import build_chat_model
 
         # 内存检查点无 IO、实例销毁即释放（不用文件版检查器：全量读写空转）
         self._checkpointer = MemorySaver()
-        tools = self.server.to_langchain_tools() + self.probe.to_langchain_tools()
+        # 任务清单中间件（Claude Code TodoWrite 同款语义）：复杂任务先拆解再逐步
+        # 执行；todos 走 langgraph state + 检查点，跨段续跑 / 会话续作自然保留。
+        # deepagents 默认栈不含它（其默认 system_prompt 过长，见 deepagents
+        # graph.py 注释）——此处传精简版；其注入的 write_todos 必须并入工具面
+        # 白名单，否则被下方 ToolsetFilter 复位过滤掉（按实例 id 过滤）
+        todo_mw = TodoListMiddleware(system_prompt=_TODO_SYSTEM_PROMPT)
+        tools = [
+            *self.server.to_langchain_tools(),
+            *self.probe.to_langchain_tools(),
+            *todo_mw.tools,
+        ]
         return create_deep_agent(
             model=build_chat_model(self.llm_role),
             tools=tools,
@@ -194,7 +213,7 @@ class WorkbenchAgent:
             # 复位模型可见工具面 = 宿主装配清单：deepagents 内置 ls/glob 跑
             # StateBackend 虚拟 FS（与磁盘无关），曾致「没有场景包」误判
             # （arch/15 v4.4；为何不用全局 harness profile 见 tool_filter 模块注释）
-            middleware=[build_toolset_filter(tools)],
+            middleware=[build_toolset_filter(tools), todo_mw],
         )
 
     # ─── 会话（宿主循环调用） ──────────────────────────────────────

@@ -113,6 +113,24 @@ def emit_tool_events(updates: dict[str, Any], emit: Callable[[dict[str, Any]], N
                 )
 
 
+def _todo_items(raw: Any) -> list[dict[str, str]]:
+    """todos 状态 → 规范化清单（dict / Todo TypedDict 兼容，缺字段补空串）。"""
+    items: list[dict[str, str]] = []
+    for todo in raw or []:
+        if isinstance(todo, dict):
+            items.append(
+                {"content": str(todo.get("content", "")), "status": str(todo.get("status", ""))}
+            )
+        else:
+            items.append(
+                {
+                    "content": str(getattr(todo, "content", "")),
+                    "status": str(getattr(todo, "status", "")),
+                }
+            )
+    return items
+
+
 async def stream_collect(
     graph: Any,
     messages: list[Any],
@@ -159,6 +177,16 @@ async def stream_collect(
                 elif block.get("type") == "thinking" and block.get("thinking"):
                     on_event({"type": "thinking", "text": str(block["thinking"])})
         elif mode == "updates" and payload:
+            # write_todos 落状态的增量（TodoListMiddleware 维护的 todos 键）——
+            # 提取成独立事件交宿主渲染任务清单；无该键（普通工具增量）不受影响
+            for delta in payload.values():
+                if isinstance(delta, dict) and "todos" in delta:
+                    on_event(
+                        {
+                            "type": "todos",
+                            "todos": _todo_items(delta.get("todos") or []),
+                        }
+                    )
             emit_tool_events(payload, on_event)
         elif mode == "values" and isinstance(payload, dict):
             final = payload
