@@ -152,10 +152,11 @@ class PackageToolServer(ToolExporterMixin):
         ),
         ToolSpec(
             "write_sut_config",
-            "机械物化 sut_configs/ 配置（在线被测系统落盘的唯一正道）：只给决策字段"
-            "（name/channel/base_url/timeout/request_template/response_mapping 等），"
-            "auth: 段由服务端从本会话登录实测账本**原样注入**（不接受手写 auth）；"
-            "装配后内联 schema 校验，幻觉字段当场打回",
+            "机械物化 sut_configs/ 配置（在线被测系统落盘的唯一正道）：filename 传"
+            " sut_configs/<名字>.yaml 或裸名 <名字>.yaml（自动归位 sut_configs/）；"
+            "只给决策字段（name/channel/base_url/timeout/request_template/"
+            "response_mapping 等），auth: 段由服务端从本会话登录实测账本**原样注入**"
+            "（不接受手写 auth）；装配后内联 schema 校验，幻觉字段当场打回",
             "write_sut_config",
         ),
         ToolSpec(
@@ -464,9 +465,10 @@ class PackageToolServer(ToolExporterMixin):
     ) -> dict[str, Any]:
         """机械物化 sut_configs（五阶段创建流程阶段3）：auth 段从探测账本注入。
 
-        Agent 只提供决策字段（name/channel/base_url/timeout/request_template/
-        response_mapping…）；``auth:`` 段由服务端从本会话登录实测账本
-        （declare_token 机械登记的 auth_snippet）**原样装配**——验证结论到落盘
+        filename 传 ``sut_configs/<名字>.yaml``（或裸名 ``<名字>.yaml``，自动归位
+        sut_configs/）。Agent 只提供决策字段（name/channel/base_url/timeout/
+        request_template/response_mapping…）；``auth:`` 段由服务端从本会话登录实测
+        账本（declare_token 机械登记的 auth_snippet）**原样装配**——验证结论到落盘
         配置的传递不经 LLM 转述，「验证过了又来一遍」的重复实测从源头消失。
         装配后内联执行器同款 schema 校验（未知键当场打回——幻觉字段进不了暂存）。
         """
@@ -476,8 +478,18 @@ class PackageToolServer(ToolExporterMixin):
 
         if Path(filename).suffix not in (".yaml", ".yml"):
             return {"error": f"sut_config 须为 .yaml/.yml: {filename}"}
-        if Path(filename).parent.as_posix() != "sut_configs":
-            return {"error": f"write_sut_config 只写 sut_configs/ 下的平铺文件: {filename}"}
+        # 裸名与带前缀两种写法都接受，机械归一为包内相对路径（凡可机械归一的变形
+        # 不经 LLM 转述）——实测事故：守卫曾只认带前缀形态却自称「只写平铺文件」，
+        # 裸名 <名字>.yaml 被拒（parent 是 "."）且错误不指路，Agent 误读为「勿带
+        # 前缀」后在 payload 结构上找原因空转多轮
+        name = Path(filename).name
+        if Path(filename).parent.as_posix() not in (".", "sut_configs"):
+            return {
+                "error": (
+                    f"write_sut_config 只写 sut_configs/ 下的平铺文件（不接受子目录）:"
+                    f" {filename}——传 sut_configs/<名字>.yaml 或 <名字>.yaml"
+                )
+            }
         if "auth" in sut:
             return {
                 "error": (
@@ -510,7 +522,7 @@ class PackageToolServer(ToolExporterMixin):
         if hit := _is_credential_violation(content):
             # 防御式（账本 snippet 只含 credential_ref 引用，正常不应触发）
             return {"error": f"安全红线：凭证明文（{hit}）"}
-        rel = Path(filename).as_posix()
+        rel = (Path("sut_configs") / name).as_posix()  # 裸名机械归位 sut_configs/
         self.staging[rel] = content
         return {
             "ok": True,

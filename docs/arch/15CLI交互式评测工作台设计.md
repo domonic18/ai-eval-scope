@@ -372,7 +372,7 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 | `read_reference` | 只读**已发现包（三源）**文件内容（ref + 包内 path，ref 走 `PackageManager.resolve_ref`）——Agent 参照真实格式的**合法通道**（`read_file` 对包外路径受分级授权约束，防反复试探） |
 | `list_evaluators` | 当前可用评估器注册 ID 的注册表实时快照（含本包 entry_points 声明）——rules 的 `evaluator` 字段从此清单**原样复制，勿凭记忆臆造**（copy, don't recall：示范强于指令） |
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff（宿主确认界面同源） |
-| `write_sut_config`（v4.7） | **机械物化**（§6.5 五阶段之阶段 3）：agent 只给决策字段（name/channel/base_url/timeout/request_template/response_mapping 等），服务端从探测证据账本取该 ref 的 `auth_snippet` **verbatim 注入 auth 段**——「验证→配置」的传递不经 LLM 转述；无账本事实即拒绝并引导先 request 实测 + declare_token；注入后**内联执行器同款 schema 校验**（未知键/模板变量审计当场打回）才入暂存；`auth` 键手写一律拒绝（防转述变形）——取代「snippet 原样粘贴」纪律，转述类打回在机制上消失。`write_file` 写 sut_configs 的旧路径保留兜底（auth_chain 链式认证等未落地形态） |
+| `write_sut_config`（v4.7） | **机械物化**（§6.5 五阶段之阶段 3）：filename 传 `sut_configs/<名字>.yaml` 或裸名 `<名字>.yaml`（机械归位 sut_configs/，v4.9——守卫曾只认带前缀形态却自称「只写平铺文件」，裸名被拒且错误不指路，Agent 在 payload 结构上空转多轮）；agent 只给决策字段（name/channel/base_url/timeout/request_template/response_mapping 等），服务端从探测证据账本取该 ref 的 `auth_snippet` **verbatim 注入 auth 段**——「验证→配置」的传递不经 LLM 转述；无账本事实即拒绝并引导先 request 实测 + declare_token；注入后**内联执行器同款 schema 校验**（未知键/模板变量审计当场打回）才入暂存；`auth` 键手写一律拒绝（防转述变形）——取代「snippet 原样粘贴」纪律，转述类打回在机制上消失。`write_file` 写 sut_configs 的旧路径保留兜底（auth_chain 链式认证等未落地形态） |
 
 **沙盒规则（读写不对称）**：**读**分级授权（会话根 → assets → 用户授权的外部路径；
 凭证类路径——密钥区 / sut_sessions / `.env`——**先于授权逻辑硬拒**，凭证不回流 LLM

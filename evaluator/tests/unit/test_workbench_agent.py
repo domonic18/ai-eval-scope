@@ -605,6 +605,49 @@ class TestWriteSutConfig:
         assert "没有已验证的登录实测" in result["error"]
         assert "request" in result["error"] and "declare_token" in result["error"]
 
+    def test_accepts_bare_filename_normalized_into_sut_configs(self, tmp_path: Path) -> None:
+        """实测事故回放：裸名 <名字>.yaml 曾被「平铺文件」守卫拒之门外（parent 是
+        "."），错误不指路致 Agent 在 payload 结构上空转多轮——裸名须机械归位
+        sut_configs/ 后放行。"""
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "jxb-agent.yaml",  # 裸名（实测会话里的真实写法）
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "body": {"content": "{{ input }}"},
+                            }
+                        ]
+                    },
+                    "response_mapping": {"text": "data.reply"},
+                },
+                credential_ref="SUT",
+            )
+        )
+        assert "ok" in result, result
+        assert "sut_configs/jxb-agent.yaml" in server.staging  # 归位到 sut_configs/
+        assert result["staged"] == "sut_configs/jxb-agent.yaml"
+
+    def test_rejects_nested_path_with_copyable_guidance(self, tmp_path: Path) -> None:
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sub/sut.yaml",
+                {"name": "SUT", "channel": "generic_http", "base_url": "https://x.example.com"},
+            )
+        )
+        assert "平铺文件" in result["error"]
+        assert "sut_configs/<名字>.yaml" in result["error"]  # 可照抄的权威形态
+        assert not server.staging  # 未入暂存
+
     def test_injects_auth_verbatim_and_passes_gates(self, tmp_path: Path) -> None:
         """核心验收（plan §八-②）：注入的 auth 与账本 snippet 逐字节一致，且
         sut_evidence_gate 必过——「不再重探」的机制基础。"""
