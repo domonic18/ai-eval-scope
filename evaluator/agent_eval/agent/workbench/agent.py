@@ -105,14 +105,20 @@ class WorkbenchAgent:
         self.config = config or WorkbenchAgentConfig()
         self.domain = domain  # 域档位：选择提示词段与门禁策略
         self.server = PackageToolServer(Path(pkg_root), ask_fn=ask_fn)
-        # SUT 接入调试工具面：与文件沙盒并列；凭证域隔离到密钥区
+        # SUT 接入调试工具面：与文件沙盒并列；凭证域隔离到密钥区。
+        # fact_sink：探测验证成功的事实由服务端机械回填进创建骨架（五阶段流程，
+        # arch/15）——事实不经 LLM 转述，「验证过了又来一遍」从源头消失
         self.probe = SUTProbeToolServer(
             ask_fn=ask_fn,
             credential_store=CredentialStore(),
             budgets=self.config.probe_budgets,
             timeout_s=self.config.probe_timeout_s,
             log_path=None,  # 探测证据随 agent_logs 统一落盘，见 _log_path
+            fact_sink=self.server.append_skeleton_fact,
         )
+        # 机械物化通道：write_sut_config 从探测账本原样注入 auth（两 server 构造
+        # 互需对方能力，probe 先带 fact_sink 装配，账本在此回绑包沙盒）
+        self.server.ledger = self.probe
         self.llm_role = llm_role
         self._messages: list[Any] = []
         # 预算护栏会话级累计（跨段/跨轮不清零）；内存检查点仅作事故现场保存器
@@ -126,6 +132,23 @@ class WorkbenchAgent:
             paths.default_workspace / "agent_sessions" / session_key(Path(pkg_root)),
             max_entries=self.config.max_dialogue_entries,
         )
+        # 进度恢复（跨进程续作，v4.10）：上次会话的暂存 + 骨架留档 + 证据账本
+        # 随会话记录持久化，重启即恢复——五阶段流程的中间进度不再「跨进程蒸发」
+        # （实测事故：代理超时后建议用户重启续作，暂存与账本实际全丢）。账本
+        # 独立于暂存恢复：已落盘包的续改会话同样免重探
+        restored = self.server.import_staging_snapshot(self._session_store.last_snapshot)
+        ledger_payload = (self._session_store.last_snapshot or {}).get("ledger")
+        restored_logins = self.probe.restore_ledgers(ledger_payload)
+        protocols = (
+            len(ledger_payload.get("verified_protocols", {}))
+            if isinstance(ledger_payload, dict)
+            else 0
+        )
+        self.restored_progress = {
+            "staged": restored,
+            "logins": restored_logins,
+            "protocols": protocols,
+        }
         self._graph: Any | None = None
         self._log_path = (
             log_dir
@@ -147,9 +170,56 @@ class WorkbenchAgent:
         """已续接的此前会话对话条数（0 = 全新会话），宿主据此显示续作提示。"""
         return len(self._session_store.dialogue)
 
+    def _progress_snapshot(self) -> dict[str, Any]:
+        """组装进度快照（暂存 + 骨架留档 + 证据账本，仅事实数据无凭证值）。"""
+        return {
+            **self.server.export_staging_snapshot(),
+            "ledger": self.probe.ledger_snapshot(),
+        }
+
     def _record_turn(self, user_text: str, reply: str) -> None:
         """记录本轮对话要点并持久化（仅 user/assistant 文本，不含工具流量）。"""
-        self._session_store.record(user_text, reply, str(self.server.root))
+        self._session_store.record(
+            user_text, reply, str(self.server.root), snapshot=self._progress_snapshot()
+        )
+
+    def relocate_root(self, final_root: Path) -> None:
+        """包归位后重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
+
+        首次确认落盘即归位（v4.9）后由宿主调用——同一会话的后续轮次直接自然语言
+        修改已归位的包。图在下一次 ``_invoke`` 时重建（系统提示的 ``{pkg_root}`` 在
+        建图时烘焙；对话消息由宿主持有，重建不丢上下文）。会话记录文件迁移到新
+        session_key——归位后跨进程续作（``--output`` 指回）命中同一记录，上下文不
+        因归位断裂。文件迁移失败仅丢跨进程续作（key 仍切换，后续记录落新位），
+        会话内不受影响。
+        """
+        final = Path(final_root).resolve()
+        previous = self.server.root
+        if final == previous:
+            return
+        old_file = self._session_store.session_file
+        self.server.rebind_root(final)
+        self._graph = None  # 系统提示烘焙了 {pkg_root}——下次调用重建
+        new_file = old_file.parent / session_key(final)
+        try:
+            if old_file.exists():
+                old_file.replace(new_file)
+            skeleton = old_file.with_suffix(".SKELETON.md")
+            if skeleton.exists():
+                skeleton.replace(new_file.with_suffix(".SKELETON.md"))
+        except OSError:
+            pass  # 迁移失败仅影响跨进程续作；key 仍切换，后续记录落新位
+        self._session_store.session_file = new_file
+        self._log("relocate_root", previous=str(previous), final=str(final))
+        # 归位事实进对话（沙盒根变了，Agent 须知道以新位置为准）——同放弃回滚的
+        # 系统注记形态，防 Agent 仍引用旧草稿路径
+        self._messages.append(
+            (
+                "user",
+                f"（包已归位：沙盒根从 {previous} 迁移到 {final}，包内容不变。"
+                "此后的文件读写、校验、落盘以新位置为准）",
+            )
+        )
 
     # ─── 组装 ─────────────────────────────────────────────────────
 
@@ -240,6 +310,22 @@ class WorkbenchAgent:
         self.probe.new_turn()  # 重置 SUT 探测轮内预算（轮内总量约束）
         if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
             self._messages.extend(_resume_messages(self._dialogue, self.config))
+            # 进度恢复注记（v4.10）：暂存与证据账本已在 __init__ 恢复——Agent 须
+            # 知道进度在手上，勿从头重探/重写（实测事故：重启续作把全部进度重做）
+            prog = self.restored_progress
+            if prog["staged"] or prog["logins"] or prog["protocols"]:
+                parts = [f"暂存 {prog['staged']} 个文件"] if prog["staged"] else []
+                if prog["logins"]:
+                    parts.append(f"已验证登录 {prog['logins']} 项")
+                if prog["protocols"]:
+                    parts.append(f"已验证协议 {prog['protocols']} 项")
+                self._messages.append(
+                    (
+                        "user",
+                        f"（已恢复上次会话进度：{'、'.join(parts)}"
+                        "——这些已写内容与已验证事实均有效，无需重新探测或重写，直接继续）",
+                    )
+                )
         self._messages.append(("user", user_text))
         segment = 1
         while True:  # 自动分段续跑：同一对话/预算池/暂存，撞线开新段
@@ -357,6 +443,7 @@ class WorkbenchAgent:
             errors = [*validation["errors"], *sut_evidence_gate(self.server, self.probe)]
             if not errors:
                 files = self.server.commit()
+                self._archive_skeleton()
                 self._log("commit", files=files)
                 return {"committed": True, "files": files}
             self._log("validate_failed", round=round_no, errors=errors)
@@ -373,6 +460,22 @@ class WorkbenchAgent:
             state = await self._invoke(self._messages, on_event=on_event)
             self._messages = list(state.get("messages", self._messages))
         return {"committed": False, "errors": ["校验轮次耗尽"], "reason": "max_fix_rounds"}
+
+    def _archive_skeleton(self) -> None:
+        """创建骨架归档为审计产物（过程事实与证据链不入包，但留档可查）。
+
+        落会话记录同目录（按包根摘要命名，不与其它包撞）：包目录是源资产、会话
+        结束要归位 cwd，过程产物跟进会污染包；写失败不影响提交（同 _log 容错）。
+        """
+        text = self.server.skeleton_archive
+        if not text:
+            return
+        try:
+            dest = self._session_store.session_file.with_suffix(".SKELETON.md")
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(text, encoding="utf-8")
+        except OSError:
+            pass  # 归档失败不影响提交
 
     async def _invoke(
         self,

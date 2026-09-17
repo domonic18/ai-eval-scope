@@ -12,11 +12,12 @@
 - **总量约束**：单探测 10s 超时、轮内预算按工具分池、发现阶梯路径清单 ≤10。
 
 状态全部公开名（各域工具类经 ``ctx`` 跨模块协作——下划线私有名跨模块引用是
-反模式）；唯 ``_client_instance`` 为懒建句柄私有。
+反模式）；唯 ``_client_instance``/``_client_loop`` 为懒建句柄私有。
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from pathlib import Path
@@ -44,6 +45,7 @@ class ProbeContext:
         http_client_factory: Any = None,
         budgets: dict[str, int] | None = None,  # 轮内预算按工具分池（缺省 TOOL_BUDGETS）
         timeout_s: float = PROBE_TIMEOUT_S,
+        fact_sink: Any = None,  # (fact_line: str) -> None——验证事实机械回填骨架
     ) -> None:
         self.allowed_hosts = {h.lower() for h in (allowed_hosts or {})}
         # 拒绝拉黑账本（与 workbench_tools._ensure_grant 的 _denied 同款）：被拒
@@ -55,6 +57,9 @@ class ProbeContext:
         self.http_client_factory = http_client_factory
         self.budgets = dict(budgets) if budgets is not None else dict(TOOL_BUDGETS)
         self.timeout_s = timeout_s
+        # 验证事实机械回填骨架的出口（装配壳注入，本包不反向依赖 workbench 文件
+        # 沙盒）——探测成功的事实行由此直达 SKELETON.md，不经 LLM 转述
+        self.fact_sink = fact_sink
         self.turn_calls: dict[str, int] = {}
         # 抓取缓存（url → 完整内容）：前端包分析的存储侧，会话内跨轮有效
         # （预算按轮重置但分析状态不丢——新轮可直接检索续查）
@@ -83,8 +88,11 @@ class ProbeContext:
         # {{ stepN.路径 }} 引用其值（值服务端流动，不经对话）
         self.step_responses: dict[str, Any] = {}
         # 会话级共享 AsyncClient（与执行器 channels/base.py 同构：连接池 +
-        # cookie jar——cookie 型凭证与会话粘性靠它），会话结束 aclose()
+        # cookie jar——cookie 型凭证与会话粘性靠它），会话结束 aclose()。
+        # _client_loop 记录建实例时的事件循环：REPL 每轮 asyncio.run 换循环，
+        # client() 据此废弃绑死旧循环的实例（Event loop is closed 实测事故）
         self._client_instance: Any = None
+        self._client_loop: Any = None
 
     # ── 会话挂点与日志 ────────────────────────────────────────────
 
@@ -117,6 +125,19 @@ class ProbeContext:
         self.verified_protocols[host.lower()] = {"flavor": flavor, "steps": steps}
         self.log("protocol_probed", host=host, flavor=flavor, steps=steps)
 
+    def emit_fact(self, fact_line: str) -> None:
+        """验证成功的事实机械回填创建骨架（fact_sink 注入；失败不阻断探测结论）。
+
+        五阶段创建流程（arch/15）的「进度即回填骨架」：事实行由探测工具服务端
+        写就，落 SKELETON.md「机械实测事实」节，Agent 据此闭合对应开槽。
+        """
+        if self.fact_sink is None:
+            return
+        try:
+            self.fact_sink(fact_line)
+        except Exception:  # noqa: BLE001 — 回填失败不影响账本与工具返回（事实已登记）
+            self.log("fact_sink_error", fact=fact_line[:120])
+
     def verified_login(self, ref: str) -> dict[str, str] | None:
         """查登录实测事实（落盘对账门禁用）。"""
         return self.verified_logins.get(ref.lower())
@@ -124,6 +145,40 @@ class ProbeContext:
     def verified_protocol(self, host: str) -> dict[str, Any] | None:
         """查协议矩阵事实（落盘对账门禁用）。"""
         return self.verified_protocols.get(host.lower())
+
+    # ── 证据账本跨进程续作（快照/恢复，与 record_* 对称） ─────────
+
+    def ledger_snapshot(self) -> dict[str, Any]:
+        """导出证据账本（纯事实数据，随 SessionStore 每轮持久化）。
+
+        红线：只含实测事实（url/body_template/auth_snippet 均为 credential_ref
+        占位形态）——session_tokens / credential_grants / last_credential_request
+        等凭证态绝不入快照。
+        """
+        return {
+            "verified_logins": self.verified_logins,
+            "verified_protocols": self.verified_protocols,
+        }
+
+    def restore_ledgers(self, verified_logins: Any, verified_protocols: Any) -> int:
+        """恢复账本（类型容错：非 dict 静默置空），返回恢复的登录事实条数。
+
+        会话凭证（session_tokens）不恢复——重启后重新 declare_token 才有值；
+        账本恢复的意义是 write_sut_config 免重探 + 门禁对账有事实源。
+        """
+        if isinstance(verified_logins, dict):
+            self.verified_logins = {
+                ref: fact
+                for ref, fact in verified_logins.items()
+                if isinstance(ref, str) and isinstance(fact, dict)
+            }
+        if isinstance(verified_protocols, dict):
+            self.verified_protocols = {
+                host: fact
+                for host, fact in verified_protocols.items()
+                if isinstance(host, str) and isinstance(fact, dict)
+            }
+        return len(self.verified_logins)
 
     @property
     def login_hosts(self) -> set[str]:
@@ -240,22 +295,42 @@ class ProbeContext:
     # ── 会话级共享 client ────────────────────────────────────────
 
     async def client(self) -> Any:
-        """会话级共享 AsyncClient（懒建）：连接池复用 + cookie jar 跨请求保持。
+        """会话级共享 AsyncClient（懒建，绑定创建时的事件循环）。
 
         与执行器通道同构（channels/base.py）：登录态 cookie、会话粘性都靠共享
         client 的 jar——每请求新建 client 丢 cookie 的宽度裂缝在此消灭。
-        会话结束经 aclose() 释放。
+        会话结束经 aclose() 释放。WorkbenchAgent 每用户轮经 asyncio.run 新建
+        事件循环（agent.py），旧 client 的连接池绑定已关闭的循环——跨轮复用的
+        首个请求即 ``RuntimeError: Event loop is closed``（实测事故：暂停恢复/
+        新指令后的轮首必炸，偶发性取决于池中是否有存活连接）。故取用时校验
+        循环一致性：不一致即废弃旧实例换新，cookie jar 同步搬运（纯数据可跨
+        循环转移——cookie 型凭证与会话粘性跨轮不丢），旧实例交 GC 回收。
         """
-        if self._client_instance is None:
+        loop = asyncio.get_running_loop()
+        cached = self._client_instance
+        stale = cached is not None and self._client_loop is not loop
+        if stale:
+            self._client_instance = None
+        if cached is None or stale:
             if self.http_client_factory is not None:
-                self._client_instance = self.http_client_factory()
+                new_client = self.http_client_factory()
             else:
                 import httpx
 
-                self._client_instance = httpx.AsyncClient(
-                    timeout=self.timeout_s, follow_redirects=False
-                )
-        return self._client_instance
+                new_client = httpx.AsyncClient(timeout=self.timeout_s, follow_redirects=False)
+            if stale:
+                # 跨轮废弃旧实例：旧 jar 搬进新实例（cookie 型凭证与会话粘性
+                # 跨轮不丢；非 httpx 形态的测试替身无 cookies 属性，静默跳过）
+                old_jar = getattr(cached, "cookies", None)
+                if old_jar is not None:
+                    try:
+                        new_client.cookies.update(old_jar)
+                    except Exception:  # noqa: BLE001 — jar 形态不兼容时宁缺勿错
+                        pass
+            cached = new_client
+        self._client_instance = cached
+        self._client_loop = loop
+        return cached
 
     def borrow_client(self) -> Any:
         """``async with`` 形态借用共享 client（退出时不关闭——归会话统一释放）。
@@ -279,3 +354,4 @@ class ProbeContext:
             except Exception:  # noqa: BLE001 — 释放失败不阻断收尾
                 pass
             self._client_instance = None
+            self._client_loop = None

@@ -368,6 +368,15 @@ def _unknown_key_errors(data: dict[str, Any], model: type[BaseModel], path: str)
     hint = ""
     if path == "sut.auth.login":
         hint = "（跨域登录接口把完整 http(s):// URL 写进 path——没有 base_url 字段）"
+    elif path.startswith("sut.request_template.steps"):
+        # 实测幻觉高发区（run 20260917_003025：kind/depends_on/until/步骤级
+        # response_mapping 全被 Pydantic 静默丢弃）——错误即教学，给出正确形态
+        hint = (
+            "（步骤字段只有 name/method/path/headers/body/once/poll——没有 "
+            "kind/depends_on/until/步骤级 response_mapping；会话步写 once: true，"
+            "轮询写 poll: {until: <Jinja2 表达式>, interval_s, timeout_s}，"
+            "末步提取走顶层 response_mapping）"
+        )
     known = set(model.model_fields)
     return [
         f"{path} 含未知字段 {k!r}，执行器会静默丢弃{hint}；合法字段: {sorted(known)}"
@@ -480,6 +489,22 @@ def validate_sut_config_document(data: Any) -> list[str]:
         ):
             if isinstance(auth.get(name), dict):
                 errors += _unknown_key_errors(auth[name], auth_model, f"sut.auth.{name}")
+    # steps 链逐项下钻：RequestStepConfig 默认 extra=ignore，步骤内发明的字段会被
+    # 静默丢弃（run 20260917_003025 教训）——与 auth 各段同一白名单语义
+    request_template = sut.get("request_template")
+    raw_steps = request_template.get("steps") if isinstance(request_template, dict) else None
+    if isinstance(raw_steps, list):
+        for i, step in enumerate(raw_steps):
+            if not isinstance(step, dict):
+                continue
+            errors += _unknown_key_errors(
+                step, RequestStepConfig, f"sut.request_template.steps[{i}]"
+            )
+            poll = step.get("poll")
+            if isinstance(poll, dict):
+                errors += _unknown_key_errors(
+                    poll, PollConfig, f"sut.request_template.steps[{i}].poll"
+                )
     if str(sut.get("channel", "")).lower() == "generic_http":
         # 通道必需段前置报缺（模型层 request_template 可空——agent_protocol 包不该被迫填它）
         if not isinstance(sut.get("request_template"), dict):
@@ -524,12 +549,23 @@ class SUTRegistry:
 
     @classmethod
     def load(cls, path: Path | str) -> SUTRegistry:
-        """加载单份 sut_config.yaml（顶层键 sut:；字符串字段先做 ${VAR} 展开）。"""
+        """加载单份 sut_config.yaml（顶层键 sut:；字符串字段先做 ${VAR} 展开）。
+
+        落盘门禁同款校验前置（validate_sut_config_document）：模型层 extra=ignore
+        会静默丢弃发明的字段——加载期显式拒绝，堵住旁路写入者（手改包/外部工具
+        生成）绕过 workbench 门禁的缺口（run 20260917_003025 教训）。
+        """
         data = ConfigLoader.load_yaml(path)
         sut_data = data.get("sut")
         if not isinstance(sut_data, dict):
             raise SUTChannelError(
                 f"sut_config 缺少顶层 'sut:' 段: {path}", details={"path": str(path)}
+            )
+        errors = validate_sut_config_document(data)
+        if errors:
+            raise SUTChannelError(
+                f"sut_config 校验失败 {Path(path).name}: {'; '.join(errors)}",
+                details={"path": str(path), "errors": errors},
             )
         config = SUTSystemConfig.model_validate(expand_env_refs(sut_data))
         return cls({config.name: config}, {Path(path).stem: config.name})
