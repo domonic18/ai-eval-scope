@@ -239,6 +239,14 @@ class TokenTool:
             token_path=effective_path,
             via_set_cookie=source == "cookie" and not effective_path,
         )
+        # 骨架机械回填（创建流程五阶段）：登录实测事实由服务端写进 SKELETON.md，
+        # 「验证过了又来一遍」的重复实测从源头消失（修复环查骨架，不查记忆）
+        self.ctx.emit_fact(
+            f"事实槽：登录实测 {fact['method']} {fact['url']}（证据：request 2xx + "
+            f"declare_token 提取成功 token_source={source}，token_path="
+            f"{effective_path or 'Set-Cookie'}；auth: 段已机械生成，落盘时原样取用，"
+            "无需重复实测）"
+        )
         return {
             "ok": True,
             "token_source": source,

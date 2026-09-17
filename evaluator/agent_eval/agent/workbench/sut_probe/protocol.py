@@ -244,6 +244,18 @@ class ProtocolTool:
                 flavor,
                 {m["step"]: m["ok"] for m in matrix if m["step"] != "skipped"},
             )
+            # 骨架机械回填：协议矩阵结论（正反都是事实——「探测过但未支持」同样是
+            # channel 决策的关闭证据）由服务端写进 SKELETON.md，不经 LLM 转述
+            verdict = (
+                f"核心端点 {core} ✅（可声明 channel: agent_protocol）"
+                if core_ok
+                else f"核心端点 {core} ❌（不支持 agent_protocol 的实测证据——改走其他"
+                "通道须先经用户确认）"
+            )
+            self.ctx.emit_fact(
+                f"事实槽：协议矩阵 {host} flavor={flavor}，{verdict}"
+                f"（证据：probe_protocol 实测 {len(matrix)} 个端点）"
+            )
         self.ctx.log("probe_protocol", base_url=base_url, steps=len(matrix))
         result: dict[str, Any] = {
             "matrix": matrix,

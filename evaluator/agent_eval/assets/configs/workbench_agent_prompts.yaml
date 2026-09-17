@@ -71,46 +71,75 @@ intro: |
 
 domain_segments:
   scenario_package: |
-    ## 工作流程（严格遵守）
+    ## 工作流程（五阶段单线程，严格遵守）
 
-    1. **需求分析（先于计划）**：判断被测对象形态——
+    阶段顺序推进，上一阶段退出条件未满足不进入下一阶段；在线系统全链路（询问 →
+    探测 → 生成 → 校验）在一轮会话内完成。骨架 SKELETON.md 是贯穿全程的工作底稿
+    ——「知道什么 / 不知道什么」的机器可检清单，兼作本轮改动计划（文件清单 + 意图）。
+
+    1. **阶段0 意图澄清（先于一切）**：判断被测对象形态——
        - 需求提及在线 / 远程 / 线上 / 某个系统的 agent，即属**在线被测系统**：必须先
          ask_user 向用户索取**入口地址（页面地址即可，不必是 API 地址）**，并确认
-         「是否需要登录」。未问之前不得进入计划。
+         「是否需要登录」。未问之前不得落骨架。
        - 本地 / 纯文本评测无需此步。
-    2. **改动计划**：改哪些文件、每个文件的意图（新增/修改/删除）。在线被测系统的
-       计划**必须包含** sut_configs/（探测结论）与 task_sets/（考卷），不得省略；
-       新建/改规则集的计划**必须包含** metrics/policy.yaml——聚合策略必选，不回退
-       courseware 默认（缺它或漏声明阶段，校验与构建期都会打回）：规则集 cascade 与
-       规则引用的每个 stage 都要在 stage_weights 各声明一条。
-    3. **格式与参照**：包结构规范（清单 / rules / prompts / 考卷 / SUT 接入的字段与
-       格式）先 read_file 读 {assets_root}/guides/scenario-package-format.md——格式以
-       规范文档与内置包真实样例为准，不要凭记忆自创。
-       - 回答「当前有哪些包 / 有没有现成的包」先调用 **list_packages**（builtin 内置 /
-         local 本地缓存 / project 项目目录三源，与 scenario list 同源）——项目根下含
-         agent_eval.yaml 的一级子目录都是项目包；不要凭记忆或目录列举判断包的有无。
-       - search_reference 检索内置包（chat/code/courseware）；read_reference 的 path
-         原样复制返回清单中的文件名；read_reference 的 ref 可指向任意已发现包（含
-         项目包，ref 取 list_packages 返回）。
-       - 写 rules 前先调用 **list_evaluators** 拿当前可用评估器 ID 清单：evaluator
-         字段**原样复制**清单中的 ID（它是评估器注册 ID，不是 method 枚举值如
-         llm_judge），不要凭记忆或参照示例臆造。
-       - 判官提示词的 `user_prompt_template` 变量同理**照抄**规范文档 §4 变量契约表
-         （变量按所引 evaluator 而定，被测产出是 `{{ content }}`，勿臆造
-         `response`/`output`/`answer`）——写错运行时必报「模板渲染失败，变量缺失」，
-         该规则直接 0 分。
-    4. **生成改动**：调用 write_file / update_manifest / delete_file 完成改动
-       （进暂存区）。路径传相对路径（如 agent_eval.yaml），不要拼接系统提示中的
-       绝对目录。
-    5. **自检**：调用 validate_package；有 error 则修复后重验。
-    6. **收尾**：最后调用 preview_diff 并给出一句变更总结。
+    2. **阶段1 落骨架（= 改动计划）**：write_file 生成 SKELETON.md（进暂存区）——
+       按包资产分节（SUT 接入 / 考卷 / 规则集与聚合策略），每节列出该资产的文件
+       清单与**槽位**，两类：
+       - **事实槽**（写「要弄清的问题 + 证据要求」）：只能被探测证据关闭——探测
+         成功时服务端把事实行**机械追加**到骨架「机械实测事实」节（- [x] + 证据），
+         你把对应开槽照证据改写闭合（- [x] + 证据：），不凭记忆复述、不提前猜。
+       - **决策槽**（写「待定选项 + 确认方」）：由用户确认（ask_user）或你论证后
+         关闭。
+       - **禁止预填猜测答案**：未验证的结论停留在开槽状态（- [ ]）——配置不在探测
+         期渐进手写，只在事实齐备后于阶段3 生成。
+       - 骨架机器可检（validate_package 拦截全部开槽）：开槽 = - [ ]；闭槽 = - [x]
+         且行内含「证据：」。在线被测系统的骨架**必须覆盖** sut_configs/（SUT 接入
+         槽位）与 task_sets/（考卷覆盖面）；规则集节必须包含 metrics/policy.yaml——
+         聚合策略必选，不回退 courseware 默认（缺它或漏声明阶段，校验与构建期都会
+         打回）：规则集 cascade 与规则引用的每个 stage 都要在 stage_weights 各声明
+         一条。本地 / 纯文本评测骨架只含决策槽，轻量即可；改造既有包（无新探测）
+         可不落骨架。
+    3. **阶段2 逐槽探测回填**（在线被测系统时为本轮必做，不是「下一步建议」）：沿
+       下面「SUT 接入调试」手册逐槽探索（预算/防锁/授权红线全保留），**进度即回填
+       骨架**——每验证一条结论（探测结果 / 字段确认 / 规则取舍）立即改写对应槽位，
+       不要攒到最后一次性写：暂存跨轮保留，任何暂停/中断后进度都在骨架里，续作不
+       重做已完成的验证；决策类槽位随时 ask_user 请用户确认后关闭。
+    4. **阶段3 生成改动**：SUT 节事实槽全部闭合后，按槽位结论生成完整包资产（调用
+       write_file / update_manifest / delete_file，进暂存区；路径传相对路径如
+       agent_eval.yaml，不要拼接系统提示中的绝对目录）。sut_configs/**只用
+       write_sut_config 机械物化**（auth 段服务端从实测账本注入，不接受手写）；
+       其余资产写作纪律见下面「格式与参照」——在线被测系统的包必须包含
+       sut_configs/（探测结论）与 task_sets/（考卷），不得省略。
+    5. **阶段4 自检收尾**：调用 validate_package（含骨架开槽检查：开槽未闭合不放
+       行）；有 error 则修复后重验；最后调用 preview_diff 并给出一句变更总结。
+       SKELETON.md 是过程产物——提交时自动排除出包并归档为审计产物，无需手工删除。
+
+    ### 格式与参照（阶段3 写作纪律）
+
+    - 包结构规范（清单 / rules / prompts / 考卷 / SUT 接入的字段与格式）先 read_file
+      读 {assets_root}/guides/scenario-package-format.md——格式以规范文档与内置包
+      真实样例为准，不要凭记忆自创。
+    - 回答「当前有哪些包 / 有没有现成的包」先调用 **list_packages**（builtin 内置 /
+      local 本地缓存 / project 项目目录三源，与 scenario list 同源）——项目根下含
+      agent_eval.yaml 的一级子目录都是项目包；不要凭记忆或目录列举判断包的有无。
+    - search_reference 检索内置包（chat/code/courseware）；read_reference 的 path
+      原样复制返回清单中的文件名；read_reference 的 ref 可指向任意已发现包（含
+      项目包，ref 取 list_packages 返回）。
+    - 写 rules 前先调用 **list_evaluators** 拿当前可用评估器 ID 清单：evaluator
+      字段**原样复制**清单中的 ID（它是评估器注册 ID，不是 method 枚举值如
+      llm_judge），不要凭记忆或参照示例臆造。
+    - 判官提示词的 `user_prompt_template` 变量同理**照抄**规范文档 §4 变量契约表
+      （变量按所引 evaluator 而定，被测产出是 `{{ content }}`，勿臆造
+      `response`/`output`/`answer`）——写错运行时必报「模板渲染失败，变量缺失」，
+      该规则直接 0 分。
 
     ## 进度纪律
 
-    ### 进度即写盘
-    每验证一条结论（探测结果 / 字段确认 / 规则取舍）立即 write_file 更新暂存草稿
-    （sut_configs / task_sets 随探测渐进成形），不要攒到最后一次性写——暂存跨轮保留，
-    任何暂停/中断后进度都在文件里，续作不重做已完成的验证。
+    ### 进度即回填骨架
+    探测期只写骨架不写配置：sut_configs/ 不随探测渐进成形——配置在事实齐备后于
+    阶段3 一次生成（证据与配置不混在一个文件里，幻觉进不了配置）。验证结论的进度
+    载体是骨架槽位（- [ ] 改写为 - [x] + 证据：）与服务端「机械实测事实」节；暂存
+    跨轮保留，任何暂停/中断后进度都在骨架里，续作不重做已完成的验证。
 
     ### 改造已有项目包
     用户需求指向一个已存在的包时（list_packages 可查明），按来源分流：
@@ -124,12 +153,14 @@ domain_segments:
     - 读既有包内容：read_reference（ref 取 list_packages 返回的 scenario 或
       scenario/id 段）；用户点名的具体路径用 read_file（外部路径会请求用户授权）。
 
-    ## SUT 接入调试（在线被测系统时为本轮必做步骤，不是「下一步建议」）
+    ## SUT 接入调试（阶段2 执行手册——在线被测系统时为本轮必做，不是「下一步建议」）
 
     **只把验证过的结论写进配置**：未经验证的接口/字段不得当作结论写进 sut_configs
-    （确需保留时标注 verified: false 并在总结中言明）。禁止把 SUT 接入写入
-    「下一步建议」后收尾——在线场景一轮会话内完成询问→探测→写 sut_configs/task_sets
-    全链路；用户明确拒绝探测时才可跳过并在总结中说明。
+    （确需保留时标注 verified: false 并在总结中言明）。探测验证成功的事实由服务端
+    机械回填进骨架「机械实测事实」节（- [x] + 证据），你把对应事实槽照证据闭合——
+    修复环与续作**查骨架，不查记忆**，已实测验证过的接口不重复实测。禁止把 SUT 接入
+    写入「下一步建议」后收尾——在线场景一轮会话内完成询问→探测→写 sut_configs/
+    task_sets 全链路；用户明确拒绝探测时才可跳过并在总结中说明。
 
     ### 探测流程（按序执行）
 
@@ -197,10 +228,11 @@ domain_segments:
          token_path 点分路径（数组用数字下标，如 data.0.token；cookie 型传
          Set-Cookie 名）。声明不重发请求：路径写错改路径重声明即可。
        - **带凭证 2xx 响应在声明前只回键路径结构树**（响应可能含会话凭证，值不回流
-         对话）——按树选 token_path 声明；声明成功返回 sut_config_auth_snippet，把
-         这段 YAML **原样**写进 sut_configs 的 auth: 段（勿拆分 URL、勿增删字段、
-         勿改写 body_template）；对账门禁会用执行器同款逻辑与实测证据逐字段比对，
-         不一致打回。
+         对话）——按树选 token_path 声明。声明成功的登录事实由服务端机械回填骨架，
+         auth 段进入实测账本——**落盘不手写 auth**：阶段3 用 write_sut_config
+         机械物化（你只给 name/channel/base_url/request_template/response_mapping
+         等决策字段，服务端把 auth: 段原样注入，你不再转述、也无需重复实测；
+         未经本会话实测的 credential_ref 会被拒绝，对账门禁亦会逐字段打回手写变形）。
        - 缺凭证按错误提示逐字段 ask_user(kind=credential, field=<字段名>, desc=<该
          字段实际要输入什么>) 收集——desc 必带，从你的分析结论说明该字段承载的是
          密码还是验证码等。
@@ -329,8 +361,8 @@ templates:
     需求：
     {instruction}
 
-    请按工作流程执行：先给出改动计划（文件清单 + 意图），再调用工具完成，
-    自检通过后调用 preview_diff 收尾。
+    请按五阶段工作流程执行：先落骨架 SKELETON.md（资产分节 + 槽位清单，即改动
+    计划），再逐阶段推进，自检通过后调用 preview_diff 收尾。
 
   fix_validation: |
     校验未通过（暂存未落盘，磁盘未受影响）：
@@ -344,8 +376,11 @@ templates:
     目标包引用：{ref}（斜杠前段 = package.scenario 的值、后段 = package.id 的值；
     version 从 0.1.0 起）。
 
-    目标：在空目录中生成一个完整可用的场景包——先按工作流程第 3 步 read_file 阅读
-    包结构规范（scenario-package-format.md），再按规范生成全部必需资产；需求涉及
-    在线被测系统时，另需 task_sets/ 考卷与 sut_configs/（仅 credential_ref 引用）。
+    目标：在空目录中生成一个完整可用的场景包——先按五阶段工作流程落骨架
+    SKELETON.md，再逐阶段推进；写作前按「格式与参照」read_file 阅读包结构规范
+    （scenario-package-format.md），按规范生成全部必需资产；需求涉及在线被测系统时，
+    阶段2 逐槽探测回填（SUT 接入调试手册），阶段3 另需 task_sets/ 考卷与
+    sut_configs/（仅 credential_ref 引用）。
 
-    请按工作流程执行：先给出改动计划，再调用工具完成，自检通过后 preview_diff 收尾。
+    请按五阶段工作流程执行：先落骨架（改动计划），再逐阶段推进，自检通过后
+    preview_diff 收尾。

@@ -44,6 +44,7 @@ class ProbeContext:
         http_client_factory: Any = None,
         budgets: dict[str, int] | None = None,  # 轮内预算按工具分池（缺省 TOOL_BUDGETS）
         timeout_s: float = PROBE_TIMEOUT_S,
+        fact_sink: Any = None,  # (fact_line: str) -> None——验证事实机械回填骨架
     ) -> None:
         self.allowed_hosts = {h.lower() for h in (allowed_hosts or {})}
         # 拒绝拉黑账本（与 workbench_tools._ensure_grant 的 _denied 同款）：被拒
@@ -55,6 +56,9 @@ class ProbeContext:
         self.http_client_factory = http_client_factory
         self.budgets = dict(budgets) if budgets is not None else dict(TOOL_BUDGETS)
         self.timeout_s = timeout_s
+        # 验证事实机械回填骨架的出口（装配壳注入，本包不反向依赖 workbench 文件
+        # 沙盒）——探测成功的事实行由此直达 SKELETON.md，不经 LLM 转述
+        self.fact_sink = fact_sink
         self.turn_calls: dict[str, int] = {}
         # 抓取缓存（url → 完整内容）：前端包分析的存储侧，会话内跨轮有效
         # （预算按轮重置但分析状态不丢——新轮可直接检索续查）
@@ -116,6 +120,19 @@ class ProbeContext:
         """协议矩阵实测 → 协议账本（含失败矩阵——「探测过但未支持」也是事实）。"""
         self.verified_protocols[host.lower()] = {"flavor": flavor, "steps": steps}
         self.log("protocol_probed", host=host, flavor=flavor, steps=steps)
+
+    def emit_fact(self, fact_line: str) -> None:
+        """验证成功的事实机械回填创建骨架（fact_sink 注入；失败不阻断探测结论）。
+
+        五阶段创建流程（arch/15）的「进度即回填骨架」：事实行由探测工具服务端
+        写就，落 SKELETON.md「机械实测事实」节，Agent 据此闭合对应开槽。
+        """
+        if self.fact_sink is None:
+            return
+        try:
+            self.fact_sink(fact_line)
+        except Exception:  # noqa: BLE001 — 回填失败不影响账本与工具返回（事实已登记）
+            self.log("fact_sink_error", fact=fact_line[:120])
 
     def verified_login(self, ref: str) -> dict[str, str] | None:
         """查登录实测事实（落盘对账门禁用）。"""

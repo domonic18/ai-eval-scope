@@ -105,14 +105,20 @@ class WorkbenchAgent:
         self.config = config or WorkbenchAgentConfig()
         self.domain = domain  # 域档位：选择提示词段与门禁策略
         self.server = PackageToolServer(Path(pkg_root), ask_fn=ask_fn)
-        # SUT 接入调试工具面：与文件沙盒并列；凭证域隔离到密钥区
+        # SUT 接入调试工具面：与文件沙盒并列；凭证域隔离到密钥区。
+        # fact_sink：探测验证成功的事实由服务端机械回填进创建骨架（五阶段流程，
+        # arch/15）——事实不经 LLM 转述，「验证过了又来一遍」从源头消失
         self.probe = SUTProbeToolServer(
             ask_fn=ask_fn,
             credential_store=CredentialStore(),
             budgets=self.config.probe_budgets,
             timeout_s=self.config.probe_timeout_s,
             log_path=None,  # 探测证据随 agent_logs 统一落盘，见 _log_path
+            fact_sink=self.server.append_skeleton_fact,
         )
+        # 机械物化通道：write_sut_config 从探测账本原样注入 auth（两 server 构造
+        # 互需对方能力，probe 先带 fact_sink 装配，账本在此回绑包沙盒）
+        self.server.ledger = self.probe
         self.llm_role = llm_role
         self._messages: list[Any] = []
         # 预算护栏会话级累计（跨段/跨轮不清零）；内存检查点仅作事故现场保存器
@@ -357,6 +363,7 @@ class WorkbenchAgent:
             errors = [*validation["errors"], *sut_evidence_gate(self.server, self.probe)]
             if not errors:
                 files = self.server.commit()
+                self._archive_skeleton()
                 self._log("commit", files=files)
                 return {"committed": True, "files": files}
             self._log("validate_failed", round=round_no, errors=errors)
@@ -373,6 +380,22 @@ class WorkbenchAgent:
             state = await self._invoke(self._messages, on_event=on_event)
             self._messages = list(state.get("messages", self._messages))
         return {"committed": False, "errors": ["校验轮次耗尽"], "reason": "max_fix_rounds"}
+
+    def _archive_skeleton(self) -> None:
+        """创建骨架归档为审计产物（过程事实与证据链不入包，但留档可查）。
+
+        落会话记录同目录（按包根摘要命名，不与其它包撞）：包目录是源资产、会话
+        结束要归位 cwd，过程产物跟进会污染包；写失败不影响提交（同 _log 容错）。
+        """
+        text = self.server.skeleton_archive
+        if not text:
+            return
+        try:
+            dest = self._session_store.session_file.with_suffix(".SKELETON.md")
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(text, encoding="utf-8")
+        except OSError:
+            pass  # 归档失败不影响提交
 
     async def _invoke(
         self,

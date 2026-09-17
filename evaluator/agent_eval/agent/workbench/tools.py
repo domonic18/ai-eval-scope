@@ -38,6 +38,40 @@ _CRED_FIELD_RE = re.compile(
     r"^\s*(password|token|api_key|secret)\s*:\s*([^#\n]+?)\s*$", re.MULTILINE
 )
 
+# 创建骨架（Plan-as-Artifact，arch/15 五阶段创建流程）：探测期只写骨架不写配置，
+# 槽位机器可检——开槽 = ``- [ ]``（未验证），闭槽 = ``- [x]`` 且行内含「证据：」。
+# 骨架是过程产物：validate 拦开槽，commit 排除出包并归档为审计产物
+SKELETON_FILENAME = "SKELETON.md"
+_MECHANICAL_SECTION = "## 机械实测事实（服务端追加，勿手改）"
+_OPEN_SLOT_RE = re.compile(r"^\s*-\s\[\s\]")
+_CLOSED_SLOT_RE = re.compile(r"^\s*-\s\[[xX]\]\s*(.*)$")
+
+
+def skeleton_gate_errors(skeleton: str) -> list[str]:
+    """骨架开槽门禁：开槽未闭合 / 闭槽缺证据标注的错误清单（空 = 放行）。"""
+    errors: list[str] = []
+    open_slots = [line.strip() for line in skeleton.splitlines() if _OPEN_SLOT_RE.match(line)]
+    if open_slots:
+        shown = "\n".join(f"  {s}" for s in open_slots[:10])
+        suffix = f"\n  …（共 {len(open_slots)} 条）" if len(open_slots) > 10 else ""
+        errors.append(
+            f"{SKELETON_FILENAME} 仍有 {len(open_slots)} 个未闭合槽位（- [ ]）——"
+            "配置只在事实齐备后生成：事实槽按「机械实测事实」节的探测证据改写闭合"
+            f"（- [x] + 证据：），决策槽经用户确认后闭合：\n{shown}{suffix}"
+        )
+    missing_evidence = [
+        match.group(1).strip()
+        for line in skeleton.splitlines()
+        if (match := _CLOSED_SLOT_RE.match(line)) and "证据：" not in line
+    ]
+    if missing_evidence:
+        errors.append(
+            f"{SKELETON_FILENAME} 闭槽缺「证据：」标注（- [x] 行必含——闭槽 = 有证据的"
+            f"结论）：{'；'.join(s[:60] for s in missing_evidence[:5])}"
+        )
+    return errors
+
+
 # 随包发布资源根（自动授权只读域）：结构规范 / JSON Schema / 示例配置。
 # 运行时资料禁止引用仓库文档路径（pip 安装用户没有仓库文档）
 _ASSETS_ROOT = PACKAGE_ROOT / "assets"
@@ -117,8 +151,16 @@ class PackageToolServer(ToolExporterMixin):
             "update_manifest",
         ),
         ToolSpec(
+            "write_sut_config",
+            "机械物化 sut_configs/ 配置（在线被测系统落盘的唯一正道）：只给决策字段"
+            "（name/channel/base_url/timeout/request_template/response_mapping 等），"
+            "auth: 段由服务端从本会话登录实测账本**原样注入**（不接受手写 auth）；"
+            "装配后内联 schema 校验，幻觉字段当场打回",
+            "write_sut_config",
+        ),
+        ToolSpec(
             "validate_package",
-            "校验暂存视图（清单合法 + 资源目录 + 规则 YAML 可解析），返回错误列表",
+            "校验暂存视图（清单合法 + 资源目录 + 规则 YAML 可解析 + 骨架开槽检查），返回错误列表",
             "validate_package",
         ),
         ToolSpec(
@@ -168,6 +210,12 @@ class PackageToolServer(ToolExporterMixin):
         self._denied: set[Path] = set()
         # 暂存区：rel_path(POSIX) -> 新内容；None 表示删除
         self.staging: dict[str, str | None] = {}
+        # 创建骨架（过程产物，commit 排除出包）的最新完整文本——宿主归档为审计
+        # 产物用；同时是跨轮暂存清除后 fact_sink 续写的种子（见 _skeleton_text）
+        self.skeleton_archive: str | None = None
+        # 探测证据账本（SUTProbeToolServer，agent.py 装配后绑定——两 server 构造
+        # 互需对方能力，靠后绑定解环）：write_sut_config 机械注入 auth 的事实源
+        self.ledger: Any = None
 
     # ─── 沙盒与视图 ───────────────────────────────────────────────
 
@@ -197,6 +245,36 @@ class PackageToolServer(ToolExporterMixin):
     def view(self) -> dict[str, str]:
         """暂存视图（宿主门禁读取：如 agent_protocol 通道必须经 probe_protocol 实测）。"""
         return self._view()
+
+    # ─── 创建骨架（Plan-as-Artifact：服务端事实回填 + 开槽门禁） ───
+
+    def _skeleton_text(self) -> str | None:
+        """骨架当前文本：暂存优先，磁盘兜底，再兜底跨轮归档文本；无则 None。"""
+        if (staged := self.staging.get(SKELETON_FILENAME)) is not None:
+            return staged
+        if SKELETON_FILENAME in self.staging:
+            return None  # 暂存标记删除：以删除为准
+        return self._disk_text(self.root / SKELETON_FILENAME) or self.skeleton_archive
+
+    def append_skeleton_fact(self, fact_line: str) -> None:
+        """探测验证成功的事实机械回填骨架（fact_sink 回调目标，非 Agent 工具）。
+
+        事实行由探测工具服务端写就（不经 LLM 转述——验证结论到骨架的传递零变形），
+        追加进「机械实测事实」节（无则在文末创建）；Agent 据此把对应开槽改写闭合。
+        无骨架时静默忽略（骨架 opt-in：克隆/fork 既有包的会话不受影响）；
+        回填失败不抛（事实sink 故障不阻断探测结论本身）。
+        """
+        text = self._skeleton_text()
+        if text is None:
+            return
+        entry = f"- [x] {fact_line.strip()}"
+        header = _MECHANICAL_SECTION + "\n"
+        if header in text:
+            head, _, tail = text.partition(header)
+            new_text = head + header + entry + "\n" + tail
+        else:
+            new_text = text.rstrip("\n") + f"\n\n{_MECHANICAL_SECTION}\n{entry}\n"
+        self.staging[SKELETON_FILENAME] = new_text
 
     # ─── 工具（Agent 可调用；错误以 {"error": ...} 返回） ─────────
 
@@ -372,6 +450,70 @@ class PackageToolServer(ToolExporterMixin):
         )
         return await self.write_file(MANIFEST_FILENAME, content)
 
+    async def write_sut_config(
+        self, filename: str, sut: dict[str, Any], credential_ref: str = ""
+    ) -> dict[str, Any]:
+        """机械物化 sut_configs（五阶段创建流程阶段3）：auth 段从探测账本注入。
+
+        Agent 只提供决策字段（name/channel/base_url/timeout/request_template/
+        response_mapping…）；``auth:`` 段由服务端从本会话登录实测账本
+        （declare_token 机械登记的 auth_snippet）**原样装配**——验证结论到落盘
+        配置的传递不经 LLM 转述，「验证过了又来一遍」的重复实测从源头消失。
+        装配后内联执行器同款 schema 校验（未知键当场打回——幻觉字段进不了暂存）。
+        """
+        import yaml
+
+        from agent_eval.execution.registry import validate_sut_config_document
+
+        if Path(filename).suffix not in (".yaml", ".yml"):
+            return {"error": f"sut_config 须为 .yaml/.yml: {filename}"}
+        if Path(filename).parent.as_posix() != "sut_configs":
+            return {"error": f"write_sut_config 只写 sut_configs/ 下的平铺文件: {filename}"}
+        if "auth" in sut:
+            return {
+                "error": (
+                    "auth 段由服务端从实测账本机械注入，不接受手写（防转述变形）——"
+                    "去掉 auth 键，用 credential_ref 参数指定采用哪条实测记录"
+                )
+            }
+        ref = (credential_ref or str(sut.get("name") or "")).strip()
+        fact = self.ledger.verified_login(ref) if self.ledger is not None else None
+        if fact is None:
+            return {
+                "error": (
+                    f"credential_ref={ref!r} 在本会话没有已验证的登录实测——auth 段只能"
+                    "出自实测账本。先用 request 实测登录（body 带凭证模板 + ref），2xx 后"
+                    " declare_token 声明提取，再用本工具落盘；禁止凭记忆或参照示例手写 auth"
+                )
+            }
+        auth = (yaml.safe_load(fact["auth_snippet"]) or {}).get("auth")
+        doc: dict[str, Any] = {"sut": {**sut, "auth": auth}}
+        if schema_errors := validate_sut_config_document(doc):
+            return {
+                "error": "sut_config schema 校验未通过（未入暂存）：\n- "
+                + "\n- ".join(schema_errors),
+                "errors": schema_errors,
+            }
+        content = (
+            f"# auth 段由探测账本机械注入（credential_ref={ref}，本会话实测），"
+            "手写 auth 不被接受\n" + yaml.safe_dump(doc, allow_unicode=True, sort_keys=False)
+        )
+        if hit := _is_credential_violation(content):
+            # 防御式（账本 snippet 只含 credential_ref 引用，正常不应触发）
+            return {"error": f"安全红线：凭证明文（{hit}）"}
+        rel = Path(filename).as_posix()
+        self.staging[rel] = content
+        return {
+            "ok": True,
+            "staged": rel,
+            "auth_injected": {
+                "credential_ref": ref,
+                "url": fact["url"],
+                "token_source": fact["token_source"],
+                "note": "auth 段与实测账本逐字节一致——对账门禁必过，无需重新实测",
+            },
+        }
+
     async def validate_package(self) -> dict[str, Any]:
         """对暂存视图做物化校验（清单合法 + 资源目录 + 规则 YAML 可解析）。"""
         import yaml
@@ -384,6 +526,12 @@ class PackageToolServer(ToolExporterMixin):
             view = self._view()
             if not view:
                 return {"ok": False, "errors": ["包视图为空（无文件）"]}
+            # 骨架开槽门禁（opt-in：暂存视图含 SKELETON.md 才检查——克隆/fork 既有包
+            # 无骨架，行为不变）。开槽未闭 = 还有未验证的结论，落盘即把「未验证」
+            # 固化成「已配置」（jxb 事故根因：探测期配置渐进成形，证据与幻觉同文件）。
+            # 先于清单等结构检查——骨架是「改动计划」，计划未闭环先于一切结构问题
+            if (skeleton := view.get(SKELETON_FILENAME)) is not None:
+                errors += skeleton_gate_errors(skeleton)
             for rel, content in view.items():
                 if content is None:  # 空内容/删除标记：不落盘
                     continue
@@ -391,7 +539,8 @@ class PackageToolServer(ToolExporterMixin):
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_text(content, encoding="utf-8")
             if not (tmp_root / MANIFEST_FILENAME).is_file():
-                return {"ok": False, "errors": [f"缺少清单 {MANIFEST_FILENAME}"]}
+                errors.append(f"缺少清单 {MANIFEST_FILENAME}")
+                return {"ok": False, "errors": errors}  # 骨架开槽等先行检查的结论保留
             try:
                 manifest = load_manifest(tmp_root)
             except Exception as e:  # noqa: BLE001 — 校验错误收集后交 Agent 自修复
@@ -609,10 +758,20 @@ class PackageToolServer(ToolExporterMixin):
         self.staging.clear()
 
     def commit(self) -> list[str]:
-        """原子提交暂存到磁盘（宿主在确认+校验通过后调用），返回变更清单。"""
+        """原子提交暂存到磁盘（宿主在确认+校验通过后调用），返回变更清单。
+
+        SKELETON.md 排除在外：骨架是过程产物（探测事实与证据链），落进包根会随
+        归位混入最终包——从暂存摘除，最新文本留在 :attr:`skeleton_archive` 供宿主
+        归档为审计产物（WorkbenchAgent 落会话区）。
+        """
         changed: list[str] = []
         # 先全部物化到临时目录再原子替换内容，失败中途不产生半提交视图
         for rel, new in sorted(self.staging.items()):
+            if rel == SKELETON_FILENAME:
+                self.staging.pop(rel)
+                self.skeleton_archive = new
+                changed.append(f"S {rel}（骨架：过程产物不入包，已留档）")
+                continue
             abs_path = self._resolve_in(rel)
             if new is None:
                 if abs_path.is_file():

@@ -44,6 +44,7 @@ class SUTProbeToolServer(ToolExporterMixin):
         http_client_factory: Any = None,
         budgets: dict[str, int] | None = None,  # 轮内预算按工具分池（缺省 TOOL_BUDGETS）
         timeout_s: float = PROBE_TIMEOUT_S,
+        fact_sink: Any = None,  # (fact_line: str) -> None——验证事实机械回填骨架
     ) -> None:
         self._ctx = ProbeContext(
             allowed_hosts=allowed_hosts,
@@ -53,6 +54,7 @@ class SUTProbeToolServer(ToolExporterMixin):
             http_client_factory=http_client_factory,
             budgets=budgets,
             timeout_s=timeout_s,
+            fact_sink=fact_sink,
         )
         self._request = RequestTool(self._ctx)
         self._search = SearchTool(self._ctx)
@@ -207,3 +209,8 @@ class SUTProbeToolServer(ToolExporterMixin):
     @ask_fn.setter
     def ask_fn(self, value: Any) -> None:
         self._ctx.ask_fn = value
+
+    @property
+    def fact_sink(self) -> Any:
+        """验证事实机械回填骨架的出口（创建流程五阶段注入，见 ProbeContext.emit_fact）。"""
+        return self._ctx.fact_sink

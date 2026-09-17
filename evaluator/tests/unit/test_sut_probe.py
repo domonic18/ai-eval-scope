@@ -950,6 +950,45 @@ class TestDeclareToken:
         }
         assert validate_sut_config_document(doc) == []
 
+    def test_success_appends_fact_via_sink(self) -> None:
+        """declare_token 成功 → 登录实测事实机械回填骨架（fact_sink 注入，服务端
+        写就；「验证过了又来一遍」的重复实测从源头消失）。"""
+        facts: list[str] = []
+        server, _ = self._did_login_sink(facts, lambda r: httpx.Response(200, json={"token": "T"}))
+        result = _run(server.declare_token("SUT", token_path="token"))
+        assert result["ok"] is True
+        assert len(facts) == 1
+        assert "事实槽：登录实测" in facts[0]
+        assert "证据：" in facts[0] and _LOGIN_URL in facts[0]
+
+    def test_failed_declare_emits_no_fact(self) -> None:
+        """骨架只收成功事实：声明失败（401 实测）不回填。"""
+        facts: list[str] = []
+        server, _ = self._did_login_sink(facts, lambda r: httpx.Response(401, json={}))
+        _run(server.declare_token("SUT", token_path="token"))
+        assert facts == []
+        assert server.verified_login("SUT") is None
+
+    def _did_login_sink(
+        self, facts: list[str], handler: Any
+    ) -> tuple[SUTProbeToolServer, list[httpx.Request]]:
+        """带 fact_sink 的登录实测前置（facts 列表收集回填的事实行；handler 自定
+        成败——负例传 401 handler 时后续 declare 应失败且零回填）。"""
+        sent: list[httpx.Request] = []
+
+        def wrapping(request: httpx.Request) -> httpx.Response:
+            sent.append(request)
+            return handler(request)
+
+        server = _make(
+            credential_store=CredentialStore(env=_CREDS),
+            ask_fn=_ask(lambda q, **kw: "允许"),
+            http_client_factory=_transport(wrapping),
+            fact_sink=facts.append,
+        )
+        _run(server.request("POST", _LOGIN_URL, body=_LOGIN_BODY, ref="SUT"))
+        return server, sent
+
     def test_failed_declare_not_recorded_in_ledger(self) -> None:
         """账本只记成功事实：401 失败不构成「验证过的登录配置」。"""
         server, _ = self._server(lambda r: httpx.Response(401, json={"error": "bad"}))
@@ -1156,6 +1195,27 @@ class TestProbeProtocol:
         assert server.protocol_hosts == set()
         _run(server.probe_protocol("https://sut.example.com"))
         assert server.protocol_hosts == {"sut.example.com"}
+
+    def test_protocol_fact_appended_via_sink(self) -> None:
+        """协议矩阵结论（正反都是事实）机械回填骨架：核心端点 ✅ 与 ❌ 各有
+        对应的事实行，channel 决策槽据此闭合。"""
+        facts: list[str] = []
+        ok_server = _make(fact_sink=facts.append)
+        _run(ok_server.probe_protocol("https://sut.example.com"))
+        assert len(facts) == 1
+        assert "事实槽：协议矩阵 sut.example.com" in facts[0]
+        assert "证据：probe_protocol 实测" in facts[0]
+        assert "✅" in facts[0]
+
+        facts.clear()
+        down_server = _make(
+            fact_sink=facts.append,
+            http_client_factory=_transport(
+                lambda r: (_ for _ in ()).throw(httpx.ConnectError("boom"))
+            ),
+        )
+        _run(down_server.probe_protocol("https://sut.example.com"))
+        assert len(facts) == 1 and "❌" in facts[0]
 
     def test_redirect_is_not_protocol_evidence(self) -> None:
         """事实质量：3xx 重定向不是端点存在的证据（页面服务/catch-all 常见，
@@ -1606,6 +1666,28 @@ class TestBudget:
 
 
 # ── WorkbenchAgent 集成（工具注册与预算挂点） ─────────────────────────
+
+
+class TestFactSinkEmission:
+    """emit_fact：验证事实机械回填骨架的出口（失败不阻断探测结论）。"""
+
+    def test_no_sink_is_noop(self) -> None:
+        from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+
+        ctx = ProbeContext()
+        ctx.emit_fact("事实槽：x（证据：y）")  # 无 sink 不抛
+
+    def test_sink_error_swallowed_and_logged(self, tmp_path: Path) -> None:
+        from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+
+        log_path = tmp_path / "probe.jsonl"
+
+        def boom(line: str) -> None:
+            raise RuntimeError("sink down")
+
+        ctx = ProbeContext(fact_sink=boom, log_path=log_path)
+        ctx.emit_fact("事实槽：x（证据：y）")  # sink 故障不上抛
+        assert "fact_sink_error" in log_path.read_text(encoding="utf-8")
 
 
 class TestWorkbenchAgentIntegration:

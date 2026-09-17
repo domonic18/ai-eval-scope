@@ -82,6 +82,12 @@ async def _write_valid(server: PackageToolServer) -> str:
     return "已生成完整场景包"
 
 
+async def _write_valid_with_skeleton(server: PackageToolServer, skeleton: str) -> str:
+    """完整包 + 骨架（五阶段流程回放用）。"""
+    await server.write_file("SKELETON.md", skeleton)
+    return await _write_valid(server)
+
+
 # ── 沙盒工具面 ──────────────────────────────────────────────────────────
 
 
@@ -416,10 +422,356 @@ class TestSandbox:
     def test_tool_specs_include_list_packages(self) -> None:
         names = PackageToolServer(Path()).get_tool_names()
         assert "list_packages" in names
-        assert len(PackageToolServer.TOOL_SPECS) == 12
+        assert len(PackageToolServer.TOOL_SPECS) == 13
 
 
 # ── WorkbenchAgent 会话状态机（mock _invoke 回放） ────────────────────────
+
+
+# ── 创建骨架（Plan-as-Artifact：开槽门禁 / commit 排除归档 / 事实机械回填） ──
+
+SKELETON_OPEN = (
+    "# 创建骨架（demo）\n"
+    "## SUT 接入 sut_configs/sut.yaml\n"
+    "- [ ] 事实槽：登录接口地址与字段形态？—— 证据：request 实测 + declare_token\n"
+    "- [x] 事实槽：协议形态 generic_http（证据：probe_protocol 两形态核心端点均 ❌）\n"
+    "## 考卷 task_sets/default.yaml\n"
+    "- [ ] 决策槽：题目覆盖面与阈值（确认方：用户）\n"
+)
+SKELETON_CLOSED = (
+    "# 创建骨架（demo）\n"
+    "## SUT 接入 sut_configs/sut.yaml\n"
+    "- [x] 事实槽：登录 POST https://sut.example.com/auth/login（证据：request 200 "
+    "+ declare_token 提取成功，auth 段已机械生成）\n"
+    "## 考卷 task_sets/default.yaml\n"
+    "- [x] 决策槽：11 题覆盖六大类（证据：用户确认）\n"
+)
+
+
+class TestSkeletonWorkflow:
+    """五阶段创建流程的骨架机制（arch/15）：配置只在事实齐备后生成。"""
+
+    def test_validate_blocks_open_slots(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", SKELETON_OPEN))
+        errors = asyncio.run(server.validate_package())["errors"]
+        skeleton_errors = [e for e in errors if "SKELETON.md" in e]
+        assert skeleton_errors and any("未闭合槽位" in e for e in skeleton_errors)
+        assert any("事实槽：登录接口地址与字段形态" in e for e in skeleton_errors)
+
+    def test_validate_requires_evidence_marker_on_closed_slots(self, tmp_path: Path) -> None:
+        """闭槽 = 有证据的结论：- [x] 行缺「证据：」不放行（防表态式闭合）。"""
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", "# 骨架\n- [x] 事实槽：登录接口已实测\n"))
+        errors = asyncio.run(server.validate_package())["errors"]
+        assert any("证据" in e for e in errors)
+
+    def test_validate_passes_all_slots_closed(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", SKELETON_CLOSED))
+        errors = asyncio.run(server.validate_package())["errors"]
+        assert not any("SKELETON.md" in e for e in errors)
+
+    def test_no_skeleton_behaves_unchanged(self, tmp_path: Path) -> None:
+        """骨架 opt-in：克隆/fork 既有包（无骨架）行为不变。"""
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("agent_eval.yaml", MANIFEST))
+        errors = asyncio.run(server.validate_package())["errors"]
+        assert not any("SKELETON.md" in e for e in errors)
+
+    def test_commit_excludes_skeleton_and_archives(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", SKELETON_CLOSED))
+        asyncio.run(server.write_file("agent_eval.yaml", MANIFEST))
+        changed = server.commit()
+        assert not (tmp_path / "SKELETON.md").exists()  # 过程产物不入包
+        assert (tmp_path / "agent_eval.yaml").is_file()
+        assert server.skeleton_archive == SKELETON_CLOSED  # 留档供宿主归档
+        assert any("SKELETON.md" in f for f in changed)
+        assert not server.has_staged_changes
+
+    def test_append_skeleton_fact_accumulates(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        server.append_skeleton_fact("事实槽：无骨架时静默忽略（证据：opt-in）")
+        assert "SKELETON.md" not in server.staging  # 无骨架：静默忽略
+        asyncio.run(server.write_file("SKELETON.md", "# 骨架\n- [ ] 事实槽：待验证\n"))
+        server.append_skeleton_fact("事实槽：登录实测（证据：request 2xx）")
+        text = server.staging["SKELETON.md"]
+        assert "## 机械实测事实" in text
+        assert "- [x] 事实槽：登录实测（证据：request 2xx）" in text
+        server.append_skeleton_fact("事实槽：协议矩阵（证据：probe_protocol）")
+        text2 = server.staging["SKELETON.md"]
+        assert text2.count("- [x] 事实槽：") == 2  # 追加累积
+        assert "- [ ] 事实槽：待验证" in text2  # Agent 自写的开槽不受影响
+
+    def test_fact_append_survives_commit_round(self, tmp_path: Path) -> None:
+        """提交轮吃掉骨架后，下一轮事实回填仍续写（skeleton_archive 兜底种子）。"""
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", "# 骨架\n"))
+        server.commit()
+        server.append_skeleton_fact("事实槽：二轮实测（证据：request 2xx）")
+        assert "- [x] 事实槽：二轮实测" in server.staging["SKELETON.md"]
+
+    def test_turn_blocks_open_skeleton_then_recovers(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """回放：开槽骨架被门禁打回 → 闭合后提交；骨架不入包、会话区有归档。"""
+
+        async def open_skeleton(server: PackageToolServer) -> str:
+            await server.write_file("SKELETON.md", SKELETON_OPEN)
+            await _write_valid(server)
+            return "初版（含开槽）"
+
+        fake, calls = _replay(
+            [open_skeleton, lambda s: _write_valid_with_skeleton(s, SKELETON_CLOSED)]
+        )
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert result.committed
+        assert len(calls) == 2  # 门禁打回一轮后通过
+        assert not (tmp_path / "SKELETON.md").exists()  # 骨架不入包
+        archived = agent._session_store.session_file.with_suffix(".SKELETON.md")  # noqa: SLF001
+        assert archived.is_file()
+        assert "证据：" in archived.read_text(encoding="utf-8")
+
+    def test_probe_fact_sink_wired_in_agent(self, tmp_path: Path) -> None:
+        """装配：探测 server 的 fact_sink 指向包沙盒的骨架机械回填（阶段1 落骨架
+        后，阶段2 探测事实直达骨架）。"""
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.probe.fact_sink is not None
+        asyncio.run(agent.server.write_file("SKELETON.md", "# 骨架\n- [ ] 事实槽：登录形态？\n"))
+        agent.probe.fact_sink("事实槽：装配冒烟（证据：test）")
+        text = agent.server.staging["SKELETON.md"]
+        assert "- [x] 事实槽：装配冒烟（证据：test）" in text
+
+
+class TestWriteSutConfig:
+    """机械物化（阶段3）：auth 从探测账本 verbatim 注入，幻觉字段内联打回。"""
+
+    @staticmethod
+    async def _allow(question: str, **kw: Any) -> str:
+        return "允许"
+
+    def _ledgered_server(self, tmp_path: Path) -> tuple[PackageToolServer, str]:
+        """账本播种：走真实 request + declare_token 链生成 auth_snippet
+        （MockTransport，零联网），绑定给包沙盒。"""
+        import httpx
+
+        from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
+        from agent_eval.execution.auth.credentials import CredentialStore
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
+
+        probe = SUTProbeToolServer(
+            allowed_hosts={"sut.example.com"},
+            ask_fn=self._allow,
+            credential_store=CredentialStore(
+                env={
+                    "AGENT_EVAL_SUT__SUT__USERNAME": "u1",
+                    "AGENT_EVAL_SUT__SUT__PASSWORD": "p1",
+                }
+            ),
+            http_client_factory=lambda: httpx.AsyncClient(
+                transport=httpx.MockTransport(handler), timeout=1.0, follow_redirects=False
+            ),
+        )
+        asyncio.run(
+            probe.request(
+                "POST",
+                "https://sut.example.com/api/login",
+                body='{"u": "{{ username }}", "p": "{{ password }}"}',
+                ref="SUT",
+            )
+        )
+        declared = asyncio.run(probe.declare_token("SUT", token_path="token"))
+        assert declared["ok"] is True
+        server = PackageToolServer(tmp_path)
+        server.ledger = probe
+        return server, declared["sut_config_auth_snippet"]
+
+    def test_requires_verified_login(self, tmp_path: Path) -> None:
+        """无账本事实 → 拒绝并引导先实测（auth 不能凭记忆/示例手写）。"""
+        server = PackageToolServer(tmp_path)  # 未绑定账本
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {"name": "SUT", "channel": "generic_http", "base_url": "https://x.example.com"},
+            )
+        )
+        assert "没有已验证的登录实测" in result["error"]
+        assert "request" in result["error"] and "declare_token" in result["error"]
+
+    def test_injects_auth_verbatim_and_passes_gates(self, tmp_path: Path) -> None:
+        """核心验收（plan §八-②）：注入的 auth 与账本 snippet 逐字节一致，且
+        sut_evidence_gate 必过——「不再重探」的机制基础。"""
+        import yaml
+
+        from agent_eval.agent.workbench.gates import sut_evidence_gate
+
+        server, snippet = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "body": {"content": "{{ input }}"},
+                            }
+                        ]
+                    },
+                    "response_mapping": {"text": "data.reply"},
+                },
+                credential_ref="SUT",
+            )
+        )
+        assert "ok" in result, result
+        staged = server.staging["sut_configs/sut.yaml"]
+        injected_auth = yaml.safe_load(staged)["sut"]["auth"]
+        # 逐字节一致：snippet 再序列化与注入段完全相等（零转述的机械证明）
+        assert (
+            yaml.safe_dump({"auth": injected_auth}, allow_unicode=True, sort_keys=False).strip()
+            == snippet
+        )
+        # 执行器同款 schema 校验 + 落盘对账门禁双绿
+        from agent_eval.execution.registry import validate_sut_config_document
+
+        assert validate_sut_config_document(yaml.safe_load(staged)) == []
+        assert sut_evidence_gate(server, server.ledger) == []
+
+    def test_rejects_agent_supplied_auth(self, tmp_path: Path) -> None:
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "auth": {"type": "none"},
+                },
+            )
+        )
+        assert "不接受手写" in result["error"]
+
+    def test_rejects_hallucinated_step_fields_inline(self, tmp_path: Path) -> None:
+        """内联 schema 校验：jxb 事故字段集在入暂存前当场打回（带教学指引）。"""
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "kind": "http",
+                                "until": "data.done",
+                                "response_mapping": {"text": "x"},
+                            }
+                        ]
+                    },
+                },
+            )
+        )
+        assert "schema 校验未通过" in result["error"]
+        assert "kind" in result["error"] and "until" in result["error"]
+        assert "sut_configs/sut.yaml" not in server.staging  # 未入暂存
+
+    def test_fix_round_does_not_reprobe(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """badcase 回放（plan §八-③）：修复环查账本，不触发重复实测——jxb 会话
+        「验证过了又来一遍」的事故链在新流程下被改写：登录实测只发生（用户）一次。"""
+        from agent_eval.agent.workbench.sut_probe.tokens import _render_auth_snippet
+
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        probe_calls: list[tuple[Any, ...]] = []
+        original_request = agent.probe.request
+
+        async def counting_request(*args: Any, **kw: Any) -> Any:
+            probe_calls.append(args)
+            return await original_request(*args, **kw)
+
+        monkeypatch.setattr(agent.probe, "request", counting_request)
+        # 账本播种 = 此前已完成的那一次登录实测（snippet 由真实渲染器生成，与
+        # declare_token 成功路径产出的逐字节同源）
+        url, template, token_path = (
+            "https://sut.example.com/api/login",
+            '{"u": "{{ username }}"}',
+            "token",
+        )
+        agent.probe._record_login(
+            {
+                "ref": "SUT",
+                "method": "POST",
+                "url": url,
+                "body_template": template,
+                "token_path": token_path,
+                "token_source": "Bearer",
+                "expires_in_path": "",
+                "auth_snippet": _render_auth_snippet(
+                    ref="SUT",
+                    method="POST",
+                    url=url,
+                    template=template,
+                    token_type="Bearer",
+                    token_path=token_path,
+                ),
+            }
+        )
+        sut_fields: dict[str, Any] = {
+            "name": "SUT",
+            "channel": "generic_http",
+            "base_url": "https://sut.example.com",
+            "request_template": {
+                "steps": [
+                    {
+                        "name": "send",
+                        "method": "POST",
+                        "path": "/chat",
+                        "body": {"q": "{{ input }}"},
+                    }
+                ]
+            },
+            "response_mapping": {"text": "data.reply"},
+        }
+
+        async def incomplete(server: PackageToolServer) -> str:
+            await server.write_sut_config("sut_configs/sut.yaml", sut_fields, credential_ref="SUT")
+            await server.write_file("agent_eval.yaml", MANIFEST)
+            return "初版（缺资源目录，触发修复环）"
+
+        fake, calls = _replay(
+            [incomplete, lambda s: _write_valid_with_skeleton(s, SKELETON_CLOSED)]
+        )
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert result.committed  # 修复环一轮后通过
+        assert len(calls) == 2
+        assert probe_calls == []  # 整个提交链（含修复环）零重复实测——账本直供
+
+    def test_agent_wires_ledger_and_sink(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.server.ledger is agent.probe  # noqa: SLF001 — 装配内省
+        assert agent.probe.fact_sink is not None  # noqa: SLF001
 
 
 class TestAgentTurn:
