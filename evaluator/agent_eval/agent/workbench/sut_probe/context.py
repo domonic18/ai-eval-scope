@@ -146,6 +146,40 @@ class ProbeContext:
         """查协议矩阵事实（落盘对账门禁用）。"""
         return self.verified_protocols.get(host.lower())
 
+    # ── 证据账本跨进程续作（快照/恢复，与 record_* 对称） ─────────
+
+    def ledger_snapshot(self) -> dict[str, Any]:
+        """导出证据账本（纯事实数据，随 SessionStore 每轮持久化）。
+
+        红线：只含实测事实（url/body_template/auth_snippet 均为 credential_ref
+        占位形态）——session_tokens / credential_grants / last_credential_request
+        等凭证态绝不入快照。
+        """
+        return {
+            "verified_logins": self.verified_logins,
+            "verified_protocols": self.verified_protocols,
+        }
+
+    def restore_ledgers(self, verified_logins: Any, verified_protocols: Any) -> int:
+        """恢复账本（类型容错：非 dict 静默置空），返回恢复的登录事实条数。
+
+        会话凭证（session_tokens）不恢复——重启后重新 declare_token 才有值；
+        账本恢复的意义是 write_sut_config 免重探 + 门禁对账有事实源。
+        """
+        if isinstance(verified_logins, dict):
+            self.verified_logins = {
+                ref: fact
+                for ref, fact in verified_logins.items()
+                if isinstance(ref, str) and isinstance(fact, dict)
+            }
+        if isinstance(verified_protocols, dict):
+            self.verified_protocols = {
+                host: fact
+                for host, fact in verified_protocols.items()
+                if isinstance(host, str) and isinstance(fact, dict)
+            }
+        return len(self.verified_logins)
+
     @property
     def login_hosts(self) -> set[str]:
         """本会话登录实测成功过的接口域（小写）——协议探测的候选证据源。"""

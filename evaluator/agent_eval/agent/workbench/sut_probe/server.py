@@ -144,6 +144,18 @@ class SUTProbeToolServer(ToolExporterMixin):
         """查协议矩阵事实（落盘对账门禁用）。"""
         return self._ctx.verified_protocol(host)
 
+    def ledger_snapshot(self) -> dict[str, Any]:
+        """导出证据账本（跨进程续作快照源；事实数据，无凭证值）。"""
+        return self._ctx.ledger_snapshot()
+
+    def restore_ledgers(self, payload: Any) -> int:
+        """恢复证据账本（SessionStore 快照恢复侧），返回恢复的登录事实条数。"""
+        if not isinstance(payload, dict):
+            return 0
+        return self._ctx.restore_ledgers(
+            payload.get("verified_logins"), payload.get("verified_protocols")
+        )
+
     # ── 兼容别名（测试/门禁专用，勿在新代码使用） ────────────────
 
     def _record_login(self, fact: dict[str, str]) -> None:

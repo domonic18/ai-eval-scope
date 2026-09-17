@@ -409,6 +409,14 @@ REF 则直接定址；此前归位压到会话结束，实测用户确认后在�
 - **中断 ≠ 放弃**：异常退出不清理草稿，提示 `--output <草稿路径>` 续作；显式指定路径非空
   放行（续作），默认路径仍要求空目录。中断/收尾一律以 server 实时根为准（落盘时可能已
   随首次归位迁移，入口函数持有的初始 root 变量已过期）。
+- **跨进程续跑 = 进度恢复**（v4.10）：每轮对话要点落盘时同步写入**进度快照**——暂存文件
+  文本 + SKELETON.md 留档 + 证据账本（`verified_logins`/`verified_protocols`，纯事实数据；
+  `session_tokens` 等凭证态**绝不入快照**）。重启续作（`--output` 指回同一目录）在 Agent
+  构造时自动恢复暂存与账本，并向对话注入「已恢复上次会话进度：暂存 N 个文件、已验证登录
+  M 项……无需重新探测」注记——五阶段流程的中间进度不再困在内存 staging（实测事故：代理
+  超时建议用户「重启会话续作」，暂存与账本实际全丢，只能从头再来；已验证过的登录被迫重探，
+  违背「验证过了又来一遍在机制上消失」承诺）。`export/import_staging_snapshot` +
+  `ledger_snapshot/restore_ledgers` 类型容错对称，快照随归位迁移天然随迁。
 - **归位时序**：成果完整的「中断」照常归位交付；「保留现场」只适用于半途。
 - **归位冲突报错保留草稿**：落盘即归位撞名 → 红字报错、包留草稿位、**不打断会话**，会话末
   `_finalize_new_package` 兜底再试（v4.9 起其职责收窄为兜底 + 改名同步：会话中自然语言改过
@@ -433,6 +441,7 @@ REF 则直接定址；此前归位压到会话结束，实测用户确认后在�
 | SUT 未知键拒绝（`registry.validate_sut_config_document`） | 以执行器模型 `model_fields` 为白名单（运行时 `extra="allow"` 前向兼容意味着发明字段被**静默丢弃**）并**递归下钻 `sut.request_template.steps[i]` 与 `steps[i].poll`**（v4.7：steps 链/poll 步同样白名单化，幻觉字段逐项点名打回并附该层合法字段清单），复用 `SUTSystemConfig` 校验必填/枚举/`${VAR}` 展开；`SUTRegistry.load` **装载卡口**（v4.7）：执行入口同源复检，违例 raise `SUTChannelError`——绕过工作台手改的配置照样被拦（arch/03 §4.0.3） | 自造 `login.base_url` 字段被静默丢弃 → 执行时拼回页面域 404；GitHub Actions 肌肉记忆 `kind/depends_on/until` 写进 steps → Pydantic 静默丢弃 → 全部任务 run_error（jxb 20260917_003025，11/11） |
 | 骨架开槽检查（v4.7，`skeleton_gate_errors`） | 暂存含 `SKELETON.md` 时：`- [ ]` 开槽全部列出打回（带逐条原文）；`- [x]` 闭槽必含「证据：」——**闭槽 = 有证据的结论，不是表态**；opt-in——无骨架的会话（克隆/fork 内置包）行为零变化 | 配置在事实未齐时渐进成形，证据与幻觉混在同一文件；探索结论散在头注释里、后续改登录方式无处重开 |
 | 通道排期校验（v4.7.3 起） | `channel` ∈ `SCHEDULED_CHANNELS`（`agent_protocol`/`generic_http`，与执行工厂同源单点）；预留通道（如 `browser`）落盘即打回，错误文案自带「探测受挫不是换通道的理由……**不得静默降级改写落盘**」行动指引；generic_http 免协议端点对账（无协议语义），登录对账照走 | 协议探测受挫后 Agent 静默降级写预留通道 → 落盘成功、答完 5 个交互到执行工厂才报「预留未排期」 |
+| YAML 全量解析双防线（v4.10） | ①**写入时 fail-fast**：`write_file` 对 `.yaml/.yml` 内容先 `safe_load`，解析失败当场拒写（未入暂存，错误带摘要与截断提示）——「靠 Agent read_file 自检才发现截断」的一整轮消失；②**校验时全量解析**：`validate_package` 对暂存视图**所有** `.yaml/.yml`（除清单——load_manifest 已覆盖；除 `sut_configs/`——另有解析+schema 校验）解析打回，旁路写入的截断文件（旧快照恢复等）照样拦下 | `task_sets/smoke.yaml` 首写被截断，解析门禁只扫 `rules/` 时漏网，靠 Agent 自检才发现；未自检即可带伤落盘 |
 
 引擎侧配套守卫：评估器**尝试创建且全部失败即中止**（部分失败跳过语义保留）——防
 「垃圾报告静默产出」。
@@ -885,3 +894,4 @@ review 检查项。
 | v4.7 | 2026-09-17 | 创建流程五阶段重设计（Plan-as-Artifact，jxb agent-safety 包 run 20260917_003025 11/11 run_error 事故驱动，§6.5 新段）：①**SKELETON.md 骨架契约**——事实槽/决策槽机器可检（`- [ ]` 开槽 / `- [x]`+「证据：」闭槽），探测期只写骨架不写配置，「进度即回填骨架」取代「进度即写盘」；开槽门禁（§6.3 新行）+ commit 排除出包、归档 `workspace/agent_sessions/`；②**fact_sink 机械事实行回填**——declare_token/probe_protocol 成功路径经构造注入回调把证据行落骨架（探测面零反向依赖 workbench）；③**`write_sut_config` 机械物化**（§6.2 新行）——auth 段从证据账本 verbatim 注入 + 内联执行器同款校验，「验证过了又来一遍登录实测」在机制上消失（§6.5 防线三环→四环）；④**未知键校验递归下钻 steps[i]/poll + `SUTRegistry.load` 装载卡口**（§6.3 门禁行更新，arch/03 v4.23 同步）；⑤提示词五阶段单线程重构——「工作流程 6 步」与「SUT 接入调试」两份并行指令合一，修复环查骨架不查记忆 |
 | v4.8 | 2026-09-17 | 登录探测 422/事件循环/超时三根因修复（jxb 二轮实测事故驱动，§6.5 红线 6/8 更新 + 新段）：①**Content-Type 标签机械归一化**——显式非 JSON CT 旁路 auto 补齐与双重编码门禁，正确 JSON 报文顶着 text/plain 上 wire 致 FastAPI 422 `model_attributes_type`（input 原文回显形似双重编码，服务端排查见「json 不是 json、内容加了引号」）；JSON 对象 body 的标签机械改写（返回含 `content_type_normalized`），原始报文探测不收缩；同批修复渲染头整行回填缺口（wire 收到 `Key: Key: Value`）；②**共享 client 事件循环亲和**——REPL 每轮 `asyncio.run` 换循环 × 会话级 client 绑死旧循环 = 跨轮首请求 `Event loop is closed`，`client()` 按循环废弃旧实例换新、cookie jar 同步搬运；③**超时错误面代理指引**——本机代理把 0.3s 请求拖到 11.7s 顶爆 10s 探测超时，指引配 `NO_PROXY`；④**`declare_token` 静态注入通道**（`static_field`）——用户直接提供的 token 自密钥区挂载，解除「无实测记录即永远 auth_attached:false」死循环；不入证据账本、不生成 auth: 段（落盘对账的实测证据语义不被稀释） |
 | v4.9 | 2026-09-17 | **落盘即归位**（用户实测反馈「确认后预告路径找不到包，须 Ctrl+C/空行退出才归位」，§6.3 重写）：首次确认落盘成功即把草稿挪到 `cwd/<id>-package/`——`PackageToolServer.rebind_root` 沙盒重定向（staging 内存态、root 无持久句柄，零残留）+ `WorkbenchAgent.relocate_root` 图重建（`{pkg_root}` 建图烘焙，对话消息宿主持有不丢）+ 归位注记进对话 + 会话记录文件随迁新 `session_key`（跨进程续作上下文不因归位断裂）；**同一会话可继续自然语言修改已归位的包**；`_finalize_new_package` 收窄为会话末兜底 + 改名同步（已归位未改名静默返回）；撞名红字报错留草稿位不打断会话；确认横幅/落盘提示同步新时序 |
+| v4.10 | 2026-09-17 | **写包链路系统性修复**（jxb-agent 创建会话转录复盘，§6.3 门禁族表 +1 行、中断续作要点重写）：①`update_manifest` 结构修复——曾手拼 `"package:\n" + safe_dump(扁平dict)` 落盘零缩进损坏清单（read_manifest 的 get 回退把坏结构读回「自洽」致 bug 隐身），改为 dump `{"package": merged}` 嵌套结构自带缩进；②**YAML 全量解析双防线**——`write_file` 对 `.yaml/.yml` fail-fast 预检（截断当场拒写未入暂存）+ `validate_package` 全视图解析打回（曾只扫 `rules/`，截断的 task_sets 靠 Agent 自检才发现）；③**跨进程续跑**（五阶段计划推迟的 MR4 落地）——每轮会话记录同步写入进度快照（暂存 + SKELETON.md 留档 + 证据账本，凭证态绝不入快照），重启续作自动恢复并向对话注入进度注记——「重启会话续作」从进度陷阱变为真实承诺，write_sut_config 免重探跨进程成立 |

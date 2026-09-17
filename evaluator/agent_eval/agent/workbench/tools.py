@@ -21,7 +21,6 @@
 from __future__ import annotations
 
 import difflib
-import json
 import re
 import shutil
 import tempfile
@@ -422,6 +421,21 @@ class PackageToolServer(ToolExporterMixin):
                         "凭证经 credential_ref 引用，明文请录 agent-eval secrets set <ref>.<field>"
                     )
                 }
+        # YAML fail-fast 预检：截断/损坏内容当场打回（垃圾进不了暂存，省掉
+        # 「靠 Agent read_file 自检才发现截断」的一整轮——实测事故）。update_manifest
+        # 经此天然受益；sut_configs 的 schema 校验由 write_sut_config 另行负责
+        if Path(path).suffix in (".yaml", ".yml"):
+            import yaml
+
+            try:
+                yaml.safe_load(content)
+            except yaml.YAMLError as e:
+                return {
+                    "error": (
+                        f"YAML 解析失败（未入暂存区）{rel}: {e}——内容疑似被截断"
+                        "或损坏，请整体重写完整文件"
+                    )
+                }
         self.staging[rel] = content
         return {"ok": True, "staged": rel, "note": "已入暂存区，落盘需宿主确认+校验通过"}
 
@@ -455,8 +469,11 @@ class PackageToolServer(ToolExporterMixin):
         if "error" in current:
             return current
         merged = {**current["manifest"], **fields}
-        content = "# 场景包清单（WorkbenchAgent 更新）\npackage:\n" + yaml.safe_dump(
-            merged, allow_unicode=True, sort_keys=False
+        # 包一层再 dump——曾手拼 "package:\n" + dump(扁平dict)，子键零缩进、
+        # package: 为 null，落盘清单结构性损坏（read_manifest 的 get 回退又把
+        # 坏结构读回「自洽」，diff 才暴露）；safe_dump 嵌套结构自带正确缩进
+        content = "# 场景包清单（WorkbenchAgent 更新）\n" + yaml.safe_dump(
+            {"package": merged}, allow_unicode=True, sort_keys=False
         )
         return await self.write_file(MANIFEST_FILENAME, content)
 
@@ -584,11 +601,25 @@ class PackageToolServer(ToolExporterMixin):
             for sub in ("rules", "prompts"):
                 if (tmp_root / sub).is_dir() and not any((tmp_root / sub).glob("*.yaml")):
                     errors.append(f"{sub}/ 缺少 YAML 资产（提示词/规则集须为 .yaml）")
-            for rf in sorted((tmp_root / "rules").glob("*.yaml")):
+            # 全量 YAML 解析门禁：包内**所有** .yaml/.yml（除清单——load_manifest
+            # 已解析；除 sut_configs/——下方另有解析 + schema 校验）必须可解析。
+            # 只扫 rules/ 时截断文件漏网（实测：task_sets/smoke.yaml 首写被截断，
+            # 靠 Agent 自检 read_file 才发现——未自检即可带伤落盘）
+            sut_prefix = "sut_configs/"
+            for yf in sorted(
+                [*tmp_root.rglob("*.yaml"), *tmp_root.rglob("*.yml")],
+                key=lambda p: p.relative_to(tmp_root).as_posix(),
+            ):
+                rel_path = yf.relative_to(tmp_root).as_posix()
+                if rel_path == MANIFEST_FILENAME or rel_path.startswith(sut_prefix):
+                    continue
                 try:
-                    yaml.safe_load(rf.read_text(encoding="utf-8"))
+                    yaml.safe_load(yf.read_text(encoding="utf-8"))
                 except yaml.YAMLError as e:
-                    errors.append(f"规则 YAML 解析失败 {rf.name}: {e}")
+                    errors.append(
+                        f"YAML 解析失败 {rel_path}: {e}——内容疑似被截断或损坏，"
+                        "read_file 核对后整体重写"
+                    )
             # 规则引用对账（evaluator 注册态 / prompt_id / dimension / stage）——悬空
             # 引用此前延迟到运行时才炸（实测：evaluator 写成 method 枚举值 llm_judge，
             # 10 条规则全被跳过 → 全 0 报告），落盘前以运行时同源真相（注册表）拦截
@@ -805,9 +836,36 @@ class PackageToolServer(ToolExporterMixin):
         self.staging.clear()
         return changed
 
-    def export_staging_snapshot(self) -> str:
-        """导出暂存快照 JSON（测试与日志用）。"""
-        return json.dumps({"root": str(self.root), "staging": self.staging}, ensure_ascii=False)
+    def export_staging_snapshot(self) -> dict[str, Any]:
+        """导出进度快照（跨进程续作源，SessionStore 每轮随写）。
+
+        只含可序列化的进度态：暂存文件文本 + 骨架留档（commit 摘除前不可丢）。
+        不含凭证域——探测账本的 session_tokens 等凭证态由 SUTProbeToolServer
+        .ledger_snapshot 另行导出，且同样只含事实（无凭证值）。
+        """
+        return {
+            "root": str(self.root),
+            "staging": self.staging,
+            "skeleton_archive": self.skeleton_archive,
+        }
+
+    def import_staging_snapshot(self, payload: Any) -> int:
+        """恢复暂存与骨架留档，返回恢复的暂存条数（类型不符静默忽略单条）。
+
+        skeleton_archive 仅在当前为空时采纳——本会话已更新的留档优先。
+        """
+        if not isinstance(payload, dict):
+            return 0
+        staging = payload.get("staging")
+        if isinstance(staging, dict):
+            self.staging = {
+                rel: content
+                for rel, content in staging.items()
+                if isinstance(rel, str) and (content is None or isinstance(content, str))
+            }
+        if self.skeleton_archive is None and isinstance(payload.get("skeleton_archive"), str):
+            self.skeleton_archive = payload["skeleton_archive"]
+        return len(self.staging)
 
 
 def materialize_view(pkg_root: Path, server: PackageToolServer, dest: Path) -> Path:

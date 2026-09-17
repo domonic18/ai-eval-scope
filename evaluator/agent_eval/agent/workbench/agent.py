@@ -132,6 +132,23 @@ class WorkbenchAgent:
             paths.default_workspace / "agent_sessions" / session_key(Path(pkg_root)),
             max_entries=self.config.max_dialogue_entries,
         )
+        # 进度恢复（跨进程续作，v4.10）：上次会话的暂存 + 骨架留档 + 证据账本
+        # 随会话记录持久化，重启即恢复——五阶段流程的中间进度不再「跨进程蒸发」
+        # （实测事故：代理超时后建议用户重启续作，暂存与账本实际全丢）。账本
+        # 独立于暂存恢复：已落盘包的续改会话同样免重探
+        restored = self.server.import_staging_snapshot(self._session_store.last_snapshot)
+        ledger_payload = (self._session_store.last_snapshot or {}).get("ledger")
+        restored_logins = self.probe.restore_ledgers(ledger_payload)
+        protocols = (
+            len(ledger_payload.get("verified_protocols", {}))
+            if isinstance(ledger_payload, dict)
+            else 0
+        )
+        self.restored_progress = {
+            "staged": restored,
+            "logins": restored_logins,
+            "protocols": protocols,
+        }
         self._graph: Any | None = None
         self._log_path = (
             log_dir
@@ -153,9 +170,18 @@ class WorkbenchAgent:
         """已续接的此前会话对话条数（0 = 全新会话），宿主据此显示续作提示。"""
         return len(self._session_store.dialogue)
 
+    def _progress_snapshot(self) -> dict[str, Any]:
+        """组装进度快照（暂存 + 骨架留档 + 证据账本，仅事实数据无凭证值）。"""
+        return {
+            **self.server.export_staging_snapshot(),
+            "ledger": self.probe.ledger_snapshot(),
+        }
+
     def _record_turn(self, user_text: str, reply: str) -> None:
         """记录本轮对话要点并持久化（仅 user/assistant 文本，不含工具流量）。"""
-        self._session_store.record(user_text, reply, str(self.server.root))
+        self._session_store.record(
+            user_text, reply, str(self.server.root), snapshot=self._progress_snapshot()
+        )
 
     def relocate_root(self, final_root: Path) -> None:
         """包归位后重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
@@ -284,6 +310,22 @@ class WorkbenchAgent:
         self.probe.new_turn()  # 重置 SUT 探测轮内预算（轮内总量约束）
         if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
             self._messages.extend(_resume_messages(self._dialogue, self.config))
+            # 进度恢复注记（v4.10）：暂存与证据账本已在 __init__ 恢复——Agent 须
+            # 知道进度在手上，勿从头重探/重写（实测事故：重启续作把全部进度重做）
+            prog = self.restored_progress
+            if prog["staged"] or prog["logins"] or prog["protocols"]:
+                parts = [f"暂存 {prog['staged']} 个文件"] if prog["staged"] else []
+                if prog["logins"]:
+                    parts.append(f"已验证登录 {prog['logins']} 项")
+                if prog["protocols"]:
+                    parts.append(f"已验证协议 {prog['protocols']} 项")
+                self._messages.append(
+                    (
+                        "user",
+                        f"（已恢复上次会话进度：{'、'.join(parts)}"
+                        "——这些已写内容与已验证事实均有效，无需重新探测或重写，直接继续）",
+                    )
+                )
         self._messages.append(("user", user_text))
         segment = 1
         while True:  # 自动分段续跑：同一对话/预算池/暂存，撞线开新段

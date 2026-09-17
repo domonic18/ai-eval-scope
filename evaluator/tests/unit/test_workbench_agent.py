@@ -176,6 +176,56 @@ class TestSandbox:
         assert "0.2.0" in server.staging["agent_eval.yaml"]
         assert "staging" in server.staging["agent_eval.yaml"]
 
+    def test_update_manifest_roundtrip_structure(self, tmp_path: Path) -> None:
+        """实测事故回放：曾手拼 "package:\\n" + dump(扁平 dict)——子键零缩进、
+        package: 为 null，落盘清单结构性损坏（read_manifest 的 get 回退又把坏
+        结构读回「自洽」）。结构回读断言防回归。"""
+        import yaml as _yaml
+
+        _seed_valid_package(tmp_path)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.update_manifest({"version": "0.2.0"}))
+        content = server.staging["agent_eval.yaml"]
+        assert "\n  id: demo" in content  # package 下字段两空格缩进
+        data = _yaml.safe_load(content)
+        assert data["package"]["id"] == "demo"
+        assert data["package"]["version"] == "0.2.0"
+
+    def test_validate_rejects_truncated_yaml_anywhere(self, tmp_path: Path) -> None:
+        """实测事故回放：task_sets/smoke.yaml 首写被截断，解析门禁只扫 rules/
+        时漏网（靠 Agent read_file 自检才发现）——全量 .yaml/.yml 解析，截断
+        文件带路径打回。"""
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await _write_valid(server)
+            # 绕过 write_file 预检直接入暂存（跨进程恢复的旧快照等旁路）——
+            # validate 的全量解析门禁是纵深防御，截断文件带路径打回
+            server.staging["task_sets/smoke.yaml"] = (
+                'task_sets:\n  - id: smoke\n    steps: ["未闭合'
+            )
+            result = await server.validate_package()
+            assert not result["ok"]
+            assert any("task_sets/smoke.yaml" in e for e in result["errors"])
+
+        asyncio.run(run())
+
+    def test_write_file_rejects_truncated_yaml(self, tmp_path: Path) -> None:
+        """截断 YAML 在写入时当场打回（垃圾进不了暂存，省掉靠 Agent 自检发现的
+        一整轮）；合法 YAML 与非 YAML 扩展名不受影响。"""
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            bad = await server.write_file("task_sets/smoke.yaml", 'a: "未闭合')
+            assert "YAML 解析失败" in bad["error"] and "未入暂存区" in bad["error"]
+            assert server.staging == {}
+            ok = await server.write_file("task_sets/smoke.yaml", "task_sets: []\n")
+            assert ok["ok"] is True and "task_sets/smoke.yaml" in server.staging
+            md = await server.write_file("notes.md", '# 任意文本 "未闭合\n')
+            assert md["ok"] is True
+
+        asyncio.run(run())
+
     def test_validate_empty_and_minimal(self, tmp_path: Path) -> None:
         server = PackageToolServer(tmp_path)
 
@@ -815,6 +865,148 @@ class TestWriteSutConfig:
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         assert agent.server.ledger is agent.probe  # noqa: SLF001 — 装配内省
         assert agent.probe.fact_sink is not None  # noqa: SLF001
+
+
+class TestCrossProcessResume:
+    """跨进程续跑（v4.10）：暂存 + 骨架留档 + 证据账本随会话记录持久化，重启
+    恢复——五阶段中间进度不再「跨进程蒸发」（实测事故：代理超时后建议重启续作，
+    暂存与账本实际全丢，只能从头再来）。"""
+
+    def _seed_login_fact(self, probe: Any) -> dict[str, str]:
+        """账本播种（snippet 由真实渲染器生成，schema 必合法；零联网零真实链）。"""
+        from agent_eval.agent.workbench.sut_probe.tokens import _render_auth_snippet
+
+        url, template, token_path = (
+            "https://sut.example.com/api/login",
+            '{"u": "{{ username }}"}',
+            "token",
+        )
+        fact = {
+            "ref": "SUT",
+            "method": "POST",
+            "url": url,
+            "body_template": template,
+            "token_path": token_path,
+            "token_source": "Bearer",
+            "expires_in_path": "",
+            "auth_snippet": _render_auth_snippet(
+                ref="SUT",
+                method="POST",
+                url=url,
+                template=template,
+                token_type="Bearer",
+                token_path=token_path,
+                expires_in_path="",
+            ),
+        }
+        probe._record_login(fact)  # noqa: SLF001 — 测试/门禁专用别名
+        return fact
+
+    def test_snapshot_roundtrip_restores_staging_and_ledger(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "draft"
+        draft.mkdir()
+        agent_a = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        self._seed_login_fact(agent_a.probe)
+        asyncio.run(agent_a.server.write_file("task_sets/smoke.yaml", "task_sets: []\n"))
+        agent_a._record_turn("推进创建", "骨架已落、smoke 已写")
+
+        session_file = agent_a._session_store.session_file
+        raw = session_file.read_text(encoding="utf-8")
+        assert '"snapshot"' in raw
+        assert "T0KPEN" not in raw and "password" not in raw.lower()  # 无凭证值/明文字段
+
+        agent_b = WorkbenchAgent(draft, log_dir=tmp_path / "log2")  # 模拟重启新进程
+        assert "task_sets/smoke.yaml" in agent_b.server.staging  # 暂存恢复
+        assert agent_b.probe.verified_login("sut") is not None  # 账本恢复（免重探）
+        assert agent_b.restored_progress["staged"] == 1
+        assert agent_b.restored_progress["logins"] == 1
+
+    def test_resumed_agent_writes_sut_config_without_reprobe(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """核心验收（v4.7 承诺跨进程成立）：新进程 write_sut_config 直接过账本
+        注入——恢复的会话不重做已完成的登录实测。"""
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "draft"
+        draft.mkdir()
+        agent_a = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        self._seed_login_fact(agent_a.probe)
+        agent_a._record_turn("登录已验证", "账本已登记")
+
+        agent_b = WorkbenchAgent(draft, log_dir=tmp_path / "log2")
+        result = asyncio.run(
+            agent_b.server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "body": {"content": "{{ input }}"},
+                            }
+                        ]
+                    },
+                    "response_mapping": {"text": "data.reply"},
+                },
+                credential_ref="SUT",
+            )
+        )
+        assert result["ok"] is True, result
+        assert "sut_configs/sut.yaml" in agent_b.server.staging
+        assert result["auth_injected"]["credential_ref"] == "SUT"
+
+    def test_resume_note_reports_restored_progress(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "draft"
+        draft.mkdir()
+        agent_a = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        self._seed_login_fact(agent_a.probe)
+        agent_a._record_turn("推进", "登录已验证")
+
+        agent_b = WorkbenchAgent(draft, log_dir=tmp_path / "log2")
+
+        async def _reply(_s: Any) -> str:
+            return "继续推进"
+
+        fake, _calls = _replay([_reply])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        asyncio.run(agent_b.turn("继续", confirm_fn=lambda r, d: True))
+
+        notes = [m for m in agent_b._messages if "已恢复上次会话进度" in str(m)]
+        assert len(notes) == 1
+        assert "已验证登录 1 项" in str(notes[0])
+
+    def test_snapshot_without_progress_is_noop(self, tmp_path: Path) -> None:
+        """无快照/快照残缺：恢复为 no-op（新会话零影响）。"""
+        server = PackageToolServer(tmp_path)
+        assert server.import_staging_snapshot(None) == 0
+        assert server.import_staging_snapshot({"staging": "垃圾"}) == 0
+        assert server.staging == {}
+        from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
+
+        probe = SUTProbeToolServer(allowed_hosts=set())
+        assert probe.restore_ledgers(None) == 0
+        assert probe.restore_ledgers({"verified_logins": ["垃圾"]}) == 0
+        assert probe.ledger_snapshot() == {"verified_logins": {}, "verified_protocols": {}}
+
+    def test_local_skeleton_archive_wins_over_snapshot(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        server.skeleton_archive = "# 本会话留档"
+        restored = server.import_staging_snapshot(
+            {"staging": {"a.yaml": "x"}, "skeleton_archive": "# 旧会话留档"}
+        )
+        assert restored == 1
+        assert server.skeleton_archive == "# 本会话留档"  # 本地更新优先
 
 
 class TestAgentTurn:
