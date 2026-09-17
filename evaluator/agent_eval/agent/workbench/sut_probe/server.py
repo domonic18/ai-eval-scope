@@ -101,13 +101,15 @@ class SUTProbeToolServer(ToolExporterMixin):
         token_path: str = "",
         token_source: str = "Bearer",
         expires_in_path: str = "",
+        static_field: str = "",
     ) -> dict[str, Any]:
-        """事后声明式会话凭证提取：在该 ref 最近一次带凭证 2xx 响应上提取。"""
+        """事后声明式会话凭证提取；static_field 走用户静态 token 注入分支。"""
         return await self._tokens.declare_token(
             ref,
             token_path=token_path,
             token_source=token_source,
             expires_in_path=expires_in_path,
+            static_field=static_field,
         )
 
     async def ask_user(

@@ -823,6 +823,137 @@ class TestRequestBodyGuard:
         assert "双重编码" in result["error"] or "而非 JSON 对象" in result["error"]
         assert sent == []
 
+    def test_json_body_with_wrong_content_type_normalized(self) -> None:
+        """jxb-server 422 误诊事故根修：正确的 JSON body 顶着 text/plain 标签上
+        wire，FastAPI 不做 JSON 解析、Pydantic 把原文当字符串校验回 422
+        model_attributes_type（input 回显带引号形似双重编码）——body 实为 JSON
+        对象时标签机械归一化（凡可机械归一的变形不经 LLM 转述）。"""
+        server, sent = self._server()
+        result = _run(
+            server.request(
+                "POST", _LOGIN_URL, body='{"username": "u"}', headers="Content-Type: text/plain"
+            )
+        )
+        assert result["status"] == 200 and len(sent) == 1
+        assert sent[0].headers["content-type"] == "application/json"
+        assert "text/plain" in result["content_type_normalized"]
+
+    def test_normalized_body_with_credential_flow(self) -> None:
+        """归一化与凭证流叠加：模板 body + 显式错标签 → 归一化后照常外发授权。"""
+        creds = CredentialStore(env=_CREDS)
+        sent: list[httpx.Request] = []
+
+        def wrapping(request: httpx.Request) -> httpx.Response:
+            sent.append(request)
+            return httpx.Response(200, json={}, request=request)
+
+        server = _make(
+            credential_store=creds,
+            ask_fn=_ask(lambda q, **kw: "允许"),
+            http_client_factory=_transport(wrapping),
+        )
+        result = _run(
+            server.request(
+                "POST",
+                _LOGIN_URL,
+                body=_LOGIN_BODY,
+                headers="Content-Type: text/plain",
+                ref="SUT",
+            )
+        )
+        assert result["status"] == 200
+        assert sent[0].headers["content-type"] == "application/json"
+
+    def test_explicit_header_wire_value_is_value_only(self) -> None:
+        """显式头的 wire 值只含值（渲染整行回填前须再切值——否则 wire 收到
+        "Key: Key: Value"，显式 Content-Type 从未真正生效）。"""
+        server, sent = self._server()
+        result = _run(
+            server.request(
+                "POST", _LOGIN_URL, body='{"a": 1}', headers="X-Trace: abc|Content-Type: text/plain"
+            )
+        )
+        assert result["status"] == 200
+        assert sent[0].headers["x-trace"] == "abc"
+        assert sent[0].headers["content-type"] == "application/json"  # 归一化值同形
+
+    def test_templated_header_renders_to_value(self) -> None:
+        """模板头（值含 {{ 凭证变量 }}）渲染后按 name→值 挂载。"""
+        creds = CredentialStore(env=_CREDS)
+        sent: list[httpx.Request] = []
+
+        def wrapping(request: httpx.Request) -> httpx.Response:
+            sent.append(request)
+            return httpx.Response(200, json={}, request=request)
+
+        server = _make(
+            credential_store=creds,
+            ask_fn=_ask(lambda q, **kw: "允许"),
+            http_client_factory=_transport(wrapping),
+        )
+        result = _run(
+            server.request(
+                "POST",
+                _LOGIN_URL,
+                body=_LOGIN_BODY,
+                headers="X-Api-Key: {{ username }}",
+                ref="SUT",
+            )
+        )
+        assert result["status"] == 200
+        assert sent[0].headers["x-api-key"] == "u1"
+
+    def test_raw_form_body_content_type_untouched(self) -> None:
+        """非 JSON 原始报文探测（form 编码）原样放行：标签归一化只对 JSON 对象/
+        数组 body 生效，原始报文自由不收缩。"""
+        server, sent = self._server()
+        result = _run(
+            server.request(
+                "POST",
+                _LOGIN_URL,
+                body="a=1&b=2",
+                headers="Content-Type: application/x-www-form-urlencoded",
+            )
+        )
+        assert result["status"] == 200 and len(sent) == 1
+        assert sent[0].headers["content-type"] == "application/x-www-form-urlencoded"
+        assert "content_type_normalized" not in result
+
+    def test_raw_scalar_body_content_type_untouched(self) -> None:
+        """标量/纯文本原始报文 + 非 JSON 标签 → 原样放行（既有豁免语义不变）。"""
+        server, sent = self._server()
+        result = _run(
+            server.request(
+                "POST", _LOGIN_URL, body="not-json-raw", headers="Content-Type: text/plain"
+            )
+        )
+        assert result["status"] == 200 and len(sent) == 1
+        assert sent[0].headers["content-type"] == "text/plain"
+        assert "content_type_normalized" not in result
+
+
+class TestRequestTimeoutHint:
+    """超时错误面的代理指引（jxb ReadTimeout 事故）：本机代理把 0.3s 请求拖到
+    11.7s 顶爆 10s 探测超时——指引配 NO_PROXY 直连，而非误判服务不可用。"""
+
+    def test_timeout_error_guides_proxy_check(self) -> None:
+        def timing_out(request: httpx.Request) -> httpx.Response:
+            raise httpx.ReadTimeout("timed out")
+
+        server = _make(http_client_factory=_transport(timing_out))
+        result = _run(server.request("GET", "https://sut.example.com/api/v1/x"))
+        assert result["status"] == 0
+        assert "ReadTimeout" in result["error"]
+        assert "NO_PROXY" in result["error"]
+
+    def test_non_timeout_error_unaffected(self) -> None:
+        def refusing(request: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectError("connection refused")
+
+        server = _make(http_client_factory=_transport(refusing))
+        result = _run(server.request("GET", "https://sut.example.com/api/v1/x"))
+        assert "NO_PROXY" not in result["error"]
+
 
 class TestResponse422Triage:
     """422 next_step 分诊（jxb-server 事故）：body 层错误换字段名无解——指引先读
@@ -1778,3 +1909,149 @@ class TestDelegationSurface:
         assert server.allowed_hosts == {"example.com"}
         assert inspect.iscoroutinefunction(server.request)
         assert inspect.iscoroutinefunction(server.ask_user)
+
+
+class TestClientEventLoopAffinity:
+    """共享 client 的事件循环亲和（workbench_agent_20260917_142724 会话 ：29/:38
+    事故）：REPL 每用户轮 asyncio.run 新建事件循环，会话级 client 绑死旧循环的
+    连接池——跨轮首个请求必得 RuntimeError: Event loop is closed（偶发性取决
+    于池中是否有存活连接）。client() 按循环废弃旧实例换新，cookie jar 同步搬运
+    （cookie 型凭证与会话粘性跨轮不丢）。"""
+
+    def _probe(self, **kw: Any) -> Any:
+        from agent_eval.agent.workbench.sut_probe.context import ProbeContext
+
+        defaults: dict[str, Any] = {
+            "allowed_hosts": {"sut.example.com"},
+            "http_client_factory": _ok_transport(),
+        }
+        defaults.update(kw)
+        return ProbeContext(**defaults)
+
+    def test_client_replaced_across_event_loops(self) -> None:
+        ctx = self._probe()
+
+        async def turn_a() -> Any:
+            return await ctx.client()
+
+        first = asyncio.run(turn_a())
+
+        async def turn_b() -> Any:
+            return await ctx.client()
+
+        second = asyncio.run(turn_b())
+        assert first is not second
+
+    def test_cookie_jar_carried_across_loops(self) -> None:
+        """jar 是纯数据可跨循环转移：cookie 型凭证（declare_token 落 jar）与会话
+        粘性跨轮不丢。"""
+        ctx = self._probe()
+
+        async def turn_a() -> Any:
+            client = await ctx.client()
+            client.cookies.set("sid", "abc")
+            return client
+
+        first = asyncio.run(turn_a())
+
+        async def turn_b() -> Any:
+            client = await ctx.client()
+            assert client is not first
+            assert client.cookies.get("sid") == "abc"
+            return client
+
+        second = asyncio.run(turn_b())
+        assert second.cookies.get("sid") == "abc"
+
+    def test_same_loop_reuses_client(self) -> None:
+        """同循环内照旧共享（连接池复用 + jar 跨请求保持的既有语义不变）。"""
+        ctx = self._probe()
+
+        async def one() -> Any:
+            a = await ctx.client()
+            b = await ctx.client()
+            assert a is b
+            return a
+
+        asyncio.run(one())
+
+    def test_aclose_then_reuse_rebuilds(self) -> None:
+        ctx = self._probe()
+
+        async def one() -> tuple[Any, Any]:
+            a = await ctx.client()
+            await ctx.aclose()
+            b = await ctx.client()
+            return a, b
+
+        first, second = asyncio.run(one())
+        assert first is not second
+
+    def test_incident_replay_two_turns_via_server(self) -> None:
+        """会话级回放（事故原样两轮）：轮 A 发请求建 client，轮 B（新事件循环）
+        首个请求不得失败于 Event loop is closed。"""
+        server = _make(allowed_hosts={"sut.example.com"})
+
+        async def turn() -> dict[str, Any]:
+            return await server.request("GET", "https://sut.example.com/api/v1/x")
+
+        assert asyncio.run(turn())["status"] == 200
+        second = asyncio.run(turn())
+        assert second["status"] == 200
+        assert "Event loop" not in json.dumps(second)
+
+
+class TestDeclareTokenStatic:
+    """declare_token(static_field=…)：用户直接提供的 token（如浏览器已登录态、
+    无登录实测）自密钥区取值挂载——解除「无带凭证 2xx 实测记录即永远
+    auth_attached:false」的死循环（事故会话 ：24-:30 静态 token 注入无通道）。
+    不入证据账本、不生成 auth: 段——落盘对账的证据语义不被静态值稀释。"""
+
+    def _server(self, **kw: Any) -> SUTProbeToolServer:
+        defaults: dict[str, Any] = {
+            "credential_store": CredentialStore(
+                env={"AGENT_EVAL_SUT__SUT__ACCESS_TOKEN": "ST0KPEN"}
+            ),
+            "http_client_factory": _ok_transport(),
+        }
+        defaults.update(kw)
+        return _make(**defaults)
+
+    def test_static_token_mounted_without_login(self) -> None:
+        server = self._server()
+        result = _run(server.declare_token("SUT", static_field="access_token"))
+        assert result["ok"] is True
+        assert "ST0KPEN" not in json.dumps(result)  # 值不回流 LLM 上下文
+        assert server.auth_headers == {"Authorization": "Bearer ST0KPEN"}
+        assert server.verified_login("SUT") is None  # 不入证据账本
+        assert "sut_config_auth_snippet" not in result  # 不生成 auth: 段
+
+    def test_static_token_header_source(self) -> None:
+        server = self._server()
+        result = _run(
+            server.declare_token(
+                "SUT", token_source="header:X-Session-Id", static_field="access_token"
+            )
+        )
+        assert result["ok"] is True
+        assert server.auth_headers == {"X-Session-Id": "ST0KPEN"}
+
+    def test_static_token_cookie_source_lands_jar(self) -> None:
+        server = self._server()
+        result = _run(
+            server.declare_token("SUT", token_source="cookie:sid", static_field="access_token")
+        )
+        assert result["ok"] is True
+        assert server.auth_headers == {}  # cookie 型由 jar 承载
+
+    def test_static_token_missing_field_directed_to_ask_user(self) -> None:
+        server = self._server(credential_store=CredentialStore(env=_CREDS))
+        result = _run(server.declare_token("SUT", static_field="access_token"))
+        assert "ask_user" in result["error"] and "access_token" in result["error"]
+
+    def test_static_token_does_not_close_fact_slot(self) -> None:
+        """骨架事实槽只收实测事实：静态注入不回填（登录实测语义不被稀释）。"""
+        facts: list[str] = []
+        server = self._server(fact_sink=facts.append)
+        _run(server.declare_token("SUT", static_field="access_token"))
+        assert facts == []

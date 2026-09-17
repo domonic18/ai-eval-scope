@@ -12,11 +12,12 @@
 - **总量约束**：单探测 10s 超时、轮内预算按工具分池、发现阶梯路径清单 ≤10。
 
 状态全部公开名（各域工具类经 ``ctx`` 跨模块协作——下划线私有名跨模块引用是
-反模式）；唯 ``_client_instance`` 为懒建句柄私有。
+反模式）；唯 ``_client_instance``/``_client_loop`` 为懒建句柄私有。
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from pathlib import Path
@@ -87,8 +88,11 @@ class ProbeContext:
         # {{ stepN.路径 }} 引用其值（值服务端流动，不经对话）
         self.step_responses: dict[str, Any] = {}
         # 会话级共享 AsyncClient（与执行器 channels/base.py 同构：连接池 +
-        # cookie jar——cookie 型凭证与会话粘性靠它），会话结束 aclose()
+        # cookie jar——cookie 型凭证与会话粘性靠它），会话结束 aclose()。
+        # _client_loop 记录建实例时的事件循环：REPL 每轮 asyncio.run 换循环，
+        # client() 据此废弃绑死旧循环的实例（Event loop is closed 实测事故）
         self._client_instance: Any = None
+        self._client_loop: Any = None
 
     # ── 会话挂点与日志 ────────────────────────────────────────────
 
@@ -257,22 +261,42 @@ class ProbeContext:
     # ── 会话级共享 client ────────────────────────────────────────
 
     async def client(self) -> Any:
-        """会话级共享 AsyncClient（懒建）：连接池复用 + cookie jar 跨请求保持。
+        """会话级共享 AsyncClient（懒建，绑定创建时的事件循环）。
 
         与执行器通道同构（channels/base.py）：登录态 cookie、会话粘性都靠共享
         client 的 jar——每请求新建 client 丢 cookie 的宽度裂缝在此消灭。
-        会话结束经 aclose() 释放。
+        会话结束经 aclose() 释放。WorkbenchAgent 每用户轮经 asyncio.run 新建
+        事件循环（agent.py），旧 client 的连接池绑定已关闭的循环——跨轮复用的
+        首个请求即 ``RuntimeError: Event loop is closed``（实测事故：暂停恢复/
+        新指令后的轮首必炸，偶发性取决于池中是否有存活连接）。故取用时校验
+        循环一致性：不一致即废弃旧实例换新，cookie jar 同步搬运（纯数据可跨
+        循环转移——cookie 型凭证与会话粘性跨轮不丢），旧实例交 GC 回收。
         """
-        if self._client_instance is None:
+        loop = asyncio.get_running_loop()
+        cached = self._client_instance
+        stale = cached is not None and self._client_loop is not loop
+        if stale:
+            self._client_instance = None
+        if cached is None or stale:
             if self.http_client_factory is not None:
-                self._client_instance = self.http_client_factory()
+                new_client = self.http_client_factory()
             else:
                 import httpx
 
-                self._client_instance = httpx.AsyncClient(
-                    timeout=self.timeout_s, follow_redirects=False
-                )
-        return self._client_instance
+                new_client = httpx.AsyncClient(timeout=self.timeout_s, follow_redirects=False)
+            if stale:
+                # 跨轮废弃旧实例：旧 jar 搬进新实例（cookie 型凭证与会话粘性
+                # 跨轮不丢；非 httpx 形态的测试替身无 cookies 属性，静默跳过）
+                old_jar = getattr(cached, "cookies", None)
+                if old_jar is not None:
+                    try:
+                        new_client.cookies.update(old_jar)
+                    except Exception:  # noqa: BLE001 — jar 形态不兼容时宁缺勿错
+                        pass
+            cached = new_client
+        self._client_instance = cached
+        self._client_loop = loop
+        return cached
 
     def borrow_client(self) -> Any:
         """``async with`` 形态借用共享 client（退出时不关闭——归会话统一释放）。
@@ -296,3 +320,4 @@ class ProbeContext:
             except Exception:  # noqa: BLE001 — 释放失败不阻断收尾
                 pass
             self._client_instance = None
+            self._client_loop = None

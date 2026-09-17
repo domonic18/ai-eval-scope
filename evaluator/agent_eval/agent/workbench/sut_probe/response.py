@@ -122,8 +122,10 @@ def structure_response(
             result["next_step"] = (
                 "422 body 类型错误：服务器收到的不是 JSON 对象——多为双重编码"
                 "（body 外层多一层引号/转义，发出的是 JSON 字符串）。detail 的 "
-                "input 字段回显了实际收到的报文，先读它确认形态；body 以单层对象"
-                "形态重传即为新组合（防锁不拦）"
+                "input 字段回显了实际收到的报文，先读它确认形态；Content-Type "
+                "标签因素已被工具排除（JSON body 的非 JSON 标签自动归一化，返回"
+                "含 content_type_normalized 可查）；body 以单层对象形态重传即为"
+                "新组合（防锁不拦）"
             )
         elif vtype == "json_invalid":
             result["next_step"] = (

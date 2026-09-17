@@ -88,12 +88,19 @@ class TokenTool:
         token_path: str = "",
         token_source: str = "Bearer",
         expires_in_path: str = "",
+        static_field: str = "",
     ) -> dict[str, Any]:
         """事后声明式会话凭证提取：在该 ref 最近一次带凭证 2xx 响应上提取。
 
         入参词汇与执行器同构：token_source 三态（Bearer | header:<X> | cookie）、
         token_path 点分路径（cookie 型为 Set-Cookie 名）。不重发请求——声明错了
         改路径重声明即可（防锁不适用；受轮内预算约束）。
+
+        static_field 非空走**静态注入**分支：用户直接提供的 token（如浏览器
+        已登录态，无登录实测）按名从密钥区取值挂载——解除「auth_attached 永远
+        false」的死循环（实测事故：用户给 token → declare_token 要求带凭证
+        2xx 实测记录 → 无实测即无法挂载）。静态注入不入证据账本、不生成
+        auth: 段——执行器 api_login 需实测登录支撑，落盘认证仍须实测路径。
         """
         if budget_err := self.ctx.budget("declare_token"):
             return budget_err
@@ -106,6 +113,8 @@ class TokenTool:
                     f"cookie[:名字]（收到 {token_source!r}）"
                 )
             }
+        if static_field.strip():
+            return await self._declare_static(ref, source, cookie_name, static_field.strip())
         fact = self.ctx.last_credential_request.get(ref.lower())
         if fact is None:
             return {
@@ -259,6 +268,48 @@ class TokenTool:
                 "（勿拆分 URL、勿增删字段；凭证仅 credential_ref 引用）；若协议探测曾在"
                 "登录成功前失败（authenticated: false），现在重探 probe_protocol"
                 "（凭证已自动挂载）"
+            ),
+        }
+
+    async def _declare_static(
+        self, ref: str, source: str, cookie_name: str, static_field: str
+    ) -> dict[str, Any]:
+        """静态注入分支：用户提供的 token 自密钥区取值挂载（无登录实测）。
+
+        只挂载会话（session_tokens → auth_headers 自动携带），不入证据账本
+        verified_logins、不生成 auth: 段——落盘对账门禁的证据语义（带凭证 2xx
+        实测）不被静态值稀释；探测面「先通再测」由此有正路可走。
+        """
+        value = (
+            self.ctx.credential_store.get(ref, static_field)
+            if self.ctx.credential_store is not None
+            else None
+        )
+        if not value:
+            return {
+                "error": (
+                    f"字段 {static_field!r} 不在 ref={ref!r} 的密钥区——先 ask_user"
+                    f"(kind=credential, ref={ref!r}, field={static_field!r}) 录入用户"
+                    "提供的 token，再 declare_token(static_field=…) 声明挂载"
+                )
+            }
+        self.ctx.store_token(ref, str(value), source)
+        if source == "cookie":
+            client = await self.ctx.client()
+            client.cookies.set(cookie_name or static_field, str(value))
+        self.ctx.log("declare_token", ref=ref, source=source, static_field=static_field)
+        return {
+            "ok": True,
+            "token_source": source,
+            "static_field": static_field,
+            "note": (
+                "用户提供的静态 token 已服务端持有并随请求自动挂载（值不在本返回中）；"
+                "不入证据账本、不生成 auth: 段"
+            ),
+            "next_step": (
+                "受保护接口现在可直接重试（auth_attached=true）。静态 token 仅支撑本会话"
+                "探测——执行器 api_login 需实测登录支撑，落盘认证仍须 request 实测登录 + "
+                "declare_token 声明提取（静态通道不能替代）"
             ),
         }
 
