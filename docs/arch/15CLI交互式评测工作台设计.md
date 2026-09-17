@@ -343,9 +343,21 @@ agent = WorkbenchAgent(
 ——同一包目录命中同一记录文件，续作时注入此前记录（≤24 条、单条 400 字截断）并附「勿重复
 追问已给信息」指引，CLI 显示「已续接 N 条对话」。
 
-**流式直播**：`astream` 事件流（`thinking`/`token`/`tool_start`/`tool_end`/`phase`/`tool_args`）
+**流式直播**：`astream` 事件流（`thinking`/`token`/`tool_start`/`tool_end`/`phase`/`tool_args`/`todos`）
 实时回调，`console/agent_stream.py` 按 Claude Code 式渲染；大文件内容在 tool_call args 里
 增量生成（不走 text 流），`tool_args` 事件以单行进度显示——否则数十秒无输出形同卡住。
+正文 TTY 下行缓冲经 markdown-lite（`console/markdown_lite.py`）行粒度渲染：完整行到达
+才转换（标题/粗体/行内代码/列表/引用/围栏，围栏内逐字保真），部分行挂起至收行兜底；
+非 TTY 原样直写保持管道日志机器可读。逐 token 全量重渲染（Live + Markdown）因 O(n²)
+与工具行抢终端被否，保守规则集（不做单星斜体/表格对齐）防模型字面量误伤。
+
+**任务清单**：`langchain.agents.middleware.TodoListMiddleware`（`write_todos` 工具 + `todos`
+状态键，Claude Code TodoWrite 同款语义）挂入 deepagents 中间件栈；注入工具必须并入工具面
+复位白名单（按实例 id 过滤，遗漏即不可见）。todos 走 langgraph state + 检查点，跨段续跑/
+会话续作自然保留；`stream_collect` 自 updates delta 提取 `todos` 独立事件，CLI 渲染
+`✓ 完成 / ▶ 进行中 / ○ 待办` 清单（与上次相同去重不重画）。纪律提示单源在中间件
+system_prompt（与工具同源注入），域提示词资产不重复维护；deepagents 默认栈不含该中间件
+（其默认 prompt 过长，见 deepagents graph.py 注释），此处传精简版。
 
 ### 6.2 工具面与沙盒（PackageToolServer）
 
@@ -607,6 +619,7 @@ prompt 段 + 档位登记，**不改会话机**。
 | `agent/workbench/sut_probe/` 包 | SUT 接入调试域：ProbeContext 共享状态 + 域工具类 request/response/search/discovery/protocol/tokens/ask_user（helpers/specs 设施）+ `server.py` 薄委托壳；组合模式，协作契约由 context 承载；「一域一 server」形态不变，拆的是实现不是边界 |
 | `cli/cmds/workbench_agent.py` | REPL 宿主：流式渲染挂接 / ask 桥 / 中断提示 / 落盘归位 |
 | `cli/console/agent_stream.py` | 流式事件渲染（表现层基础设施，与 prompts/render 同层） |
+| `cli/console/markdown_lite.py` | 流式正文 markdown-lite 行渲染（标题/粗体/行内代码/列表/围栏保真） |
 | `assets/configs/workbench_agent_prompts.yaml` | 提示词资产（分段装配，见下）+ `intro` 自我介绍段（§6.8） |
 
 **域装配档位（profile）**：`WorkbenchAgent(root, domain=<域档位>)` = 工具面清单 + 提示词段
@@ -799,3 +812,4 @@ review 检查项。
 | v4.3 | 2026-09-10 | 执行域事故修复（content-safety 假成功，arch/03 v4.8 同步）：generic_http steps 链式模板 + SSE 末步 + text 未命中判 failed；模板变量审计落盘门禁（§6.4 新增）；执行面工具结构性裁剪——invoke_* 退出 LLM 工具面 + 文件工具 workspace 边界（§6.4 新增）；prompts/guide 资产同步（steps 链实测纪律） |
 | v4.4 | 2026-09-10 | 既有场景包发现修复（用户实测「agent 找不到我创建的包」）：`list_packages` 三源工具（§6.2 新行，与 `scenario list` 同源）+ `read_reference` 纠偏为三源直读；工具面复位中间件（§6.1 新 bullet）剥除 deepagents 内置虚拟 FS 工具（ls/glob 永远为空致误判「没有包」）；prompts 域段包发现/改造规约按来源分流 + intro 示例（§3.5 同步） |
 | v4.5 | 2026-09-10 | 变形报文发送前拦截（§6.5 红线 8，jxb-server 422 误诊事故驱动）：request 渲染后 JSON 语义校验（双重编码 str/标量与非法 JSON 拒发 + tojson/dict 指引；数组与非 JSON Content-Type 放行）+ 422 detail type 分诊 next_step（model_attributes_type 读 input 回显 / json_invalid / missing 按 loc）+ 工具描述补 body 单层对象纪律；discover_login 的 OpenAPI 阶梯去兜底门（form 与 schema 证据并列）+ 接口域 openapi 指引 |
+| v4.6 | 2026-09-17 | Agent 交互可读性（用户实测反馈「markdown 裸奔」+ 复杂任务缺拆解）：流式正文 markdown-lite 行粒度渲染（§6.1 流式直播段，`console/markdown_lite.py` 新模块，TTY only、围栏保真、Text+span 防 markup 注入）+ TodoListMiddleware 任务清单（§6.1 新段，write_todos 并入工具面白名单、todos 事件提取与渲染、跨段续跑保留）；非流式兜底 `_render_turn` 升级完整 rich.markdown 渲染 |
