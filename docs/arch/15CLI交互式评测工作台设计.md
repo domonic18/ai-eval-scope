@@ -372,6 +372,7 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 | `read_reference` | 只读**已发现包（三源）**文件内容（ref + 包内 path，ref 走 `PackageManager.resolve_ref`）——Agent 参照真实格式的**合法通道**（`read_file` 对包外路径受分级授权约束，防反复试探） |
 | `list_evaluators` | 当前可用评估器注册 ID 的注册表实时快照（含本包 entry_points 声明）——rules 的 `evaluator` 字段从此清单**原样复制，勿凭记忆臆造**（copy, don't recall：示范强于指令） |
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff（宿主确认界面同源） |
+| `write_sut_config`（v4.7） | **机械物化**（§6.5 五阶段之阶段 3）：agent 只给决策字段（name/channel/base_url/timeout/request_template/response_mapping 等），服务端从探测证据账本取该 ref 的 `auth_snippet` **verbatim 注入 auth 段**——「验证→配置」的传递不经 LLM 转述；无账本事实即拒绝并引导先 request 实测 + declare_token；注入后**内联执行器同款 schema 校验**（未知键/模板变量审计当场打回）才入暂存；`auth` 键手写一律拒绝（防转述变形）——取代「snippet 原样粘贴」纪律，转述类打回在机制上消失。`write_file` 写 sut_configs 的旧路径保留兜底（auth_chain 链式认证等未落地形态） |
 
 **沙盒规则（读写不对称）**：**读**分级授权（会话根 → assets → 用户授权的外部路径；
 凭证类路径——密钥区 / sut_sessions / `.env`——**先于授权逻辑硬拒**，凭证不回流 LLM
@@ -417,7 +418,8 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 | 清单与结构 | `agent_eval.yaml` 合法 + 资源目录 + `rules/`、`prompts/` 各含 ≥1 个 `.yaml`（加载器只认 `.yaml`，README 式提示词会静默失效 `prompts=0`） | 提示词写成 `.md` 后静默无判官 |
 | 规则引用对账（`evaluation/rule_refs.py`） | 四类引用可解析：evaluator 注册态 / prompt_id / dimension / stage；注册表快照经 `load_package_entry_points` **运行时同源装载**（少装包会把「清单已声明、运行时可用」的 ID 误判未注册） | guide 示例把 method 枚举值写进 `evaluator` 字段被照抄 → 运行时规则全跳过仍产出全 0 报告 |
 | 判官模板变量契约 | `user_prompt_template` 只能用所引评估器实际注入的变量——评估器以类级 `prompt_variables` 声明契约（渐进声明：未声明的不参与对账）；jinja2 `meta.find_undeclared_variables` 对账，越界随可用清单打回 | `{{ response }}` vs `content` 注入集错位 → StrictUndefined 渲染失败 → 规则全 0 分 |
-| SUT 未知键拒绝（`registry.validate_sut_config_document`） | 以执行器模型 `model_fields` 为白名单（运行时 `extra="allow"` 前向兼容意味着发明字段被**静默丢弃**），并复用 `SUTSystemConfig` 校验必填/枚举/`${VAR}` 展开 | 自造 `login.base_url` 字段被静默丢弃 → 执行时拼回页面域 404 |
+| SUT 未知键拒绝（`registry.validate_sut_config_document`） | 以执行器模型 `model_fields` 为白名单（运行时 `extra="allow"` 前向兼容意味着发明字段被**静默丢弃**）并**递归下钻 `sut.request_template.steps[i]` 与 `steps[i].poll`**（v4.7：steps 链/poll 步同样白名单化，幻觉字段逐项点名打回并附该层合法字段清单），复用 `SUTSystemConfig` 校验必填/枚举/`${VAR}` 展开；`SUTRegistry.load` **装载卡口**（v4.7）：执行入口同源复检，违例 raise `SUTChannelError`——绕过工作台手改的配置照样被拦（arch/03 §4.0.3） | 自造 `login.base_url` 字段被静默丢弃 → 执行时拼回页面域 404；GitHub Actions 肌肉记忆 `kind/depends_on/until` 写进 steps → Pydantic 静默丢弃 → 全部任务 run_error（jxb 20260917_003025，11/11） |
+| 骨架开槽检查（v4.7，`skeleton_gate_errors`） | 暂存含 `SKELETON.md` 时：`- [ ]` 开槽全部列出打回（带逐条原文）；`- [x]` 闭槽必含「证据：」——**闭槽 = 有证据的结论，不是表态**；opt-in——无骨架的会话（克隆/fork 内置包）行为零变化 | 配置在事实未齐时渐进成形，证据与幻觉混在同一文件；探索结论散在头注释里、后续改登录方式无处重开 |
 | 通道排期校验（v4.7.3 起） | `channel` ∈ `SCHEDULED_CHANNELS`（`agent_protocol`/`generic_http`，与执行工厂同源单点）；预留通道（如 `browser`）落盘即打回，错误文案自带「探测受挫不是换通道的理由……**不得静默降级改写落盘**」行动指引；generic_http 免协议端点对账（无协议语义），登录对账照走 | 协议探测受挫后 Agent 静默降级写预留通道 → 落盘成功、答完 5 个交互到执行工厂才报「预留未排期」 |
 
 引擎侧配套守卫：评估器**尝试创建且全部失败即中止**（部分失败跳过语义保留）——防
@@ -451,13 +453,49 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 | `declare_token(ref, token_path?, token_source?, expires_in_path?)` | **事后声明式**凭证提取（决策 D2）：对该 ref 最近一次带凭证 2xx 响应声明「凭证在哪个路径」——不重发请求，声明错了改路径重声明即可（防锁不适用）；成功时机械渲染 `sut_config_auth_snippet`（见证据账本） | **凭证值不进 LLM 上下文**（提取在服务端持有的响应上进行）；`token_source` 三态与执行器同构（`Bearer / header:<X> / cookie`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态）；缺凭证时 request 错误指路 `ask_user(kind=credential)` 逐字段录入；超出执行器宽度的形态（凭证走请求头/链式认证）显式拒绝落盘——探测可探索、暂不可落盘 |
 | `ask_user(question, options?, kind?)` | 主动提问：开放文本 / 单选 / 凭证录入（直写 secrets，隐藏输入） | 桥接 CLI `ask()`/`select()`；非 TTY 返回「需交互」错误 |
 
-#### 流程整合（创建包时即调试）
+#### 创建流程五阶段（Plan-as-Artifact，v4.7）
 
-system_prompt 增「SUT 接入调试」阶段：包骨架完成后，需求含被测系统 → 主动问入口地址（页面地址即可）→
-逐层探测 → 登录接口用 request 实测（body 带凭证模板 + ref）→ 2xx 后 declare_token 声明提取（成功返回
-`sut_config_auth_snippet`）→ **只把验证过的结论**写进 `sut_configs/`（protocol_flavor、auth 段 snippet 原样粘贴）→
-缺凭证字段经 `ask_user(kind=credential)` 会话内直录 → 全绿才视为 SUT 段完成。探测证据落 `workspace/agent_logs/`
-（包内只落最终 YAML）。
+> badcase 驱动重设计（jxb agent-safety 包，run 20260917_003025，11/11 run_error）。旧流程
+> 「探测期 sut_configs 随探测渐进成形」的三重病：①登录实测证据写进 yaml 头注释、steps 段凭
+> 训练记忆手写（GitHub Actions 肌肉记忆 `kind/depends_on/until`）——**证据与幻觉混在同一文件**，
+> 幻觉字段被 Pydantic 静默丢弃落盘零报警；②「验证过了又来一遍」——修复环里 agent 的最可靠
+> 手段是重新登录实测而非修文本（auth 段靠 LLM 抄写 snippet，逐字符对账打回后重探成最优解）；
+> ③后续改登录方式（username→phone）时证据散在注释里，变更无受控路径。根因：配置在事实未齐
+> 时就开始写，流程没有「未知」的表达方式。重设计原则：**进度即回填骨架**取代「进度即写盘」，
+> 配置只能在事实齐备后由机械物化生成。
+
+```
+阶段0 意图澄清 ─→ 阶段1 落骨架 ─→ 阶段2 逐槽探测回填 ─→ 阶段3 机械物化 ─→ 阶段4 验收提交
+```
+
+| 阶段 | 核心动作 | 退出条件（门禁强制） |
+|---|---|---|
+| **0 意图澄清** | 主动问入口地址（页面地址即可）与登录确认，沿用现有纪律 | 意图与入口明确 |
+| **1 落骨架** | write_file 生成 `SKELETON.md`：按包资产分节（SUT 接入/考卷/规则集/聚合策略）列**槽位**——事实槽写「问题+证据要求」，决策槽写「待定选项+确认方」；**禁止预填猜测答案** | 骨架覆盖全部必做资产 |
+| **2 逐槽探测回填** | sut_probe 工具面逐槽探索（预算/防锁/授权红线全保留，缺凭证经 `ask_user(kind=credential)` 会话内直录）；**探测成功由服务端机械追加事实行**到骨架（fact_sink → `- [x]` + 证据摘要），agent 只把结论组织成决策槽关闭 | SUT 节事实槽全闭（骨架开槽门禁，§6.3） |
+| **3 机械物化** | `write_sut_config` 从账本装配 sut_config（auth verbatim 注入 + 内联校验）；创作类资产（考卷/规则集/提示词）由 agent 撰写并关闭对应决策槽 | validate_package 全绿 |
+| **4 验收提交** | 用户 confirm → 账本对账 → commit；SKELETON.md 排除在包外、归档 `workspace/agent_sessions/` 为审计产物 | 既有五段链不变 |
+
+**骨架契约**（机器可检，`workbench/tools.py::skeleton_gate_errors`）：
+
+- 开槽 = `- [ ]` 行；闭槽 = `- [x]` 且**必含「证据：」**（闭槽 = 有证据的结论，不是表态）；
+- **事实槽**只能被探测证据关闭（服务端机械追加，agent 不可代填）；**决策槽**由用户确认或
+  agent 论证关闭（agent 手改）——「哪些已验证、哪些还不知道、谁说了算」全程机器可查；
+- **变更受控**：改已闭事实槽（如换登录方式）= 重开槽位（证据失效）→ 重探 → 重物化；
+- **过程产物**：commit 时排除出包（包目录不见 SKELETON.md，归位干净），跨段续跑经骨架
+  归档回种；探测证据仍随会话日志落 `workspace/agent_logs/`（包内只落最终 YAML）；
+- **opt-in**：无骨架的会话（克隆/fork 内置包）全行为不变。
+
+**fact_sink 机械事实行回填**：`declare_token` 成功路径（登录实测事实）与 `probe_protocol`
+的 `record_protocol`（协议矩阵事实）经构造注入的 `fact_sink` 回调把证据行写给骨架
+（`PackageToolServer.append_skeleton_fact`，落在暂存区；无骨架 = 静默 no-op，sink 异常吞掉
+只记 `fact_sink_error` 日志）——探测面零反向依赖 workbench 模块，装配侧单向接线。落盘内容
+由服务端机械生成，与「验证结果正确落到场景包文件」同一设计原则（见证据账本）。
+
+**两份并行指令合一**：旧提示词「工作流程 6 步」与「SUT 接入调试必做步骤」并行（后者另成
+线程），现合并为五阶段单线程状态机——「SUT 接入调试」段降格为**阶段 2 的执行手册**（全部
+实测纪律保留：同形实测/防锁/授权/前端包分析法/判读教训），修复环**查骨架不查记忆**；
+TodoListMiddleware（todos=「在做什么」）与骨架（「知道什么/不知道什么」）互补不重叠。
 
 **通道纪律（v4.7.3 起，与门禁/提示词三面对齐）**：可执行通道只有 `agent_protocol` 与
 `generic_http`（排期单源 `SCHEDULED_CHANNELS`，`browser` 预留落盘即打回）。判定「不支持
@@ -524,13 +562,14 @@ agent-protocol」前，runs/commands 两形态都须带凭证实测且核心端�
 > 落盘会变形（实测过的 API 域被拆成自造 `login.base_url` 字段被静默丢弃、协议矩阵 ❌ 的
 > host 仍被声明可用），通用机制优于点查式门禁逐字段打补丁。
 
-**三环防线**（「验证结果正确落到场景包文件」的完整链路）：
+**四环防线**（「验证结果正确落到场景包文件」的完整链路；v4.7 前为三环）：
 
 | 环 | 机制 | 落点 |
 |---|---|---|
 | ① 同构词汇（消除转换需求） | `declare_token` 渲染的 `auth` 段与执行器词汇同构：`token_source` 三态（`Bearer / header:<X> / cookie`）即执行器 `SUTSession.token_type`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态（执行器靠共享 client 的 cookie jar 承载登录态，语义 1:1）；凭证仅 `credential_ref` 引用 | `workbench/sut_probe/tokens.py` |
-| ② 工具返回即产物（装配在证据产生处完成一次） | 声明成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责收缩为「原样粘贴」 | `workbench/sut_probe/tokens.py::_render_auth_snippet` |
+| ② 工具返回即产物（装配在证据产生处完成一次） | 声明成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责原为「原样粘贴」（v4.7 起由环 ④ 取代——连粘贴也不需要了） | `workbench/sut_probe/tokens.py::_render_auth_snippet` |
 | ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path/token_source/expires_in_path；协议核心端点 ✅）——不一致打回并携带权威片段 | `workbench/gates.py::sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
+| ④ 机械物化（转述通道关闭，v4.7） | `write_sut_config` 从账本 `auth_snippet` **verbatim 注入** auth 段（yaml 语义级与实测一致，非逐字符比对再打回）——jxb 事故中「验证过了又来一遍登录实测」的根因（LLM 抄写 snippet → 对账打回 → 重探成修复环最优解）在机制上消失；修复环只改决策字段，不再重探 | `workbench/tools.py::write_sut_config`（§6.2） |
 
 配套修正：
 
@@ -539,11 +578,13 @@ agent-protocol」前，runs/commands 两形态都须带凭证实测且核心端�
 - **协议假阳性**（`probe/protocol.py`）：3xx 重定向不计 ✅（catch-all 假证据）；建线程失败
   即跳过后续端点并如实记录「未探测」。
 - **未知键显式拒绝**（`registry.validate_sut_config_document`）：以执行器 `model_fields`
-  为白名单（`extra="allow"` 会静默丢弃发明字段），复用 `SUTSystemConfig` 校验必填/枚举/
-  `${VAR}` 展开；staging 与 `scenario validate` 双端接线。
+  为白名单（`extra="allow"` 会静默丢弃发明字段），**递归下钻 `steps[i]`/`steps[i].poll`**（v4.7），
+  复用 `SUTSystemConfig` 校验必填/枚举/`${VAR}` 展开；`SUTRegistry.load` 装载卡口同源复检
+  （v4.7，违例 raise，见 arch/03 §4.0.3）；staging 与 `scenario validate` 双端接线。
 - **URL 解析单源**：`registry.resolve_login_url` 为「配置实际会打到哪个 URL」的唯一真相，
   执行器与落盘门禁共用，永不漂移。
-- prompts/guide 同步：auth 段照抄规约、核心端点 ✅ 才可声明、301 非证据。
+- prompts/guide 同步：auth 段经 `write_sut_config` 机械物化（照抄规约退役）、核心端点 ✅
+  才可声明、301 非证据。
 
 ### 6.6 会话机：长任务执行与失控防线
 
@@ -813,3 +854,4 @@ review 检查项。
 | v4.4 | 2026-09-10 | 既有场景包发现修复（用户实测「agent 找不到我创建的包」）：`list_packages` 三源工具（§6.2 新行，与 `scenario list` 同源）+ `read_reference` 纠偏为三源直读；工具面复位中间件（§6.1 新 bullet）剥除 deepagents 内置虚拟 FS 工具（ls/glob 永远为空致误判「没有包」）；prompts 域段包发现/改造规约按来源分流 + intro 示例（§3.5 同步） |
 | v4.5 | 2026-09-10 | 变形报文发送前拦截（§6.5 红线 8，jxb-server 422 误诊事故驱动）：request 渲染后 JSON 语义校验（双重编码 str/标量与非法 JSON 拒发 + tojson/dict 指引；数组与非 JSON Content-Type 放行）+ 422 detail type 分诊 next_step（model_attributes_type 读 input 回显 / json_invalid / missing 按 loc）+ 工具描述补 body 单层对象纪律；discover_login 的 OpenAPI 阶梯去兜底门（form 与 schema 证据并列）+ 接口域 openapi 指引 |
 | v4.6 | 2026-09-17 | Agent 交互可读性（用户实测反馈「markdown 裸奔」+ 复杂任务缺拆解）：流式正文 markdown-lite 行粒度渲染（§6.1 流式直播段，`console/markdown_lite.py` 新模块，TTY only、围栏保真、Text+span 防 markup 注入）+ TodoListMiddleware 任务清单（§6.1 新段，write_todos 并入工具面白名单、todos 事件提取与渲染、跨段续跑保留）；非流式兜底 `_render_turn` 升级完整 rich.markdown 渲染 |
+| v4.7 | 2026-09-17 | 创建流程五阶段重设计（Plan-as-Artifact，jxb agent-safety 包 run 20260917_003025 11/11 run_error 事故驱动，§6.5 新段）：①**SKELETON.md 骨架契约**——事实槽/决策槽机器可检（`- [ ]` 开槽 / `- [x]`+「证据：」闭槽），探测期只写骨架不写配置，「进度即回填骨架」取代「进度即写盘」；开槽门禁（§6.3 新行）+ commit 排除出包、归档 `workspace/agent_sessions/`；②**fact_sink 机械事实行回填**——declare_token/probe_protocol 成功路径经构造注入回调把证据行落骨架（探测面零反向依赖 workbench）；③**`write_sut_config` 机械物化**（§6.2 新行）——auth 段从证据账本 verbatim 注入 + 内联执行器同款校验，「验证过了又来一遍登录实测」在机制上消失（§6.5 防线三环→四环）；④**未知键校验递归下钻 steps[i]/poll + `SUTRegistry.load` 装载卡口**（§6.3 门禁行更新，arch/03 v4.23 同步）；⑤提示词五阶段单线程重构——「工作流程 6 步」与「SUT 接入调试」两份并行指令合一，修复环查骨架不查记忆 |
