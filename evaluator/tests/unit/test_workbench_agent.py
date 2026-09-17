@@ -1841,6 +1841,217 @@ class TestCliEntries:
         assert calls == [True]
 
 
+# ── 落盘即归位（v4.9）：首次确认落盘即归位 + 沙盒重定向 + 会话记录迁移 ────
+
+
+class TestRelocateOnCommit:
+    def _draft(self, tmp_path: Path, name: str = "agent-eval-pkg-ab12cd34") -> Path:
+        draft = tmp_path / "workspace" / ".staging" / name
+        draft.mkdir(parents=True)
+        return draft
+
+    def test_relocate_root_rebinds_and_migrates_session(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from agent_eval.agent.workbench.memory import session_key
+
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        final = tmp_path / "study-trip-package"
+        agent = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        agent._session_store.record("需求", "已生成", str(draft))  # 会话记录已落盘
+        old_file = agent._session_store.session_file
+        assert old_file.is_file()
+
+        agent.relocate_root(final)
+
+        assert agent.server.root == final.resolve()
+        new_file = old_file.parent / session_key(final)
+        assert new_file.is_file() and not old_file.exists()  # 记录随包迁移
+        assert agent._session_store.session_file == new_file
+        assert agent._graph is None  # 系统提示烘焙了旧 {pkg_root}——强制重建
+        notes = [m for m in agent._messages if "已归位" in str(m)]
+        assert len(notes) == 1  # 归位事实进对话：Agent 知道以新位置为准
+
+    def test_relocate_root_moves_skeleton_archive(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        agent = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        agent._session_store.record("q", "a", str(draft))
+        skeleton = agent._session_store.session_file.with_suffix(".SKELETON.md")
+        skeleton.write_text("# 骨架", encoding="utf-8")
+
+        agent.relocate_root(tmp_path / "study-trip-package")
+
+        new_file = agent._session_store.session_file
+        assert new_file.with_suffix(".SKELETON.md").is_file()  # 审计产物跟进新会话键
+        assert not skeleton.exists()
+
+    def test_relocate_root_same_root_noop(self, tmp_path: Path) -> None:
+        root = tmp_path / "pkg"
+        root.mkdir()
+        agent = WorkbenchAgent(root, log_dir=tmp_path / "log")
+        agent._graph = object()  # 非空标记：noop 不得触发重建
+        agent.relocate_root(root)
+        assert agent._graph is not None
+        assert agent._messages == []
+
+    def test_relocate_after_commit_moves_draft(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        (draft / "agent_eval.yaml").write_text(
+            "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+        )
+        rebinds: list[Path] = []
+        agent = SimpleNamespace(server=SimpleNamespace(root=draft), relocate_root=rebinds.append)
+
+        from agent_eval.cli.cmds.workbench_agent import _relocate_after_commit
+
+        landed = _relocate_after_commit(agent)
+
+        assert landed == tmp_path / "study-trip-package"
+        assert (landed / "agent_eval.yaml").is_file() and not draft.exists()
+        assert rebinds == [landed]  # 沙盒同步重定向
+
+    def test_relocate_after_commit_skips_in_place_sessions(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        # 非草稿前缀（edit / --output 定址 / 已归位）：原地生效，返回 None
+        rooted = tmp_path / "demo-package"
+        rooted.mkdir()
+        (rooted / "agent_eval.yaml").write_text(MANIFEST, encoding="utf-8")
+        no_rebind = SimpleNamespace(
+            server=SimpleNamespace(root=rooted),
+            relocate_root=lambda p: pytest.fail("原地会话不得重定向"),
+        )
+        from agent_eval.cli.cmds.workbench_agent import _relocate_after_commit
+
+        assert _relocate_after_commit(no_rebind) is None
+        # 草稿区但清单未落盘（防御：理论不可达）——留给会话末 finalize
+        bare = self._draft(tmp_path, "agent-eval-pkg-aa11")
+        assert (
+            _relocate_after_commit(
+                SimpleNamespace(server=SimpleNamespace(root=bare), relocate_root=pytest.fail)
+            )
+            is None
+        )
+        assert bare.exists()
+
+    def test_relocate_after_commit_collision_keeps_draft(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        (draft / "agent_eval.yaml").write_text(
+            "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+        )
+        (tmp_path / "study-trip-package").mkdir()  # 落点已被占
+        agent = SimpleNamespace(
+            server=SimpleNamespace(root=draft),
+            relocate_root=lambda p: pytest.fail("撞名不得重定向"),
+        )
+
+        from agent_eval.cli.cmds.workbench_agent import _relocate_after_commit
+
+        assert _relocate_after_commit(agent) is None
+        assert draft.exists()  # 包留草稿位不打断会话——会话末 finalize 兜底
+        assert "已存在" in capsys.readouterr().out
+
+    def test_repl_continues_on_relocated_package_after_landing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """v4.9 核心验收：确认落盘即归位；同一会话可继续自然语言修改已归位的包。"""
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        agent = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+
+        def fake_run_turn(agent_: Any, text: str, *, confirm_fn: Any, on_event: Any = None) -> Any:
+            root = agent_.server.root
+            if not (root / "agent_eval.yaml").exists():
+                (root / "agent_eval.yaml").write_text(
+                    "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+                )
+                return TurnResult(
+                    reply="已生成",
+                    diff="d",
+                    staged=True,
+                    committed=True,
+                    committed_files=["A agent_eval.yaml"],
+                )
+            (root / "rules").mkdir(exist_ok=True)  # 第二轮写操作落在当前沙盒根
+            (root / "rules" / "late.yaml").write_text("rules: []\n", encoding="utf-8")
+            return TurnResult(
+                reply="已补充",
+                diff="d",
+                staged=True,
+                committed=True,
+                committed_files=["A rules/late.yaml"],
+            )
+
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
+        inputs = iter(["补一条规则", ""])
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
+        sa._session(agent, "创建研学包")
+
+        final = tmp_path / "study-trip-package"
+        assert (final / "agent_eval.yaml").is_file()  # 首轮确认后包立即可见（不再等会话结束）
+        assert not draft.exists()
+        assert (final / "rules" / "late.yaml").is_file()  # 第二轮写进已归位的包
+        assert agent.server.root == final
+
+    def test_session_end_rename_sync_after_landing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """归位后自然语言改包名：目录名在会话末按最终清单 id 同步（finalize 兜底语义）。"""
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        monkeypatch.chdir(tmp_path)
+
+        def fake_run_turn(agent_: Any, text: str, *, confirm_fn: Any, on_event: Any = None) -> Any:
+            manifest = agent_.server.root / "agent_eval.yaml"
+            pid = "study-trip" if not manifest.exists() else "trip-v2"
+            manifest.write_text(f"package:\n  id: {pid}\n  scenario: travel\n", encoding="utf-8")
+            return TurnResult(
+                reply="ok",
+                diff="d",
+                staged=True,
+                committed=True,
+                committed_files=["M agent_eval.yaml"],
+            )
+
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
+        inputs = iter(["把包名改成 trip-v2", ""])
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
+        root = sa.agent_new_package(
+            ref=None, output=None, instruction="创建", yes=False, trust_agent=False
+        )
+        assert root == tmp_path / "trip-v2-package"
+        assert (root / "agent_eval.yaml").is_file()
+        assert not (tmp_path / "study-trip-package").exists()  # 首归位目录已按新名同步
+        assert not any(p.name.startswith("agent-eval-pkg-") for p in tmp_path.rglob("*"))
+
+    def test_finalize_silent_when_already_landed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        final = tmp_path / "demo-package"
+        final.mkdir()
+        (final / "agent_eval.yaml").write_text(MANIFEST, encoding="utf-8")  # id: demo
+        from agent_eval.cli.cmds.workbench_agent import _finalize_new_package
+
+        assert _finalize_new_package(final, movable=True) == final
+        assert "已保存" not in capsys.readouterr().out  # 归位提示已在落盘时刻给出，不重复
+
+
 # ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
 
 

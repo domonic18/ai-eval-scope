@@ -2,8 +2,10 @@
 
 用户在 CLI 持续输入自然语言（``你> ...``），WorkbenchAgent 经沙盒工具面改包，工作
 过程**流式直播**（claude code 式：回复 token 直出 + 工具调用行实时可见）；每轮展示
-diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘。空行退出会话；Ctrl+C 暂停当前轮
-（进度保留，输入「继续」接着跑、「放弃」回滚暂存——§6.7 D-WB-4）。
+diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘（草稿区会话落盘即归位
+``cwd/<id>-package/``，沙盒同步重定向，同一会话可继续自然语言修改已归位的包）。
+空行退出会话；Ctrl+C 暂停当前轮（进度保留，输入「继续」接着跑、「放弃」回滚暂存
+——§6.7 D-WB-4）。
 非交互形态（CI）需 ``--instruction`` + ``--yes --trust-agent`` 双开关。
 """
 
@@ -37,9 +39,10 @@ def _render_outcome(result: Any, landing: Path | None = None) -> None:  # noqa: 
     if result.committed:
         rprint(f"[green]✅ 已落盘[/green]（{len(result.committed_files)} 个文件变更）")
         if landing is not None:
-            # 归位发生在会话结束而非此刻——落盘时刻说清时序（实测：用户确认后在
-            # 预告路径找不到包，以为落盘丢失）
-            rprint(f"[dim]会话结束（输入空行退出）后归位 → {landing}[/dim]")
+            # v4.9 落盘即归位：草稿区包此刻已挪到 landing（沙盒同步重定向）——
+            # 「会话结束后才归位」的时序提示成为历史（实测：用户确认后在预告
+            # 路径找不到包，以为落盘丢失）
+            rprint(f"[green]📦 已归位 → {landing}（继续对话可自然语言修改该包）[/green]")
     elif result.aborted_reason == "user_aborted":
         rprint("[yellow]↩️ 已放弃本轮（磁盘未受影响）[/yellow]")
     elif result.aborted_reason == "segment_limit":
@@ -58,7 +61,7 @@ def _render_outcome(result: Any, landing: Path | None = None) -> None:  # noqa: 
         rprint("[yellow]（本轮无文件变更——可继续描述需求或换种说法）[/yellow]")
 
 
-def _render_turn(reply: str, result: Any) -> None:  # noqa: ANN001 — 非流式兜底渲染
+def _render_turn(reply: str, result: Any, landing: Path | None = None) -> None:  # noqa: ANN001 — 非流式兜底渲染
     if reply:
         # 非流式无逐 token 约束——完整 rich.markdown 渲染（表格/嵌套列表/高亮全支持）
         from rich.markdown import Markdown
@@ -67,7 +70,7 @@ def _render_turn(reply: str, result: Any) -> None:  # noqa: ANN001 — 非流式
         rprint(Markdown(reply))
     if result.diff:
         _render_diff(result.diff)
-    _render_outcome(result)
+    _render_outcome(result, landing)
 
 
 def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]] | None:
@@ -94,13 +97,14 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     finally:
         if finish:
             finish()
+    landed = _relocate_after_commit(agent) if result.committed else None
     if not emit:
-        _render_turn(result.reply, result)
+        _render_turn(result.reply, result, landed)
         return
     if result.committed:
         # 确认环节已展示过 diff，不再重画（实测：确认后再出一份完整 diff 被误读为
-        # 「还有一份未应用」）；已落盘时补归位时序提示
-        _render_outcome(result, _landing_hint(agent))
+        # 「还有一份未应用」）；落盘即归位，归位结果随落盘提示展示
+        _render_outcome(result, landed)
         return
     _render_outcome(result)
 
@@ -112,18 +116,17 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
     landing = _landing_hint(agent) if agent is not None else None
     if landing:
         # 不预设门禁通过（实测：门禁打回后横幅仍称「确认落盘即归位」，用户误以为
-        # 已落盘）——归位是「确认 → 门禁通过 → 落盘 → 会话结束」的链，任何一环
-        # 失败都不归位
-        rprint(
-            f"[green]确认后经校验门禁，通过即落盘；会话结束（空行退出）后归位 → {landing}[/green]"
-        )
+        # 已落盘）——归位是「确认 → 门禁通过 → 落盘」的链（v4.9 起落盘即归位，
+        # 不再等会话结束），任何一环失败都不归位
+        rprint(f"[green]确认后经校验门禁，通过即落盘并归位 → {landing}[/green]")
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 
 def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
     """确认时刻的预计落点：暂存清单 id 已定则显示 ./<id>-package/（形态 B 归位预告）。
 
-    归位预告随确认提示出现——草稿区路径只是会话中间态，确认前让用户看清最终落点。
+    归位预告随确认提示出现——草稿区路径只是会话中间态，确认前让用户看清最终落点
+    （v4.9 起预告路径在门禁通过后立即成为现实，不再是「会话后」）。
     """
     import re as _re
 
@@ -133,7 +136,7 @@ def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
     pid = agent.server.staged_manifest_id()
     if pid:
         slug = _re.sub(r"[^A-Za-z0-9._-]+", "-", pid).strip("-.") or "scenario"
-        if root.name.startswith("agent-eval-pkg-"):  # 草稿区 → 会话后归位 cwd
+        if root.name.startswith("agent-eval-pkg-"):  # 草稿区 → 落盘即归位 cwd（v4.9）
             return Path.cwd() / f"{slug}-package"
         return root  # 非草稿区（edit / --output 定址）原地生效，落点就是 root
     if not (root / MANIFEST_FILENAME).is_file():
@@ -145,8 +148,8 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
     """``start`` 主菜单一级入口（§3.5）：横幅介绍能力后**直入对话**（Claude Code 式）。
 
     无前置菜单——新建 / 改已有包 / 排查都是会话里的一句话（能力与样例见横幅，
-    §6.10）。默认任务对象为新包草稿（workspace/.staging，会话后按清单 id 归位
-    ``cwd/<id>-package/``）；改已有项目包由 Agent 经 read_file 读入现有内容后在
+    §6.10）。默认任务对象为新包草稿（workspace/.staging，首次确认落盘即按清单 id
+    归位 ``cwd/<id>-package/``）；改已有项目包由 Agent 经 read_file 读入现有内容后在
     草稿中改造（prompts 域段规约）。LLM 未配置在此阻断（无模型 Agent 不可用）。
     """
     from agent_eval.agent.workbench.agent import WorkbenchAgent
@@ -155,24 +158,27 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
     _guard_llm_ready()
     root = _new_draft_root()
     root.mkdir(parents=True)
-    rprint("[dim]包完成后将归位到 ./<包名>-package/（包名以 Agent 拟定的清单 id 为准）[/dim]")
+    rprint("[dim]确认落盘后包即归位到 ./<包名>-package/（包名以 Agent 拟定的清单 id 为准）[/dim]")
     agent = WorkbenchAgent(root, ask_fn=_make_ask_fn())
     _render_intro(agent)
     try:
         _session(agent, None, show_intro=False)
     except BaseException:
         # 中断 ≠ 放弃：半途草稿保留（与 agent_new_package 同约定）；清单已落盘 =
-        # 成果已完整，照常归位不困在草稿区
-        if (root / MANIFEST_FILENAME).is_file():
-            _finalize_new_package(root, movable=True)
+        # 成果已完整，照常归位不困在草稿区。以 server 实时根为准——v4.9 落盘即
+        # 归位，中断时刻包可能已不在初始草稿位
+        draft = Path(agent.server.root)
+        if (draft / MANIFEST_FILENAME).is_file():
+            _finalize_new_package(draft, movable=True)
             return
-        rprint(f"[yellow]⚠ 会话中断，草稿已保留: {root}[/yellow]")
-        rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {root}[/dim]")
+        rprint(f"[yellow]⚠ 会话中断，草稿已保留: {draft}[/yellow]")
+        rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {draft}[/dim]")
         raise
-    if not any(root.iterdir()):
-        root.rmdir()  # 空会话（用户看一眼就退出）不留草稿残目录
+    live_root = Path(agent.server.root)  # 归位后与初始 root 不同（v4.9）
+    if not any(live_root.iterdir()):
+        live_root.rmdir()  # 空会话（用户看一眼就退出）不留草稿残目录
         return
-    _finalize_new_package(root, movable=True)
+    _finalize_new_package(live_root, movable=True)
 
 
 def _render_intro(agent: Any) -> None:  # noqa: ANN001 — WorkbenchAgent
@@ -273,10 +279,14 @@ def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — Work
     finally:
         if finish:
             finish()
+    landed = _relocate_after_commit(agent) if result.committed else None
     if not emit:
-        _render_turn(result.reply, result)
+        _render_turn(result.reply, result, landed)
     elif result.diff:
         _render_diff(result.diff)
+        if result.committed:
+            # 自动确认无确认环节展示——落盘/归位结果在此补示（非流式走 _render_turn）
+            _render_outcome(result, landed)
     if result.aborted_reason in ("segment_limit", "budget_exceeded"):
         _render_outcome(result)
     if not result.committed:
@@ -339,11 +349,42 @@ def _new_draft_root() -> Path:
     return paths.default_workspace / ".staging" / f"agent-eval-pkg-{uuid.uuid4().hex[:8]}"
 
 
-def _finalize_new_package(root: Path, movable: bool) -> Path:
-    """Agent 拟定引用且未指定 --output：会话结束后按**最终清单 id** 归位。
+def _relocate_after_commit(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
+    """首次确认落盘成功即归位（v4.9）：草稿 root → ``cwd/<id>-package/`` 并重定向沙盒。
 
-    归位到 ``cwd/<id>-package/``（与 skeleton 模式 ``./<id>/`` 方向一致）；会话中
-    自然语言改过包名也生效（迁移读的是最后一次落盘的清单）。
+    只对草稿区会话（``agent-eval-pkg-`` 前缀）生效——edit / ``--output`` 定址的
+    会话原地生效，返回 None。撞名红字报错、包留草稿位、**不打断会话**：会话末
+    ``_finalize_new_package`` 兜底再试（用户可能已换包名或手动处置冲突）。
+    """
+    import re
+    import shutil
+
+    from agent_eval.packages import MANIFEST_FILENAME, load_manifest
+
+    root = Path(agent.server.root)
+    if not root.name.startswith("agent-eval-pkg-") or not (root / MANIFEST_FILENAME).is_file():
+        return None
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", load_manifest(root).id).strip("-.") or "scenario"
+    final = Path.cwd() / f"{slug}-package"
+    if final == root:
+        return final
+    if final.exists():
+        rprint(f"[red]❌ 归位目标已存在: {final}（包暂留草稿位: {root}）[/red]")
+        rprint("[dim]处理：把包名改成其它名字后重新确认；或手动处置该目录后继续[/dim]")
+        return None
+    final.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(root), str(final))
+    agent.relocate_root(final)  # 沙盒重定向 + 会话记录迁移（后续轮次改已归位的包）
+    return final
+
+
+def _finalize_new_package(root: Path, movable: bool) -> Path:
+    """会话末按**最终清单 id** 归位（v4.9 起为兜底 + 改名同步，首归位在落盘时刻）。
+
+    归位到 ``cwd/<id>-package/``（与 skeleton 模式 ``./<id>/`` 方向一致）。已随
+    首次落盘归位的包（root 即 cwd 落点）静默返回——归位提示已在落盘时刻给出，
+    会话末不再重复；会话中自然语言改过包名的，此处按最后一次落盘的清单把目录
+    同步到新名。
     """
     import re
     import shutil
@@ -359,8 +400,7 @@ def _finalize_new_package(root: Path, movable: bool) -> Path:
     slug = re.sub(r"[^A-Za-z0-9._-]+", "-", load_manifest(root).id).strip("-.") or "scenario"
     final = Path.cwd() / f"{slug}-package"
     if final == root:
-        _print_landed(final)
-        return final
+        return final  # 已随首次落盘归位且未改名——落盘时刻已提示，不再重复
     if final.exists():
         rprint(f"[red]❌ 归位目标已存在: {final}[/red]")
         rprint(f"[yellow]包已生成、保留在草稿位: {root}[/yellow]")
@@ -392,8 +432,9 @@ def agent_new_package(
 ) -> Path:
     """``scenario new --mode agent``：自然语言生成完整场景包（REPL 会话）。
 
-    ref 缺省时不问包名——Agent 在 workspace/.staging 草稿区生成，会话结束后按
-    最终清单 id 归位 ``cwd/<id>-package/``（会话中自然语言改包名也生效）；
+    ref 缺省时不问包名——Agent 在 workspace/.staging 草稿区生成，**首次确认落盘
+    即归位** ``cwd/<id>-package/``（v4.9；沙盒同步重定向，同一会话可继续自然语言
+    修改已归位的包；会话末按最终清单 id 兜底归位/改名同步）；
     给了 ref 默认落 ``cwd/<id>-package/``，给了 --output 则原地生成（支持指回
     草稿续作，非空目录放行）。
     """
@@ -401,7 +442,7 @@ def agent_new_package(
     from agent_eval.packages import MANIFEST_FILENAME, parse_ref
 
     _guard_llm_ready()
-    movable = ref is None and output is None  # 目录名后定 → 会话后归位
+    movable = ref is None and output is None  # 目录名后定 → 落盘即归位（v4.9）
     if ref:
         scenario, package_id, _ = parse_ref(ref)
         package_id = package_id or scenario
@@ -412,14 +453,16 @@ def agent_new_package(
         root = (
             Path(output)
             if output
-            else _new_draft_root()  # 草稿区（workspace/.staging），会话后归位 cwd
+            else _new_draft_root()  # 草稿区（workspace/.staging），落盘即归位 cwd
         )
     if output is None:
         # 默认路径要求空目录（不覆盖既有包）；--output 显式指定视为定址/续作，放行非空
         _require_empty_dir(root)
     root.mkdir(parents=True, exist_ok=True)
     if movable:
-        rprint("[dim]包完成后将归位到 ./<包名>-package/（包名以 Agent 拟定的清单 id 为准）[/dim]")
+        rprint(
+            "[dim]确认落盘后包即归位到 ./<包名>-package/（包名以 Agent 拟定的清单 id 为准）[/dim]"
+        )
 
     if not instruction:
         if yes and trust_agent:
@@ -444,14 +487,16 @@ def agent_new_package(
         # 中断 ≠ 放弃：半途草稿保留在 workspace/.staging（续作 --output 指回）。
         # 但清单已落盘 = 至少完成过一次确认落盘、成果已完整——中断只是结束对话，
         # 照常归位，不把完整包困在草稿区（实测：确认落盘后 Ctrl+C 退出会话，
-        # 归位预告的路径下找不到包）
-        if movable and (root / MANIFEST_FILENAME).is_file():
-            return _finalize_new_package(root, movable)
+        # 归位预告的路径下找不到包）。以 server 实时根为准——v4.9 落盘即归位，
+        # 中断时刻包可能已随首次归位迁移
+        live_root = Path(agent.server.root)
+        if movable and (live_root / MANIFEST_FILENAME).is_file():
+            return _finalize_new_package(live_root, movable)
         if movable:
-            rprint(f"[yellow]⚠ 会话中断，草稿已保留: {root}[/yellow]")
-            rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {root}[/dim]")
+            rprint(f"[yellow]⚠ 会话中断，草稿已保留: {live_root}[/yellow]")
+            rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {live_root}[/dim]")
         raise
-    return _finalize_new_package(root, movable)
+    return _finalize_new_package(Path(agent.server.root), movable)
 
 
 def agent_edit_package(

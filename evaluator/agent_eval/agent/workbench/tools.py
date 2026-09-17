@@ -246,6 +246,15 @@ class PackageToolServer(ToolExporterMixin):
         """暂存视图（宿主门禁读取：如 agent_protocol 通道必须经 probe_protocol 实测）。"""
         return self._view()
 
+    def rebind_root(self, new_root: Path) -> None:
+        """重绑包根（包归位后调用）：后续读写/diff/门禁以新位置为准。
+
+        会话中重定向沙盒零状态残留——staging 是内存 dict、root 无其它持久句柄，
+        _resolve_in/_view/commit 均按 self.root 现取；调用时机（commit 之后，staging
+        已清）保证无跨根脏暂存。
+        """
+        self.root = Path(new_root).resolve()
+
     # ─── 创建骨架（Plan-as-Artifact：服务端事实回填 + 开槽门禁） ───
 
     def _skeleton_text(self) -> str | None:
@@ -619,7 +628,7 @@ class PackageToolServer(ToolExporterMixin):
         notes = (
             "改已有 project/local 包首选原位编辑：退出本会话后 agent-eval scenario edit <ref>"
             "（或主菜单 2「场景包管理 → 用 Agent 修改选中的包」），会话根即包目录、原位生效。"
-            "在本会话内 fork 改造须换新 scenario/id——沿用原 id 会在会话结束归位 "
+            "在本会话内 fork 改造须换新 scenario/id——沿用原 id 会在确认落盘归位 "
             "cwd/<id>-package/ 时与既有目录冲突。builtin 包只读，改造即 fork（scenario new）。"
             "读任意包内容用 read_reference（ref 取上面 ref 串的 scenario 或 scenario/id 段）。"
         )

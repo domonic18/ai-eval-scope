@@ -202,8 +202,8 @@ Agent 是工作台的首选工作方式——不是某个域里的一个动作�
   提供等价直达（与 `--domain auth` 别名惯例一致）。
   **直入对话，无前置菜单**：进入即横幅介绍能力与示例，随后直接 REPL——「新建 /
   改已有包 / 排查」都是会话里的一句话，不由菜单分流（对标 claude：打开即对话，
-  能力介绍先行）。默认任务对象 = 新包草稿（`workspace/.staging`，会话后按清单 id
-  归位 `cwd/<id>-package/`，空会话退出清理草稿，见 §6.3）；改已有包经 `list_packages`
+  能力介绍先行）。默认任务对象 = 新包草稿（`workspace/.staging`，首次确认落盘即按清单 id
+  归位 `cwd/<id>-package/`（v4.9），空会话退出清理草稿，见 §6.3）；改已有包经 `list_packages`
   三源发现（v4.4）+ `read_reference` 直读既有内容——project/local 包首选
   `scenario edit` 原位编辑（会话根即包目录），本会话内 fork 改造必须**换新 scenario/id**
   （沿用原 id 归位时与既有目录冲突）；prompts 域段「改造已有项目包」规约按来源分流，
@@ -394,14 +394,26 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 关键不变量：**磁盘上的包在任何时刻都只见过「用户确认 + 校验通过」的内容**。
 
 **落盘与归位**：场景包是源资产（用户要编辑、可团队共享），与 `workspace/` 运行产物区归属
-不同——会话在 `workspace/.staging/agent-eval-pkg-<rand>/` 草稿区进行，结束后按**最终清单 id**
-归位 **`cwd/<id>-package/`**（同卷原子归位，与 skeleton 模式 `./<id>/` 方向一致；给了 REF 则
-直接定址）。配套语义：
+不同——会话在 `workspace/.staging/agent-eval-pkg-<rand>/` 草稿区进行，**首次确认落盘成功即
+归位 `cwd/<id>-package/`**（v4.9，同卷原子归位，与 skeleton 模式 `./<id>/` 方向一致；给了
+REF 则直接定址；此前归位压到会话结束，实测用户确认后在预告路径找不到包、以为落盘丢失）。
+配套语义：
 
+- **落盘即归位 + 沙盒重定向**（v4.9）：门禁通过、暂存落盘的同一时刻，草稿目录挪到
+  `cwd/<id>-package/`，`PackageToolServer.rebind_root` 重定向沙盒根（staging 是内存态、
+  root 无持久句柄，会话中重绑定零残留），`WorkbenchAgent.relocate_root` 重建图（系统提示的
+  `{pkg_root}` 在建图时烘焙；对话消息由宿主持有，重建不丢上下文）并向对话注入归位注记——
+  **同一会话可继续自然语言修改已归位的包**。会话记录文件随迁到新 `session_key`（含
+  SKELETON.md 审计产物）：归位后跨进程续作（`--output` 指回）命中同一记录，上下文不因
+  归位断裂；迁移失败仅丢跨进程续作，会话内不受影响。
 - **中断 ≠ 放弃**：异常退出不清理草稿，提示 `--output <草稿路径>` 续作；显式指定路径非空
-  放行（续作），默认路径仍要求空目录。
+  放行（续作），默认路径仍要求空目录。中断/收尾一律以 server 实时根为准（落盘时可能已
+  随首次归位迁移，入口函数持有的初始 root 变量已过期）。
 - **归位时序**：成果完整的「中断」照常归位交付；「保留现场」只适用于半途。
-- **归位冲突报错保留草稿**：目标已存在或清单未落盘 → `Exit(1)` 交用户处置。
+- **归位冲突报错保留草稿**：落盘即归位撞名 → 红字报错、包留草稿位、**不打断会话**，会话末
+  `_finalize_new_package` 兜底再试（v4.9 起其职责收窄为兜底 + 改名同步：会话中自然语言改过
+  包名的，按最后一次落盘的清单把目录同步到新名；已归位且未改名则静默返回，归位提示已在
+  落盘时刻给出）。清单未落盘 → `Exit(1)` 交用户处置。
 - **git 视野**：仓库 `.gitignore` 收 `/*-package/`（实验态默认忽略）；工具不改用户
   `.gitignore`，仅收尾提示。
 
@@ -872,3 +884,4 @@ review 检查项。
 | v4.6 | 2026-09-17 | Agent 交互可读性（用户实测反馈「markdown 裸奔」+ 复杂任务缺拆解）：流式正文 markdown-lite 行粒度渲染（§6.1 流式直播段，`console/markdown_lite.py` 新模块，TTY only、围栏保真、Text+span 防 markup 注入）+ TodoListMiddleware 任务清单（§6.1 新段，write_todos 并入工具面白名单、todos 事件提取与渲染、跨段续跑保留）；非流式兜底 `_render_turn` 升级完整 rich.markdown 渲染 |
 | v4.7 | 2026-09-17 | 创建流程五阶段重设计（Plan-as-Artifact，jxb agent-safety 包 run 20260917_003025 11/11 run_error 事故驱动，§6.5 新段）：①**SKELETON.md 骨架契约**——事实槽/决策槽机器可检（`- [ ]` 开槽 / `- [x]`+「证据：」闭槽），探测期只写骨架不写配置，「进度即回填骨架」取代「进度即写盘」；开槽门禁（§6.3 新行）+ commit 排除出包、归档 `workspace/agent_sessions/`；②**fact_sink 机械事实行回填**——declare_token/probe_protocol 成功路径经构造注入回调把证据行落骨架（探测面零反向依赖 workbench）；③**`write_sut_config` 机械物化**（§6.2 新行）——auth 段从证据账本 verbatim 注入 + 内联执行器同款校验，「验证过了又来一遍登录实测」在机制上消失（§6.5 防线三环→四环）；④**未知键校验递归下钻 steps[i]/poll + `SUTRegistry.load` 装载卡口**（§6.3 门禁行更新，arch/03 v4.23 同步）；⑤提示词五阶段单线程重构——「工作流程 6 步」与「SUT 接入调试」两份并行指令合一，修复环查骨架不查记忆 |
 | v4.8 | 2026-09-17 | 登录探测 422/事件循环/超时三根因修复（jxb 二轮实测事故驱动，§6.5 红线 6/8 更新 + 新段）：①**Content-Type 标签机械归一化**——显式非 JSON CT 旁路 auto 补齐与双重编码门禁，正确 JSON 报文顶着 text/plain 上 wire 致 FastAPI 422 `model_attributes_type`（input 原文回显形似双重编码，服务端排查见「json 不是 json、内容加了引号」）；JSON 对象 body 的标签机械改写（返回含 `content_type_normalized`），原始报文探测不收缩；同批修复渲染头整行回填缺口（wire 收到 `Key: Key: Value`）；②**共享 client 事件循环亲和**——REPL 每轮 `asyncio.run` 换循环 × 会话级 client 绑死旧循环 = 跨轮首请求 `Event loop is closed`，`client()` 按循环废弃旧实例换新、cookie jar 同步搬运；③**超时错误面代理指引**——本机代理把 0.3s 请求拖到 11.7s 顶爆 10s 探测超时，指引配 `NO_PROXY`；④**`declare_token` 静态注入通道**（`static_field`）——用户直接提供的 token 自密钥区挂载，解除「无实测记录即永远 auth_attached:false」死循环；不入证据账本、不生成 auth: 段（落盘对账的实测证据语义不被稀释） |
+| v4.9 | 2026-09-17 | **落盘即归位**（用户实测反馈「确认后预告路径找不到包，须 Ctrl+C/空行退出才归位」，§6.3 重写）：首次确认落盘成功即把草稿挪到 `cwd/<id>-package/`——`PackageToolServer.rebind_root` 沙盒重定向（staging 内存态、root 无持久句柄，零残留）+ `WorkbenchAgent.relocate_root` 图重建（`{pkg_root}` 建图烘焙，对话消息宿主持有不丢）+ 归位注记进对话 + 会话记录文件随迁新 `session_key`（跨进程续作上下文不因归位断裂）；**同一会话可继续自然语言修改已归位的包**；`_finalize_new_package` 收窄为会话末兜底 + 改名同步（已归位未改名静默返回）；撞名红字报错留草稿位不打断会话；确认横幅/落盘提示同步新时序 |

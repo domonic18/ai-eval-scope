@@ -146,8 +146,8 @@ domain_segments:
     - **project / local 包（用户自己的包）**：首选指引**原位编辑**——退出本会话后
       ``agent-eval scenario edit <ref>``（或主菜单 2「场景包管理 → 用 Agent 修改
       选中的包」），会话根即包目录、原位生效。本会话（新包草稿根）内 fork 改造仅在
-      用户明确要新版本/新包时进行，且**必须换新 scenario/id**——沿用原 id 会在会话
-      结束归位 ``cwd/<id>-package/`` 时与既有目录冲突（归位失败只留草稿）。
+      用户明确要新版本/新包时进行，且**必须换新 scenario/id**——沿用原 id 会在
+      确认落盘归位 ``cwd/<id>-package/`` 时与既有目录冲突（归位失败只留草稿）。
     - **builtin 包只读**：search_reference / read_reference 参照格式；改造即 fork
       （scenario new，换新 id）。
     - 读既有包内容：read_reference（ref 取 list_packages 返回的 scenario 或

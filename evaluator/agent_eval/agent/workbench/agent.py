@@ -157,6 +157,44 @@ class WorkbenchAgent:
         """记录本轮对话要点并持久化（仅 user/assistant 文本，不含工具流量）。"""
         self._session_store.record(user_text, reply, str(self.server.root))
 
+    def relocate_root(self, final_root: Path) -> None:
+        """包归位后重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
+
+        首次确认落盘即归位（v4.9）后由宿主调用——同一会话的后续轮次直接自然语言
+        修改已归位的包。图在下一次 ``_invoke`` 时重建（系统提示的 ``{pkg_root}`` 在
+        建图时烘焙；对话消息由宿主持有，重建不丢上下文）。会话记录文件迁移到新
+        session_key——归位后跨进程续作（``--output`` 指回）命中同一记录，上下文不
+        因归位断裂。文件迁移失败仅丢跨进程续作（key 仍切换，后续记录落新位），
+        会话内不受影响。
+        """
+        final = Path(final_root).resolve()
+        previous = self.server.root
+        if final == previous:
+            return
+        old_file = self._session_store.session_file
+        self.server.rebind_root(final)
+        self._graph = None  # 系统提示烘焙了 {pkg_root}——下次调用重建
+        new_file = old_file.parent / session_key(final)
+        try:
+            if old_file.exists():
+                old_file.replace(new_file)
+            skeleton = old_file.with_suffix(".SKELETON.md")
+            if skeleton.exists():
+                skeleton.replace(new_file.with_suffix(".SKELETON.md"))
+        except OSError:
+            pass  # 迁移失败仅影响跨进程续作；key 仍切换，后续记录落新位
+        self._session_store.session_file = new_file
+        self._log("relocate_root", previous=str(previous), final=str(final))
+        # 归位事实进对话（沙盒根变了，Agent 须知道以新位置为准）——同放弃回滚的
+        # 系统注记形态，防 Agent 仍引用旧草稿路径
+        self._messages.append(
+            (
+                "user",
+                f"（包已归位：沙盒根从 {previous} 迁移到 {final}，包内容不变。"
+                "此后的文件读写、校验、落盘以新位置为准）",
+            )
+        )
+
     # ─── 组装 ─────────────────────────────────────────────────────
 
     def _describe_tools(self) -> str:
