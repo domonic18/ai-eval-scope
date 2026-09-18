@@ -10,6 +10,7 @@
  */
 
 import archiver from "archiver"
+import { createHash } from "crypto"
 import { PlatformError } from "../middleware/errorHandler"
 import { getLogger } from "../infra/logger"
 import { getObjectStorage } from "../infra/objectStorage"
@@ -139,7 +140,8 @@ export function createRunExportService(tenant: Tenant) {
           kind: a.kind,
           sample_id: a.sampleExternalId,
           size_bytes: Number(a.sizeBytes),
-          md5: a.md5,
+          // 对实际入包字节现算（摄取侧不回填 artifacts.md5；导出时算才能对账 bundle 内容）
+          md5: createHash("md5").update(buf).digest("hex"),
         })
       } catch (err) {
         log.warn(

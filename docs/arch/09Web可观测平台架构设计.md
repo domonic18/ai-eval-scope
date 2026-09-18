@@ -1116,6 +1116,7 @@ run 导出从「前端拼字符串报告」升级为平台级导出能力，与 
   ├── manifest.json                     # 自描述索引（schema: run-export/v1）
   │                                     #   run 元数据 + metrics + summary_report
   │                                     #   + entries[{path, kind, sample_id, size_bytes, md5}]
+  │                                     #   （md5 对实际入包字节导出时现算，摄取侧不回填 artifacts.md5）
   ├── summary.md / summary.json         # 人读汇总 + 机器可读汇总（服务端合成，不在前端拼）
   ├── run/{kind}/…                      # 无样本归属的制品
   └── samples/{externalSampleId}/…

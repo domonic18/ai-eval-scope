@@ -36,7 +36,6 @@ export interface RunExportArtifact {
   objectKey: string
   contentType: string
   sizeBytes: bigint
-  md5: string | null
   originalName: string | null
   sampleExternalId: string | null
 }
@@ -94,7 +93,6 @@ export class RunExportRepository extends BaseRepository {
         objectKey: true,
         contentType: true,
         sizeBytes: true,
-        md5: true,
         originalName: true,
         sample: { select: { externalSampleId: true } },
       },
