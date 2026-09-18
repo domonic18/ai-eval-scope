@@ -105,10 +105,15 @@ export default function RunDetail() {
   const passCount = overview?.summary?.passed ?? run.samples.filter((s) => s.status === "pass" || s.status === "passed").length
   const failCount = overview?.summary?.failed ?? run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
   const metricDefs = extractMetricDefs(run.runConfigSnapshot)
-  // 优先用最新场景默认指标定义（id 稳定，name/explain 随场景包更新）；
-  // 运行快照里的 metric_definitions 是历史拷贝（旧名/已删指标），仅在默认缺失时回退
-  const activeDefs = defaultDefs.length > 0 ? defaultDefs : metricDefs
+  // 展示锚定该 run 自带快照（时间一致 = 审计一致，docs/plan/08 不变量 3）：
+  // 阈值/口径/名称均用执行时刻语义；场景 defaults 仅在快照无定义时兜底（极老 run）。
+  // 「当前定义解释历史数据」跨包代际必错（edu:* 旧 defaults × kb:* 新快照改名事故根因）。
+  const activeDefs = metricDefs.length > 0 ? metricDefs : defaultDefs
   const rawMetrics = overview?.metrics_raw ?? run.metrics ?? {}
+  // 防御（不变量 5）：有指标值但定义键零交集 → 显式降级提示，不渲染一排无从察觉的 "—"
+  const defsMismatchRun =
+    Object.keys(rawMetrics).length > 0 && activeDefs.length > 0 &&
+    !activeDefs.some((d) => rawMetrics[d.id] != null)
 
   async function downloadZip() {
     if (!id || downloading) return
@@ -217,7 +222,14 @@ export default function RunDetail() {
       {/* 场景化指标 */}
       <section className="space-y-2">
         <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
-        <DynamicMetricGrid defs={activeDefs} metrics={run.metrics} />
+        {defsMismatchRun ? (
+          <div className="rounded-md border border-yellow-500/20 bg-yellow-500/5 px-3 py-2 text-xs text-muted-foreground">
+            指标定义与该运行的指标数据不匹配（无同名指标键），已跳过指标卡渲染。
+            {metricDefs.length === 0 && " 该运行未携带指标定义快照，回退的场景默认定义与数据代际不一致。"}
+          </div>
+        ) : (
+          <DynamicMetricGrid defs={activeDefs} metrics={run.metrics} />
+        )}
       </section>
 
       {/* 摘要报告 */}
