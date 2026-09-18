@@ -231,6 +231,7 @@ def test_sut_request_returns_result_and_records_last_run() -> None:
         "run_id": None,
         "text": "课件正文",
         "input": "帮我生成课件",
+        "output": {"files": ["a.md"], "text": "课件正文"},  # 合同一：结构化交付入账
     }
 
 
@@ -560,3 +561,21 @@ def test_channel_aclose_clears_session_cache() -> None:
     asyncio.run(channel.aclose())
     assert len(channel._session) == 0  # noqa: SLF001
     seen.clear()  # aclose 后会话不存活：再次 run 需重建（仅验证缓存清空）
+
+
+def test_sut_request_logs_sut_observation_event() -> None:
+    """合同一（arch/16 §4.6）：generic_http 面同样落 sut_observation 观测事件。"""
+    from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
+    from agent_eval.execution.models import InteractionPolicy
+
+    evidence = EvidenceLedger()
+    server = GenericHttpToolServer(
+        _channel(_sut(), lambda request: httpx.Response(200, json=RESPONSE)),
+        default_metadata={"task_id": "t0"},
+    )
+    server.ledger = ResourceLedger(InteractionPolicy(sut_calls_total=8), evidence=evidence)
+    asyncio.run(server.sut_request("帮我生成课件"))
+    observations = [e for e in evidence.events if e["kind"] == "sut_observation"]
+    assert observations and observations[0]["source"] == "sut_request"
+    assert observations[0]["terminal_kind"] == "delivered"
+    assert "课件正文" in observations[0]["text"]

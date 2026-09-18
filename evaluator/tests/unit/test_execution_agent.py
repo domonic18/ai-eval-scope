@@ -934,7 +934,13 @@ def test_abort_package_carries_trace_answer_ledger(tmp_path, monkeypatch) -> Non
 
     pkg_dir = _pkg_root(tmp_path) / "task_1"
     manifest = _read_json(pkg_dir / "manifest.json")
-    assert manifest["status"] == "failed"
+    # 合同四（arch/16 §4.6）：SUT 已交付（「课件已全部完成！」）→ 可评估性
+    # 只看证据，异常收尾翻转后由 guard_evaluable_abort 翻回 success 进评分
+    # 分母（run 20260916_074046 media_001 教训：SUT 交付 + 会话崩 ≠ run_error）
+    assert manifest["status"] == "success"
+    metadata = _read_json(pkg_dir / "metadata.json")
+    assert metadata["guard_abort"] is True  # 异常语义留痕不擦除
+    assert metadata["guard_evaluable_abort"] is True
     trace = _read_json(pkg_dir / "trace.json")
     # 真实错误入 trace.error（write_package 的 error 只进返回摘要不入包）
     assert "graph 中断" in trace["error"]

@@ -186,6 +186,7 @@ def test_agent_run_records_last_run_summary() -> None:
         "text": "回答" * 3000,  # 截断前原文
         "input": "问题",  # 机械回显守卫的判定信号源
         "pending": None,  # success 无待应答反问
+        "output": {"text": "回答" * 3000},  # 合同一：结构化交付不再丢弃
     }
 
 
@@ -534,7 +535,7 @@ def test_refresh_final_state_records_evidence_without_budget(
     asyncio.run(server.refresh_final_state())  # 不经 _budget：额度耗尽仍放行
     assert server.last_run["text"] == "课件已生成完毕"
     assert server.ledger is not None and server.ledger.counters["state_poll"] == 1  # 计数未增
-    polls = [e for e in evidence.events if e["action"] == "state_poll"]
+    polls = [e for e in evidence.events if e.get("action") == "state_poll"]
     assert polls and "final_refresh" in polls[-1]["summary"]
 
 
@@ -1191,3 +1192,61 @@ def test_state_tracker_resets_across_tasks_and_feeds_idle() -> None:
 
     server.reset_task_state()
     assert server._tracker.last_busy is None  # 新任务无观察，不串上一任务状态
+
+
+# ─── 合同一/二：观测入账 + interrupt 一等终态（arch/16 §4.6，Phase 2.3） ───
+
+
+def test_agent_run_logs_sut_observation_event() -> None:
+    """合同一：run 返回即向 EvidenceLedger 记 sut_observation（载荷截断全量在 trace）。"""
+    payload = {
+        "run": {"run_id": "r-9", "thread_id": "th-9", "status": "success"},
+        "values": {"messages": []},
+        "output": {"files": ["a.md"], "text": "答案"},
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=payload)
+
+    channel = AgentProtocolChannel(
+        SUTSystemConfig(
+            name="cw",
+            channel="agent_protocol",
+            base_url="https://ap.example.com",
+            output_paths=OutputPathsConfig(text_field="output.text", files_field="output.files"),
+        ),
+        http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    server = AgentProtocolToolServer(channel)
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(
+        InteractionPolicy(sut_calls_total=8, dispatch=4, nudges=2), evidence=evidence
+    )
+    asyncio.run(server.agent_run("问题"))
+    observations = [e for e in evidence.events if e["kind"] == "sut_observation"]
+    assert observations and observations[0]["source"] == "run"
+    assert observations[0]["terminal_kind"] == "delivered"
+    assert observations[0]["status"] == "success"
+
+
+def test_refresh_final_state_interrupt_pending_is_terminal_no_spin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """neg_001 根因回归（arch/16 §4.6 合同二）：反问挂起是一等终态——收尾刷新
+    单采样立即返回并对账 pending，不再空转 settle 满超时后带旧值早退。"""
+    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.05)
+    server = _commands_server([INTERRUPT_STATE])
+    server.last_run = {
+        "status": "interrupted",
+        "thread_id": "th-1",
+        "run_id": "r-1",
+        "text": "我先检索一下",
+        "input": "任务",
+        "pending": None,
+    }
+    asyncio.run(server.refresh_final_state(settle_timeout_s=0.3))
+    # 反问对账进 last_run（旧实现：next 永不清空 → 空转 0.3s 早退，pending 仍 None）
+    assert server.last_run["pending"] is not None
+    assert server.last_run["pending"]["interrupt_id"] == "int-1"
+    assert server.last_run["text"] == "请选择交付形式与用途"
+    assert server.last_run["delivery_via"] == "text"
