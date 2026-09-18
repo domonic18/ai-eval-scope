@@ -2,6 +2,10 @@
  * 场景默认指标定义 hook（模块级缓存，多页面共享一次 fetch）。
  *
  * 指标定义统一来自后端 GET /scenarios/:id/defaults（单一源落库，由 import 脚本写入）。
+ *
+ * docs/plan/08 批次 C：run 展示（Dashboard/列表/明细）已改吃后端行级下发
+ * metricDefinitions（锚定各 run 自带快照），本 hook 仅剩两类消费方——
+ * RunDetail 的无快照兜底、DebugPage 的「当前登记预览」。
  */
 import { useEffect, useState } from "react"
 import { api } from "../api/client"
@@ -33,46 +37,4 @@ export function useScenarioDefaults(scenarioId: string | null | undefined): Metr
       .catch(() => setDefs([])) // 404（场景未注册）等失败 → 清空，调用方回退运行快照 defs
   }, [scenarioId])
   return defs
-}
-
-/**
- * 多场景指标定义映射：对 distinct 场景逐个按需拉取（复用 _cache），
- * 返回 { scenarioId: defs }。供 Dashboard（多项目）/ AdminRuns（多场景）等
- * 跨场景列表页按各行/各卡各自场景取 defs。
- */
-export function useScenarioDefaultsMap(scenarioIds: string[]): Record<string, MetricDef[]> {
-  const [map, setMap] = useState<Record<string, MetricDef[]>>(() => {
-    const m: Record<string, MetricDef[]> = {}
-    for (const id of scenarioIds) {
-      const cached = _cache.get(id)
-      if (cached) m[id] = cached
-    }
-    return m
-  })
-  const key = scenarioIds.join(",")
-  useEffect(() => {
-    const ids = key ? key.split(",") : []
-    const missing = ids.filter((id) => !_cache.has(id))
-    if (missing.length === 0) {
-      const m: Record<string, MetricDef[]> = {}
-      for (const id of ids) m[id] = _cache.get(id)!
-      setMap(m)
-      return
-    }
-    let cancelled = false
-    Promise.all(missing.map((id) => fetchScenarioDefaults(id).then((d) => [id, d] as const)))
-      .then((entries) => {
-        if (cancelled) return
-        setMap((prev) => {
-          const m = { ...prev }
-          for (const [id, d] of entries) m[id] = d
-          return m
-        })
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [key])
-  return map
 }

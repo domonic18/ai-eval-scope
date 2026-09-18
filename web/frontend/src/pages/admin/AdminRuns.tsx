@@ -23,7 +23,6 @@ import { useToast } from "../../hooks/useToast"
 import { DataTable, Page, PageHead, Pager, StatusBadge, type Column } from "../../components/shared"
 import { fmt3, timeAgo } from "../../lib/format"
 import { useDebouncedValue } from "../../lib/useDebounce"
-import { useScenarioDefaultsMap } from "../../hooks/useScenarioDefaults"
 
 const STATUSES = ["all", "completed", "failed", "running", "partial"]
 
@@ -38,21 +37,17 @@ export default function AdminRuns() {
   const [delTarget, setDelTarget] = useState<AdminRun | null>(null)
   const [busy, setBusy] = useState(false)
 
-  // 多场景：按各行 run 场景批量取 defs；指标列 = 出现场景的 threshold 指标并集（各行填自身值，他场景列留空）
-  const scenarioIds = useMemo(
-    () => [...new Set(rows.map((r) => r.scenarioId).filter((v): v is string => !!v))],
-    [rows],
-  )
-  const defsByScn = useScenarioDefaultsMap(scenarioIds)
+  // 行级 defs 配对（docs/plan/08 批次 C）：后端按各行 run 自带快照解析下发；
+  // 指标列 = 各行 defs 的 threshold 并集（按 id 去重，各行填自身值，他代列留空）
   const metricCols = useMemo(() => {
     const seen = new Map<string, { id: string; name: string }>()
-    for (const scn of scenarioIds) {
-      for (const d of defsByScn[scn] ?? []) {
+    for (const r of rows) {
+      for (const d of r.metricDefinitions ?? []) {
         if (d.threshold != null && !seen.has(d.id)) seen.set(d.id, { id: d.id, name: d.name ?? d.id })
       }
     }
     return [...seen.values()]
-  }, [scenarioIds, defsByScn])
+  }, [rows])
 
   async function load(p = 1) {
     try {
