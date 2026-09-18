@@ -14,6 +14,7 @@ from typing import Any
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec
 from agent_eval.agent.executor.ledger import ResourceLedger, uninjected_ledger_refusal
 from agent_eval.agent.executor.protocol_tools import bounded_result, tool_guard
+from agent_eval.agent.executor.terminal import log_sut_observation
 from agent_eval.execution.channels.generic_http import GenericHttpChannel
 
 TOOL_SPECS: list[ToolSpec] = [
@@ -63,6 +64,7 @@ class GenericHttpToolServer(ToolExporterMixin):
         """记录最近一次请求的状态、输入与回答文本（与 AgentProtocolToolServer 同契约）。
 
         input 一并记录：ExecutionAgent 的机械回显守卫据此判定「SUT 返回=请求原文」。
+        output 一并保留：结构化交付不再当场丢弃，供交付物渲染（arch/16 §4.6 合同一）。
         """
         output = result.get("output") or {}
         self.last_run = {
@@ -70,7 +72,10 @@ class GenericHttpToolServer(ToolExporterMixin):
             "run_id": (result.get("run") or {}).get("run_id"),
             "text": result.get("text") or output.get("text") or "",
             "input": input,
+            "output": output or None,
         }
+        # 观测载荷同步入台账（sut_observation 事件，载荷截断全量在 trace）
+        log_sut_observation(self.ledger, source="sut_request", run=self.last_run)
 
     @tool_guard
     async def sut_request(

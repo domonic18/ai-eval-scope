@@ -104,7 +104,7 @@ export class IngestRepository {
           scenarioId,
           assetId: "default",
           version:
-            ((snapshot.package as { version?: string } | undefined)?.version) ?? "0.0.0-snapshot",
+            (snapshot.package as { version?: string } | undefined)?.version ?? "0.0.0-snapshot",
           labels: ["auto-ingest"],
           content: content as Prisma.InputJsonValue,
           contentHash: hashDefaultsContent(content),
@@ -139,8 +139,8 @@ export class IngestRepository {
             await tx.runConfigSnapshot.create({
               data: {
                 scenarioId: (snap.scenario_id as string) ?? "",
-                packageId: ((snap.package as { id?: string })?.id) ?? "",
-                packageVersion: ((snap.package as { version?: string })?.version) ?? "",
+                packageId: (snap.package as { id?: string })?.id ?? "",
+                packageVersion: (snap.package as { version?: string })?.version ?? "",
                 content: snap as Prisma.InputJsonValue,
                 contentHash,
               },
@@ -213,6 +213,10 @@ export class IngestRepository {
         totalDurationMs: d.total_duration_ms ?? null,
         llmCalls: d.llm_calls ?? 0,
         tokenUsage: d.token_usage ?? 0,
+        // run_error 诊断摘要（arch/16 §4.6 合同五）落 extra jsonb
+        extra: (d.error_summary
+          ? { error_summary: d.error_summary }
+          : undefined) as Prisma.InputJsonValue,
       },
       update: {
         contentHash: d.content_hash ?? null,
@@ -222,6 +226,9 @@ export class IngestRepository {
         totalDurationMs: d.total_duration_ms ?? null,
         llmCalls: d.llm_calls ?? 0,
         tokenUsage: d.token_usage ?? 0,
+        extra: (d.error_summary
+          ? { error_summary: d.error_summary }
+          : undefined) as Prisma.InputJsonValue,
       },
       select: { id: true },
     })

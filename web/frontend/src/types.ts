@@ -97,6 +97,21 @@ export interface MetricExplainRow {
   tone?: "default" | "primary" | "danger" | "success" | "warning"
 }
 
+/** 快照语义「最近一次上报」（docs/arch/09 §9.6）：run 与其场景指标定义服务端原子配对下发。 */
+export interface LatestRunSnapshot {
+  run: RunSummary | null
+  metricDefinitions: MetricDef[]
+}
+
+/** 样本视图 tab 词表（docs/arch/09 §9.7；与后端 SAMPLE_VIEW_TABS 同源）。 */
+export type SampleViewTab = "doc" | "task" | "transcript" | "shot" | "trace"
+
+/** 场景样本视图呈现配置（场景级，管理端可编辑；null = 前端机械兜底）。 */
+export interface SampleViewConfig {
+  tabs: SampleViewTab[]
+  labels?: { doc?: string }
+}
+
 /** 项目下样本（课件）清单项（docs/arch/09 §9.4）。 */
 export interface ProjectSample {
   externalSampleId: string
@@ -107,17 +122,14 @@ export interface ProjectSample {
   latestContentHash: string | null
 }
 
-/** 样本走势点（某 externalSampleId 跨 run 的时间序列，docs/arch/09 §9.4）。 */
+/** 样本走势点（某 externalSampleId 跨 run 的时间序列，docs/arch/09 §9.4；指标为场景化 JSONB）。 */
 export interface SampleTrendPoint {
   run_id: string
   created_at: string
   reward: number
-  s_format: number
-  s_common: number
-  s_soft: number
-  s_pref: number
   status: string
   content_hash: string | null
+  metrics?: Record<string, number>
 }
 
 export interface ConstraintRow {

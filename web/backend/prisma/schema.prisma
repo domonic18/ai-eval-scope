@@ -329,6 +329,9 @@ model Scenario {
   // 来源：official = 管理员创建 / 脚本导入（配置中心可见）；
   // auto_ingest = run 事件补缺注册（arch/09 §7.5 方向1，仅可观测，不进配置中心默认视图）
   source                   String   @default("official")
+  // 呈现配置链（arch/09 §9.7）：样本视图 tab 集/顺序/命名，管理端可编辑；
+  // null = 前端按制品证据机械兜底推导（配置优先于推导）
+  sampleView               Json?    @map("sample_view")
   createdAt                DateTime @default(now()) @map("created_at")
 
   packages    ScenarioPackage[]

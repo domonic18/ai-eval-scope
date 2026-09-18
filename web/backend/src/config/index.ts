@@ -25,6 +25,7 @@ export interface PlatformConfig {
   ingestRateLimit: number // 令牌桶配额（每分钟/每 key）
   ingestMaxBatch: number // 单批事件数上限
   ingestMaxBytes: number // 单批体积上限（字节）
+  maxExportBytes: number // run 导出 bundle 体积护栏（字节，超限 413；arch/09 §9.8）
   presignTtlSec: number // presigned URL 有效期（秒，≤900）
   retentionDefaultDays: number
   nodeEnv: string
@@ -74,6 +75,7 @@ export function loadConfig(): PlatformConfig {
     ingestRateLimit: int(process.env.PLATFORM_INGEST_RATE_LIMIT, 600),
     ingestMaxBatch: int(process.env.PLATFORM_INGEST_MAX_BATCH, 500),
     ingestMaxBytes: int(process.env.PLATFORM_INGEST_MAX_BYTES, 4 * 1024 * 1024),
+    maxExportBytes: int(process.env.PLATFORM_MAX_EXPORT_BYTES, 512 * 1024 * 1024),
     presignTtlSec: int(process.env.PLATFORM_PRESIGN_TTL_SEC, 900),
     retentionDefaultDays: int(process.env.PLATFORM_RETENTION_DEFAULT_DAYS, 90),
     nodeEnv: process.env.NODE_ENV || "development",

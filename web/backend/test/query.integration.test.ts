@@ -20,7 +20,7 @@ function uid(p: string) {
   return `${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`
 }
 
-function runEvent(extRunId: string, eventId: string, dr = 0.9) {
+function runEvent(extRunId: string, eventId: string, dr = 0.9, createdAt?: string) {
   return {
     event_id: eventId,
     type: "run",
@@ -30,6 +30,7 @@ function runEvent(extRunId: string, eventId: string, dr = 0.9) {
       status: "completed",
       metrics: { DR: dr, CPR: 0.7, avg_reward: 0.6, condR: 0.65, avg_time_ms: 1200 },
       total_samples: 1,
+      ...(createdAt ? { created_at: createdAt } : {}),
     },
   }
 }
@@ -79,18 +80,24 @@ beforeAll(async () => {
   const sess = await login(app, owner.email)
   accessToken = sess.access_token
 
-  // 摄取两条 run（趋势需要 ≥1），含 sample + constraint
+  // 摄取两条 run（趋势需要 ≥1），含 sample + constraint；
+  // created_at 显式错开（毫秒精度下同值会退化成 id 决胜，全量并行时易撞）
   const extRun1 = uid("run")
   const extRun2 = uid("run")
   const extSample = uid("s")
-  for (const er of [extRun1, extRun2]) {
+  const t1 = new Date(Date.now() - 2000).toISOString()
+  const t2 = new Date(Date.now() - 1000).toISOString()
+  for (const [er, ts] of [
+    [extRun1, t1],
+    [extRun2, t2],
+  ] as const) {
     await bearerPost(app, {
       url: "/api/public/ingest",
       token: key.token,
       bodyObj: {
         schema_version: "1.0",
         events: [
-          runEvent(er, uid("ev"), er === extRun1 ? 0.9 : 0.8),
+          runEvent(er, uid("ev"), er === extRun1 ? 0.9 : 0.8, ts),
           sampleEvent(er, extSample, uid("ev")),
           constraintEvent(er, extSample, uid("ev")),
         ],
@@ -138,6 +145,16 @@ describe("Query API", () => {
     expect(r.body[0]).toHaveProperty("metrics")
   })
 
+  it("GET /projects/:id/trends?limit=1 keeps newest（窗口=最新 N；旧实现取最老）", async () => {
+    const r = await request(app)
+      .get(`/api/v1/projects/${project.id}/trends?limit=1`)
+      .set(auth(accessToken))
+    expect(r.status).toBe(200)
+    expect(r.body.length).toBe(1)
+    // 最老 run1(DR=0.9) 被淘汰——旧 ASC LIMIT 实现将取到 0.9
+    expect(Number(r.body[0].metrics?.DR)).toBe(0.8)
+  })
+
   it("GET /runs/:id returns run with samples", async () => {
     const r = await request(app).get(`/api/v1/runs/${runId}`).set(auth(accessToken))
     expect(r.status).toBe(200)
@@ -167,6 +184,80 @@ describe("Query API", () => {
     const other = await registerUser(app, "qother2")
     const r = await request(app)
       .get(`/api/v1/projects/${project.id}/runs`)
+      .set(auth(other.accessToken))
+    expect(r.status).toBe(404)
+  })
+})
+
+describe("GET /projects/:id/latest-run（快照语义 §9.6）", () => {
+  it("empty project → run null + 空指标定义", async () => {
+    const p2 = await createProject(app, owner)
+    const r = await request(app).get(`/api/v1/projects/${p2.id}/latest-run`).set(auth(accessToken))
+    expect(r.status).toBe(200)
+    expect(r.body.run).toBeNull()
+    expect(r.body.metricDefinitions).toEqual([])
+  })
+
+  it("returns newest of two runs（非最老窗口）+ 未带场景时 defs 为空", async () => {
+    const r = await request(app)
+      .get(`/api/v1/projects/${project.id}/latest-run`)
+      .set(auth(accessToken))
+    expect(r.status).toBe(200)
+    expect(r.body.run).not.toBeNull()
+    // beforeAll 摄取 run1(DR=0.9) → run2(DR=0.8)，快照取最新
+    expect(r.body.run.metrics?.DR).toBe(0.8)
+    // run 事件未带 scenario_id → defs 空数组，杜绝交叉配对
+    expect(r.body.metricDefinitions).toEqual([])
+  })
+
+  it("run 与其场景 metricDefinitions 服务端配对原子下发", async () => {
+    // 独立项目：run 带 scenario_id + run_config_snapshot（auto-ingest 补缺注册场景 defaults）
+    const proj = await createProject(app, owner)
+    const k = await issueKey(app, { accessToken: owner.accessToken, projectId: proj.id })
+    const scen = `snap_scn_${Date.now()}`
+    const defs = [{ id: "reward", name: "Reward", threshold: 0.8, unit: "0-1" }]
+    const res = await bearerPost(app, {
+      url: "/api/public/ingest",
+      token: k.token,
+      bodyObj: {
+        schema_version: "1.0",
+        events: [
+          {
+            event_id: uid("ev"),
+            type: "run",
+            data: {
+              external_run_id: uid("snaprun"),
+              mode: "eval_only",
+              status: "completed",
+              metrics: { reward: 0.88 },
+              total_samples: 0,
+              scenario_id: scen,
+              run_config_snapshot: {
+                scenario_id: scen,
+                snapshot_hash: "sha256:test-snapshot",
+                package: { id: "pkg", version: "1.0.0" },
+                metric_definitions: defs,
+              },
+            },
+          },
+        ],
+      },
+    })
+    expect(res.status).toBe(202)
+
+    const r = await request(app)
+      .get(`/api/v1/projects/${proj.id}/latest-run`)
+      .set(auth(accessToken))
+    expect(r.status).toBe(200)
+    expect(r.body.run.scenarioId).toBe(scen)
+    expect(r.body.run.metrics?.reward).toBe(0.88)
+    expect(r.body.metricDefinitions).toEqual(defs)
+  })
+
+  it("cross-tenant: another org user gets 404", async () => {
+    const other = await registerUser(app, "qlatest")
+    const r = await request(app)
+      .get(`/api/v1/projects/${project.id}/latest-run`)
       .set(auth(other.accessToken))
     expect(r.status).toBe(404)
   })

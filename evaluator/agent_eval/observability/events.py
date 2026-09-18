@@ -84,26 +84,45 @@ def build_sample_event(
     *,
     external_run_id: str,
 ) -> dict[str, Any]:
-    """SampleResult → sample 事件。dimensions 暂不映射（scores.json 维度，预留）。"""
-    return {
-        "event_id": _new_event_id(),
-        "type": "sample",
-        "data": {
-            "external_run_id": external_run_id,
-            "external_sample_id": sample.sample_id,
-            "content_hash": sample.content_hash,
-            "status": sample.status.value,
-            # 场景化样本指标（权威）：key = StageWeight.id + reward
-            "stage_metrics": dict(sample.stage_metrics),
+    """SampleResult → sample 事件。dimensions 暂不映射（scores.json 维度，预留）。
+
+    合同五（arch/16 §4.6）：metrics 字段对齐后端契约（metrics JSONB 为权威）——
+    此前误发 stage_metrics 双端漂移，samples.metrics 恒 NULL；过程数值并入
+    metrics 一并落库。stage_metrics 键保留兼容旧后端滚动升级窗口。
+    """
+    data: dict[str, Any] = {
+        "external_run_id": external_run_id,
+        "external_sample_id": sample.sample_id,
+        "content_hash": sample.content_hash,
+        "status": sample.status.value,
+        # 场景化样本指标（权威）：key = StageWeight.id + reward
+        "stage_metrics": dict(sample.stage_metrics),
+        # 契约字段（samples.metrics jsonb）：场景指标 + 过程数值合并
+        "metrics": {
+            **dict(sample.stage_metrics),
             "reward": sample.reward,
             "total_duration_ms": sample.total_duration_ms,
             "llm_calls": sample.llm_calls,
             "token_usage": sample.token_usage,
-            # 执行链路过程指标（Sprint 9 v6.0；eval_only 外部包为 0）
             "agent_turns": sample.agent_turns,
             "agent_tool_calls": sample.agent_tool_calls,
             "agent_exec_ms": sample.agent_exec_ms,
         },
+        "reward": sample.reward,
+        "total_duration_ms": sample.total_duration_ms,
+        "llm_calls": sample.llm_calls,
+        "token_usage": sample.token_usage,
+        # 执行链路过程指标（Sprint 9 v6.0；eval_only 外部包为 0）
+        "agent_turns": sample.agent_turns,
+        "agent_tool_calls": sample.agent_tool_calls,
+        "agent_exec_ms": sample.agent_exec_ms,
+    }
+    if sample.error_summary:
+        data["error_summary"] = sample.error_summary
+    return {
+        "event_id": _new_event_id(),
+        "type": "sample",
+        "data": data,
     }
 
 

@@ -87,6 +87,15 @@ class PackageStatus(str, Enum):
     FAILED = "failed"  # 执行失败
 
 
+class TerminalKind(str, Enum):
+    """SUT 终态分类（arch/16 §4.6 合同二）——执行会话命运无关，只看交付证据。"""
+
+    DELIVERED = "delivered"  # SUT 已交付（text / 结构化 output）
+    INTERRUPT_PENDING = "interrupt_pending"  # 反问挂起（SUT 显式收尾信号，一等终态）
+    SUT_FAILED = "sut_failed"  # SUT 运行失败（status=failed/error/timeout 且无交付）
+    NO_EVIDENCE = "no_evidence"  # 无任何终态证据（settle 唯一的等待对象）
+
+
 class DatasetSource(str, Enum):
     """数据集下载源 — 决定从哪个 Hub 拉取评测数据集。"""
 

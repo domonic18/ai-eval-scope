@@ -38,11 +38,19 @@ def _truncate(value: Any) -> str:
 class EvidenceLedger:
     """语义证据台账 —— append-only 事件流，dump 为执行包内 ledger.jsonl。
 
-    事件 kind：sut_call / state_poll / gate_refusal / artifact / close /
-    decision（P2 决策简报预留，本期不产生）。
+    事件 kind：sut_call / sut_observation（观测载荷入账，arch/16 §4.6 合同一）/
+    state_poll / gate_refusal / artifact / close / decision。
     """
 
-    KINDS = ("sut_call", "state_poll", "gate_refusal", "artifact", "close", "decision")
+    KINDS = (
+        "sut_call",
+        "sut_observation",
+        "state_poll",
+        "gate_refusal",
+        "artifact",
+        "close",
+        "decision",
+    )
 
     def __init__(self) -> None:
         self.events: list[dict[str, Any]] = []

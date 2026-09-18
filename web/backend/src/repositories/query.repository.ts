@@ -116,20 +116,42 @@ class QueryRepository extends BaseRepository {
     return { items, total, page, size }
   }
 
-  /** 趋势聚合（核心指标已为一等列，走索引）。 */
+  /**
+   * 项目最近一次上报的运行（快照查询语义，docs/arch/09 §9.6）。
+   * created_at 同值时按 id 定序，保证「最新一个」确定唯一。
+   */
+  async latestRun(projectId: string) {
+    const orgId = this.requireOrg()
+    return this.prisma.run.findFirst({
+      where: { projectId, project: { orgId } },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      include: {
+        samples: {
+          select: { externalSampleId: true },
+          orderBy: { externalSampleId: "asc" },
+        },
+      },
+    })
+  }
+
+  /**
+   * 趋势聚合（核心指标已为一等列，走索引）。
+   * 窗口语义 =「最新 N 条」（旧 ASC LIMIT 实取最老 N 属缺陷）；响应仍按时间 ASC，供趋势绘制。
+   */
   async trends(projectId: string, f: { from?: Date; to?: Date; limit?: number }) {
     const orgId = this.requireOrg()
     const limit = Math.min(500, Math.max(1, f.limit ?? 100))
-    return this.prisma.$queryRaw<TrendPoint[]>`
+    const rows = await this.prisma.$queryRaw<TrendPoint[]>`
       SELECT external_run_id AS run_id, created_at, metrics
       FROM runs
       WHERE project_id = ${projectId}
         AND project_id IN (SELECT id FROM projects WHERE org_id = ${orgId})
         ${f.from ? Prisma.sql`AND created_at >= ${f.from}` : Prisma.empty}
         ${f.to ? Prisma.sql`AND created_at <= ${f.to}` : Prisma.empty}
-      ORDER BY created_at ASC
+      ORDER BY created_at DESC, id DESC
       LIMIT ${limit}
     `
+    return rows.reverse()
   }
 
   /** 样本清单：项目下 distinct externalSampleId + 评估次数 + 最近一次指标（docs/arch/09 §9.4）。 */
@@ -232,18 +254,31 @@ class QueryRepository extends BaseRepository {
     return run?.runConfigSnapshot ?? null
   }
 
-  /** 样本详情（含约束 + 制品引用）。 */
+  /**
+   * 样本详情（含约束 + 制品引用 + 场景样本视图配置，docs/arch/09 §9.7）。
+   * Run.scenarioId 是逻辑引用（无外键），场景配置二次取数补齐——对前端仍是一次请求。
+   */
   async sampleDetail(projectId: string, sampleId: string) {
     const orgId = this.requireOrg()
-    return this.prisma.sample.findFirst({
+    const sample = await this.prisma.sample.findFirst({
       where: { id: sampleId, projectId, run: { project: { orgId } } },
       include: {
         constraintResults: { orderBy: { tier: "asc" } },
         artifacts: {
           select: { id: true, kind: true, contentType: true, sizeBytes: true, originalName: true },
         },
+        run: { select: { scenarioId: true } },
       },
     })
+    if (!sample || !sample.run.scenarioId) return sample
+    const scenario = await this.prisma.scenario.findUnique({
+      where: { id: sample.run.scenarioId },
+      select: { sampleView: true },
+    })
+    return {
+      ...sample,
+      run: { ...sample.run, scenario: scenario ? { sampleView: scenario.sampleView } : null },
+    }
   }
 
   /**

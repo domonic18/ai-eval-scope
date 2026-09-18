@@ -27,18 +27,24 @@ from agent_eval.agent.executor.briefing import (
     build_briefing,
 )
 from agent_eval.agent.executor.ledger import ResourceLedger, uninjected_ledger_refusal
+from agent_eval.agent.executor.terminal import (
+    TerminalObservation,
+    classify_thread_state,
+    log_sut_observation,
+)
 from agent_eval.core.exceptions import (
     AgentEvalError,
     AgentProtocolError,
     AgentProtocolTimeoutError,
     ToolExecutionError,
 )
+from agent_eval.core.types import TerminalKind
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 from agent_eval.execution.channels.interrupts import (
     ask_question_tool_call_ids,
     pending_ask_questions,
 )
-from agent_eval.execution.channels.message_digest import compact_messages, final_ai_text
+from agent_eval.execution.channels.message_digest import compact_messages
 from agent_eval.execution.channels.thread_commands import COMMANDS_POLL_INTERVAL_S
 
 # 工具结果中大体量字段的截断上限（上下文经济性，非业务阈值）
@@ -255,7 +261,12 @@ class AgentProtocolToolServer(ToolExporterMixin):
             "text": result.get("text") or output.get("text") or "",
             "input": input,
             "pending": pending,
+            # 合同一（arch/16 §4.6）：结构化交付不再当场丢弃（run 20260916_074046
+            # sem_002：resources_found 等 _extract_output 产物此前只进 LLM 视野）
+            "output": output or None,
         }
+        # 观测载荷同步入台账（sut_observation 事件，载荷截断全量在 trace）
+        log_sut_observation(self.ledger, source="run", run=self.last_run)
         # run 完成即活动：观察时间线记一笔（idle 计时从此刻起算）——简报
         # sut_state 的素材与 last_run 同源，不需要决策体另行拼凑
         self._tracker.observe(
@@ -534,17 +545,21 @@ class AgentProtocolToolServer(ToolExporterMixin):
         run 工具返回时刻 ≠ SUT 最终发言时刻：阶段切换空窗误判终态后，后续取证
         （read_thread_state）只读不回写，last_run.text 冻结在中间播报，answer.md
         随之冻结（run 20260912_000410）。由 ExecutionAgent 在 freeze（包物化）前
-        机械调用：等待线程空闲（snapshot），把最新 ai 回答回写 last_run.text
-        （reconcile）。
+        机械调用：等待线程终态（snapshot），把终局事实全量回写 last_run
+        （reconcile：text 经 final_delivery 归一提取，output/questions 一并对账）。
 
         - 门控：无 last_run/thread_id 或非 commands 形态直接返回（runs 形态
           thread_state 直接 raise；generic_http 无线程概念，无本方法自然跳过）；
-        - settle_timeout_s 内轮询等 next 清空；线程 404 或超时保留现值静默返回
+        - settle 判据归一（合同二，arch/16 §4.6）：classify_thread_state 分类，
+          interrupt_pending 是一等终态单采样立即返回——interrupt 线程 ``next``
+          永不清空，此前自建循环只看 ``next`` 会空转满 120s 带旧值早退（run
+          20260916_074046 neg_001）；空转仅对 no_evidence 生效；
+        - settle_timeout_s 内未得终态、线程 404 或通道错误：保留现值静默返回
           ——收尾取证失败不得 fail 任务、不得破坏失败包物化；
         - 直调通道不经 _budget("state_poll")：收尾取证不耗执行 Agent 的轮询额度
           （对齐「取证/下载/写包不设闸」惯例），留证走 ledger.record；
-        - 只改 text：input 保留原值（guard_echo_answer 以 input vs text 比对回显，
-          动 input 守卫语义漂移）。
+        - 只改 text/output/pending：input 保留原值（guard_echo_answer 以 input
+          vs text 比对回显，动 input 守卫语义漂移）。
         """
         last = self.last_run
         thread_id = (last or {}).get("thread_id")
@@ -552,9 +567,10 @@ class AgentProtocolToolServer(ToolExporterMixin):
             return
         started = time.monotonic()
         deadline = started + settle_timeout_s
-        idle_state: dict[str, Any] | None = None
+        terminal: TerminalObservation | None = None
+        terminal_values: dict[str, Any] = {}
         try:
-            while idle_state is None:
+            while terminal is None:
                 state = await self.channel.thread_state(thread_id)
                 if state is None:
                     # 线程不存在：不会再有更新的终局事实，保留现值
@@ -562,8 +578,15 @@ class AgentProtocolToolServer(ToolExporterMixin):
                         "state_poll", "ok", started, summary={"final_refresh": "thread_not_found"}
                     )
                     return
-                if not (state.get("next") or []):
-                    idle_state = state
+                values = state.get("values") or {}
+                obs = classify_thread_state(
+                    state,
+                    interrupt_types=self.channel.sut.interrupt_types,
+                    output=self.channel._extract_output(values),
+                )
+                if obs.kind is not TerminalKind.NO_EVIDENCE:
+                    terminal = obs
+                    terminal_values = values
                     break
                 if time.monotonic() >= deadline:
                     self._ledger_record(
@@ -576,14 +599,32 @@ class AgentProtocolToolServer(ToolExporterMixin):
                 "state_poll", "error", started, summary={"final_refresh": str(e)[:200]}
             )
             return
-        values = idle_state.get("values") or {}
+        values = terminal_values
         self._tracker.observe(False, json.dumps(values, ensure_ascii=False, default=str))
         self._ledger_record(
-            "state_poll", "ok", started, summary={"final_refresh": "ok", "thread_busy": False}
+            "state_poll",
+            "ok",
+            started,
+            summary={"final_refresh": terminal.kind.value, "thread_busy": False},
         )
-        fresh = final_ai_text(values.get("messages") or [])
-        if fresh and fresh != last.get("text"):
-            last["text"] = fresh
+        # reconcile（合同二/三）：终局事实全量回写——text 经 final_delivery 归一
+        # 提取（tool_call 交付 SUT 不再落在首句播报），结构化 output 与反问挂起
+        # 一并对账；观测载荷入台账
+        if terminal.text and terminal.text != last.get("text"):
+            last["text"] = terminal.text
+        last["delivery_via"] = terminal.via
+        if terminal.output is not None and terminal.output != {}:
+            last["output"] = terminal.output
+        if terminal.questions:
+            ids = ask_question_tool_call_ids(values.get("messages") or [])
+            last["pending"] = {
+                "interrupt_id": terminal.questions[0].get("interrupt_id") or "",
+                "tool_call_id": ids[-1] if ids else "",
+                "questions": [
+                    {k: v for k, v in q.items() if k != "interrupt_id"} for q in terminal.questions
+                ],
+            }
+        log_sut_observation(self.ledger, source="final_refresh", run=last)
 
     @tool_guard
     async def answer_sut_questions(self, answers: list[Any]) -> dict[str, Any]:
