@@ -295,9 +295,6 @@ export const api = {
     const params = source ? { source } : undefined
     return (await http.get("/scenarios", { params })).data.scenarios as Scenario[]
   },
-  async createScenario(id: string, name: string, description?: string): Promise<Scenario> {
-    return (await http.post("/scenarios", { id, name, description })).data.scenario
-  },
   async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
     return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
   },
@@ -308,33 +305,10 @@ export const api = {
   async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
     return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
   },
-  /** 一次 GET 拿完整 defaults（metric_definitions + aggregation_policy），供编辑器 loadDoc 组装。 */
-  async scenarioDefaultsContent(
-    scenarioId: string,
-    version?: string,
-  ): Promise<{ metric_definitions: MetricDef[]; aggregation_policy: Record<string, unknown> | null }> {
-    const params = version ? `?version=${encodeURIComponent(version)}` : ""
-    return (await http.get(`/scenarios/${scenarioId}/defaults${params}`)).data
-  },
-  /** 发布场景默认配置新版本（指标定义 + 聚合策略版本化；POST /scenarios/:id/defaults）。 */
-  async publishDefaults(
-    scenarioId: string,
-    input: {
-      version: string
-      labels?: string[]
-      metric_definitions?: unknown
-      aggregation_policy?: unknown
-    },
-  ): Promise<{ asset: { assetId: string; version: string } }> {
-    return (await http.post(`/scenarios/${scenarioId}/defaults`, input)).data
-  },
   async listDefaultsVersions(
     scenarioId: string,
   ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
     return (await http.get(`/scenarios/${scenarioId}/defaults/versions`)).data.versions
-  },
-  async promoteDefaultsLabels(scenarioId: string, version: string, labels: string[]): Promise<void> {
-    await http.post(`/scenarios/${scenarioId}/defaults/versions/${version}/labels`, { labels })
   },
   /** 资产完整内容（评测规则浏览器/编辑器 diff 用）。 */
   async assetContent(
@@ -347,35 +321,6 @@ export const api = {
     return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/content${params}`)).data
       .content
   },
-  async publishPackage(
-    scenarioId: string,
-    input: {
-      asset_id: string
-      version: string
-      labels?: string[]
-      name?: string
-      description?: string
-      content?: Record<string, unknown>
-    },
-  ): Promise<{ package: { packageId: string; scenarioId: string } }> {
-    return (await http.post(`/scenarios/${scenarioId}/packages`, input)).data
-  },
-  async publishAsset(
-    scenarioId: string,
-    kind: AssetKind,
-    input: {
-      asset_id: string
-      version: string
-      labels?: string[]
-      content?: Record<string, unknown>
-      namespace?: string
-      role?: string
-      backend_type?: string
-      backend_config?: Record<string, unknown>
-    },
-  ): Promise<{ asset: { assetId: string; version: string } }> {
-    return (await http.post(`/scenarios/${scenarioId}/${kind}`, input)).data
-  },
   async listAssetVersions(
     scenarioId: string,
     kind: AssetKind,
@@ -383,16 +328,6 @@ export const api = {
   ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
     return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/versions`)).data.versions
   },
-  async promoteAssetLabels(
-    scenarioId: string,
-    kind: AssetKind,
-    assetId: string,
-    version: string,
-    labels: string[],
-  ): Promise<void> {
-    await http.post(`/scenarios/${scenarioId}/${kind}/${assetId}/versions/${version}/labels`, { labels })
-  },
-
   /* ── 超管后台 ─────────────────────────────────────── */
   async adminOverview() {
     return (await http.get("/admin/stats/overview")).data
@@ -540,31 +475,6 @@ export const api = {
   },
   async adminTestLlmModel(id: string): Promise<{ status: "success" | "failed"; detail: string; testedAt: string }> {
     return (await http.post(`/admin/llm-models/${id}/test`)).data
-  },
-  async aiOptimizePrompt(input: {
-    instruction: string
-    scenario?: string
-    currentSystem?: string
-    currentUserPrompt?: string
-  }): Promise<{ system: string; userPrompt: string }> {
-    return (await http.post("/ai/optimize-prompt", input)).data
-  },
-  async aiRecommendRules(input: {
-    scenario?: string
-    cascade?: Array<{ stage: string; name?: string }>
-    existingRules?: Array<{ name?: string; method?: string; stage?: string }>
-  }): Promise<{ rules: Record<string, unknown>[] }> {
-    return (await http.post("/ai/recommend-rules", input)).data
-  },
-  async aiGenerateMetrics(input: { scenario?: string; description: string }): Promise<{ metricDefinitions: Record<string, unknown>[] }> {
-    return (await http.post("/ai/generate-metrics", input)).data
-  },
-  async aiGeneratePolicy(input: {
-    scenario?: string
-    cascade?: Array<{ stage: string; name?: string }>
-    metricDefinitions?: Array<{ id?: string; name?: string; threshold?: number | null; unit?: string | null }>
-  }): Promise<{ aggregationPolicy: Record<string, unknown> | null }> {
-    return (await http.post("/ai/generate-policy", input)).data
   },
 }
 

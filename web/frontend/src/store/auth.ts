@@ -15,11 +15,6 @@ export function loadSession(): Stored | null {
   return raw ? (JSON.parse(raw) as Stored) : null
 }
 
-/** 是否可编辑配置中心资产（平台管理员）。普通用户只读场景包（docs/arch/13）。 */
-export function canEditConfig(): boolean {
-  return !!loadSession()?.user?.platformAdmin
-}
-
 export function saveSession(s: AuthSession & { user: User }): void {
   localStorage.setItem(KEY, JSON.stringify(s))
 }
