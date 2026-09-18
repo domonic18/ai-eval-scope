@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import { CodeBlock } from "../components/CodeBlock"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type { ArtifactRow, ConstraintRow, SampleViewConfig } from "../types"
 import { fmt3 } from "../lib/format"
@@ -23,9 +23,8 @@ import {
   TooltipTrigger,
 } from "@/components/shadcn/tooltip"
 import { useCrumbs } from "../context/navigation"
-import { useToast } from "../hooks/useToast"
 import { SemPill, TierChip, type Tier } from "../components/shared"
-import { ChevronRight, ExternalLink, FileText, HelpCircle } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink, FileText, HelpCircle } from "lucide-react"
 
 /** 约束层级（evaluator 全局 ConstraintTier）→ 展示语义（场景无关）。 */
 interface TierGroupDef {
@@ -86,6 +85,14 @@ interface SampleData {
   } | null
 }
 
+/** 同 run 样本摘要（外部 id 升序，与运行详情样本表同序）：翻页/快跳的定位基准。 */
+interface RunSampleBrief {
+  id: string
+  externalSampleId: string
+  status: string
+  reward: number
+}
+
 type PreviewMode = "iframe" | "img" | "markdown" | "json" | "text" | "task" | "none"
 interface PreviewState {
   mode: PreviewMode
@@ -140,8 +147,8 @@ function parseSourceFiles(details: Record<string, unknown> | null): SourceFile[]
 
 export default function SampleDetail() {
   const { id, sid } = useParams<{ id: string; sid: string }>()
+  const navigate = useNavigate()
   const { setCrumbs } = useCrumbs()
-  const toast = useToast()
   const [sample, setSample] = useState<SampleData | null>(null)
   // 呈现配置链解析（arch/09 §9.7）：场景配置优先，缺失机械兜底（lib/artifactTabs.ts）
   const isMultimodal = (sample?.constraintResults ?? []).some((c) => c.constraintId?.includes("vision"))
@@ -180,6 +187,53 @@ export default function SampleDetail() {
       })
       .catch(() => setSample(null))
   }, [id, sid, setCrumbs])
+
+  // 同 run 样本清单：随 run 取一次（与样本详情互不阻塞），驱动翻页/计数/快跳
+  const [siblings, setSiblings] = useState<RunSampleBrief[] | null>(null)
+  useEffect(() => {
+    setSiblings(null)
+    if (!id) return
+    api
+      .runDetail(id)
+      .then((r) => setSiblings(r.samples ?? []))
+      .catch(() => setSiblings([]))
+  }, [id])
+
+  const idx = useMemo(
+    () => (siblings ? siblings.findIndex((s) => s.id === sid) : -1),
+    [siblings, sid],
+  )
+  const prevId = idx > 0 && siblings ? siblings[idx - 1].id : null
+  const nextId = siblings && idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1].id : null
+  const goSampleId = useCallback(
+    (sampleId: string) => {
+      if (id) navigate(`/run/${id}/sample/${sampleId}`)
+    },
+    [id, navigate],
+  )
+
+  // ← / → 键盘翻页：焦点落在编辑控件或下拉面板内时让路
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
+      const t = e.target as HTMLElement | null
+      if (
+        t?.closest(
+          "input, textarea, [contenteditable], [role=listbox], [role=option], [data-radix-popper-content-wrapper]",
+        )
+      )
+        return
+      if (e.key === "ArrowLeft" && prevId) {
+        e.preventDefault()
+        goSampleId(prevId)
+      } else if (e.key === "ArrowRight" && nextId) {
+        e.preventDefault()
+        goSampleId(nextId)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [prevId, nextId, goSampleId])
 
   /** 按 tier 分组的约束统计（全过/未过数 + 均分），场景无关。 */
   const tierStats = useMemo(() => {
@@ -231,21 +285,57 @@ export default function SampleDetail() {
             </SemPill>
           )}
         </div>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => toast.info("请在运行详情的样本表中切换样本")}
-          >
-            上一个
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => toast.info("请在运行详情的样本表中切换样本")}
-          >
-            下一个
-          </Button>
+        <div className="flex items-center gap-2">
+          {/* 快跳：全量样本下拉（仅多样本时出现），含通过态与评分 */}
+          {siblings && siblings.length > 1 && (
+            <Select value={sid} onValueChange={goSampleId}>
+              <SelectTrigger size="sm" className="w-52 text-xs" aria-label="跳转到指定样本">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-h-72">
+                {siblings.map((s) => {
+                  const ok = s.status === "pass" || s.status === "passed"
+                  return (
+                    <SelectItem key={s.id} value={s.id} className="text-xs">
+                      <span className={ok ? "text-emerald-500" : "text-red-500"}>
+                        {ok ? "✓" : "✗"}
+                      </span>
+                      <span className="min-w-0 truncate font-mono">{s.externalSampleId}</span>
+                      <span className="ml-auto font-mono tabular-nums text-muted-foreground">
+                        {fmt3(s.reward)}
+                      </span>
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          )}
+          {/* 边界态：首个/末个样本时禁用并提示原因（disabled 不接收指针事件，title 放外层） */}
+          <span title={prevId ? "上一个样本（←）" : "已是第一个样本"}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!prevId}
+              onClick={() => prevId && goSampleId(prevId)}
+            >
+              <ChevronLeft className="size-3.5" />
+              上一个
+            </Button>
+          </span>
+          <span className="w-12 text-center font-mono text-xs tabular-nums text-muted-foreground">
+            {siblings && idx >= 0 ? `${idx + 1} / ${siblings.length}` : ""}
+          </span>
+          <span title={nextId ? "下一个样本（→）" : "已是最后一个样本"}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!nextId}
+              onClick={() => nextId && goSampleId(nextId)}
+            >
+              下一个
+              <ChevronRight className="size-3.5" />
+            </Button>
+          </span>
         </div>
       </div>
 
