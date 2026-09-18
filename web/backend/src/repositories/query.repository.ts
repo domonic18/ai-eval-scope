@@ -34,6 +34,7 @@ class QueryRepository extends BaseRepository {
   async listProjectsDashboard() {
     const orgId = this.requireOrg()
     // 每项目最新运行用 distinct on（PostgreSQL）；Prisma 无原生支持，走 $queryRaw。
+    // LEFT JOIN run_config_snapshots：latest-run 行级 defs 配对锚定该 run 自带快照（docs/plan/08 批次 C）。
     const rows = await this.prisma.$queryRaw<
       Array<{
         id: string
@@ -47,12 +48,15 @@ class QueryRepository extends BaseRepository {
         latest_created_at: Date | null
         metrics: Record<string, number> | null
         scenario_id: string | null
+        snapshot_content: unknown
+        snapshot_content_hash: string | null
         owner_name: string | null
       }>
     >(Prisma.sql`
       SELECT p.id, p.name, p.slug, p.description, p.archived_at, p.created_at,
              COALESCE(r_cnt.run_count, 0)::bigint AS run_count,
              lr.latest_run_id, lr.latest_created_at, lr.metrics, lr.scenario_id,
+             rcs.content AS snapshot_content, rcs.content_hash AS snapshot_content_hash,
              COALESCE(u.name, u.email) AS owner_name
       FROM projects p
       LEFT JOIN users u ON u.id = p.created_by
@@ -60,9 +64,11 @@ class QueryRepository extends BaseRepository {
         SELECT project_id, COUNT(*)::bigint AS run_count FROM runs GROUP BY project_id
       ) r_cnt ON r_cnt.project_id = p.id
       LEFT JOIN LATERAL (
-        SELECT id AS latest_run_id, created_at AS latest_created_at, metrics, scenario_id
+        SELECT id AS latest_run_id, created_at AS latest_created_at, metrics, scenario_id,
+               run_config_snapshot_id
         FROM runs WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1
       ) lr ON true
+      LEFT JOIN run_config_snapshots rcs ON rcs.id = lr.run_config_snapshot_id
       WHERE p.org_id = ${orgId} AND p.archived_at IS NULL
       ORDER BY p.created_at DESC
     `)
@@ -79,6 +85,10 @@ class QueryRepository extends BaseRepository {
             createdAt: r.latest_created_at,
             metrics: r.metrics,
             scenarioId: r.scenario_id,
+            // 中间形态：service 层 pairRunDefs 解析为 metricDefinitions 后剥离（重 content 不下发）
+            runConfigSnapshot: r.snapshot_content
+              ? { content: r.snapshot_content, contentHash: r.snapshot_content_hash }
+              : null,
           }
         : null,
       ownerName: r.owner_name,
@@ -109,6 +119,8 @@ class QueryRepository extends BaseRepository {
             select: { externalSampleId: true },
             orderBy: { externalSampleId: "asc" },
           },
+          // 行级 defs 配对锚点（docs/plan/08 批次 C）：service 层解析后剥离重 content
+          runConfigSnapshot: { select: { content: true, contentHash: true } },
         },
       }),
       this.prisma.run.count({ where }),
@@ -131,7 +143,7 @@ class QueryRepository extends BaseRepository {
           select: { externalSampleId: true },
           orderBy: { externalSampleId: "asc" },
         },
-        runConfigSnapshot: { select: { content: true } },
+        runConfigSnapshot: { select: { content: true, contentHash: true } },
       },
     })
   }

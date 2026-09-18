@@ -13,7 +13,9 @@ import { adminRepository } from "../repositories/admin.repository"
 import { adminStatsRepository } from "../repositories/adminStats.repository"
 import { llmModelRepository, type LlmModelInput } from "../repositories/llm-model.repository"
 import { llmClientService } from "../services/llm-client.service"
+import { ScenarioRepository } from "../repositories/scenario.repository"
 import { getScenarioSampleView, setScenarioSampleView } from "../services/sampleView.service"
+import { pairRunDefs } from "../utils/metricDefs"
 import { AuditService } from "../services/audit.service"
 import { getLogger } from "../infra/logger"
 import { getObjectStorage } from "../infra/objectStorage"
@@ -206,18 +208,21 @@ router.delete(
 /* ── 评估任务（全平台 run）────────────────────────── */
 router.get(
   "/runs",
-  wrap(async (req, res) =>
-    res.json(
-      await adminRepository.listRuns({
-        status: req.query.status ? String(req.query.status) : undefined,
-        from: req.query.from ? new Date(String(req.query.from)) : undefined,
-        to: req.query.to ? new Date(String(req.query.to)) : undefined,
-        search: req.query.search ? String(req.query.search) : undefined,
-        page: num(req.query.page, 1),
-        size: num(req.query.size, 50),
-      }),
-    ),
-  ),
+  wrap(async (req, res) => {
+    const result = await adminRepository.listRuns({
+      status: req.query.status ? String(req.query.status) : undefined,
+      from: req.query.from ? new Date(String(req.query.from)) : undefined,
+      to: req.query.to ? new Date(String(req.query.to)) : undefined,
+      search: req.query.search ? String(req.query.search) : undefined,
+      page: num(req.query.page, 1),
+      size: num(req.query.size, 50),
+    })
+    // 行级 defs 配对（docs/plan/08 批次 C）：每行锚定该行 run 快照，无快照走场景 defaults 兜底；
+    // 解析后剥离 runConfigSnapshot 重 content
+    const scenarios = new ScenarioRepository()
+    await pairRunDefs(result.items, (scenarioId) => scenarios.getDefaultsContent(scenarioId))
+    res.json(result)
+  }),
 )
 router.delete(
   "/runs/:id",

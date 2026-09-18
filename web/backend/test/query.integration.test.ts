@@ -386,3 +386,77 @@ describe("GET /projects/:id/latest-run（快照语义 §9.6）", () => {
     expect(r.status).toBe(404)
   })
 })
+
+describe("行级 defs 配对（docs/plan/08 批次 C）：listRuns / dashboard", () => {
+  it("listRuns 每行 metricDefinitions 锚定各自 run 快照，重 content 不下发", async () => {
+    const proj = await createProject(app, owner)
+    const k = await issueKey(app, { accessToken: owner.accessToken, projectId: proj.id })
+    const scen = `pair_scn_${Date.now()}`
+    const ingestRun = async (extRunId: string, prefix: string, ts: string) =>
+      bearerPost(app, {
+        url: "/api/public/ingest",
+        token: k.token,
+        bodyObj: {
+          schema_version: "1.0",
+          events: [
+            {
+              event_id: uid("ev"),
+              type: "run",
+              data: {
+                external_run_id: extRunId,
+                mode: "eval_only",
+                status: "completed",
+                created_at: ts,
+                metrics: { [`${prefix}:reward`]: 0.9 },
+                total_samples: 0,
+                scenario_id: scen,
+                run_config_snapshot: {
+                  scenario_id: scen,
+                  snapshot_hash: `sha256:${extRunId}`,
+                  package: { id: "pkg", version: "1.0.0" },
+                  metric_definitions: [
+                    { id: `${prefix}:reward`, name: "综合得分", threshold: 0.8, unit: "score" },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      })
+    const t1 = new Date(Date.now() - 2000).toISOString()
+    const t2 = new Date(Date.now() - 1000).toISOString()
+    expect((await ingestRun(uid("old"), "edu", t1)).status).toBe(202)
+    expect((await ingestRun(uid("new"), "kb", t2)).status).toBe(202)
+
+    const r = await request(app).get(`/api/v1/projects/${proj.id}/runs`).set(auth(accessToken))
+    expect(r.status).toBe(200)
+    expect(r.body.items).toHaveLength(2)
+    for (const item of r.body.items as Array<Record<string, unknown>>) {
+      // 解析后剥离：快照重 content 不随列表下发
+      expect("runConfigSnapshot" in item).toBe(false)
+    }
+    const byGen = (prefix: string) =>
+      (r.body.items as Array<{ metrics: Record<string, number>; metricDefinitions: unknown[] }>).find(
+        (x) => x.metrics?.[`${prefix}:reward`] != null,
+      )
+    // 两代行各自配对（跨代不互借定义）
+    expect(byGen("edu")?.metricDefinitions).toEqual([
+      { id: "edu:reward", name: "综合得分", threshold: 0.8, unit: "score" },
+    ])
+    expect(byGen("kb")?.metricDefinitions).toEqual([
+      { id: "kb:reward", name: "综合得分", threshold: 0.8, unit: "score" },
+    ])
+
+    // dashboard：latest-run（新代 kb）行级 defs 同步锚定
+    const d = await request(app)
+      .get(`/api/v1/orgs/${owner.org.id}/projects`)
+      .set(auth(accessToken))
+    expect(d.status).toBe(200)
+    const p = d.body.projects.find((x: { id: string }) => x.id === proj.id)
+    expect(p.latestRun).not.toBeNull()
+    expect(p.latestRun.metricDefinitions).toEqual([
+      { id: "kb:reward", name: "综合得分", threshold: 0.8, unit: "score" },
+    ])
+    expect("runConfigSnapshot" in p.latestRun).toBe(false)
+  })
+})
