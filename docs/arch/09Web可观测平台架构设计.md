@@ -1092,6 +1092,7 @@ LIMIT $4;
 - **分层**：run 查询落 `query.repository.latestRun`；defs 复用 `scenario.repository.getDefaultsContent`；组合在 `query.service.latestRunSnapshot`（不跨层）。
 - **前端溯源为一等 UI**：项目页概览不再渲染趋势图，改为快照卡片 + 溯源 Banner（「指标来自最近一次上报 · run #id · 场景 · 时间 · 查看运行 →」）。展示的每个指标必须可追溯到源 run（对齐 W&B「latest run」快照实践）。
 - trends 端点保留为平台能力（Dashboard sparkline 消费），窗口语义修复见 §9.2。
+- **行级 defs 配对（v1.14，docs/plan/08 批次 C）**：配对不变量从 latest-run 端点推广到全部 run 列表/看板——`GET /projects/:id/runs`、`GET /orgs/:org/projects`（dashboard latest-run）、`GET /admin/runs` 每行下发 `metricDefinitions`，锚定该行 run 自带快照；解析在 service 层 `pairRunDefs`（`utils/metricDefs.ts` 纯函数：按快照 contentHash memo 去重解析、defaults 按 scenarioId memo 至多取一次），解析后**剥离 runConfigSnapshot 重 content**（响应不因配对变重）。无快照/无定义的行按 scenarioId 走场景 defaults 兜底（不变量 3），取失败按无 defaults 处理（单场景故障不拖垮列表）。`latest-run` 响应附带血缘 meta（`defsSource`/`snapshotHash`/`defaultsHash`）。前端 `useScenarioDefaultsMap`（按场景借当前 defaults）随之删除——「当前定义解释历史数据」的取数路径在前端不复存在。
 
 ### 9.7 样本视图呈现配置链（v1.13）
 
@@ -1292,3 +1293,4 @@ volumes: { pgdata: {} }
 | v1.11 | 2026-09-13 | 公开项目登录非成员语义修复：runGuard/artifactGuard 公开只读对登录非成员与匿名同权（此前匿名可读、登录反 404 倒挂）；写操作与 projectGuard 不受影响，转私后恢复 404 |
 | v1.12 | 2026-09-13 | 本地制品上传 502 归因与配置修正（run 20260913_050312/052011：事件摄取正常、制品 0/N）：§5.1 presign 对外端点为权衡开关——本地 `.env` 误配 `PLATFORM_S3_EXTERNAL_ENDPOINT=http://minio:9000`（容器内可达、宿主不可解析，叠加 macOS 系统代理经 httpx trust_env 拦截即 502），恢复模板默认 `http://localhost:9100`；权衡说明落 §5.1 注记 |
 | v1.13 | 2026-09-18 | 平台能力三件套（项目页指标空 / 下载报告无意义 / 样本 tab 写死的系统性修复）：§9.6 快照查询语义（latest-run 端点，run+defs 服务端原子配对，客户端不可能交叉错配）；§9.7 样本视图呈现配置链（scenarios.sample_view JSONB + admin API + 配置→机械兜底两级解析，词表 doc/task/transcript/shot/trace）；§9.8 运行导出契约（自描述 zip bundle：manifest 索引 + summary + 全量制品，archiver 流式 + PLATFORM_MAX_EXPORT_BYTES 护栏）；§9.2 trends 窗口语义修复（最老 N → 最新 N，响应仍 ASC） |
+| v1.14 | 2026-09-19 | 行级 defs 配对机制固化（docs/plan/08 批次 C）：§9.6 配对不变量推广到 runs 列表 / dashboard / admin runs（pairRunDefs 按 contentHash memo，解析后剥离快照重 content，无快照行 defaults 兜底）+ latest-run 血缘 meta（defsSource/snapshotHash/defaultsHash）；摄取 auto-ingest defaults 由「仅补缺」改 contentHash 登记（同代跳过、改代登记 `+hash8` 新版本并切 latest，official 导入零影响，见 arch/13 §5.3 v2.1）；RunConfigSnapshot.contentHash 服务端重算（消除缺省 unknown 多快照共享一行）；前端删 useScenarioDefaultsMap（run 展示不再借场景当前 defaults） |
