@@ -21,7 +21,7 @@
 ### 1.2 范围（本期 Sprint 7b–7g + 配置管理对接）
 
 - 含：账号/组织/项目/API Key、Ingestion API、PG + 对象存储、ResultSink、Query API、前端重接、回填迁移、自托管部署；**SAML SSO 登录**、**团队中心模型**（注册不自动建个人 Org，申请 + 审批加入团队）、**样本级走势**、项目/运行**永久删除**、制品**同源预览代理**
-- 配置管理对接（详见 [13 配置管理设计](./13配置管理设计.md)）：**场景化指标体系**（`Run.metrics` / `Sample.metrics` JSONB 替代固定一等列，见 §9.5）、**运行配置快照**（`RunConfigSnapshot`）、**场景目录 API**（`/api/scenarios/:id/catalog`）、**Web 端 Rule/Prompt/Dataset 编辑器**。
+- 配置管理对接（详见 [13 配置管理设计](./13配置管理设计.md)）：**场景化指标体系**（`Run.metrics` / `Sample.metrics` JSONB 替代固定一等列，见 §9.5）、**运行配置快照**（`RunConfigSnapshot`）、**场景目录 API**（`/api/scenarios/:id/catalog`）。Web 为纯可视化（docs/plan/08）：场景包仅查看，配置写入走登记脚本 / auto-ingest，编辑器已移除。
 - 不含：细粒度 RBAC 矩阵、实时流式评估、人工仲裁界面（远期）
 
 ---

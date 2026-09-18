@@ -116,7 +116,7 @@ make web-typecheck      # = cd web/backend && npm run typecheck
 - `POST /api/public/ingest`（Bearer API Key 鉴权）— 评估结果摄取
 - `GET|POST|PATCH|DELETE /api/v1/admin/llm-models`（platformAdmin）— LLM 模型配置 CRUD
 - `POST /api/v1/admin/llm-models/:id/{set-default,test}`、`POST /api/v1/admin/llm-models/export-yaml` — 设默认/连通性测试/导出
-- `POST /api/v1/ai/{optimize-prompt,recommend-rules,generate-metrics,generate-policy}`（requireAuth + 限流）— 配置资产 AI 生成
+- `GET /api/v1/scenarios*`（catalog / defaults / 资产内容 / 包内容）— **只读**：Web 为纯可视化平台（docs/plan/08），场景包在 Web 上仅查看；写入只走 `importAssetsToDb` 登记脚本与 auto-ingest，无配置写端点
 
 > Query API（运行 / 样本 / 趋势 / 制品）见架构文档 §九。
 
