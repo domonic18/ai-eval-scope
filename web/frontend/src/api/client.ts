@@ -8,7 +8,14 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getToken, saveSession } from "../store/auth"
-import type { DebugJobStatus, MetricDef, ProjectSample, SampleTrendPoint } from "../types"
+import type {
+  DebugJobStatus,
+  LatestRunSnapshot,
+  MetricDef,
+  ProjectSample,
+  SampleTrendPoint,
+  SampleViewConfig,
+} from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -161,6 +168,10 @@ export const api = {
   async projectTrends(projectId: string, limit = 50) {
     return (await http.get(`/projects/${projectId}/trends`, { params: { limit } })).data
   },
+  /** 快照语义「最近一次上报」（arch/09 §9.6）：run 与场景指标定义已服务端配对。 */
+  async projectLatestRun(projectId: string): Promise<LatestRunSnapshot> {
+    return (await http.get(`/projects/${projectId}/latest-run`)).data
+  },
   async runDetail(runId: string) {
     return (await http.get(`/runs/${runId}`)).data.run
   },
@@ -200,6 +211,25 @@ export const api = {
   },
   async deleteRun(runId: string) {
     return (await http.delete(`/runs/${runId}`)).data
+  },
+  /**
+   * 运行导出（arch/09 §9.8）：后端流式 zip 自描述 bundle。
+   * axios blob + 长 timeout（optionalAuth 只认 Bearer 头，裸 <a> 带不上凭证）。
+   */
+  async runDownload(runId: string): Promise<void> {
+    const res = await http.get(`/runs/${runId}/export`, {
+      responseType: "blob",
+      timeout: 300000,
+    })
+    const disposition = (res.headers["content-disposition"] as string | undefined) ?? ""
+    const m = /filename="?([\w.-]+)"?/.exec(disposition)
+    const name = m?.[1] ?? `run-${runId}.zip`
+    const url = URL.createObjectURL(res.data as Blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
   },
   async listKeys(projectId: string) {
     return (await http.get(`/projects/${projectId}/keys`)).data.keys
@@ -379,6 +409,13 @@ export const api = {
       bucket: string
       count: number
     }>
+  },
+  /** 场景样本视图配置（arch/09 §9.7 呈现配置链；platformAdmin）。 */
+  async adminGetSampleView(scenarioId: string): Promise<{ scenarioId: string; sampleView: SampleViewConfig | null }> {
+    return (await http.get(`/admin/scenarios/${scenarioId}/sample-view`)).data
+  },
+  async adminSetSampleView(scenarioId: string, config: SampleViewConfig): Promise<{ scenarioId: string; sampleView: SampleViewConfig }> {
+    return (await http.put(`/admin/scenarios/${scenarioId}/sample-view`, config)).data
   },
   async adminListUsers(opts: { search?: string; status?: string; page?: number } = {}) {
     const qs = new URLSearchParams()

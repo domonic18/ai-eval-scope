@@ -5,8 +5,9 @@ import rehypeHighlight from "rehype-highlight"
 import { CodeBlock } from "../components/CodeBlock"
 import { useParams } from "react-router-dom"
 import { api } from "../api/client"
-import type { ArtifactRow, ConstraintRow } from "../types"
+import type { ArtifactRow, ConstraintRow, SampleViewConfig } from "../types"
 import { fmt3 } from "../lib/format"
+import { resolveTabs, TAB_LABELS, type PrevTab, type ResolvedTab } from "@/lib/artifactTabs"
 import { Button } from "@/components/shadcn/button"
 import {
   Select,
@@ -78,6 +79,11 @@ interface SampleData {
   reward: number
   constraintResults: ConstraintRow[]
   artifacts: ArtifactRow[]
+  /** 场景样本视图配置随详情一次带出（arch/09 §9.7，零额外请求） */
+  run?: {
+    scenarioId: string | null
+    scenario: { sampleView: SampleViewConfig | null } | null
+  } | null
 }
 
 type PreviewMode = "iframe" | "img" | "markdown" | "json" | "text" | "task" | "none"
@@ -86,7 +92,6 @@ interface PreviewState {
   url?: string
   text?: string
 }
-type PrevTab = "doc" | "task" | "transcript" | "shot" | "trace"
 
 /** 文件定位（约束→源课件文件），评估器产出 details.source_files（docs/arch/13）。 */
 interface SourceFile {
@@ -94,16 +99,6 @@ interface SourceFile {
   artifact_kind?: string
   page?: number
   snippet?: string
-}
-
-/** 制品归属的预览 tab（与 PreviewPane 分组一致）。 */
-function artifactTab(a: ArtifactRow): PrevTab {
-  if (a.kind === "transcript") return "transcript"
-  if (a.kind === "trace" && a.originalName === "task.json") return "task"
-  if (a.kind === "trace" || a.contentType.includes("json") || a.kind === "judge_record")
-    return "trace"
-  if (a.contentType.startsWith("image") || a.kind === "screenshot") return "shot"
-  return "doc"
 }
 
 /** 按 filename 匹配 sample 制品：精确 originalName → 尾缀（相对路径）→ basename。 */
@@ -148,6 +143,13 @@ export default function SampleDetail() {
   const { setCrumbs } = useCrumbs()
   const toast = useToast()
   const [sample, setSample] = useState<SampleData | null>(null)
+  // 呈现配置链解析（arch/09 §9.7）：场景配置优先，缺失机械兜底（lib/artifactTabs.ts）
+  const isMultimodal = (sample?.constraintResults ?? []).some((c) => c.constraintId?.includes("vision"))
+  const sampleViewConfig = sample?.run?.scenario?.sampleView ?? null
+  const resolvedTabs = useMemo(
+    () => resolveTabs(sample?.artifacts ?? [], { config: sampleViewConfig, isMultimodal }),
+    [sample, sampleViewConfig, isMultimodal],
+  )
   // 制品预览受控状态（docs/arch/13 §4.4）：状态上提，供扣分项文件 chip 联动驱动
   const [previewTab, setPreviewTab] = useState<PrevTab>("doc")
   const [previewSelected, setPreviewSelected] = useState<Record<PrevTab, string>>({
@@ -158,9 +160,10 @@ export default function SampleDetail() {
     trace: "",
   })
   const handleSelectFile = (a: ArtifactRow) => {
-    const t = artifactTab(a)
-    setPreviewTab(t)
-    setPreviewSelected((prev) => ({ ...prev, [t]: a.id }))
+    const hit = resolvedTabs.find((t) => t.artifacts.some((x) => x.id === a.id))
+    if (!hit) return
+    setPreviewTab(hit.key)
+    setPreviewSelected((prev) => ({ ...prev, [hit.key]: a.id }))
   }
 
   useEffect(() => {
@@ -301,8 +304,7 @@ export default function SampleDetail() {
         {/* 右：制品预览 */}
         <div className="flex min-h-0 flex-col">
           <PreviewPane
-            artifacts={sample.artifacts}
-            isMultimodal={sample.constraintResults.some((c) => c.constraintId?.includes("vision"))}
+            tabs={resolvedTabs}
             tab={previewTab}
             onTabChange={setPreviewTab}
             selectedId={previewSelected}
@@ -708,15 +710,14 @@ function TaskQuestionView({ text }: { text: string }) {
 }
 
 function PreviewPane({
-  artifacts,
-  isMultimodal,
+  tabs: resolvedTabs,
   tab,
   onTabChange,
   selectedId,
   onSelectId,
 }: {
-  artifacts: ArtifactRow[]
-  isMultimodal: boolean
+  /** resolveTabs 产出的有序可见 tab（配置优先 / 机械兜底，arch/09 §9.7） */
+  tabs: ResolvedTab[]
   tab: PrevTab
   onTabChange: (t: PrevTab) => void
   selectedId: Record<PrevTab, string>
@@ -726,27 +727,17 @@ function PreviewPane({
   const [loading, setLoading] = useState(false)
 
   const groups = useMemo(() => {
-    const shot = artifacts.filter((a) => artifactTab(a) === "shot")
-    const trace = artifacts.filter((a) => artifactTab(a) === "trace")
-    const task = artifacts.filter((a) => artifactTab(a) === "task")
-    const transcript = artifacts.filter((a) => artifactTab(a) === "transcript")
-    const used = new Set([...shot, ...trace, ...task, ...transcript].map((a) => a.id))
-    const doc = artifacts.filter((a) => !used.has(a.id))
-    return { doc, shot, trace, task, transcript }
-  }, [artifacts])
+    const g: Record<PrevTab, ArtifactRow[]> = { doc: [], task: [], transcript: [], shot: [], trace: [] }
+    for (const t of resolvedTabs) g[t.key] = t.artifacts
+    return g
+  }, [resolvedTabs])
+  // task.json 的结构化「原始问题」渲染档位（机械语义，随解析结果走）
+  const taskIds = useMemo(
+    () => new Set((groups.task ?? []).map((a) => a.id)),
+    [groups],
+  )
 
-  const listFor = (t: PrevTab): ArtifactRow[] =>
-    t === "doc"
-      ? groups.doc
-      : t === "shot"
-        ? groups.shot
-        : t === "task"
-          ? groups.task
-          : t === "transcript"
-            ? groups.transcript
-            : groups.trace
-
-  const currentList = listFor(tab)
+  const currentList = groups[tab] ?? []
   const currentId = selectedId[tab] || currentList[0]?.id || ""
   const current = currentList.find((a) => a.id === currentId) || currentList[0]
 
@@ -767,7 +758,7 @@ function PreviewPane({
           try {
             const resp = await fetch(p.url)
             const text = await resp.text()
-            if (artifactTab(current) === "task") setPreview({ mode: "task", text })
+            if (taskIds.has(current.id)) setPreview({ mode: "task", text })
             else if (p.contentType.includes("markdown")) setPreview({ mode: "markdown", text })
             else if (p.contentType.includes("json")) setPreview({ mode: "json", text })
             else setPreview({ mode: "text", text })
@@ -781,18 +772,12 @@ function PreviewPane({
     return () => {
       cancelled = true
     }
-  }, [current])
+  }, [current, taskIds])
 
-  // tab 按制品动态显隐（arch/09 v1.8）：无 task/transcript 制品（如 eval_only 手动包）
-  // 不出现对应 tab，eval_only 场景不受影响
-  const tabs: [PrevTab, string][] = [
-    ["doc", "原始文档"],
-    ...(groups.task.length ? [["task", "原始问题"] as [PrevTab, string]] : []),
-    ...(groups.transcript.length ? [["transcript", "对话过程"] as [PrevTab, string]] : []),
-    ...(isMultimodal ? [["shot", "渲染截图"] as [PrevTab, string]] : []),
-    ["trace", "执行 Trace"],
-  ]
-  const hasAny = artifacts.length > 0
+  // tab 按解析结果渲染：配置/兜底已完成筛选、排序与命名，组空档位已在解析层剔除
+  const tabs: [PrevTab, string][] = resolvedTabs.map((t) => [t.key, t.label])
+  const activeLabel = resolvedTabs.find((t) => t.key === tab)?.label ?? TAB_LABELS[tab]
+  const hasAny = resolvedTabs.some((t) => t.artifacts.length > 0)
 
   return (
     <>
@@ -842,19 +827,7 @@ function PreviewPane({
             该样本暂无可预览的产出物。
           </div>
         ) : !current ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            暂无
-            {tab === "doc"
-              ? "原始文档"
-              : tab === "shot"
-                ? "渲染截图"
-                : tab === "task"
-                  ? "原始问题"
-                  : tab === "transcript"
-                    ? "对话过程"
-                    : "执行 Trace"}
-            制品
-          </div>
+          <div className="py-8 text-center text-sm text-muted-foreground">暂无{activeLabel}制品</div>
         ) : loading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">加载中…</div>
         ) : preview.mode === "iframe" ? (

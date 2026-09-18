@@ -85,6 +85,8 @@ export default function RunDetail() {
   const [overview, setOverview] = useState<OverviewData | null>(null)
   const toast = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // 运行导出（arch/09 §9.8）：后端流式 zip 自描述 bundle，前端只触发不合成
+  const [downloading, setDownloading] = useState(false)
   const defaultDefs = useScenarioDefaults(run?.scenarioId)
 
   useEffect(() => {
@@ -108,18 +110,16 @@ export default function RunDetail() {
   const activeDefs = defaultDefs.length > 0 ? defaultDefs : metricDefs
   const rawMetrics = overview?.metrics_raw ?? run.metrics ?? {}
 
-  function downloadReport(kind: "md" | "json") {
-    const m = run!.metrics ?? {}
-    const summary = { run: run!.externalRunId, mode: run!.mode, samples: run!.totalSamples, metrics: m, pass: passCount, fail: failCount }
-    const mdMetrics = Object.entries(m).map(([k, v]) => `${k}=${fmt3(v)}`).join(" · ")
-    const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- ${mdMetrics}\n`
-    const blob = new Blob([text], { type: kind === "json" ? "application/json" : "text/markdown" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `run-${run!.externalRunId}.${kind}`
-    a.click()
-    URL.revokeObjectURL(url)
+  async function downloadZip() {
+    if (!id || downloading) return
+    setDownloading(true)
+    try {
+      await api.runDownload(id)
+    } catch (e) {
+      toast.error("打包下载失败：" + ((e as Error).message ?? ""))
+    } finally {
+      setDownloading(false)
+    }
   }
 
   async function doDelete() {
@@ -165,8 +165,8 @@ export default function RunDetail() {
                 </a>
               </Button>
             )}
-            <Button variant="outline" onClick={() => downloadReport("md")}>
-              <Download className="size-4" /> 下载报告
+            <Button variant="outline" disabled={downloading} onClick={downloadZip}>
+              <Download className="size-4" /> {downloading ? "打包中…" : "打包下载"}
             </Button>
             {run.canDelete && (
               <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
@@ -224,10 +224,6 @@ export default function RunDetail() {
       <SectionCard>
         <SectionCardHeader>
           <SectionCardTitle>摘要报告</SectionCardTitle>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => downloadReport("md")}>MD</Button>
-            <Button size="sm" variant="outline" onClick={() => downloadReport("json")}>JSON</Button>
-          </div>
         </SectionCardHeader>
         <SectionCardContent className="space-y-4 text-sm">
           {/* LLM 生成的人话摘要（优先展示，未生成时回退到结构化拼装） */}
