@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
-import { fmt3, fmtMsRaw, num } from "../lib/format"
+import { fmt3, fmtSeconds, num } from "../lib/format"
 import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
 import { extractMetricDefs } from "../lib/metricGrid"
 import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
@@ -62,11 +62,6 @@ interface OverviewData {
     passed: boolean
     failures: Array<{ name: string; reason: string; top_issues?: string[]; files?: string[] }>
   }>
-}
-
-/** 运行模式中文标签：eval_only=仅评估；agent=执行器执行+评估（run 产物）；pipeline=一体化流水线 */
-function modeLabel(mode: string): string {
-  return { eval_only: "仅评估", agent: "Agent 执行", pipeline: "流水线" }[mode] ?? mode
 }
 
 /** 从指标定义中提取大白话描述：优先 summary → explain.定义 → name */
@@ -160,7 +155,7 @@ export default function RunDetail() {
     <Page>
       <PageHead
         title={<span className="flex items-center gap-2 font-mono">运行 #{run.externalRunId} <StatusBadge status={run.status} /></span>}
-        sub={`${modeLabel(run.mode)} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
+        sub={`${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
         right={
           <div className="flex gap-2">
             {langfuseUrl && (
@@ -199,18 +194,13 @@ export default function RunDetail() {
         )}
         <Sep />
         <span className="inline-flex items-center gap-1.5">
-          <span className="text-muted-foreground">评估模式</span>
-          <span className="font-medium">{modeLabel(run.mode)}</span>
-        </span>
-        <Sep />
-        <span className="inline-flex items-center gap-1.5">
           <span className="text-muted-foreground">样本数</span>
           <span className="font-medium tabular-nums">{num(run.totalSamples)}</span>
         </span>
         <Sep />
         <span className="inline-flex items-center gap-1.5">
           <span className="text-muted-foreground">平均耗时</span>
-          <span className="font-medium tabular-nums">{fmtMsRaw(rawMetrics["avg_time_ms"] ?? 0)}</span>
+          <span className="font-medium tabular-nums">{fmtSeconds(rawMetrics["avg_time_ms"] ?? 0)}</span>
         </span>
         <Sep />
         <span className="inline-flex items-center gap-1.5">

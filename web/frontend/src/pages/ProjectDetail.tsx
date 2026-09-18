@@ -260,7 +260,6 @@ function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
     }))
   return [
     { key: "externalRunId", title: "运行", render: (r) => <span className="font-mono text-xs">#{r.externalRunId}</span> },
-    { key: "mode", title: "模式", render: (r) => <span className="text-xs text-muted-foreground">{r.mode}</span> },
     { key: "status", title: "状态", render: (r) => <StatusBadge status={r.status} /> },
     {
       key: "samples",
@@ -284,11 +283,9 @@ function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
 function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; onOpen: (r: RunSummary) => void }) {
   const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
   const [q, setQ] = useState("")
-  const [mode, setMode] = useState("all")
   const [status, setStatus] = useState("all")
   const filtered = runs.filter((r) => {
     if (q && !r.externalRunId.toLowerCase().includes(q.toLowerCase())) return false
-    if (mode !== "all" && r.mode !== mode) return false
     if (status !== "all" && r.status !== status) return false
     return true
   })
@@ -300,18 +297,6 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="搜索运行 ID" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
-          <Select value={mode} onValueChange={setMode}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部模式</SelectItem>
-              <SelectItem value="eval_only">eval_only</SelectItem>
-              <SelectItem value="agent">agent</SelectItem>
-              <SelectItem value="pipeline">pipeline</SelectItem>
-              <SelectItem value="run">run</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="w-32">
               <SelectValue />

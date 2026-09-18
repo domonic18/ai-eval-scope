@@ -26,6 +26,11 @@ export function fmtMsRaw(ms: number | null | undefined): string {
   return ms == null ? "—" : Math.round(ms).toLocaleString("en-US") + " ms"
 }
 
+/** 毫秒 → 秒展示（"125.0s"）；null → "—"。执行耗时的用户口径统一按秒读。 */
+export function fmtSeconds(ms: number | null | undefined): string {
+  return ms == null ? "—" : (ms / 1000).toFixed(1) + "s"
+}
+
 /** 相对时间（中文）："刚刚 / 12 分钟前 / 3 小时前 / 昨天 21:04 / 2 天前 / 2026-06-18"。 */
 export function timeAgo(iso: string | null | undefined): string {
   if (!iso) return "—"
