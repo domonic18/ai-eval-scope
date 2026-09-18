@@ -934,12 +934,14 @@ def post_ingest(events, *, api_key: str, host: str):
 | GET | `/api/orgs/:org/projects` | 组织下项目看板（每项目最新运行、运行总数、创建者） |
 | GET | `/api/projects/:id` | 项目详情 |
 | GET | `/api/projects/:id/runs` | 运行列表（`?mode&scenario_id&package_id&from&to&order&page&size`） |
-| GET | `/api/projects/:id/trends` | Run 级趋势（`?from&to&limit&metric_ids=...`） |
+| GET | `/api/projects/:id/trends` | Run 级趋势（`?from&to&limit&metric_ids=...`；窗口语义 = 最新 N 条，见 §9.2） |
+| GET | `/api/projects/:id/latest-run` | 快照查询「最近一次上报」（run + 场景指标定义服务端原子配对，见 §9.6） |
 | GET | `/api/projects/:id/samples` | 样本清单（distinct `externalSampleId` + 评估次数 + 最近指标） |
 | GET | `/api/projects/:id/sample-trends` | 样本级走势（`?sample_id&limit&metric_ids=...`，某样本跨 run 指标时序） |
 | GET | `/api/runs/:id` | 运行详情（含 `metrics`、`snapshot.metricDefinitions`、`snapshot.aggregationPolicy`） |
 | GET | `/api/runs/:id/snapshot` | 本次运行使用的完整配置快照 |
-| GET | `/api/runs/:id/samples/:sid` | 样本详情（约束 + 溯源 + 制品） |
+| GET | `/api/runs/:id/samples/:sid` | 样本详情（约束 + 溯源 + 制品；含 `run.scenario.sampleView` 呈现配置，见 §9.7） |
+| GET | `/api/runs/:id/export` | 运行导出为自描述 zip bundle（流式，见 §9.8） |
 | GET | `/api/scenarios` | 列出所有场景 |
 | GET | `/api/scenarios/:id/catalog` | 场景下可用包/规则集/提示词/数据集目录（替代静态 `rule-sets.json`） |
 | DELETE | `/api/projects/:id` | 永久删除项目（owner；DB 级联 + 对象存储回收 + 审计） |
@@ -965,6 +967,8 @@ WHERE project_id = $1
 ORDER BY created_at ASC
 LIMIT $5;
 ```
+
+> **窗口语义（v1.13 修复）**：`?limit=n` 约束的是**最新 N 条**（先 `ORDER BY created_at DESC, id DESC LIMIT n` 取窗口，再反转为 ASC 返回）——同毫秒时间戳以 id 次序稳定决胜；响应体仍为时间升序，契约不变。早期实现直接 `ASC LIMIT n` 会取到最老 N 条，长生命周期项目趋势线静止在历史区段。
 
 > 生产中对高频查询的指标可建表达式索引，例如：
 > ```sql
@@ -1079,6 +1083,50 @@ LIMIT $4;
 5. 前端类型 + API client + 组件动态化（无 fallback）。
 6. 确认历史数据已迁移、查询与前端均走 `metrics` 后，删除遗留列 `dr/cpr/avgReward/avgSoft/avgPref/condR` 与 `sFormat/sCommon/sSoft/sPref/reward`（DDL 删列）。
 
+### 9.6 快照查询语义（「最近一次上报」端点，v1.13）
+
+项目页等「当前状态」型视图不应由客户端拼装（旧实现 trends[0] × 另一请求的 defs 交叉配对，defs 与 metrics 可能源自不同场景 → 指标全空的根因类别）。平台层修复 = 引入**服务端配对不变量**：
+
+- **端点**：`GET /api/v1/projects/:id/latest-run`（requireAuth + projectGuard，与项目读同权）。
+- **响应原子单元**：`{ run: RunSummary | null, metricDefinitions: MetricDef[] }`。服务端 `findFirst(orderBy: [createdAt desc, id desc])` 取最新 run，再按 `run.scenarioId` 读 defaults_assets 的 `metric_definitions`，**一次下发配对结果**——客户端拿不到「defs 与 metrics 异源」的组合。空项目返回 `{ run: null, metricDefinitions: [] }`。
+- **分层**：run 查询落 `query.repository.latestRun`；defs 复用 `scenario.repository.getDefaultsContent`；组合在 `query.service.latestRunSnapshot`（不跨层）。
+- **前端溯源为一等 UI**：项目页概览不再渲染趋势图，改为快照卡片 + 溯源 Banner（「指标来自最近一次上报 · run #id · 场景 · 时间 · 查看运行 →」）。展示的每个指标必须可追溯到源 run（对齐 W&B「latest run」快照实践）。
+- trends 端点保留为平台能力（Dashboard sparkline 消费），窗口语义修复见 §9.2。
+
+### 9.7 样本视图呈现配置链（v1.13）
+
+样本详情页右侧 tab 的集合 / 顺序 / 命名，按「**场景配置 → 机械兜底**」两级解析，呈现逻辑不再烧死在 UI 代码：
+
+- **配置归属**：场景级（tab 语义随场景包形态走，多项目共享场景一处配置）。数据模型：`scenarios.sample_view JSONB`（可空）。通道 = 管理端编辑（`GET/PUT /api/v1/admin/scenarios/:id/sample-view`，platformAdmin guard，服务端 `parseSampleView` 校验，写审计 `scenario.sample_view.update`）。**演进路径**：evaluator 包清单未来可声明 `sample_view`，经既有导入 / run 补缺注册链写入同字段（同 defaults 的 auto-ingest 范式）。
+- **配置 schema**：`{ tabs: ("doc"|"task"|"transcript"|"shot"|"trace")[] 有序子集, labels?: { doc?: string } }`。词表是代码级固定词汇（同 metric id 性质），场景只做选择 / 排序 / 命名；校验：tabs ⊆ 词表、非空、去重；labels.doc 非空字符串；未知键剥除。管理前端 `/admin/sample-views` 提供场景下拉 + 词表勾选排序 + doc 命名覆盖。
+- **读取路径**：`query.repository.sampleDetail` 两步取数（`run.scenarioId` → `scenario.sampleView`）一次 HTTP 带出（`Run.scenarioId` 为逻辑引用无 FK，不 include）。**零额外前端请求**。
+- **前端解析（`lib/artifactTabs.ts` 纯函数）**：
+  - 配置存在 → tab 集 / 顺序 / doc 命名按配置；组空的 tab 仍隐藏（防御旧数据）；**配置外桶的制品并入 trace（未启用则 doc）——配置永远不能隐藏制品**。
+  - 配置缺失 → 机械兜底：`kind=transcript` 制品存在 ⇔ agent 会话形态（evaluator sink 仅 agent 执行上传 transcript.md）→ 首 tab「Agent 回答」、task.json 归位「原始问题」；否则课件形态「原始文档」，task.json 落 trace（修复旧版 eval_only 样本误显「原始问题」）。多模态（vision 约束存在）追加「渲染截图」。
+  - doc 显示名：`labels.doc` > 形态推导（Agent 回答 / 原始文档）。
+
+### 9.8 运行导出契约（自描述 zip bundle，v1.13）
+
+run 导出从「前端拼字符串报告」升级为平台级导出能力，与 Langfuse/W&B 的 run export 对齐——UI 只是触发器，产物是**自描述、可审计、可重建**的 bundle：
+
+- **端点**：`GET /api/v1/runs/:id/export`（optionalAuth + runGuard，公开只读同 `GET /:id` 语义）。写头前完成 404 / 413 校验（`PLATFORM_MAX_EXPORT_BYTES` 解压前护栏，默认 512MB）；`application/zip` + `Content-Disposition`（文件名 `\w.-` 白名单防注入）+ `no-store`；archiver 真流式 `pipe(res)`（背压由 HTTP 层承担），流中错误 `res.destroy()`。
+- **bundle 结构**：
+  ```text
+  run-{externalRunId}.zip
+  ├── manifest.json                     # 自描述索引（schema: run-export/v1）
+  │                                     #   run 元数据 + metrics + summary_report
+  │                                     #   + entries[{path, kind, sample_id, size_bytes, md5}]
+  ├── summary.md / summary.json         # 人读汇总 + 机器可读汇总（服务端合成，不在前端拼）
+  ├── run/{kind}/…                      # 无样本归属的制品
+  └── samples/{externalSampleId}/…
+      ├── transcript.md                 # 会话记录放样本根
+      └── {output|judge_record|screenshot|trace}/…
+  ```
+- **确定性**：条目按 repo `id asc` 排序产出，同名对象加 id 后缀去重 → 同一 run 两次导出字节结构一致（可对账）；`manifest.json` **最后追加**，entries 与实际归档内容严格一致。
+- **健壮性**：条目名清洗（控制字符剥除、`\`→`/`、去 `..`/绝对段）；单对象读取失败 skip + warn（`run_export_object_skipped`）不炸整包；BigInt sizeBytes 仅用于护栏求和，不走 JSON 序列化。
+- **前端**：`RunDetail`「打包下载」触发 axios blob 下载（optionalAuth 只认 Bearer，裸 `<a>` 带不上凭证）；摘要区 MD/JSON 直链按钮删除（被 bundle 取代）。
+- **体积量级**：本地 52 场实测最大 run 18.4MB / 49 文件，典型 bundle 1–20MB；archiver 流式内存峰值 ≈ 最大单对象。512MB 护栏为视频类制品留 ~25 倍余量。
+
 ---
 
 ## 十、前端改造
@@ -1179,6 +1227,7 @@ volumes: { pgdata: {} }
 | `PLATFORM_INGEST_RATE_LIMIT` | 摄取限流（令牌桶配额） |
 | `PLATFORM_INGEST_MAX_BATCH` | 单批事件/体积上限 |
 | `PLATFORM_RETENTION_DEFAULT_DAYS` | 项目默认保留天数 |
+| `PLATFORM_MAX_EXPORT_BYTES` | run 导出 zip 体积护栏字节数（默认 512MB，写头前 413，见 §9.8） |
 | `TENCENT_SCF_ENABLED` | 是否启用腾讯云 SCF executor 触发（本地 false） |
 | `TENCENT_SCF_REGION/NAMESPACE/FUNCTION_NAME` | SCF 函数配置 |
 | `TENCENT_SECRET_ID/SECRET_KEY` | 腾讯云 API 密钥（SCF Invoke 签名；启用 SCF 时必填） |
@@ -1241,3 +1290,4 @@ volumes: { pgdata: {} }
 | v1.10 | 2026-09-13 | 场景来源标记与配置中心视角分流：scenarios.source（official/auto_ingest）+ 列表 ?source= 过滤与 _count；配置中心默认只列官方场景包，补缺注册产物带「自动注册」徽标经开关显式展开；清理存量 auto-scn-*/content-safety 空壳 |
 | v1.11 | 2026-09-13 | 公开项目登录非成员语义修复：runGuard/artifactGuard 公开只读对登录非成员与匿名同权（此前匿名可读、登录反 404 倒挂）；写操作与 projectGuard 不受影响，转私后恢复 404 |
 | v1.12 | 2026-09-13 | 本地制品上传 502 归因与配置修正（run 20260913_050312/052011：事件摄取正常、制品 0/N）：§5.1 presign 对外端点为权衡开关——本地 `.env` 误配 `PLATFORM_S3_EXTERNAL_ENDPOINT=http://minio:9000`（容器内可达、宿主不可解析，叠加 macOS 系统代理经 httpx trust_env 拦截即 502），恢复模板默认 `http://localhost:9100`；权衡说明落 §5.1 注记 |
+| v1.13 | 2026-09-18 | 平台能力三件套（项目页指标空 / 下载报告无意义 / 样本 tab 写死的系统性修复）：§9.6 快照查询语义（latest-run 端点，run+defs 服务端原子配对，客户端不可能交叉错配）；§9.7 样本视图呈现配置链（scenarios.sample_view JSONB + admin API + 配置→机械兜底两级解析，词表 doc/task/transcript/shot/trace）；§9.8 运行导出契约（自描述 zip bundle：manifest 索引 + summary + 全量制品，archiver 流式 + PLATFORM_MAX_EXPORT_BYTES 护栏）；§9.2 trends 窗口语义修复（最老 N → 最新 N，响应仍 ASC） |
