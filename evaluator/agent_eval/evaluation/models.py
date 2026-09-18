@@ -116,6 +116,9 @@ class SampleResult:
     agent_turns: int = 0
     agent_tool_calls: int = 0
     agent_exec_ms: float = 0.0
+    # run_error 样本的诊断摘要（arch/16 §4.6 合同五）：trace.error 截断 +
+    # 终态分类，上行落 samples.extra——Web 端「无结果」变为可解释
+    error_summary: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """序列化为字典。"""
@@ -132,6 +135,7 @@ class SampleResult:
             "agent_turns": self.agent_turns,
             "agent_tool_calls": self.agent_tool_calls,
             "agent_exec_ms": self.agent_exec_ms,
+            "error_summary": self.error_summary,
         }
 
     @classmethod

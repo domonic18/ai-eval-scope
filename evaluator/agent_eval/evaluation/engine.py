@@ -28,6 +28,21 @@ from agent_eval.evaluation.stage import PipelineStage
 from agent_eval.rules.models import RuleMethod
 
 
+def _failed_package_diag(sample: Any) -> tuple[str | None, float]:
+    """失败包诊断摘要（合同五，arch/16 §4.6）：trace.error 截断 + 真实执行时长。
+
+    run 20260916_074046：run_error 样本 DB duration=0（真实 151s 丢失）、
+    「无结果」无解释——run_error 也带证据落库，Web 端可解释。
+    """
+    trace = getattr(sample, "trace", None)
+    trace = trace if isinstance(trace, dict) else {}
+    resp = trace.get("response")
+    resp = resp if isinstance(resp, dict) else {}
+    error = str(trace.get("error") or "").strip()[:300] or None
+    duration = float(resp.get("duration_ms") or trace.get("duration_ms") or 0.0)
+    return error, duration
+
+
 def _derive_evaluator_name(rule: Any) -> str | None:
     """当 rule.evaluator 缺失时，按 method + 绑定资产派生默认执行器名。"""
     method = getattr(rule, "method", None)
@@ -210,12 +225,18 @@ class PipelineEngine:
         # manifest.status=failed 表示包未执行完成（半张卷子）——残留产物打出的分数
         # 只会误导，不进 stage 评估、reward 0.0，由 metrics 侧从分母剔除。
         # partial（部分产物）仍有评估价值，照常评估。
+        # 合同四（arch/16 §4.6）：SUT 已交付的 abort 包已被 guard_evaluable_abort
+        # 翻回 success，短路仅兜「真无交付证据」样本；诊断回填（error_summary +
+        # 真实执行时长）保证 run_error 样本在 Web 端可解释。
         pkg_status = getattr(getattr(sample, "manifest", None), "status", None)
         if pkg_status == PackageStatus.FAILED:
+            error_summary, exec_ms = _failed_package_diag(sample)
             result = SampleResult(
                 sample_id=sample_id,
                 status=EvalStatus.RUN_ERROR,
                 content_hash=context.get("content_hash"),
+                total_duration_ms=exec_ms,
+                error_summary=error_summary,
             )
             self._cache[cache_key] = result
             return result

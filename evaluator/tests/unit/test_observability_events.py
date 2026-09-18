@@ -128,3 +128,29 @@ def test_constraint_event_mapping_and_passed_derivation():
     )
     assert ev_fail["data"]["passed"] is False
     assert ev_fail["data"]["status"] == "fail"
+
+
+def test_build_sample_event_sends_metrics_contract_and_error_summary():
+    """合同五（arch/16 §4.6）：metrics 字段对齐后端契约（samples.metrics jsonb 权威），
+    场景指标 + 过程数值合并；run_error 附 error_summary。"""
+    sample = SampleResult(sample_id="s1", status=EvalStatus.RUN_ERROR, reward=0.0)
+    sample.stage_metrics = {"soft": 0.5, "reward": 0.0}
+    sample.total_duration_ms = 151000.0
+    sample.agent_exec_ms = 151000.0
+    sample.agent_turns = 3
+    sample.agent_tool_calls = 2
+    sample.error_summary = "Agent 会话异常中断: Connection error."
+    data = build_sample_event(sample, external_run_id="run_1")["data"]
+    assert data["metrics"]["soft"] == 0.5
+    assert data["metrics"]["reward"] == 0.0
+    assert data["metrics"]["agent_exec_ms"] == 151000.0
+    assert data["metrics"]["agent_turns"] == 3
+    assert data["metrics"]["agent_tool_calls"] == 2
+    assert data["metrics"]["total_duration_ms"] == 151000.0
+    assert data["error_summary"] == "Agent 会话异常中断: Connection error."
+    assert "stage_metrics" in data  # 旧键保留：旧后端滚动升级窗口兼容
+
+
+def test_build_sample_event_omits_error_summary_when_absent():
+    data = build_sample_event(_sample(), external_run_id="run_1")["data"]
+    assert "error_summary" not in data
