@@ -13,6 +13,7 @@ import { adminRepository } from "../repositories/admin.repository"
 import { adminStatsRepository } from "../repositories/adminStats.repository"
 import { llmModelRepository, type LlmModelInput } from "../repositories/llm-model.repository"
 import { llmClientService } from "../services/llm-client.service"
+import { getScenarioSampleView, setScenarioSampleView } from "../services/sampleView.service"
 import { AuditService } from "../services/audit.service"
 import { getLogger } from "../infra/logger"
 import { getObjectStorage } from "../infra/objectStorage"
@@ -281,6 +282,23 @@ router.get(
       ...r,
       items: r.items.map((a) => ({ ...a, id: a.id.toString() })),
     })
+  }),
+)
+
+/* ── 场景样本视图呈现配置（docs/arch/09 §9.7）────────── */
+router.get(
+  "/scenarios/:id/sample-view",
+  wrap(async (req, res) =>
+    res.json({ scenarioId: req.params.id, sampleView: await getScenarioSampleView(req.params.id) }),
+  ),
+)
+
+router.put(
+  "/scenarios/:id/sample-view",
+  wrap(async (req, res) => {
+    const config = await setScenarioSampleView(req.params.id, req.body)
+    await audit(req, "scenario.sample_view.update", req.params.id, { tabs: config.tabs })
+    res.json({ scenarioId: req.params.id, sampleView: config })
   }),
 )
 

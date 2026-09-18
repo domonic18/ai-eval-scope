@@ -7,6 +7,7 @@ import { PlatformError } from "../middleware/errorHandler"
 import { getLogger } from "../infra/logger"
 import { getObjectStorage } from "../infra/objectStorage"
 import { AuditService } from "./audit.service"
+import { ScenarioRepository } from "../repositories/scenario.repository"
 import { QueryRepository, type RunListFilter } from "../repositories/query.repository"
 import type { Tenant } from "../repositories/base.repository"
 
@@ -34,6 +35,11 @@ export interface QueryService {
     projectId: string,
     runId: string,
   ) => Promise<NonNullable<Awaited<ReturnType<QueryRepository["runSnapshot"]>>>>
+  /** 快照语义「最近一次上报」（docs/arch/09 §9.6）：run 与其场景指标定义服务端配对原子下发。 */
+  latestRunSnapshot: (projectId: string) => Promise<{
+    run: NonNullable<Awaited<ReturnType<QueryRepository["latestRun"]>>> | null
+    metricDefinitions: Array<Record<string, unknown>>
+  }>
   runOverview: (
     projectId: string,
     runId: string,
@@ -72,6 +78,21 @@ export function createQueryService(tenant: Tenant): QueryService {
   }
   const runOverview: QueryService["runOverview"] = async (projectId, runId) => {
     return repo.runOverview(projectId, runId)
+  }
+  const scenarios = new ScenarioRepository()
+  const latestRunSnapshot: QueryService["latestRunSnapshot"] = async (projectId) => {
+    // 配对不变量：defs 按 run.scenarioId 取场景 defaults，一次下发——客户端拿不到
+    // 「defs 与 metrics 来自不同场景」的组合（旧 trends×useScenarioDefaults 交叉错配的类别级修复）
+    const run = await repo.latestRun(projectId)
+    if (!run) return { run: null, metricDefinitions: [] }
+    const defaults = run.scenarioId ? await scenarios.getDefaultsContent(run.scenarioId) : null
+    const defs = defaults?.content as { metric_definitions?: unknown } | undefined
+    return {
+      run,
+      metricDefinitions: Array.isArray(defs?.metric_definitions)
+        ? (defs.metric_definitions as Array<Record<string, unknown>>)
+        : [],
+    }
   }
 
   async function artifactMeta(artifactId: string) {
@@ -118,6 +139,7 @@ export function createQueryService(tenant: Tenant): QueryService {
     sampleDetail,
     runSnapshot,
     runOverview,
+    latestRunSnapshot,
     artifactMeta,
     deleteRun,
     samples: (pid) => repo.listSamplesByProject(pid),
