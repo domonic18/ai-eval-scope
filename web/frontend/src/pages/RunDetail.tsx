@@ -139,8 +139,11 @@ export default function RunDetail() {
     }
   }
 
-  // 规则集链接 → 只读规则浏览器（docs/plan/08 纯可视化：包编辑器已移除）
-  const ruleSetLink = run.scenarioId ? `/config/scenarios/${run.scenarioId}/explorer` : null
+  // 规则集链接 → 只读规则浏览器，深链定位到该规则集（docs/plan/08 纯可视化：包编辑器已移除）
+  const ruleSetId = run.ruleSetVersion?.split(":")[0] ?? run.ruleSetVersion
+  const ruleSetLink = run.scenarioId && ruleSetId
+    ? `/config/scenarios/${run.scenarioId}/explorer?select=rule-sets:${ruleSetId}`
+    : null
 
   // verdict 从 overview 取（与第三方 API 一致）
   const verdict = overview?.verdict

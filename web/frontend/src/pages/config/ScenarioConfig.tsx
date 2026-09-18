@@ -1,24 +1,17 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { useCrumbs } from "../../context/navigation"
 import { Page, PageHead, DataTable } from "../../components/shared"
 import { Card, CardContent } from "../../components/shadcn/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/shadcn/tabs"
 import { Badge } from "../../components/shadcn/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/shadcn/dialog"
-import { api, type AssetKind, type ScenarioCatalog, type CatalogEntry, type DatasetCatalogEntry, type SutCatalogEntry, type TaskSetCatalogEntry } from "../../api/client"
+import { api, type ScenarioCatalog, type CatalogEntry, type DatasetCatalogEntry, type SutCatalogEntry, type TaskSetCatalogEntry } from "../../api/client"
 
 const errMsg = (e: unknown, fb: string) =>
   (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? fb
 
-/** catalog 表键 → API 资产 kind（GET /scenarios/:id/:kind/:assetId/content）。 */
-const CATALOG_KIND: Record<string, AssetKind> = {
+/** catalog 表键 → 资产 kind（规则浏览器深链 ?select= 同款，docs/plan/08 纯可视化）。 */
+const CATALOG_KIND: Record<string, string> = {
   rules: "rule-sets",
   prompts: "prompts",
   datasets: "datasets",
@@ -26,58 +19,13 @@ const CATALOG_KIND: Record<string, AssetKind> = {
   sut_configs: "sut-configs",
 }
 
-/** 只读内容弹窗（docs/plan/08 纯可视化：场景包仅查看）。 */
-function AssetContentDialog({
-  scenarioId,
-  target,
-  onClose,
-}: {
-  scenarioId: string
-  target: { kind: AssetKind; assetId: string } | null
-  onClose: () => void
-}) {
-  const [content, setContent] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    setContent(null)
-    setError(null)
-    if (!target) return
-    api
-      .assetContent(scenarioId, target.kind, target.assetId)
-      .then((c) => setContent(JSON.stringify(c, null, 2)))
-      .catch((e) => setError(errMsg(e, "加载资产内容失败")))
-  }, [scenarioId, target])
-
-  return (
-    <Dialog open={target != null} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="font-mono text-sm">{target?.assetId}</DialogTitle>
-          <DialogDescription>资产内容（只读，登记源以仓库 YAML 为准）</DialogDescription>
-        </DialogHeader>
-        {error ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">{error}</div>
-        ) : content == null ? (
-          <div className="py-6 text-sm text-muted-foreground">加载中…</div>
-        ) : (
-          <pre className="max-h-[60vh] overflow-auto rounded-md border border-border bg-muted/40 p-3 font-mono text-xs leading-relaxed">
-            {content}
-          </pre>
-        )}
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 export default function ScenarioConfig() {
   const { id = "" } = useParams()
+  const nav = useNavigate()
   const { setCrumbs } = useCrumbs()
   const [catalog, setCatalog] = useState<ScenarioCatalog | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  // 只读查看：当前点选的资产（null = 关闭）
-  const [viewing, setViewing] = useState<{ kind: AssetKind; assetId: string } | null>(null)
 
   useEffect(() => {
     setCrumbs([{ label: "配置中心", to: "/config" }, { label: id }])
@@ -88,8 +36,9 @@ export default function ScenarioConfig() {
       .finally(() => setLoading(false))
   }, [id, setCrumbs])
 
+  // 只读查看：跳转规则浏览器并深链定位到该资产（结构化视图，无编辑/发版）
   const openAsset = (tab: string, assetId: string) =>
-    setViewing({ kind: CATALOG_KIND[tab] ?? "rule-sets", assetId })
+    nav(`/config/scenarios/${id}/explorer?select=${CATALOG_KIND[tab] ?? "rule-sets"}:${assetId}`)
 
   return (
     <Page>
@@ -126,8 +75,6 @@ export default function ScenarioConfig() {
           </TabsContent>
         </Tabs>
       ) : null}
-
-      <AssetContentDialog scenarioId={id} target={viewing} onClose={() => setViewing(null)} />
     </Page>
   )
 }
