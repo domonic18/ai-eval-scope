@@ -254,6 +254,130 @@ describe("GET /projects/:id/latest-run（快照语义 §9.6）", () => {
     expect(r.body.metricDefinitions).toEqual(defs)
   })
 
+  it("跨包代际：defs 锚定该 run 自带快照，而非场景旧代 defaults（edu 事故回归，docs/plan/08）", async () => {
+    // 复现线上事故：run A（旧代 edu:*）先摄取 → auto-ingest 以其快照注册场景 defaults；
+    // run B（新代 kb:*）后摄取 → latest-run 的 defs 必须取 run B 快照（kb:*），而非旧代 defaults
+    const proj = await createProject(app, owner)
+    const k = await issueKey(app, { accessToken: owner.accessToken, projectId: proj.id })
+    const scen = `anchor_scn_${Date.now()}`
+    const ingestRun = async (extRunId: string, prefix: string, ts: string) =>
+      bearerPost(app, {
+        url: "/api/public/ingest",
+        token: k.token,
+        bodyObj: {
+          schema_version: "1.0",
+          events: [
+            {
+              event_id: uid("ev"),
+              type: "run",
+              data: {
+                external_run_id: extRunId,
+                mode: "eval_only",
+                status: "completed",
+                created_at: ts,
+                metrics: { [`${prefix}:reward`]: 0.9 },
+                total_samples: 0,
+                scenario_id: scen,
+                run_config_snapshot: {
+                  scenario_id: scen,
+                  snapshot_hash: `sha256:${extRunId}`,
+                  package: { id: "pkg", version: "1.0.0" },
+                  metric_definitions: [
+                    { id: `${prefix}:reward`, name: "综合得分", threshold: 0.8, unit: "score" },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      })
+    const t1 = new Date(Date.now() - 2000).toISOString()
+    const t2 = new Date(Date.now() - 1000).toISOString()
+    expect((await ingestRun(uid("old"), "edu", t1)).status).toBe(202)
+    expect((await ingestRun(uid("new"), "kb", t2)).status).toBe(202)
+
+    const r = await request(app)
+      .get(`/api/v1/projects/${proj.id}/latest-run`)
+      .set(auth(accessToken))
+    expect(r.status).toBe(200)
+    expect(r.body.run.metrics?.["kb:reward"]).toBe(0.9)
+    expect(r.body.metricDefinitions).toEqual([
+      { id: "kb:reward", name: "综合得分", threshold: 0.8, unit: "score" },
+    ])
+  })
+
+  it("快照缺失的 run：defs 回退场景 defaults（极老 run 兜底）", async () => {
+    // run A 带快照（注册场景 defaults）→ run B 同场景无快照且更新 → latest-run 取 run B + defaults defs
+    const proj = await createProject(app, owner)
+    const k = await issueKey(app, { accessToken: owner.accessToken, projectId: proj.id })
+    const scen = `fallback_scn_${Date.now()}`
+    const defs = [{ id: "edu:reward", name: "综合得分", threshold: 0.7, unit: "score" }]
+    const base = {
+      mode: "eval_only",
+      status: "completed",
+      metrics: { "edu:reward": 0.8 },
+      total_samples: 0,
+      scenario_id: scen,
+    }
+    expect(
+      (
+        await bearerPost(app, {
+          url: "/api/public/ingest",
+          token: k.token,
+          bodyObj: {
+            schema_version: "1.0",
+            events: [
+              {
+                event_id: uid("ev"),
+                type: "run",
+                data: {
+                  ...base,
+                  external_run_id: uid("withsnap"),
+                  created_at: new Date(Date.now() - 2000).toISOString(),
+                  run_config_snapshot: {
+                    scenario_id: scen,
+                    snapshot_hash: "sha256:fb",
+                    package: { id: "pkg", version: "1.0.0" },
+                    metric_definitions: defs,
+                  },
+                },
+              },
+            ],
+          },
+        })
+      ).status,
+    ).toBe(202)
+    expect(
+      (
+        await bearerPost(app, {
+          url: "/api/public/ingest",
+          token: k.token,
+          bodyObj: {
+            schema_version: "1.0",
+            events: [
+              {
+                event_id: uid("ev"),
+                type: "run",
+                data: {
+                  ...base,
+                  external_run_id: uid("nosnap"),
+                  created_at: new Date(Date.now() - 1000).toISOString(),
+                },
+              },
+            ],
+          },
+        })
+      ).status,
+    ).toBe(202)
+
+    const r = await request(app)
+      .get(`/api/v1/projects/${proj.id}/latest-run`)
+      .set(auth(accessToken))
+    expect(r.status).toBe(200)
+    expect(r.body.run.metrics?.["edu:reward"]).toBe(0.8)
+    expect(r.body.metricDefinitions).toEqual(defs)
+  })
+
   it("cross-tenant: another org user gets 404", async () => {
     const other = await registerUser(app, "qlatest")
     const r = await request(app)

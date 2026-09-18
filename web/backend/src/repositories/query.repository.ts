@@ -119,6 +119,7 @@ class QueryRepository extends BaseRepository {
   /**
    * 项目最近一次上报的运行（快照查询语义，docs/arch/09 §9.6）。
    * created_at 同值时按 id 定序，保证「最新一个」确定唯一。
+   * 附带运行快照 content：defs 配对锚定该 run 自带快照（docs/plan/08 不变量 3）。
    */
   async latestRun(projectId: string) {
     const orgId = this.requireOrg()
@@ -130,6 +131,7 @@ class QueryRepository extends BaseRepository {
           select: { externalSampleId: true },
           orderBy: { externalSampleId: "asc" },
         },
+        runConfigSnapshot: { select: { content: true } },
       },
     })
   }
