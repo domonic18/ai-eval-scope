@@ -132,7 +132,12 @@ export class ScenarioRepository {
   async getDefaultsContent(
     scenarioId: string,
     version?: string,
-  ): Promise<{ version: string; labels: string[]; content: Record<string, unknown> } | null> {
+  ): Promise<{
+    version: string
+    labels: string[]
+    content: Record<string, unknown>
+    contentHash: string
+  } | null> {
     const rows = await this.prisma.defaultsAsset.findMany({
       where: { scenarioId, assetId: "default" },
     })
@@ -143,6 +148,7 @@ export class ScenarioRepository {
       version: chosen.version,
       labels: chosen.labels,
       content: chosen.content as Record<string, unknown>,
+      contentHash: chosen.contentHash,
     }
   }
 

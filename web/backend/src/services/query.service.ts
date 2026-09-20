@@ -9,7 +9,7 @@ import { getObjectStorage } from "../infra/objectStorage"
 import { AuditService } from "./audit.service"
 import { ScenarioRepository } from "../repositories/scenario.repository"
 import { QueryRepository, type RunListFilter } from "../repositories/query.repository"
-import { resolveRunMetricDefs } from "../utils/metricDefs"
+import { pairRunDefs, resolveRunDefinitions, type DefsSource } from "../utils/metricDefs"
 import type { Tenant } from "../repositories/base.repository"
 
 export interface QueryService {
@@ -40,6 +40,9 @@ export interface QueryService {
   latestRunSnapshot: (projectId: string) => Promise<{
     run: NonNullable<Awaited<ReturnType<QueryRepository["latestRun"]>>> | null
     metricDefinitions: Array<Record<string, unknown>>
+    defsSource: "run-snapshot" | "scenario-defaults" | "none"
+    snapshotHash: string | null
+    defaultsHash: string | null
   }>
   runOverview: (
     projectId: string,
@@ -81,17 +84,24 @@ export function createQueryService(tenant: Tenant): QueryService {
     return repo.runOverview(projectId, runId)
   }
   const scenarios = new ScenarioRepository()
+  // pairRunDefs 的 defaults 获取（按 scenarioId memo 由助手内部保证，每场景至多取一次）
+  const defaultsOf = async (scenarioId: string): Promise<DefsSource | null> =>
+    scenarios.getDefaultsContent(scenarioId)
+
   const latestRunSnapshot: QueryService["latestRunSnapshot"] = async (projectId) => {
     // 配对不变量（docs/plan/08 不变量 3）：defs 锚定该 run 自带快照（时间一致 = 审计一致），
     // 场景 defaults 仅在快照缺失/无定义时兜底——客户端拿不到
     // 「当前定义解释历史数据」的组合（edu:* 旧 defaults × kb:* 新快照跨包代际错配事故的类别级修复）
     const run = await repo.latestRun(projectId)
-    if (!run) return { run: null, metricDefinitions: [] }
-    const defaults = run.scenarioId ? await scenarios.getDefaultsContent(run.scenarioId) : null
-    const resolved = resolveRunMetricDefs(run.runConfigSnapshot?.content, defaults?.content)
+    if (!run)
+      return { run: null, metricDefinitions: [], defsSource: "none", snapshotHash: null, defaultsHash: null }
+    const resolved = resolveRunDefinitions(run.runConfigSnapshot, await defaultsOf(run.scenarioId ?? ""))
     return {
       run,
       metricDefinitions: resolved.defs,
+      defsSource: resolved.source,
+      snapshotHash: resolved.snapshotHash,
+      defaultsHash: resolved.defaultsHash,
     }
   }
 
@@ -132,8 +142,22 @@ export function createQueryService(tenant: Tenant): QueryService {
   }
 
   return {
-    dashboard: () => repo.listProjectsDashboard(),
-    listRuns: (pid, f) => repo.listRuns(pid, f),
+    // 看板：latest-run 行级 defs 配对（锚定各自 run 快照，docs/plan/08 批次 C）；
+    // 解析后剥离 runConfigSnapshot 重 content，响应不因配对变重
+    dashboard: async () => {
+      const result = await repo.listProjectsDashboard()
+      const latest = result
+        .map((p) => p.latestRun)
+        .filter((r): r is NonNullable<typeof r> => r != null)
+      await pairRunDefs(latest, defaultsOf)
+      return result
+    },
+    // 运行列表：每行 defs 锚定该行 run 自带快照；无快照老 run 按场景 defaults 兜底（不变量 3）
+    listRuns: async (pid, f) => {
+      const result = await repo.listRuns(pid, f)
+      await pairRunDefs(result.items, defaultsOf)
+      return result
+    },
     trends: (pid, f) => repo.trends(pid, f),
     runDetail,
     sampleDetail,

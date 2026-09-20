@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/shadcn/chart"
@@ -15,7 +15,6 @@ import type {
 import { fmt3, num, timeAgo } from "../lib/format"
 import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
 import { metricLabelOf, metricThresholdOf } from "../lib/metricGrid"
-import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -214,7 +213,7 @@ export default function ProjectDetail() {
             </CardHeader>
             <CardContent>
               <DataTable
-                columns={runColumns(snapshot?.metricDefinitions ?? [])}
+                columns={runColumns(unionThresholdDefs(runs.slice(0, 6)))}
                 rows={runs.slice(0, 6)}
                 rowKey={(r) => r.id}
                 onRowClick={(r) => nav(`/run/${r.id}`)}
@@ -227,7 +226,7 @@ export default function ProjectDetail() {
           <RunsTab runs={runs} total={runsTotal} onOpen={(r) => nav(`/run/${r.id}`)} />
         </TabsContent>
 
-        <TabsContent value="samples">{id && <SamplesTab projectId={id} scenarioId={runs[0]?.scenarioId ?? "courseware"} />}</TabsContent>
+        <TabsContent value="samples">{id && <SamplesTab projectId={id} defs={runs[0]?.metricDefinitions ?? []} />}</TabsContent>
 
         <TabsContent value="settings">
           {project && (
@@ -247,6 +246,18 @@ export default function ProjectDetail() {
       </Tabs>
     </Page>
   )
+}
+
+/**
+ * 列并集：各 run 行级 defs（docs/plan/08 批次 C，锚定各自快照）的 threshold 指标按 id 去重。
+ * 跨代混排时列集为并集，异代行对应列留空属预期——禁止按首行场景借「当前 defaults」建列。
+ */
+function unionThresholdDefs(rows: RunSummary[]): MetricDef[] {
+  const seen = new Map<string, MetricDef>()
+  for (const r of rows)
+    for (const d of r.metricDefinitions ?? [])
+      if (d.threshold != null && !seen.has(d.id)) seen.set(d.id, d)
+  return [...seen.values()]
 }
 
 function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
@@ -281,7 +292,8 @@ function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
 }
 
 function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; onOpen: (r: RunSummary) => void }) {
-  const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
+  // 列 = 全量 run 行级 defs 并集（memo：过滤不重建列）
+  const columns = useMemo(() => runColumns(unionThresholdDefs(runs)), [runs])
   const [q, setQ] = useState("")
   const [status, setStatus] = useState("all")
   const filtered = runs.filter((r) => {
@@ -314,18 +326,18 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
       </Card>
       <Card>
         <CardContent className="pt-6">
-          <DataTable columns={runColumns(defaultDefs)} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
+          <DataTable columns={columns} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
         </CardContent>
       </Card>
     </div>
   )
 }
 
-function SamplesTab({ projectId, scenarioId }: { projectId: string; scenarioId: string }) {
+function SamplesTab({ projectId, defs }: { projectId: string; defs: MetricDef[] }) {
   const [samples, setSamples] = useState<ProjectSample[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [trend, setTrend] = useState<SampleTrendPoint[]>([])
-  const defs = useScenarioDefaults(scenarioId)
+  // defs 取自最新 run 行级下发（runs 按时间倒序，runs[0] 即最新代），不再按场景借当前 defaults
   const rewardLabel = metricLabelOf(defs, "reward", "Reward")
   const rewardThr = metricThresholdOf(defs, "reward")
 

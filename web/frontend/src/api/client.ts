@@ -574,6 +574,8 @@ export interface AdminRun {
   createdAt: string
   /** Phase 5 场景化指标（与 dr/cpr 并存，P5-8 清理遗留列后为唯一来源）*/
   metrics?: Record<string, number>
+  /** 行级 defs 配对（docs/plan/08 批次 C）：锚定该 run 自带快照，无快照老 run 走场景 defaults 兜底 */
+  metricDefinitions?: MetricDef[]
   project: { id: string; name: string; org: { id: string; name: string } }
 }
 export interface AdminArtifact {

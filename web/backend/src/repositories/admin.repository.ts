@@ -188,6 +188,8 @@ class AdminRepository {
         take,
         include: {
           project: { select: { id: true, name: true, org: { select: { id: true, name: true } } } },
+          // 行级 defs 配对锚点（docs/plan/08 批次 C）：路由层解析后剥离重 content
+          runConfigSnapshot: { select: { content: true, contentHash: true } },
         },
       }),
       this.prisma.run.count({ where }),

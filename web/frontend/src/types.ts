@@ -33,6 +33,8 @@ export interface DashboardProject {
     createdAt: string | null
     metrics?: Record<string, number> | null
     scenarioId: string | null
+    /** 行级 defs 配对（docs/plan/08 批次 C）：锚定该 run 自带快照，无快照老 run 走场景 defaults 兜底 */
+    metricDefinitions?: MetricDef[]
   } | null
 }
 
@@ -101,6 +103,10 @@ export interface MetricExplainRow {
 export interface LatestRunSnapshot {
   run: RunSummary | null
   metricDefinitions: MetricDef[]
+  /** 血缘 meta（docs/plan/08 批次 C）：defs 解析来源 + 锚定版本 hash（暂无 UI 消费，供核查） */
+  defsSource?: "run-snapshot" | "scenario-defaults" | "none"
+  snapshotHash?: string | null
+  defaultsHash?: string | null
 }
 
 /** 样本视图 tab 词表（docs/arch/09 §9.7；与后端 SAMPLE_VIEW_TABS 同源）。 */
