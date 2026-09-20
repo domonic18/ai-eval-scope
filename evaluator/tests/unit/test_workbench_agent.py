@@ -2855,3 +2855,127 @@ class TestSessionMachine:
         assert result.aborted_reason == "segment_limit"  # max_segments=1：撞线即暂停
         assert len(agent._messages) == 3  # human + ai + 合成的失败 ToolMessage
         assert getattr(agent._messages[-1], "tool_call_id", "") == "c9"
+
+
+class TestExecutionDomainAssembly:
+    """执行域装配回归（Sprint 14b C7，arch/15 v4.12 §6.10）。"""
+
+    @staticmethod
+    def _exec_outcome():
+        from agent_eval.cli.pipeline_core import PipelineOutcome
+
+        return PipelineOutcome(
+            stage="done",
+            exit_code=0,
+            run_id="20260101_000000",
+            run_dir="/ws/runs/20260101_000000",
+            metrics={"m:reward": 0.9},
+            total_samples=2,
+            gate={"mode": "off", "enabled": False, "passed": True},
+            upload_receipt={"enabled": False},
+            payload={"total": 2, "succeeded": 2},
+            result=SimpleNamespace(report=SimpleNamespace(failure_breakdown={"safety": 1})),
+        )
+
+    def test_execution_server_assembles_five_tools(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        names = {t.name for t in agent.execution.to_langchain_tools()}
+        assert names == {
+            "run_evaluation",
+            "list_eval_targets",
+            "list_runs",
+            "show_run",
+            "upload_run",
+        }
+        assert {s.name for s in agent.execution.TOOL_SPECS} == names  # 面单一致
+
+    def test_describe_tools_includes_execution_domain(self, tmp_path: Path) -> None:
+        # 三 server 展平：包域 + 探测 + 执行域同进 {tools} 段
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        described = agent._describe_tools()
+        assert "run_evaluation" in described
+        assert "list_eval_targets" in described
+        assert "upload_run" in described
+
+    def test_config_field_set_unchanged(self) -> None:
+        # §6.7 回归：WorkbenchAgentConfig 零改动——执行域装配走构造 kwarg
+        # （render_bridge）而非扩配置；字段集漂移 = 扩展机制失效信号
+        import dataclasses
+
+        assert {f.name for f in dataclasses.fields(WorkbenchAgentConfig)} == {
+            "max_turns",
+            "max_fix_rounds",
+            "max_segments",
+            "budget_usd",
+            "max_dialogue_entries",
+            "resume_max_entries",
+            "resume_max_chars",
+            "probe_budgets",
+            "probe_timeout_s",
+        }
+
+    def test_interrupt_active_two_states(self, tmp_path: Path) -> None:
+        import threading
+
+        from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
+
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.interrupt_active_execution() is False  # 无活跃执行
+
+        bridge = ExecutionRenderBridge(None)
+        agent.bind_render_bridge(bridge)
+        agent.execution.ctx.active_event = threading.Event()
+        assert agent.interrupt_active_execution() is True  # 置位 + 封缄
+        assert agent.execution.ctx.active_event.is_set()
+        assert bridge._sealed  # 失联 worker 线程静音
+
+    def test_new_turn_does_not_reset_active_event(self, tmp_path: Path) -> None:
+        # 生命周期约定：active_event 归 run_evaluation，不随 REPL 换轮复位
+        import threading
+
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        event = threading.Event()
+        agent.execution.ctx.active_event = event
+        agent.execution.new_turn()
+        assert agent.execution.ctx.active_event is event
+
+    def test_execution_bypasses_session_budget(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """预算豁免回归：执行评测不消耗会话预算（BudgetGuard 仅挂 on_llm_end）。
+
+        双保险断言：①空转 pipeline_core 走完整 run_evaluation 后 spent_usd 不变；
+        ②结构性断言 PipelineParams 无 budget 字段（执行参数进不了预算通道）。
+        """
+        import dataclasses
+        import threading
+
+        import agent_eval.agent.workbench.execution.run_eval as run_eval_mod
+        from agent_eval.cli.pipeline_core import PipelineParams
+
+        assert not {f.name for f in dataclasses.fields(PipelineParams)} & {
+            "budget_usd",
+            "budget",
+        }  # 结构性：执行参数无预算字段
+
+        cfg = WorkbenchAgentConfig(budget_usd=1.0)
+        agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
+        assert agent._budget_guard is not None and agent._budget_guard.spent_usd == 0
+
+        core_calls: list[str] = []
+
+        def fake_core(params, *, progress, cancel_event, credential_filler):
+            core_calls.append("core")
+            assert isinstance(cancel_event, threading.Event)
+            return self._exec_outcome()
+
+        monkeypatch.setattr(run_eval_mod, "pipeline_core", fake_core)
+
+        async def ask_fn(question, *, options=None, secret=False):
+            return "确认执行"
+
+        agent.execution.ctx.ask_fn = ask_fn  # 与 bind_render_bridge 同风格：ctx 公开名直写
+        result = asyncio.run(agent.execution.run_evaluation(package="demo-pkg"))
+        assert result["status"] == "done"
+        assert core_calls == ["core"]
+        assert agent._budget_guard.spent_usd == 0  # 会话预算分文未动
