@@ -86,8 +86,15 @@ def _graceful_exec_interrupt(agent: Any):  # noqa: ANN001 — WorkbenchAgent
     """交互会话的 SIGINT 分流（Sprint 14b，仅 _run_one 装配；非交互维持现行 KI 语义）。
 
     评测执行期首按 Ctrl+C：协作中断（当前任务完成后停止）——不抛 KI，tool future
-    拿 cancelled 摘要正常收轮；无活跃执行或二按：恢复默认 handler 抛 KI，走现行
+    拿 cancelled 摘要正常收轮；无活跃执行或二按：屏蔽后续信号后抛 KI，走现行
     `_attempt` 暂停语义（进度保留，「继续」接着跑）。
+
+    二按前置 ``SIG_IGN``（v4.12.1 硬中断终局隔离）：KI 打断 asyncio.run 的
+    teardown（cancel tasks / shutdown asyncgens）期间若再进信号，会击穿
+    ``run_forever`` 登记/清理 running-loop 线程态的窗口——泄漏后本轮报
+    「Cannot close a running event loop」、后续轮报「asyncio.run() cannot be
+    called from a running event loop」，会话报废。等待侧已 daemon 化（零 join），
+    teardown 毫秒级，屏蔽窗体感不可见；contextmanager 退出即复原。
     """
     import signal
 
@@ -97,11 +104,9 @@ def _graceful_exec_interrupt(agent: Any):  # noqa: ANN001 — WorkbenchAgent
     def _handler(signum: int, frame: Any) -> None:  # noqa: ARG001 — signal 回调签名
         if not state["pressed"] and agent.interrupt_active_execution():
             state["pressed"] = True
-            rprint(
-                "\n[yellow]⏳ 正在中断评测（当前任务完成后停止；再按一次立即暂停）[/yellow]"
-            )
+            rprint("\n[yellow]⏳ 正在中断评测（当前任务完成后停止；再按一次立即暂停）[/yellow]")
             return  # 不抛 KI：worker 消化取消令牌后以 cancelled 摘要收轮
-        signal.signal(signal.SIGINT, signal.default_int_handler)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)  # teardown 期屏蔽按键风暴
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGINT, _handler)

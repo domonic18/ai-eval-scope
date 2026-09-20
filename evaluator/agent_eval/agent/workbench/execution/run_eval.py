@@ -1,23 +1,26 @@
 """RunEvalTool — 评测执行（run_evaluation，执行域主工具）。
 
-编排零复制：``pipeline_core``（Sprint 14b C4 单一真相源）经 ``asyncio.to_thread``
-在 worker 线程运行；本工具只做「门槛 → 装配 → 终态摘要」：
+编排零复制：``pipeline_core``（Sprint 14b C4 单一真相源）经 ``_spawn_pipeline_worker``
+在独立 daemon 线程运行；本工具只做「门槛 → 装配 → 终态摘要」：
 
 ① ask_fn 为空 → refused（**执行确认永不被 --trust-agent 旁路的唯一实现点**：
    非交互环境没有确认通道，直接拒绝而非静默执行）
-② busy 守卫（active_event 兼哨兵）
+② busy 守卫（active_event 兼哨兵；worker 存活同判，残留令牌就地 reap）
 ③ 确认门槛：等价 CLI 命令（console/equiv 同源 argv）展示给用户二选一；
    拒绝 → declined，pipeline_core 从未被调用
 ④ 渲染桥挂起 + 取消令牌置位（busy 哨兵同源）
-⑤ to_thread(pipeline_core, progress=桥包装的共用渲染器, cancel_event,
-   credential_filler=ask_fn 补录循环)
-⑥ finally 复位 + 桥恢复（core 的 setup_logging 是进程全局突变，桥负责快照恢复）
+⑤ daemon worker(pipeline_core, progress=桥包装的共用渲染器, cancel_event,
+   credential_filler=ask_fn 补录循环)；等待侧零 join（arch/15 §6.10 中断终局）
+⑥ finally 复位 + 桥恢复（core 的 setup_logging 是进程全局突变，桥负责快照恢复）；
+   KI/取消硬中断保留令牌作僵尸 worker 取消通道（下一轮入口 reap）
 ⑦ 紧凑摘要（指标不全文罗列，明细引 show_run）
 """
 
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
+import contextlib
 import threading
 from typing import Any
 
@@ -25,6 +28,13 @@ from agent_eval.agent.workbench.execution.context import ExecContext
 from agent_eval.cli.pipeline_core import PipelineOutcome, PipelineParams, pipeline_core
 
 _CONFIRM = "确认执行"
+
+# 等待侧取消后 set_result/set_exception 的终态报错：3.8–3.12 抛 CancelledError、
+# 3.13+ 抛 InvalidStateError("CANCELLED")——双类兼容（实测 3.13 走 InvalidStateError）
+_FUT_STATE_ERRORS = (
+    concurrent.futures.CancelledError,
+    concurrent.futures.InvalidStateError,
+)
 
 
 def _make_credential_filler(ctx: ExecContext) -> Any:
@@ -68,6 +78,43 @@ def _make_credential_filler(ctx: ExecContext) -> Any:
     return filler
 
 
+def _spawn_pipeline_worker(
+    params: PipelineParams,
+    *,
+    progress: Any,
+    cancel: threading.Event,
+    filler: Any,
+) -> tuple[concurrent.futures.Future, threading.Thread]:
+    """单飞 daemon worker：pipeline_core 跑独立守护线程，等待侧零 join。
+
+    为何不用 ``asyncio.to_thread``（arch/15 §6.10 硬中断终局语义）：to_thread 落
+    loop 默认线程池，KI 硬中断后 ``Runner.close`` 会 shutdown+join 该池（上限
+    300s）——当前任务分钟级时终端冻结，用户连按 Ctrl+C 会击穿 asyncio.run 收尾
+    的信号窗口，running-loop 线程态泄漏、会话报废。daemon worker 让 teardown
+    无可 join：turn 即时收轮，worker 后台继续到任务边界收尾（cancelled 产物照常
+    落盘），进程退出随解释器终止（与 CLI 硬中断同语义）。busy/协作中断经
+    ``ctx.active_event`` 保留的令牌仍然可达（见 run_evaluation ⑥）。
+    """
+
+    fut: concurrent.futures.Future = concurrent.futures.Future()
+
+    def _run() -> None:
+        try:
+            result = pipeline_core(
+                params, progress=progress, cancel_event=cancel, credential_filler=filler
+            )
+        except BaseException as e:  # noqa: BLE001 — 原样过桥，等待侧映射终态
+            with contextlib.suppress(*_FUT_STATE_ERRORS):
+                fut.set_exception(e)  # 等待侧已取消 → 结果无人接，worker 就此收尾
+        else:
+            with contextlib.suppress(*_FUT_STATE_ERRORS):
+                fut.set_result(result)
+
+    thread = threading.Thread(target=_run, name="agent-eval-pipeline", daemon=True)
+    thread.start()
+    return fut, thread
+
+
 class RunEvalTool:
     """工具：run_evaluation——确认门槛 + pipeline_core 装配 + 终态摘要。"""
 
@@ -94,9 +141,16 @@ class RunEvalTool:
                 "status": "refused",
                 "reason": "非交互环境（--yes/CI）不支持会话内执行评测——请在交互终端运行，或用等价 CLI 命令",
             }
-        # ② busy 守卫：并发二次调用直接拒绝（首轮执行未收尾）
-        if self.ctx.active_event is not None:
-            return {"status": "busy", "note": "已有评测在执行中，等待其完成（或 Ctrl+C 协作中断）"}
+        # ② busy 守卫：执行中（active_event）或上轮硬中断的 daemon worker 尚在
+        #    后台收尾（worker_alive）都拒绝并发；worker 已退出的残留令牌就地 reap
+        if self.ctx.active_event is not None and not self.ctx.worker_alive():
+            self.ctx.active_event = None  # 上轮 KI 僵尸已退出——清账放行
+        if self.ctx.active_event is not None or self.ctx.worker_alive():
+            return {
+                "status": "busy",
+                "note": "已有评测在执行中（或上轮硬中断后仍在后台收尾），"
+                "等待完成或 Ctrl+C 协作中断",
+            }
 
         # ③ 确认门槛：等价命令展示 + 二选一（拒绝 → pipeline_core 从未被调用）
         from agent_eval.cli.console.equiv import pipeline_argv, render
@@ -151,17 +205,23 @@ class RunEvalTool:
         outcome: PipelineOutcome | None = None
         failure: BaseException | None = None
         try:
-            outcome = await asyncio.to_thread(
-                pipeline_core,
+            fut, worker = _spawn_pipeline_worker(
                 params,
                 progress=progress,
-                cancel_event=cancel,
-                credential_filler=_make_credential_filler(self.ctx),
+                cancel=cancel,
+                filler=_make_credential_filler(self.ctx),
             )
+            self.ctx.worker_thread = worker
+            outcome = await asyncio.wrap_future(fut)
         except BaseException as e:  # noqa: BLE001 — 终态映射兜底（含 KI 透传宿主）
             failure = e
         finally:
-            self.ctx.active_event = None
+            if failure is None or not isinstance(
+                failure, (KeyboardInterrupt, asyncio.CancelledError)
+            ):
+                self.ctx.active_event = None  # 正常/内部失败：worker 已退出，令牌清账
+            # KI/取消硬中断：保留令牌作僵尸 worker 的取消通道（busy 守卫与
+            # interrupt_active 仍可达），由下次 run_evaluation 入口 reap
             if bridge is not None:
                 bridge.resume()
         if failure is not None:
