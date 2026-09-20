@@ -170,7 +170,7 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
             f"[green]确认后经校验门禁，通过即{_landing_verb(Path(agent.server.root))} → {landing}[/green]"
         )
     try:
-        return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
+        return select("确认变更", ["全部应用", "放弃"], no_default=True) == "全部应用"
     except typer.Abort:
         raise KeyboardInterrupt from None  # 落盘确认 ^C = 中断本轮（v4.12.4，同 ask_fn 桥）
 
@@ -380,7 +380,7 @@ def _make_ask_fn() -> Any:
                 return ask("└─ 输入（隐藏回显）", hide=True)
             if options:
                 _show(question)
-                return select("└─ 选择", options)
+                return select("└─ 选择", options, no_default=True)
             if len(question) <= _ASK_INLINE_QUESTION_CHARS:
                 return ask(f"? {question}")
             _show(question)

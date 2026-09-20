@@ -76,6 +76,58 @@ class TestSelect:
         assert "picked=a" in result.output
         assert "无效选择" in result.output
 
+    def test_implicit_default_empty_enter_picks_first(self) -> None:
+        # 既有行为回归：向导类选择空回车仍落隐式默认第一项（不受 no_default 影响）
+        import typer
+
+        app = typer.Typer()
+
+        @app.command()
+        def pick() -> None:
+            print(f"picked={console_prompts.select('选择', ['a', 'b'])}")
+
+        result = runner.invoke(app, [], input="\n")
+        assert result.exit_code == 0, result.output
+        assert "picked=a" in result.output
+
+    def test_no_default_empty_enter_reprompts(self) -> None:
+        # 放行类选择（v4.12.4）：空回车不再隐式选第一项——按无效选择重问，
+        # 曾是安全纵伤（授权/确认选择器空回车一律落「允许」「确认执行」）
+        import typer
+
+        app = typer.Typer()
+
+        @app.command()
+        def pick() -> None:
+            print(f"picked={console_prompts.select('选择', ['允许', '取消'], no_default=True)}")
+
+        result = runner.invoke(app, [], input="\n1\n")
+        assert result.exit_code == 0, result.output
+        assert "picked=允许" in result.output
+        assert "无效选择" in result.output
+
+    def test_no_default_hint_has_no_enter_promise(self) -> None:
+        # 提示去掉「回车确认」——no_default 下空回车没有默认语义，文案不许撒谎
+        import typer
+
+        app = typer.Typer()
+
+        @app.command()
+        def pick() -> None:
+            console_prompts.select("选择", ["a", "b"], no_default=True)
+
+        result = runner.invoke(app, [], input="2\n")
+        assert result.exit_code == 0, result.output
+        assert "输入编号，回车确认" not in result.output
+        assert "输入编号]" in result.output
+
+    def test_no_default_no_input_requires_explicit(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # --no-input 下放行类无默认可用：必须显式提供（防线收口；ask_fn 场景不可达）
+        monkeypatch.setenv("AGENT_EVAL_NO_INPUT", "1")
+        with pytest.raises(typer.Exit) as ei:
+            console_prompts.select("选择", ["a", "b"], no_default=True)
+        assert ei.value.exit_code == 2
+
 
 class TestConfirmAsk:
     def test_no_input_uses_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
