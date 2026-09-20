@@ -55,7 +55,7 @@ cicd/
 ├── README.md                     # 本文件
 └── scripts/
     ├── setup-python.sh           # Python3 + uv 幂等安装（eval / executor 用）
-    ├── setup-nodejs.sh           # Node.js 20.11.0 幂等安装（web 用）
+    ├── setup-nodejs.sh           # Node.js 22.15.1 幂等安装（web 用）
     └── docker-build.groovy       # Docker 镜像构建 + 推送腾讯云 CCR 共享库（web 用）
 ```
 
@@ -88,7 +88,7 @@ cicd/
 
 | 阶段 | 工具 | 阻塞策略 | 说明 |
 |------|------|----------|------|
-| 环境准备 | setup-nodejs.sh | — | 安装 Node.js 20.11.0 + 腾讯云 npm 镜像 |
+| 环境准备 | setup-nodejs.sh | — | 安装 Node.js 22.15.1 + 腾讯云 npm 镜像 |
 | 前端静态检查 | eslint (`web/frontend`) | 非阻塞 | `npm run lint` |
 | 前端构建验证 | tsc -b + vite build | **阻塞** | `npm run build`（含类型检查） |
 | 后端静态检查 | eslint (`web/backend`) | 非阻塞 | `npm run lint` |
