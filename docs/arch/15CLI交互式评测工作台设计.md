@@ -870,8 +870,9 @@ review 检查项。
 
 **输出直通机制**（D-CLI-9，需求 2 的落地）：
 
-- `run_evaluation` 是**直通阻塞调用**：执行核心经 **`asyncio.to_thread`** 在工作线程运行（不冻结
-  事件循环——ask_fn、流式、Ctrl+C 依赖它）；执行期宿主经 **render_bridge 挂起 Agent 流式渲染**
+- `run_evaluation` 是**直通阻塞调用**：执行核心经 **daemon 单飞线程 + `asyncio.wrap_future`**
+  在工作线程运行（v4.12.1 起，见硬中断终局条——to_thread 落默认线程池会被 teardown join，
+  弃用；不冻结事件循环——ask_fn、流式、Ctrl+C 依赖它）；执行期宿主经 **render_bridge 挂起 Agent 流式渲染**
   （host 每轮构造、ExecContext 持引用注入，与 ask_fn 同模式：suspend 后 `on_event` 事件丢弃、
   rich console 交棒给执行渲染，结束 resume，恢复由宿主单点负责），渲染经 `pipeline_core` 的
   progress 钩子走**与 CLI 同一条渲染路径**（进度视图 + `--log-level` 分档事件行，§4.4）；
@@ -895,6 +896,16 @@ review 检查项。
   Agent 会话内 Ctrl+C = 宿主置位取消令牌并中断本轮，已完成任务产物与 run_manifest 已落盘、
   可溯源（与 CLI 现状一致）；CLI 进程内 Ctrl+C 语义不变（裸中断）。三选菜单落内核后
   CLI / 向导 / Agent 域同步受益；
+- **硬中断终局（v4.12.1，实测事故修复：二按 Ctrl+C 后会话报废）**：事故链 = 二按 KI 打断
+  `asyncio.run` teardown → `Runner.close` join `to_thread` 默认池（上限 300s，当前任务分钟级
+  时终端冻结）→ 连按的 KI 击穿 `run_forever` 登记/清理 running-loop 线程态的窗口 → 泄漏后
+  本轮报「Cannot close a running event loop」、后续轮报「asyncio.run() cannot be called from
+  a running event loop」。修复三件套：①执行核心改 **daemon 单飞线程**（`_spawn_pipeline_worker` +
+  `wrap_future`）——teardown 无可 join，turn 即时收轮，worker 后台到任务边界收尾（cancelled
+  产物照常落盘）；②KI/取消后 `active_event` **保留为僵尸 worker 取消通道**（busy 守卫加
+  `worker_alive` 双判据 + 下一轮入口 reap 残留令牌，僵尸存活期拒绝并发评测）；③SIGINT handler
+  二按前置 `SIG_IGN`（contextmanager 退出复原）——teardown 期屏蔽按键风暴，信号窗口不可再击穿。
+  取消粒度仍为任务边界（当前任务不可打断，分钟级收尾属预期，busy 提示如实转述）；
 - **预算豁免**：**天然成立**（`BudgetGuard` 仅挂 `on_llm_end` 计会话机 token，`agent/core/callbacks.py`
   ——工具执行不产生会话机 LLM 事件，评测 judge 走独立 client 不经会话回调）；以回归测试断言
   长执行不烧会话预算（F-C-AGENT-04）；执行自身成本由评测配置的 judge 预算管（既有 budget_usd）。
@@ -1015,3 +1026,4 @@ review 检查项。
 | v4.10 | 2026-09-17 | **写包链路系统性修复**（jxb-agent 创建会话转录复盘，§6.3 门禁族表 +1 行、中断续作要点重写）：①`update_manifest` 结构修复——曾手拼 `"package:\n" + safe_dump(扁平dict)` 落盘零缩进损坏清单（read_manifest 的 get 回退把坏结构读回「自洽」致 bug 隐身），改为 dump `{"package": merged}` 嵌套结构自带缩进；②**YAML 全量解析双防线**——`write_file` 对 `.yaml/.yml` fail-fast 预检（截断当场拒写未入暂存）+ `validate_package` 全视图解析打回（曾只扫 `rules/`，截断的 task_sets 靠 Agent 自检才发现）；③**跨进程续跑**（五阶段计划推迟的 MR4 落地）——每轮会话记录同步写入进度快照（暂存 + SKELETON.md 留档 + 证据账本，凭证态绝不入快照），重启续作自动恢复并向对话注入进度注记——「重启会话续作」从进度陷阱变为真实承诺，write_sut_config 免重探跨进程成立 |
 | v4.11 | 2026-09-20 | **评测执行域 + 数据集域 + 日志四档**（req/04 v1.6 用户需求四则，新 §6.10/§6.11/§4.4 + D-CLI-9/10）：①**评测执行域**——ExecutionToolServer（list_eval_targets/run_evaluation/list_runs/show_run/upload_run），统一会话内「执行→看结果→上传」闭环；**输出直通**（D-CLI-9）：执行期挂起 Agent 流式渲染、rich 直出与 CLI 同一渲染路径，LLM 只见紧凑摘要不转述；执行确认门槛永不被 `--trust-agent` 旁路、凭证缺失经 ask_fn 补录、Ctrl+C 按阶段路由、执行不计会话预算；②**数据集域**——DatasetToolServer（list_datasets/download_dataset 复用 DatasetManager），与 SUT 探测并列的**第二个受控出网域**（D-CLI-10 白名单制实例化）：域名白名单 + `workspace/datasets/` 写白名单 + token 不入对话/日志；③**`--log-level` 四档**（quiet/normal/verbose/debug）取代 `--verbose`，三形态（CLI/向导/Agent）同源，verbose 档补 SUT 请求响应摘要/judge 交互/重试事件埋点（只加事件不改指标逻辑）；会话机四工具面并列、横幅能力域/示例同步、`WorkbenchAgentConfig` 不变（新域零会话机改动，验证 §6.7 扩展机制） |
 | v4.12 | 2026-09-20 | **14b 设计评审裁决（req/04 v1.7）**：①**编排单一真相源**——新增 `pipeline_core`（§6.10）无渲染编排纯函数 + `PipelineOutcome`（退出码返回而非 raise），`execute_pipeline` 薄壳化（CLI 行为零变化为重构验收），Agent 域 `run_evaluation` 只消费 pipeline_core——否决「直拼 `_stages` 阶段函数」（第三份编排拷贝，逐字节同源必漂移）；②**直通机制补注**——`asyncio.to_thread` 包裹同步执行内核（事件循环保活性）+ render_bridge 注入接口（host 每轮构造、ExecContext 持引用，与 ask_fn 同模式）+ 执行后日志档位恢复；③**Ctrl+C 降级**——`pipeline_core` 任务循环协作式取消检查点（cancel_event 任务边界粒度），F-C-EXEC-05 三选询问拆出 P2 独立立项（先落内核，三形态同步受益）；④预算豁免确认为天然成立（BudgetGuard 仅 on_llm_end），收敛为回归断言 |
+| v4.12.1 | 2026-09-20 | **硬中断终局隔离（14b 验收实测事故修复）**：执行核心 `asyncio.to_thread` → daemon 单飞线程 + `wrap_future`（teardown 零 join，二按 KI 后 turn 即时收轮、worker 后台到任务边界收尾）；KI/取消保留 `active_event` 作僵尸 worker 取消通道（busy 守卫 `worker_alive` 双判据 + 下一轮入口 reap）；SIGINT handler 二按前置 `SIG_IGN`（teardown 期屏蔽按键风暴，退出复原）——三件套合围「Cannot close a running event loop」会话报废链（§6.10 硬中断终局条）；取消粒度维持任务边界不变 |
