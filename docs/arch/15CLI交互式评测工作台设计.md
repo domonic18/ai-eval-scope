@@ -50,8 +50,8 @@
 │   PackageManager / ConfigLoader / PipelineEngine /             │
 │   ExecutionAgent / ResultSink / upload                          │
 └───────────────────────────────────────────────────────────────┘
-        ▲ 工具面（沙盒：仅限包根目录）
-   WorkbenchAgent（DeepAgents，独立于执行侧 SUT 通道）
+        ▲ 工具面（包根沙盒 / 受控网络域 / 执行直通域 / 数据集域，§6.10/§6.11）
+   WorkbenchAgent（DeepAgents 统一会话：包工程 / SUT 调试 / 评测执行 / 数据集）
 ```
 
 ### 2.2 模块布局
@@ -96,6 +96,7 @@ agent_eval/agent/
 ├── core/              # 共享内核：tools 基座 / budget / session_log / callbacks / model_bridge / session
 ├── executor/          # 评估执行域：agent（ExecutionAgent）+ sut_tools + protocol_tools
 ├── workbench/         # 评测工作台域：agent 会话机（§6.1/§6.6）+ tools 暂存沙盒（§6.2）+ sut_probe 探测面（§6.5）
+│                      #   + execution/ 评测执行域（§6.10）+ datasets/ 数据集域（§6.11）（v4.11）
 └── assets/configs/workbench_agent_prompts.yaml # 提示词资产：base + domain_segments 分段装配（§6.7/§6.8）
 ```
 
@@ -120,6 +121,8 @@ agent_eval/agent/
 | D-CLI-6 | **命令命名不设兼容层**：`scenario` / `models set|clear` 等新命名直接生效，无旧名别名 | 名字即语义（场景包 ≠ 打包执行包；配置模型 ≠ 登录模型），别名层只会延续误用 |
 | D-CLI-7 | **退出码集中映射**：`console/output.py::map_exit_code(exc)` 单点适配异常体系 → 0/1/2/3/130 | 契约可测试；新增异常不改命令层 |
 | D-CLI-8 | **`runs` 读本地索引优先**：`workspace/index/runs_index.json`（06 §3.8）列表，run 目录直读详情；平台态经 manifest 上传标记推断 | 零新存储；与 Web 平台解耦 |
+| D-CLI-9 | **Agent 执行 = 直通阻塞调用**（v4.11）：`run_evaluation` 与 CLI 共用同一渲染路径，执行期间宿主挂起 Agent 流式渲染、rich console 直出过程；LLM 只见紧凑摘要（run_id/指标/产物路径），不转述过程；执行不计会话预算（非 LLM 活动），Ctrl+C 按阶段路由 | 需求 2「Agent/命令行输出一致」的结构性保证——转述必然漂移；执行期单输出流，终端混排问题消解（req/04 开放问题 #7） |
+| D-CLI-10 | **受控出网域白名单制**（v4.11）：网络面按域开列（SUT 探测 §6.5、数据集下载 §6.11），每域单出口 + 域名白名单 + 确认门槛；其余工具面维持无网络红线 | 出网能力成为显式装配决策而非默认存在；§6.7 红线泛化（「任何新域的网络面以策略形式接入」）的实例化 |
 
 ### 2.4 复用清单（不重造边界）
 
@@ -256,7 +259,30 @@ def map_exit_code(exc: BaseException) -> int:
 
 - `--no-input`：全局回调注入，向导原语进入非 TTY 语义。
 - `--output-format json`：stdout 仅 JSON 文档（run_id/指标/失败明细/制品路径），人读进度走 stderr；对 `run/pipeline/eval/runs/doctor` 生效。
+- `--log-level quiet|normal|verbose|debug`（v4.11）：执行日志四档，取代 `--verbose` 二档（P6 惯例一次性切换，全仓引用同步清理）；详见 §4.4。
 - 契约测试：退出码 × 异常矩阵、JSON 输出 Schema 快照。
+
+### 4.4 执行日志级别（四档，v4.11）
+
+> 需求 req/04 F-C-EXEC-07：task_sets 逐条执行时「重要过程不可见、全开又过载」。`--verbose` 只有开/关两态，
+> 升级为四档后**过程可见性成为显式选择**；CI 侧 `quiet` 档显著压缩 Jenkins 日志体积（与 pipeline.stdout
+> 归档实践互补）。
+
+| 档位 | 语义 | 实现落点 |
+|------|------|---------|
+| `quiet` | 仅任务结果行（`task-07 ✅ reward 0.82`）+ 总摘要 | 进度视图关闭阶段 spinner 与关键阶段事件；`setup_logging(WARNING)` |
+| `normal` | **现状默认**：任务级进度 + 关键阶段事件 | `setup_logging(INFO)` + 既有进度视图（行为与 v4.10 默认一致） |
+| `verbose` | 过程可见性核心档：SUT 请求/响应摘要（方法/端点/状态码/耗时）、judge 交互（评估器/结论/耗时）、重试事件 | 事件行直出——以既有结构化日志（`agent_logs/*.jsonl`）与执行回调为事件源盘点补缺，console 新增事件行渲染；`setup_logging(INFO)` |
+| `debug` | 全量原文（含完整请求/响应体） | `setup_logging(DEBUG)`；传输层日志解压（§6.4 v4.2「debug 级原文收紧」的反向开关） |
+
+设计约束：
+
+- **三形态同源**（§6.10 前置）：CLI `--log-level` 参数、向导执行高级选项、Agent 对话（`run_evaluation`
+  的 `log_level` 入参，自然语言「详细一点」由 Agent 映射）共用同一枚举与渲染路径；
+- **实现单点**：`console/render.py` 事件行渲染按档位过滤 + `core/logging.py::setup_logging` 档位映射；
+  事件埋点缺口（SUT req/resp 摘要、judge 交互、重试）在执行内核补 hook——**只加事件、不改指标逻辑**；
+- `--verbose` 移除后无别名（D-CLI-6 惯例）；`stage_progress` 启停条件由「非 verbose」改为「非 quiet/normal
+  语义等价重述」（进度视图仅 quiet 关闭）。
 
 ---
 
@@ -324,13 +350,15 @@ agent = WorkbenchAgent(
 装配要点（`agent/workbench/agent.py`）：
 
 - **模型**：`build_chat_model(llm_role="agent")`（回退 text）；底座 `create_deep_agent`（03 §3.2 同源）。
-- **双工具面**：`PackageToolServer`（文件沙盒，§6.2）+ `SUTProbeToolServer`（受控网络探测，§6.5）
-  并列挂载，`_describe_tools` 汇总注入系统提示词；`ask_fn` 同时桥接两面交互。
+- **多工具面（v4.11 起四域）**：`PackageToolServer`（文件沙盒，§6.2）+ `SUTProbeToolServer`
+  （受控网络探测，§6.5）+ `ExecutionToolServer`（评测执行直通，§6.10）+ `DatasetToolServer`
+  （数据集发现/下载，§6.11）并列挂载，`_describe_tools` 汇总注入系统提示词；`ask_fn` 同时桥接
+  各面交互（执行/下载确认门槛同走此单通道）。
 - **工具面复位中间件（v4.4，`workbench/tool_filter.py`）**：`create_deep_agent(tools=...)` 是
   additive 合并、不移除内置——内置 ls/glob/read_file 跑在 StateBackend **虚拟文件系统**
   （与真实磁盘无关、永远为空），实测 Agent 连续 ls/glob 空转后误判「没有场景包」。per-call
   中间件做**允许清单复位**（`wrap_model_call` 内 `request.override(tools=宿主装配清单)`）：
-  模型可见工具面恒等于两面装配清单，对未来版本新增内置名免疫。不走全局 `register_harness_profile`
+  模型可见工具面恒等于宿主装配清单（全部域工具面），对未来版本新增内置名免疫。不走全局 `register_harness_profile`
   （进程级不可注销，会波及同进程 ExecutionAgent，且按名排除误伤同名沙盒工具）；过滤按对象
   **身份**（`id`）匹配而非按名，全部失配时原样返回（保守 no-op，防上游契约漂移把工具面清空）。
 - **提示词分段装配**：`system_prompt_base`（会话机段，零域语义）+ `domain_segments.<域>` 拼接，
@@ -451,7 +479,8 @@ REF 则直接定址；此前归位压到会话结束，实测用户确认后在�
 - sut_config 内容扫描：出现 `password/token/api_key` 值字段且非 `credential_ref` 引用 → 拒绝写入并提示 `secrets set`（启发式 + System Prompt 双保险）。
 - `scenario new/edit --instruction ... --yes --trust-agent`：非交互模式必须双重显式旗标；默认关闭。
 - 会话日志 `workspace/agent_logs/workbench_agent_<ts>.jsonl`：消息、工具调用与参数（凭证字段脱敏）、token、耗时；SUT 探测证据随会话日志同文件落盘（时间线完整）。
-- 传输层日志降噪：httpx/httpcore/openai/anthropic 的 INFO 级「HTTP Request: …」在非 DEBUG 模式压到 WARNING（`core/logging.py` 单点）——root 日志是进程级全局态，工作台里执行域先跑过一次评测，噪声就会混进之后所有 Agent 流式直播会话；`--verbose`（DEBUG）诊断模式全量放行。
+- 传输层日志降噪：httpx/httpcore/openai/anthropic 的 INFO 级「HTTP Request: …」在非 DEBUG 模式压到 WARNING（`core/logging.py` 单点）——root 日志是进程级全局态，工作台里执行域先跑过一次评测，噪声就会混进之后所有 Agent 流式直播会话；`--log-level debug` 诊断模式全量放行。
+- 子告警堆栈降噪（v4.11.1）：WARNING 以下记录一律摘除 exc_info（root handler 单点 Filter）——第三方库惯于在 DEBUG 级挂良性堆栈（实测 deepagents 对「可选 prompt-caching 中间件缺失」每条 debug 附带 ModuleNotFoundError），rich 渲染成整屏 locals 面板一次四五块，真故障信噪比反被淹没；摘除后只留消息行，WARNING 及以上堆栈完整渲染。
 - 执行面工具按需装配（v4.8，执行域）：`SUTToolServer` 默认仅导出通用工具白名单（`DEFAULT_EXECUTION_TOOLS`），`invoke_http_sut`/`invoke_cli_sut` **退出 LLM 工具面**（`enabled_tools` 显式恢复，方法保留供服务端直调）——实测语义工具受挫后 LLM 借任意 shell `cat` 凭证与 `.env`，prompts 禁令打不过工具可用性，结构性裁剪才有效；配套 `read_file`/`scan_directory`/`list_files` 限 workspace 子树与任务目录模式路径（`extra_allowed_roots` 逐任务机械注入，不由 LLM 运行时决定）。
 - generic_http 模板变量审计（v4.8，落盘门禁）：request_template 全部模板叶子的 Jinja2 未声明变量并集必须**含 `input`**（测试指令未进模板 = 从未发送给被测系统，content-safety 假成功事故的机械判定），且 ⊆ {`input`, `metadata`, 前序步骤名}（拼错变量名/前向引用落盘前打回）；staging 门禁与 CLI `scenario validate` 同源生效（arch/03 §4.2）。
 
@@ -695,6 +724,8 @@ prompt 段 + 档位登记，**不改会话机**。
 | `agent/workbench/agent.py` | 会话机：turn/流式/预算/分段/salvage/对话持久化/门禁编排（门禁策略由档位注入）；包域语义全部下沉 |
 | `agent/workbench/tools.py` | 暂存沙盒原语（staging/view/commit/diff、路径与扩展名守卫）+ 包域工具（validate/manifest/reference）；原语/域的文件拆分留待第二域落地时按需切开（YAGNI） |
 | `agent/workbench/sut_probe/` 包 | SUT 接入调试域：ProbeContext 共享状态 + 域工具类 request/response/search/discovery/protocol/tokens/ask_user（helpers/specs 设施）+ `server.py` 薄委托壳；组合模式，协作契约由 context 承载；「一域一 server」形态不变，拆的是实现不是边界 |
+| `agent/workbench/execution/` 包 | 评测执行域（§6.10）：ExecContext + 直通执行工具（list_eval_targets/run_evaluation/list_runs/show_run/upload_run）+ `server.py`；参数对象与 CLI 同构、输出直通、确认门槛永不被信任模式旁路 |
+| `agent/workbench/datasets/` 包 | 数据集域（§6.11）：DatasetContext + list_datasets/download_dataset + `server.py`；DatasetManager 单出口受控出网，写面仅 workspace/datasets/ |
 | `cli/cmds/workbench_agent.py` | REPL 宿主：流式渲染挂接 / ask 桥 / 中断提示 / 落盘归位 |
 | `cli/console/agent_stream.py` | 流式事件渲染（表现层基础设施，与 prompts/render 同层） |
 | `cli/console/markdown_lite.py` | 流式正文 markdown-lite 行渲染（标题/粗体/行内代码/列表/围栏保真） |
@@ -711,7 +742,8 @@ prompt 段 + 档位登记，**不改会话机**。
 
 **红线泛化**：§6.3 staging 门禁（磁盘只见「用户确认 + 校验通过」的内容）与 §6.5 网络红线
 （host 边界 / 凭证旁路 / 防锁 / 注入防护）升格为**工作台级工具面策略**——任何新域的网络面 /
-落盘面工具必须以策略形式接入（如数据集下载 = host 确认 + 磁盘限额），不得绕过。
+落盘面工具必须以策略形式接入，不得绕过。v4.11 起已实例化两个受控出网域：SUT 探测（§6.5）
+与数据集下载（§6.11，host 确认 + 写路径白名单）。
 
 ### 6.8 启动横幅与自我介绍
 
@@ -726,16 +758,18 @@ prompt 段 + 档位登记，**不改会话机**。
 > 你好，我是 **agent-eval 工作台 Agent**——你用自然语言下需求，我调用工具逐步完成
 > 评测工程中的多步操作。
 >
-> 当前任务对象：`{root}`　　可用能力域：场景包工程 · SUT 接入调试（其余域随版本增装）
+> 当前任务对象：`{root}`　　可用能力域：场景包工程 · SUT 接入调试 · 评测执行 · 数据集
 >
 > 可以这样用我：
 > - 「创建一个代码安全评测场景包，被测系统入口 https://…」——给页面登录地址即可，
 >   我会探测登录接口与 agent 协议、实测验证后才写入配置
 > - 「参照 chat 包，把规则集换成幻觉检测，再加 5 条考卷」
+> - 「执行评测」——我列出可执行的场景包给你确认，执行过程与命令行完全一致
+> - 「下载 gsm8k 数据集」——确认来源与目录后经白名单源下载
 > - 「这个包执行报 404，帮我排查 SUT 配置」
 >
-> 规则：所有文件改动先进暂存区，给你看 diff、你确认后才落盘；凭证只在会话内隐藏输入，
-> 不写进任何文件或日志。
+> 规则：所有文件改动先进暂存区，给你看 diff、你确认后才落盘；执行评测每次都需你确认后
+> 才开始；凭证只在会话内隐藏输入，不写进任何文件或日志。
 > 控制：Ctrl+C 随时中断（已完成进度保留，说「继续」接着干），输入空行退出。
 
 **实现要点**：
@@ -804,6 +838,66 @@ class WorkbenchAgentConfig:
 红线）；**ToolSpec 描述即对外契约**（开源用户与 LLM 同读），描述与行为一致性纳入
 review 检查项。
 
+### 6.10 评测执行域（ExecutionToolServer，v4.11）
+
+> 需求 req/04 §4.11（F-C-AGENT-01~06）：统一会话内「执行评测 → 看结果 → 上传」闭环——用户在
+> 对话中说「执行评测」，Agent 给出执行候选与摘要，确认后开始执行。核心约束是**输出直通**
+> （F-C-AGENT-03）：Agent 发起的执行与命令行执行内容、样式完全一致。
+
+**模块形态**：`agent/workbench/execution/`，复刻 sut_probe 组合模式（context 共享状态 + 域工具类 +
+`server.py` 薄委托壳），「一域一 server」边界不变。
+
+| 工具 | 说明 |
+|------|------|
+| `list_eval_targets` | 执行候选概要：复用包域 `list_packages` + 选中包的 task_sets/SUT/规则集解析（ConfigLoader 只读）——「执行评测」意图的第一应答 |
+| `run_evaluation` | **唯一执行入口**：入参为与 CLI 完全同构的参数对象（package/task_set/sut_config/rule_set/log_level/upload…）→ 直通调用 `_stages` 阶段函数（D-CLI-1 双前端同内核在 Agent 域的延伸）；**调用前必须经 ask_fn 确认**（执行摘要 + 等价命令，`console/equiv.py` 复用）；拒绝即返回 cancelled，不执行 |
+| `list_runs` / `show_run` / `upload_run` | 执行后衔接：复用 §7.2 runs 纯函数动作与既有 `upload`（回执附平台 run URL）；Agent 据此做「看结果 / 上传 / 调参重跑」衔接 |
+
+**输出直通机制**（D-CLI-9，需求 2 的落地）：
+
+- `run_evaluation` 是**直通阻塞调用**：执行期间宿主挂起 Agent 流式渲染（`agent_stream` 停止
+  重绘后交棒），rich console 直出执行过程——渲染路径与 CLI 执行**同一条**（进度视图 +
+  `--log-level` 分档事件行，§4.4）；执行期单输出流，终端混排问题结构性消解（req/04 开放问题 #7）；
+- **LLM 看不到过程输出、也不转述**：tool 返回值仅紧凑摘要（run_id / 指标 / 失败数 / 产物路径 /
+  是否上传）；结束后 Agent 基于摘要做一句总结 + 下一步建议，过程细节由用户回看直通输出或
+  `show_run` 追问；
+- 非 JSON 形态专用：`--output-format json` 语义仍走 CLI 命令；Agent 会话内执行恒为交互形态，
+  `--no-input` 旁路不存在（F-C-AGENT-06：执行工具**永不经 `--trust-agent` 旁路自主触发**，
+  不进信任模式工具白名单）。
+
+**确认与安全门槛**：
+
+- **凭证缺失路径**：`preflight_sut_credentials` 的结构化缺失清单作为 tool 结果返回 → Agent 经
+  ask_fn 隐藏输入逐字段引导补录（复用 `ensure_sut_credentials` 的「一次落盘、空输入整体取消」
+  语义，§7.2）→ 复检通过重试；_stages 零交互纪律不破——域内交互全部走 ask_fn 单通道；
+- **Ctrl+C 按阶段路由**：Agent 流式阶段 = 中断当前轮（既有语义）；执行直通阶段 = 透传执行内核
+  （终止 / 跳过当前任务继续评估 / 保存已完成，F-C-EXEC-05），不触发会话 salvage——执行产物
+  落盘语义与 CLI 执行完全一致；
+- **预算豁免**：执行调用非 LLM 活动，不计会话 `BudgetGuard`（§6.6 缰绳只约束 Agent 自身推理，
+  防止长评测被会话预算误杀）；执行自身成本由评测配置的 judge 预算管（既有 budget_usd）。
+
+### 6.11 数据集域（DatasetToolServer，v4.11）
+
+> 需求 req/04 §4.12（F-C-DATA-01~04）：CLI 既有 `dataset list/download`（DatasetManager：
+> HF/ModelScope 双源 + `assets/datasets/dataset_index.yaml` 索引）接入 Agent 工具面。
+> 数据集驱动考卷生成（F-C-DATA-05）为 P2 独立立项，本域只做发现与下载。
+
+**模块形态**：`agent/workbench/datasets/`，同组合模式；工具仅两只：
+
+| 工具 | 说明 |
+|------|------|
+| `list_datasets` | 索引清单（id/名称/类别/双源 repo）+ 本地已下载状态（扫描 `workspace/datasets/` 下 `_dataset_manifest.json`：版本/规模/路径） |
+| `download_dataset` | 复用 `DatasetManager.download` 全参数（source/revision/token/force）；**下载前 ask_fn 确认**（来源 repo + 目标目录 + 预计规模）；完成回执 manifest 路径与数据规模 |
+
+**沙盒与网络边界**（§6.7 红线泛化「host 确认 + 磁盘限额」的实例化，D-CLI-10）：
+
+- **受控出网**：与 SUTProbeToolServer 并列的**第二个网络面**——出网仅经 DatasetManager 单出口
+  （HF / ModelScope 域名），域名白名单随 `source` 参数收窄；工具面其余部分维持无网络红线不动；
+- **写路径白名单**：仅 `workspace/datasets/{name}/`——独立于包沙盒根的第二写域（包 confined
+  会话根语义不变，两域写面互不可达）；
+- **token 安全**：数据集访问 token 经 env / `secrets` 传入 DatasetManager，禁止入对话消息、
+  会话日志与工具回执（§6.4 凭证硬拒清单不新增项——token 根本不进工具层）。
+
 ---
 
 ## 七、查看与结果浏览
@@ -862,6 +956,7 @@ review 检查项。
 | `cli/cmds/`（scenario/workbench_agent/models/auth/runs/open_url/doctor + 既有五组） | 子命令组（typer 绑定 + 纯函数动作）与 Agent REPL 宿主 |
 | `agent/workbench/agent.py` / `agent/workbench/tools.py` | 工作台 Agent 会话机（turn/流式/预算/分段/salvage）与暂存沙盒工具面（§6.1/§6.2） |
 | `agent/workbench/sut_probe/`（context + 域工具类 + server 薄委托壳） | SUT 接入调试域工具面：组合式工具面（§6.5/§6.7） |
+| `agent/workbench/execution/` + `agent/workbench/datasets/`（同形态） | 评测执行域（§6.10）与数据集域（§6.11）工具面：直通执行 / 受控出网下载 |
 | `agent_eval/assets/configs/workbench_agent_prompts.yaml` | 提示词资产：`system_prompt_base` + `domain_segments` 分段装配（§6.7）；`intro` 自我介绍段（§6.8） |
 | `agent_eval/assets/guides/scenario-package-format.md` | 随包发布的包结构规范——Agent 经 `read_file` 直读（assets 自动授权域，§6.9.1） |
 | 平台侧 `/cli-auth` 授权页（通道 B） | 09 侧，交互流程见 §5.1 |
@@ -895,3 +990,4 @@ review 检查项。
 | v4.8 | 2026-09-17 | 登录探测 422/事件循环/超时三根因修复（jxb 二轮实测事故驱动，§6.5 红线 6/8 更新 + 新段）：①**Content-Type 标签机械归一化**——显式非 JSON CT 旁路 auto 补齐与双重编码门禁，正确 JSON 报文顶着 text/plain 上 wire 致 FastAPI 422 `model_attributes_type`（input 原文回显形似双重编码，服务端排查见「json 不是 json、内容加了引号」）；JSON 对象 body 的标签机械改写（返回含 `content_type_normalized`），原始报文探测不收缩；同批修复渲染头整行回填缺口（wire 收到 `Key: Key: Value`）；②**共享 client 事件循环亲和**——REPL 每轮 `asyncio.run` 换循环 × 会话级 client 绑死旧循环 = 跨轮首请求 `Event loop is closed`，`client()` 按循环废弃旧实例换新、cookie jar 同步搬运；③**超时错误面代理指引**——本机代理把 0.3s 请求拖到 11.7s 顶爆 10s 探测超时，指引配 `NO_PROXY`；④**`declare_token` 静态注入通道**（`static_field`）——用户直接提供的 token 自密钥区挂载，解除「无实测记录即永远 auth_attached:false」死循环；不入证据账本、不生成 auth: 段（落盘对账的实测证据语义不被稀释） |
 | v4.9 | 2026-09-17 | **落盘即归位**（用户实测反馈「确认后预告路径找不到包，须 Ctrl+C/空行退出才归位」，§6.3 重写）：首次确认落盘成功即把草稿挪到 `cwd/<id>-package/`——`PackageToolServer.rebind_root` 沙盒重定向（staging 内存态、root 无持久句柄，零残留）+ `WorkbenchAgent.relocate_root` 图重建（`{pkg_root}` 建图烘焙，对话消息宿主持有不丢）+ 归位注记进对话 + 会话记录文件随迁新 `session_key`（跨进程续作上下文不因归位断裂）；**同一会话可继续自然语言修改已归位的包**；`_finalize_new_package` 收窄为会话末兜底 + 改名同步（已归位未改名静默返回）；撞名红字报错留草稿位不打断会话；确认横幅/落盘提示同步新时序 |
 | v4.10 | 2026-09-17 | **写包链路系统性修复**（jxb-agent 创建会话转录复盘，§6.3 门禁族表 +1 行、中断续作要点重写）：①`update_manifest` 结构修复——曾手拼 `"package:\n" + safe_dump(扁平dict)` 落盘零缩进损坏清单（read_manifest 的 get 回退把坏结构读回「自洽」致 bug 隐身），改为 dump `{"package": merged}` 嵌套结构自带缩进；②**YAML 全量解析双防线**——`write_file` 对 `.yaml/.yml` fail-fast 预检（截断当场拒写未入暂存）+ `validate_package` 全视图解析打回（曾只扫 `rules/`，截断的 task_sets 靠 Agent 自检才发现）；③**跨进程续跑**（五阶段计划推迟的 MR4 落地）——每轮会话记录同步写入进度快照（暂存 + SKELETON.md 留档 + 证据账本，凭证态绝不入快照），重启续作自动恢复并向对话注入进度注记——「重启会话续作」从进度陷阱变为真实承诺，write_sut_config 免重探跨进程成立 |
+| v4.11 | 2026-09-20 | **评测执行域 + 数据集域 + 日志四档**（req/04 v1.6 用户需求四则，新 §6.10/§6.11/§4.4 + D-CLI-9/10）：①**评测执行域**——ExecutionToolServer（list_eval_targets/run_evaluation/list_runs/show_run/upload_run），统一会话内「执行→看结果→上传」闭环；**输出直通**（D-CLI-9）：执行期挂起 Agent 流式渲染、rich 直出与 CLI 同一渲染路径，LLM 只见紧凑摘要不转述；执行确认门槛永不被 `--trust-agent` 旁路、凭证缺失经 ask_fn 补录、Ctrl+C 按阶段路由、执行不计会话预算；②**数据集域**——DatasetToolServer（list_datasets/download_dataset 复用 DatasetManager），与 SUT 探测并列的**第二个受控出网域**（D-CLI-10 白名单制实例化）：域名白名单 + `workspace/datasets/` 写白名单 + token 不入对话/日志；③**`--log-level` 四档**（quiet/normal/verbose/debug）取代 `--verbose`，三形态（CLI/向导/Agent）同源，verbose 档补 SUT 请求响应摘要/judge 交互/重试事件埋点（只加事件不改指标逻辑）；会话机四工具面并列、横幅能力域/示例同步、`WorkbenchAgentConfig` 不变（新域零会话机改动，验证 §6.7 扩展机制） |
