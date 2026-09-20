@@ -1,12 +1,13 @@
 """评测执行域工具单测（Sprint 14b，arch/15 v4.12）。
 
 工具直调（不经 LLM 面）：确认门槛/旁路拒绝/busy/摘要分支/取消令牌接线/
-凭证补录循环/三只读工具数据形态。pipeline_core 全程 monkeypatch（编排回归
-在 test_pipeline_core；渲染字节在 golden）。
+凭证补录循环/三只读工具数据形态/硬中断终局（daemon worker 生命周期）。
+pipeline_core 全程 monkeypatch（编排回归在 test_pipeline_core；渲染字节在 golden）。
 """
 
 from __future__ import annotations
 
+import asyncio
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -118,9 +119,24 @@ class TestRunEvaluationGate:
     async def test_busy_guard(self, monkeypatch) -> None:
         server, calls = self._server(monkeypatch, answers=["确认执行"])
         server.ctx.active_event = threading.Event()  # 模拟执行中
+        server.ctx.worker_thread = threading.current_thread()  # busy 双判据：worker 存活
         result = await server.run_evaluation(package="chat")
         assert result["status"] == "busy"
+        assert "收尾" in result["note"] or "执行中" in result["note"]
         assert "core" not in calls
+
+    @pytest.mark.asyncio
+    async def test_stale_token_reaped_after_worker_exit(self, monkeypatch) -> None:
+        """上轮 KI 僵尸 worker 已退出：入口 reap 残留令牌，放行新一轮。"""
+        server, _ = self._server(monkeypatch, answers=["取消"])
+        dead = threading.Thread(target=lambda: None)
+        dead.start()
+        dead.join()
+        server.ctx.active_event = threading.Event()  # KI 路径残留令牌
+        server.ctx.worker_thread = dead
+        result = await server.run_evaluation(package="chat")
+        assert result["status"] == "declined"  # reap 后走到确认门槛
+        assert server.ctx.active_event is None  # 正常收轮令牌清账
 
     @pytest.mark.asyncio
     async def test_bridge_lifecycle_and_cancel_wiring(self, monkeypatch) -> None:
@@ -148,6 +164,66 @@ class TestRunEvaluationGate:
         assert seen["active_set"] is True
         assert bridge.calls == ["suspend", "resume"]  # 挂起→恢复成对
         assert server.ctx.active_event is None  # finally 复位 busy 哨兵
+
+
+class TestHardInterruptTeardown:
+    """硬中断终局（v4.12.1）：daemon worker 零 join，会话不被僵尸拖垮。
+
+    场景还原 v4.12 实测事故：二按 KI 打断等待侧后（teardown cancel 等效于
+    task.cancel()），旧实现 Runner.close 会 join to_thread 默认池把终端冻住
+    （上限 300s）→ 按键风暴击穿 asyncio.run 收尾窗口 → 会话报废。新实现
+    turn 即时收轮、令牌保留、worker 后台到任务边界收尾。
+    """
+
+    @pytest.mark.asyncio
+    async def test_hard_interrupt_zombie_worker_lifecycle(self, monkeypatch) -> None:
+        import agent_eval.agent.workbench.execution.run_eval as run_eval_mod
+
+        started, release = threading.Event(), threading.Event()
+        answers = iter(["确认执行", "取消"])
+
+        async def ask_fn(question, *, options=None, secret=False):
+            return next(answers, "")
+
+        server = ExecutionToolServer(ask_fn=ask_fn, workspace_root=Path("/ws"))
+
+        def fake_core(params, *, progress, cancel_event, credential_filler):
+            started.set()
+            release.wait(5)  # 模拟分钟级不可打断的当前任务
+            return _outcome()
+
+        monkeypatch.setattr(run_eval_mod, "pipeline_core", fake_core)
+
+        task = asyncio.create_task(server.run_evaluation(package="chat"))
+        for _ in range(500):  # 等 worker 进入「当前任务」
+            if started.is_set():
+                break
+            await asyncio.sleep(0.01)
+        else:  # pragma: no cover - worker 未启动即失败
+            pytest.fail("pipeline worker 未启动")
+
+        task.cancel()  # 二按 KI 打断等待侧的等效注入点
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        # 硬中断终局：turn 即时收轮；令牌保留作僵尸取消通道；daemon 存活
+        assert server.ctx.active_event is not None  # 不随 finally 清账
+        assert server.ctx.worker_thread is not None
+        assert server.ctx.worker_thread.daemon is True  # teardown 零 join 的根据
+        assert server.ctx.worker_alive() is True
+
+        # 僵尸存活期：busy 守卫拒绝并发（含 reap 判据 worker_alive）
+        busy = await server.run_evaluation(package="chat")
+        assert busy["status"] == "busy"
+        assert "收尾" in busy["note"]
+
+        # worker 到任务边界退出 → 下一轮入口 reap 残留令牌，正常走确认
+        release.set()
+        server.ctx.worker_thread.join(5)
+        assert server.ctx.worker_alive() is False
+        third = await server.run_evaluation(package="chat")
+        assert third["status"] == "declined"
+        assert server.ctx.active_event is None  # 正常收轮令牌清账
 
 
 class TestRunEvaluationSummary:

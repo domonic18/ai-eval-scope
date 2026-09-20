@@ -695,9 +695,10 @@ class TestGracefulExecInterrupt:
             handler(signal.SIGINT, None)  # 首按：协作取消，不抛 KI
             assert agent.interrupts == 1
             with pytest.raises(KeyboardInterrupt):
-                handler(signal.SIGINT, None)  # 二按：恢复默认硬暂停语义
+                handler(signal.SIGINT, None)  # 二按：屏蔽后续信号，走现行暂停语义
+            assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN  # teardown 期屏蔽按键风暴
             assert agent.interrupts == 1  # 二按不再置位
-        assert signal.getsignal(signal.SIGINT) is previous  # 退出复原
+        assert signal.getsignal(signal.SIGINT) is previous  # 退出复原（屏蔽解除）
 
     def test_first_press_without_active_execution_raises(
         self, monkeypatch: pytest.MonkeyPatch
@@ -711,5 +712,6 @@ class TestGracefulExecInterrupt:
         with wb._graceful_exec_interrupt(agent):
             handler = signal.getsignal(signal.SIGINT)
             with pytest.raises(KeyboardInterrupt):
-                handler(signal.SIGINT, None)  # 首按即走现行暂停语义
+                handler(signal.SIGINT, None)  # 首按即走现行暂停语义（同样先屏蔽）
+            assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN
         assert agent.interrupts == 1
