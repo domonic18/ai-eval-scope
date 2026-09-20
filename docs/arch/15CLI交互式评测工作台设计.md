@@ -207,10 +207,12 @@ Agent 是工作台的首选工作方式——不是某个域里的一个动作�
   改已有包 / 排查」都是会话里的一句话，不由菜单分流（对标 claude：打开即对话，
   能力介绍先行）。默认任务对象 = 新包草稿（`workspace/.staging`，首次确认落盘即按清单 id
   归位 `cwd/<id>-package/`（v4.9），空会话退出清理草稿，见 §6.3）；改已有包经 `list_packages`
-  三源发现（v4.4）+ `read_reference` 直读既有内容——project/local 包首选
-  `scenario edit` 原位编辑（会话根即包目录），本会话内 fork 改造必须**换新 scenario/id**
-  （沿用原 id 归位时与既有目录冲突）；prompts 域段「改造已有项目包」规约按来源分流，
-  `scenario new/edit --mode agent` 命令与域内快捷方式保留为显式直达。
+  三源发现（v4.4）+ `read_reference` 直读既有内容——**project/local 包轻量修改默认
+  `edit_package(ref)` 会话内原位切根**（v4.12.2，§6.5：用户确认后沙盒根切到该包，
+  落盘原位生效，不走骨架/五阶段/fork），明确要新版本/新包才 fork 且**换新 scenario/id**
+  （沿用原 id 归位时与既有目录冲突）；prompts 域段「改造已有项目包」规约按「改什么」
+  三档分流，`scenario new/edit --mode agent` 命令与域内快捷方式保留为显式直达
+  （`scenario edit` 为跨进程续作的等价通道，非会话内轻量编辑的必经之路）。
 - **域内入口 = 档位快捷方式**：场景包域两项标签为「用 Agent 创建场景包」「用 Agent
   修改选中的包」——语义是「预载对象上下文的快捷方式」（改包先经 `select_editable_ref`
   选定，选中对象注入首条上下文；对标在仓库目录里启动 claude，cwd 即上下文）。
@@ -399,6 +401,7 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 | `search_reference` | 按文件名检索内置包（courseware/chat/code），返回命中文件与各包真实文件清单 |
 | `read_reference` | 只读**已发现包（三源）**文件内容（ref + 包内 path，ref 走 `PackageManager.resolve_ref`）——Agent 参照真实格式的**合法通道**（`read_file` 对包外路径受分级授权约束，防反复试探） |
 | `list_evaluators` | 当前可用评估器注册 ID 的注册表实时快照（含本包 entry_points 声明）——rules 的 `evaluator` 字段从此清单**原样复制，勿凭记忆臆造**（copy, don't recall：示范强于指令） |
+| `edit_package`（v4.12.2） | **会话目标切换到既有包原位编辑**（既有包轻量修改的正道，验收事故修复——曾规约「退出会话走 scenario edit 或 fork」致加 1 条用例触发全建包流程）：非交互 refused（切写域须确认通道，与 run_evaluation 同策略）→ 定址（路径含清单直取 / `resolve_ref`；builtin 只读拒绝并指引 fork）→ 守卫（目标=当前根提示已在编辑；**staging 非空拒绝**——rebind_root「调用时 staging 已清」不变式，指引先放弃/提交）→ `ask_fn` 确认（展示当前根→目标根）→ 清旧根态（**骨架归档置 None**——跨根携带会让旧包开槽卡住新包 validate；授权账本按根记账，一并清空）→ `relocate_fn`（宿主 `relocate_root(note=…)`：server 重绑 + 图重建 + **会话记录迁移**——切换后跨进程续作命中新包 key）。切根后落盘语义由既有路径保证：非草稿前缀根，确认后**原位生效不归位**（§6.3 归位判定不变） |
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff（宿主确认界面同源） |
 | `write_sut_config`（v4.7） | **机械物化**（§6.5 五阶段之阶段 3）：filename 传 `sut_configs/<名字>.yaml` 或裸名 `<名字>.yaml`（机械归位 sut_configs/，v4.9——守卫曾只认带前缀形态却自称「只写平铺文件」，裸名被拒且错误不指路，Agent 在 payload 结构上空转多轮）；agent 只给决策字段（name/channel/base_url/timeout/request_template/response_mapping 等），服务端从探测证据账本取该 ref 的 `auth_snippet` **verbatim 注入 auth 段**——「验证→配置」的传递不经 LLM 转述；无账本事实即拒绝并引导先 request 实测 + declare_token；注入后**内联执行器同款 schema 校验**（未知键/模板变量审计当场打回）才入暂存；`auth` 键手写一律拒绝（防转述变形）——取代「snippet 原样粘贴」纪律，转述类打回在机制上消失。`write_file` 写 sut_configs 的旧路径保留兜底（auth_chain 链式认证等未落地形态） |
 
@@ -1027,3 +1030,4 @@ review 检查项。
 | v4.11 | 2026-09-20 | **评测执行域 + 数据集域 + 日志四档**（req/04 v1.6 用户需求四则，新 §6.10/§6.11/§4.4 + D-CLI-9/10）：①**评测执行域**——ExecutionToolServer（list_eval_targets/run_evaluation/list_runs/show_run/upload_run），统一会话内「执行→看结果→上传」闭环；**输出直通**（D-CLI-9）：执行期挂起 Agent 流式渲染、rich 直出与 CLI 同一渲染路径，LLM 只见紧凑摘要不转述；执行确认门槛永不被 `--trust-agent` 旁路、凭证缺失经 ask_fn 补录、Ctrl+C 按阶段路由、执行不计会话预算；②**数据集域**——DatasetToolServer（list_datasets/download_dataset 复用 DatasetManager），与 SUT 探测并列的**第二个受控出网域**（D-CLI-10 白名单制实例化）：域名白名单 + `workspace/datasets/` 写白名单 + token 不入对话/日志；③**`--log-level` 四档**（quiet/normal/verbose/debug）取代 `--verbose`，三形态（CLI/向导/Agent）同源，verbose 档补 SUT 请求响应摘要/judge 交互/重试事件埋点（只加事件不改指标逻辑）；会话机四工具面并列、横幅能力域/示例同步、`WorkbenchAgentConfig` 不变（新域零会话机改动，验证 §6.7 扩展机制） |
 | v4.12 | 2026-09-20 | **14b 设计评审裁决（req/04 v1.7）**：①**编排单一真相源**——新增 `pipeline_core`（§6.10）无渲染编排纯函数 + `PipelineOutcome`（退出码返回而非 raise），`execute_pipeline` 薄壳化（CLI 行为零变化为重构验收），Agent 域 `run_evaluation` 只消费 pipeline_core——否决「直拼 `_stages` 阶段函数」（第三份编排拷贝，逐字节同源必漂移）；②**直通机制补注**——`asyncio.to_thread` 包裹同步执行内核（事件循环保活性）+ render_bridge 注入接口（host 每轮构造、ExecContext 持引用，与 ask_fn 同模式）+ 执行后日志档位恢复；③**Ctrl+C 降级**——`pipeline_core` 任务循环协作式取消检查点（cancel_event 任务边界粒度），F-C-EXEC-05 三选询问拆出 P2 独立立项（先落内核，三形态同步受益）；④预算豁免确认为天然成立（BudgetGuard 仅 on_llm_end），收敛为回归断言 |
 | v4.12.1 | 2026-09-20 | **硬中断终局隔离（14b 验收实测事故修复）**：执行核心 `asyncio.to_thread` → daemon 单飞线程 + `wrap_future`（teardown 零 join，二按 KI 后 turn 即时收轮、worker 后台到任务边界收尾）；KI/取消保留 `active_event` 作僵尸 worker 取消通道（busy 守卫 `worker_alive` 双判据 + 下一轮入口 reap）；SIGINT handler 二按前置 `SIG_IGN`（teardown 期屏蔽按键风暴，退出复原）——三件套合围「Cannot close a running event loop」会话报废链（§6.10 硬中断终局条）；取消粒度维持任务边界不变 |
+| v4.12.2 | 2026-09-20 | **既有包轻量编辑路由修复（用户验收反馈：加 1 条用例触发全建包流程）**：①新增 `edit_package` 会话目标切换工具（§6.2 新行）——非交互/builtin/staging 非空多级守卫 + ask_fn 确认 + 骨架归档/授权账本清账 + `relocate_root(note=…)` 切根（会话记录随迁，注记进对话）；②`relocate_root` 参数化注记（归位/切根同一机制、语义注记区分），`relocate_fn` 构造后注入（与 ledger 同风格解环）；③prompts「改造已有项目包」三档分流重写——**轻量修改默认档 = 会话内 edit_package 原位编辑**（不落骨架/不起五阶段/不 fork/不重测 SUT），fork 仅限明确要新版本/新包，删除「首选指引退出本会话」（`scenario edit` 降级为等价通道提及）；五阶段适用边界置顶（从零建新包 / 新接入在线 SUT）；④`list_packages` notes 同步改路由。`WorkbenchAgentConfig` 零改动（§6.7） |
