@@ -675,6 +675,26 @@ is closed`（暂停恢复/新指令后的轮首必炸，偶发性取决于池中
 REPL 处置闭环：中断/瞬时错误上抛 → CLI 打印「⏸ 已暂停（进度已保留…）」；「继续」重跑；
 「放弃」走唯一回滚触发器。
 
+#### Ctrl+C 五态状态机（v4.12.4，对齐 Claude Code：^C 永远立即生效，中断的是当前活动而非会话）
+
+会话生命周期五个状态下 ^C 走同一条收口（`_attempt` 的暂停语义），此前五态各自演进
+（v4.12 → v4.12.1 → …）曾致交互等待期 ^C 被吞成工具 failed 结果回流 LLM——**用户中断
+是控制流信号不是工具错误**，宿主桥在终端 I/O 边界把 click `Abort`（Exception 子类）
+转回 `KeyboardInterrupt`（BaseException 天然穿透工具层 `except Exception` 兜底）：
+
+| 状态 | 首按 ^C | 再按 ^C |
+|---|---|---|
+| 空闲提示符（你>） | 清行 +「再按一次退出」armed 提示，**不退出**（输入任意内容即重置） | 退出会话 |
+| 生成/工具中 | 立即中断本轮（KI 穿透）→ salvage → 回提示符，部分产出/上下文保留 | 已回提示符 |
+| 评测执行中 | 协作中断：当前任务完成后停止（v4.12） | 立即中断（v4.12.1 穿透） |
+| 交互选择器（ask_user/授权/确认） | **中断本轮**（Abort→KI 桥；选择器作废，不默认、不放行） | 同左 |
+| teardown 瞬态 | SIG_IGN 屏蔽（v4.12.1，护 asyncio.run 收尾毫秒级窗口） | 同左 |
+
+配套裁决：授权/确认类选择器**空回车不再默认放行**（`select(no_default=True)`：host
+授权/凭证外发/执行确认/落盘确认，提示改「输入编号」、空输入重问——隐式默认曾是安全
+纵伤，编号列表又从未展示默认态）；中断措辞去魔法词（「直接说下一步即可接着干」——
+checkpoint 已回对话，任意输入自然续跑，「继续」从来不是机制）。
+
 #### salvage：撞线保现场（根治失忆）
 
 - `create_deep_agent(..., checkpointer=MemorySaver())`：langgraph `MemorySaver` 纯内存，
@@ -1032,3 +1052,4 @@ review 检查项。
 | v4.12.1 | 2026-09-20 | **硬中断终局隔离（14b 验收实测事故修复）**：执行核心 `asyncio.to_thread` → daemon 单飞线程 + `wrap_future`（teardown 零 join，二按 KI 后 turn 即时收轮、worker 后台到任务边界收尾）；KI/取消保留 `active_event` 作僵尸 worker 取消通道（busy 守卫 `worker_alive` 双判据 + 下一轮入口 reap）；SIGINT handler 二按前置 `SIG_IGN`（teardown 期屏蔽按键风暴，退出复原）——三件套合围「Cannot close a running event loop」会话报废链（§6.10 硬中断终局条）；取消粒度维持任务边界不变 |
 | v4.12.2 | 2026-09-20 | **既有包轻量编辑路由修复（用户验收反馈：加 1 条用例触发全建包流程）**：①新增 `edit_package` 会话目标切换工具（§6.2 新行）——非交互/builtin/staging 非空多级守卫 + ask_fn 确认 + 骨架归档/授权账本清账 + `relocate_root(note=…)` 切根（会话记录随迁，注记进对话）；②`relocate_root` 参数化注记（归位/切根同一机制、语义注记区分），`relocate_fn` 构造后注入（与 ledger 同风格解环）；③prompts「改造已有项目包」三档分流重写——**轻量修改默认档 = 会话内 edit_package 原位编辑**（不落骨架/不起五阶段/不 fork/不重测 SUT），fork 仅限明确要新版本/新包，删除「首选指引退出本会话」（`scenario edit` 降级为等价通道提及）；五阶段适用边界置顶（从零建新包 / 新接入在线 SUT）；④`list_packages` notes 同步改路由。`WorkbenchAgentConfig` 零改动（§6.7） |
 | v4.12.3 | 2026-09-20 | **既有包编辑证据门禁豁免（用户验收反馈：只删一条用例仍触发凭证重验）**：①**对账门禁收窄至暂存增量**（§6.5 ③，回归文档原意）——`sut_evidence_gate` 遍历源 view() → staging，磁盘既有未动的 sut_config 不再重复对账；与磁盘基线逐字段全等的 auth（base_url+auth）/ 协议结论（通道+接口域+flavor 三元组）豁免，结构性错误与未排期通道无条件打回、磁盘无基线保守全量对账（新建包行为不变，安全属性不降）；②**切根保育**（§6.2）——`relocate_root` 目标记录已存在时不覆盖：目标对话并入 + 账本快照合并恢复（曾静默清零对话史+账本）；③横幅文案按草稿前缀区分「归位/原位落盘」（edit_package 原位场景曾误称归位）；④prompts 豁免规约——不因对账提示重探登录、不发起「允许/不允许」类确认（该询问无代码消费，属无效解锁动作）；⑤edit_package 尾部不可达残段清理（v4.12.2 编辑事故善后） |
+| v4.12.4 | 2026-09-20 | **Ctrl+C 五态语义统一（用户验收反馈：凭证外发确认上 ^C 无法中断，空回车落默认「允许」放行真外发）**：①**交互桥 Abort→KI**（§6.6 新增五态状态机表）——ask_fn/_cli_confirm 桥把 click `Abort`（Exception 子类，曾被工具层 `except Exception` 吞成 `{"type":"Abort","message":""}` 回流 LLM 诱发重试、SIG_IGN 滞留整轮后 ^C 全面失效）转回 `KeyboardInterrupt` 穿透工具层直达 turn() 统一暂停语义；②turn() KI 归 reason=interrupted（曾落 error）；③`_json_tool` 空 message 回退类名；④空闲提示符 ^C 二按退出（首按 armed 提示不清场、输入即重置，曾一次 ^C 即退会话——对齐 Claude Code）；⑤授权/确认类选择器空回车不再默认放行（`select(no_default=True)`：提示改「输入编号」、空输入重问——隐式默认曾是安全纵伤）；⑥中断措辞去魔法词（「直接说下一步即可接着干」）。普通 CLI 命令 Abort→exit 130 语义零变化 |
