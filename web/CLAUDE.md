@@ -71,7 +71,7 @@ npm start                  # node dist/server.js（生产）
 
 ## 代码风格（强制）
 
-- Node 18+，npm 管理依赖。
+- Node 22（CI 与 docker/web 镜像统一 22.15.1；`engines` 下限 >=22.12——backend vitest 4 需 Node 22.12+），npm 管理依赖。
 - **ESLint + Prettier**：规则见各端 `eslint.config.js` / `.prettierrc`。
 - **Prettier 统一风格**：无分号、双引号、行宽 100、缩进 2 空格。
 - **TypeScript 严格模式**：禁用 `any`（必要时显式 `unknown` + 类型守卫）；函数参数与返回值标注。

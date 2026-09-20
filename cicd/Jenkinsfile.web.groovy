@@ -5,7 +5,7 @@
  * 触发方式: 手动触发 / TGit Webhook（Multibranch，main/develop）
  *
  * 阶段:
- *   1. 环境准备 — Node.js 20.11.0
+ *   1. 环境准备 — Node.js 22.15.1
  *   2. 前端代码静态检查 — ESLint（非阻塞）
  *   3. 前端构建验证 — tsc -b && vite build（阻塞）
  *   4. 后端代码静态检查 — ESLint（非阻塞）
