@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_eval.agent.core.callbacks import BudgetGuard
+from agent_eval.agent.workbench.execution import ExecutionToolServer
 from agent_eval.agent.workbench.gates import sut_evidence_gate
 from agent_eval.agent.workbench.memory import (
     SessionStore,
@@ -101,6 +102,7 @@ class WorkbenchAgent:
         llm_role: str = "agent",
         log_dir: Path | None = None,
         ask_fn: Any = None,  # async (question, *, options, secret) -> str | None
+        render_bridge: Any = None,  # ExecutionRenderBridge（宿主注入；WorkbenchAgentConfig 零改动，§6.7）
     ) -> None:
         self.config = config or WorkbenchAgentConfig()
         self.domain = domain  # 域档位：选择提示词段与门禁策略
@@ -157,6 +159,15 @@ class WorkbenchAgent:
             / f"workbench_agent_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
         )
         self.probe.log_path = self._log_path  # 探测证据与会话日志同文件（时间线完整）
+        # 评测执行域（Sprint 14b，arch/15 v4.12）：会话内「执行 → 看 → 传」闭环。
+        # workspace 同源 default_workspace（runs/ 与 CLI 同址）；渲染桥宿主每轮
+        # 重绑（_run_one 构造新 emitter → bind_render_bridge），构造期值仅占位
+        self.execution = ExecutionToolServer(
+            ask_fn=ask_fn,
+            render_bridge=render_bridge,
+            workspace_root=paths.default_workspace,
+            log_path=self._log_path,
+        )
 
     # ─── 会话记忆（跨进程续作） ────────────────────────────────────
 
@@ -223,8 +234,20 @@ class WorkbenchAgent:
 
     # ─── 组装 ─────────────────────────────────────────────────────
 
+    def bind_render_bridge(self, bridge: Any) -> None:
+        """每轮重绑执行域渲染桥（宿主 _run_one 构造新流式 emitter 后调用）。"""
+        self.execution.ctx.bridge = bridge
+
+    def interrupt_active_execution(self) -> bool:
+        """协作中断活跃评测（宿主 SIGINT 首按落点，§6.7 生命周期挂钩）。"""
+        return self.execution.interrupt_active_execution()
+
     def _describe_tools(self) -> str:
-        specs = [*PackageToolServer.TOOL_SPECS, *SUTProbeToolServer.TOOL_SPECS]
+        specs = [
+            *PackageToolServer.TOOL_SPECS,
+            *SUTProbeToolServer.TOOL_SPECS,
+            *ExecutionToolServer.TOOL_SPECS,
+        ]
         return "\n".join(f"- {s.name}: {s.description}" for s in specs)
 
     def _build_system_prompt(self) -> str:
@@ -273,6 +296,7 @@ class WorkbenchAgent:
         tools = [
             *self.server.to_langchain_tools(),
             *self.probe.to_langchain_tools(),
+            *self.execution.to_langchain_tools(),
             *todo_mw.tools,
         ]
         return create_deep_agent(
@@ -308,6 +332,7 @@ class WorkbenchAgent:
         """
         self._log("turn_start", instruction=user_text)
         self.probe.new_turn()  # 重置 SUT 探测轮内预算（轮内总量约束）
+        self.execution.new_turn()  # 执行域轮次标记（active_event 生命周期归 run_evaluation）
         if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
             self._messages.extend(_resume_messages(self._dialogue, self.config))
             # 进度恢复注记（v4.10）：暂存与证据账本已在 __init__ 恢复——Agent 须

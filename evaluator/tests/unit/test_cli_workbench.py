@@ -659,3 +659,57 @@ class TestExecDomain:
         assert called["sut_name"] == "api"  # stem 从「api（agent_protocol）」正确解析回取
         assert called["package"] == "t/api"
         assert session.ctx.active_sut == "api"
+
+
+# ── Agent 会话宿主：SIGINT 协作中断分流（Sprint 14b）───────────────────
+
+
+class TestGracefulExecInterrupt:
+    """`_graceful_exec_interrupt` handler 直调函数体测试（真实 os.kill 放 e2e，默认 skip）。"""
+
+    @staticmethod
+    def _agent(active: bool = True) -> object:
+        class _FakeAgent:
+            def __init__(self) -> None:
+                self.interrupts = 0
+
+            def interrupt_active_execution(self) -> bool:
+                self.interrupts += 1
+                return active
+
+        return _FakeAgent()
+
+    def test_first_press_cooperative_second_press_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import signal
+
+        from agent_eval.cli.cmds import workbench_agent as wb
+
+        monkeypatch.setattr(wb, "rprint", lambda *a, **k: None)  # 静音黄字提示
+        previous = signal.getsignal(signal.SIGINT)
+        agent = self._agent(active=True)
+        with wb._graceful_exec_interrupt(agent):
+            handler = signal.getsignal(signal.SIGINT)
+            assert handler is not previous
+            handler(signal.SIGINT, None)  # 首按：协作取消，不抛 KI
+            assert agent.interrupts == 1
+            with pytest.raises(KeyboardInterrupt):
+                handler(signal.SIGINT, None)  # 二按：恢复默认硬暂停语义
+            assert agent.interrupts == 1  # 二按不再置位
+        assert signal.getsignal(signal.SIGINT) is previous  # 退出复原
+
+    def test_first_press_without_active_execution_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import signal
+
+        from agent_eval.cli.cmds import workbench_agent as wb
+
+        monkeypatch.setattr(wb, "rprint", lambda *a, **k: None)
+        agent = self._agent(active=False)  # 无活跃执行
+        with wb._graceful_exec_interrupt(agent):
+            handler = signal.getsignal(signal.SIGINT)
+            with pytest.raises(KeyboardInterrupt):
+                handler(signal.SIGINT, None)  # 首按即走现行暂停语义
+        assert agent.interrupts == 1

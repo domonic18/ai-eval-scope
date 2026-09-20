@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -80,20 +81,56 @@ def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]
     return None if is_json() else make_stream_emitter()
 
 
+@contextmanager
+def _graceful_exec_interrupt(agent: Any):  # noqa: ANN001 — WorkbenchAgent
+    """交互会话的 SIGINT 分流（Sprint 14b，仅 _run_one 装配；非交互维持现行 KI 语义）。
+
+    评测执行期首按 Ctrl+C：协作中断（当前任务完成后停止）——不抛 KI，tool future
+    拿 cancelled 摘要正常收轮；无活跃执行或二按：恢复默认 handler 抛 KI，走现行
+    `_attempt` 暂停语义（进度保留，「继续」接着跑）。
+    """
+    import signal
+
+    previous = signal.getsignal(signal.SIGINT)
+    state = {"pressed": False}
+
+    def _handler(signum: int, frame: Any) -> None:  # noqa: ARG001 — signal 回调签名
+        if not state["pressed"] and agent.interrupt_active_execution():
+            state["pressed"] = True
+            rprint(
+                "\n[yellow]⏳ 正在中断评测（当前任务完成后停止；再按一次立即暂停）[/yellow]"
+            )
+            return  # 不抛 KI：worker 消化取消令牌后以 cancelled 摘要收轮
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, _handler)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, previous)
+
+
 def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """执行并渲染一轮：流式直播（回复不重复打印）或非流式兜底。"""
     from agent_eval.agent.workbench.agent import run_turn
+    from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
         rprint("[dim]⏳ Agent 工作中（流式输出，Ctrl+C 中断本轮）…[/dim]")
+    # 执行域渲染桥（Sprint 14b）：emit=None（JSON）时桥仍在——gated_emit 自然
+    # no-op、管线渲染照常直出；桥每轮新建并与 agent 绑定（emitter 是逐轮产物）
+    bridge = ExecutionRenderBridge(emit, finish)
+    agent.bind_render_bridge(bridge)
     try:
-        result = run_turn(
-            agent,
-            text,
-            confirm_fn=lambda reply, diff: _cli_confirm(reply, diff, agent),
-            on_event=emit,
-        )
+        with _graceful_exec_interrupt(agent):
+            result = run_turn(
+                agent,
+                text,
+                confirm_fn=lambda reply, diff: _cli_confirm(reply, diff, agent),
+                on_event=bridge.gated_emit,
+            )
     finally:
         if finish:
             finish()
@@ -213,6 +250,11 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
     if show_intro:
         _render_intro(agent)
 
+    def _bye() -> None:
+        # 退出兜底：worker 线程仍在消化取消令牌时置位（僵尸静音由桥封缄保证）
+        agent.interrupt_active_execution()
+        rprint("👋 会话结束")
+
     def _attempt(text: str) -> None:
         try:
             _run_one(agent, text)
@@ -243,10 +285,11 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
         try:
             text = ask("你>")
         except typer.Abort:
-            rprint("\n👋 会话结束")
+            rprint()
+            _bye()
             return
         if not text.strip():
-            rprint("👋 会话结束")
+            _bye()
             return
         if _maybe_abandon(text):
             continue

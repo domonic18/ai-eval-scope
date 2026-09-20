@@ -154,3 +154,172 @@ class TestEquiv:
             "--workspace",
             "./workspace",
         ]
+
+
+# ── pipeline_render：渲染门 seal（僵尸线程静音）────────────────────────
+
+
+class TestPipelineRendererSeal:
+    @staticmethod
+    def _patch_render(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+        from agent_eval.cli.console import pipeline_render as pr
+
+        seen: list[str] = []
+        monkeypatch.setattr(pr, "rprint", lambda *a, **k: seen.append("rprint"))
+        monkeypatch.setattr(pr, "print_task_table", lambda pkgs: seen.append("table"))
+        monkeypatch.setattr(pr, "_print_summary", lambda report: seen.append("summary"))
+        monkeypatch.setattr(pr, "_render_upload_receipt", lambda r: seen.append("receipt"))
+        return seen
+
+    @staticmethod
+    def _resolve_payload() -> dict:
+        return {
+            "task_set_path": "ts.yaml",
+            "task_count": 1,
+            "sut_name": "sut",
+            "sut_channel": "generic_http",
+            "sut_base_url": "http://x",
+            "rule_set_path": "rs.yaml",
+            "run_id": "r1",
+        }
+
+    def test_seal_permanently_silences_progress(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.console.pipeline_render import PipelineRenderer
+        from agent_eval.cli.pipeline_core import PipelineStage
+
+        seen = self._patch_render(monkeypatch)
+        renderer = PipelineRenderer(log_level="quiet")
+
+        renderer.on_progress(PipelineStage.RESOLVE_INFO, self._resolve_payload())
+        renderer.on_progress(PipelineStage.DONE, {"run_dir": "d"})
+        assert seen  # seal 前正常渲染
+
+        renderer.seal()
+        sealed_count = len(seen)
+        renderer.on_progress(PipelineStage.RESOLVE_INFO, self._resolve_payload())
+        renderer.on_progress(PipelineStage.SUMMARY, {"report": {}})
+        renderer.close()  # seal 后 close 亦无输出
+        assert len(seen) == sealed_count  # 渲染门永久关闭
+
+    def test_seal_idempotent(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.console.pipeline_render import PipelineRenderer
+
+        seen = self._patch_render(monkeypatch)
+        renderer = PipelineRenderer(log_level="quiet")
+        renderer.seal()
+        renderer.seal()  # 幂等不炸
+        assert seen == []
+
+
+# ── exec_bridge：会话内执行的写者仲裁 + 日志档位快照 ───────────────────
+
+
+class TestExecutionRenderBridge:
+    @staticmethod
+    def _make(emit_sink: list | None):
+        from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
+
+        finished: list[bool] = []
+        emit = emit_sink.append if emit_sink is not None else None
+        return ExecutionRenderBridge(emit, lambda: finished.append(True)), finished
+
+    def test_gated_emit_three_states(self) -> None:
+        sink: list[dict] = []
+        bridge, finished = self._make(sink)
+
+        bridge.gated_emit({"k": 1})
+        assert sink == [{"k": 1}]  # normal 直通
+
+        bridge.suspend()
+        bridge.gated_emit({"k": 2})
+        assert sink == [{"k": 1}]  # suspended 丢弃（LLM 事件行让位管线渲染）
+        assert finished == [True]  # suspend 收未闭合行
+
+        bridge.resume()
+        bridge.gated_emit({"k": 3})
+        assert sink == [{"k": 1}, {"k": 3}]  # resume 复通
+
+        bridge.cancel()
+        bridge.gated_emit({"k": 4})
+        bridge.resume()  # sealed 后 resume 不重开渲染门
+        assert sink == [{"k": 1}, {"k": 3}]  # sealed 永久丢弃
+
+    def test_emit_none_is_noop(self) -> None:
+        bridge, finished = self._make(None)  # JSON 模式：emit=None 桥仍在
+        bridge.suspend()
+        bridge.gated_emit({"k": 1})  # 不炸
+        bridge.resume()
+        bridge.cancel()
+        assert finished == [True]
+
+    def test_cancel_without_suspend(self) -> None:
+        sink: list[dict] = []
+        bridge, _ = self._make(sink)
+        bridge.cancel()  # 未 suspend 直接 cancel（状态机穷举）
+        bridge.gated_emit({"k": 1})
+        assert sink == []
+
+    def test_pipeline_progress_passthrough_then_sealed(self) -> None:
+        from unittest.mock import MagicMock
+
+        from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
+
+        bridge = ExecutionRenderBridge(None)
+        renderer = MagicMock()
+        wrapped = bridge.pipeline_progress(renderer)
+
+        bridge.suspend()  # 挂起不作用于管线渲染——执行期唯一写者直通
+        wrapped("stage", {"p": 1})
+        renderer.on_progress.assert_called_once_with("stage", {"p": 1})
+
+        bridge.cancel()  # 封缄：渲染器 seal + 包装闭包丢弃
+        renderer.seal.assert_called_once()
+        wrapped("stage", {"p": 2})
+        assert renderer.on_progress.call_count == 1
+
+    def test_renderer_seal_without_pipeline_progress(self) -> None:
+        # 未经过 pipeline_progress 注入渲染器时 cancel 不炸（renderer 为 None）
+        bridge, _ = self._make([])
+        bridge.cancel()
+
+
+class TestBridgeLoggingRestore:
+    def test_snapshot_restore_roundtrip(self) -> None:
+        """pipeline_core 的 setup_logging 是进程全局突变——resume 必须复原会话档位。"""
+        import logging
+
+        from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
+        from agent_eval.core.exec_events import EXEC_EVENT_LOGGER
+        from agent_eval.core.logging import install_exec_event_handler, setup_logging
+
+        try:
+            bridge = ExecutionRenderBridge(None)
+
+            # 场景1：debug 档 + 事件行可见 → 执行期被改为 warning → 复原
+            setup_logging(level="DEBUG")
+            install_exec_event_handler(enabled=True)
+            bridge.suspend()
+            setup_logging(level="WARNING")  # 模拟 pipeline_core 的全局突变
+            assert logging.getLogger().level == logging.WARNING
+            bridge.resume()
+            assert logging.getLogger().level == logging.DEBUG
+            assert logging.getLogger(EXEC_EVENT_LOGGER).handlers  # 事件渲染器复原
+
+            # 场景2：normal 档（事件行不可见）同样复原
+            setup_logging(level="INFO")
+            install_exec_event_handler(enabled=False)
+            bridge.suspend()
+            setup_logging(level="ERROR")
+            bridge.resume()
+            assert logging.getLogger().level == logging.INFO
+            assert not logging.getLogger(EXEC_EVENT_LOGGER).handlers
+        finally:
+            # 还原全局日志态，不污染其他用例
+            setup_logging(level="INFO")
+            install_exec_event_handler(enabled=False)
+
+    def test_resume_without_snapshot_is_noop(self) -> None:
+        from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
+
+        bridge = ExecutionRenderBridge(None)
+        bridge.resume()  # 未 suspend（无快照）不炸
