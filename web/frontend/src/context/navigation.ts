@@ -17,6 +17,8 @@ interface OrgApi {
   memberships: Membership[]
   loading: boolean
   setActive: (orgId: string) => void
+  /** 重拉 /auth/me 刷新 memberships（角色变更 / 所有权转移后调用）。 */
+  refresh: () => Promise<void>
 }
 
 export const CrumbsContext = createContext<CrumbsApi>({ crumbs: [], setCrumbs: () => {} })
@@ -25,6 +27,7 @@ export const OrgContext = createContext<OrgApi>({
   memberships: [],
   loading: true,
   setActive: () => {},
+  refresh: async () => {},
 })
 
 export const useCrumbs = () => useContext(CrumbsContext)

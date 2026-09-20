@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage"
 import RegisterPage from "./pages/RegisterPage"
 import JoinPage from "./pages/JoinPage"
 import Dashboard from "./pages/Dashboard"
+import Members from "./pages/Members"
 import ProjectDetail from "./pages/ProjectDetail"
 import RunDetail from "./pages/RunDetail"
 import SampleDetail from "./pages/SampleDetail"
@@ -67,6 +68,7 @@ export default function App() {
       <Route path="/docs" element={<DocsPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/members" element={<Members />} />
         <Route path="/join" element={<JoinPage />} />
         <Route path="/project/:id" element={<ProjectDetail />} />
         <Route path="/runs" element={<ComingSoon title="全部运行" />} />

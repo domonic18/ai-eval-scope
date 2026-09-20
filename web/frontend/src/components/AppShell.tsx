@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { api } from "@/api/client"
 import { clearSession, getActiveOrg, loadSession, setActiveOrg, updateSessionUser } from "@/store/auth"
 import { APP_VERSION } from "@/version"
-import type { Membership } from "@/types"
+import type { JoinRequestRow, Membership } from "@/types"
 import { initialOf } from "@/lib/format"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
@@ -33,7 +33,6 @@ import {
   BookOpen,
   ChevronDown,
   LayoutDashboard,
-  Activity,
   Lock,
   LogOut,
   Moon,
@@ -41,27 +40,14 @@ import {
   Plus,
   Search,
   Sun,
-  Trash2,
-  Boxes,
 } from "lucide-react"
-
-interface MemberRow {
-  userId: string
-  role: string
-  email: string
-  name: string | null
-}
-interface JoinRequestRow {
-  id: string
-  status: string
-  message: string | null
-  user: { id: string; email: string; name: string | null }
-}
 
 const NAV_MAIN = [
   { to: "/dashboard", icon: LayoutDashboard, label: "项目看板", match: (p: string) => p === "/dashboard" || p.startsWith("/project") },
-  { to: "/runs", icon: Activity, label: "全部运行", match: (p: string) => p.startsWith("/run") },
-  { to: "/config", icon: Boxes, label: "配置中心", match: (p: string) => p.startsWith("/config") },
+]
+
+const NAV_ORG = [
+  { to: "/members", icon: Users, label: "成员", match: (p: string) => p.startsWith("/members") },
 ]
 
 export function AppShell() {
@@ -70,13 +56,9 @@ export function AppShell() {
   const [orgLoading, setOrgLoading] = useState(true)
   const [crumbs, setCrumbs] = useState<Crumb[]>([])
   const [createOrgOpen, setCreateOrgOpen] = useState(false)
-  const [membersOpen, setMembersOpen] = useState(false)
-  const [members, setMembers] = useState<MemberRow[]>([])
   const [joinRequests, setJoinRequests] = useState<JoinRequestRow[]>([])
   const [newOrgName, setNewOrgName] = useState("")
-  const [inviteEmail, setInviteEmail] = useState("")
   const [creatingOrg, setCreatingOrg] = useState(false)
-  const [inviting, setInviting] = useState(false)
   const [platformAdmin, setPlatformAdmin] = useState(!!loadSession()?.user?.platformAdmin)
   const toast = useToast()
   const { theme, toggle } = useTheme()
@@ -123,26 +105,47 @@ export function AppShell() {
     const d = await api.me()
     setMemberships(d.memberships)
   }
-  async function loadMembers() {
-    if (!activeOrg) return
-    try {
-      setMembers(await api.listMembers(activeOrg))
-    } catch {
-      setMembers([])
-    }
-  }
-  async function loadJoinRequests() {
-    if (!activeOrg) return
+
+  // 侧栏待审徽标：主动拉取（修复原先仅开 Dialog 才拉、徽标恒 0 的 bug）；
+  // Members 页操作后广播 members:changed，这里监听重拉
+  const refetchJoinRequests = useCallback(async () => {
+    if (!activeOrg || !isOwner) return
     try {
       setJoinRequests(await api.orgJoinRequests(activeOrg))
     } catch {
       setJoinRequests([])
     }
-  }
-  async function openMembers() {
-    setMembersOpen(true)
-    await Promise.all([loadMembers(), loadJoinRequests()])
-  }
+  }, [activeOrg, isOwner])
+
+  useEffect(() => {
+    if (!activeOrg || !isOwner) {
+      setJoinRequests([])
+      return
+    }
+    refetchJoinRequests()
+  }, [activeOrg, isOwner, refetchJoinRequests])
+
+  useEffect(() => {
+    window.addEventListener("members:changed", refetchJoinRequests)
+    return () => window.removeEventListener("members:changed", refetchJoinRequests)
+  }, [refetchJoinRequests])
+
+  // 切换器副标题「Team · N 项目」（看板接口轻量复用，仅取数量）
+  const [projectCount, setProjectCount] = useState(0)
+  useEffect(() => {
+    if (!activeOrg) return
+    let cancelled = false
+    api
+      .dashboard(activeOrg)
+      .then((ps) => {
+        if (!cancelled) setProjectCount(ps.length)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [activeOrg])
+
   async function doCreateOrg() {
     const name = newOrgName.trim()
     if (!name) {
@@ -163,57 +166,37 @@ export function AppShell() {
       setCreatingOrg(false)
     }
   }
-  async function doInvite() {
-    const email = inviteEmail.trim()
-    if (!email || !activeOrg) return
-    setInviting(true)
-    try {
-      await api.inviteMember(activeOrg, email, "member")
-      setInviteEmail("")
-      await loadMembers()
-      toast.success("已添加成员")
-    } catch (e) {
-      const ex = e as { response?: { data?: { error?: string } }; message?: string }
-      toast.error(ex.response?.data?.error || ex.message || "添加失败")
-    } finally {
-      setInviting(false)
-    }
-  }
-  async function doRemoveMember(userId: string) {
-    if (!activeOrg) return
-    try {
-      await api.removeMember(activeOrg, userId)
-      await loadMembers()
-      toast.success("已移除")
-    } catch {
-      toast.error("移除失败")
-    }
-  }
-  async function doApprove(reqId: string) {
-    if (!activeOrg) return
-    try {
-      await api.approveJoin(activeOrg, reqId)
-      await Promise.all([loadJoinRequests(), loadMembers()])
-      toast.success("已通过")
-    } catch {
-      toast.error("操作失败")
-    }
-  }
-  async function doReject(reqId: string) {
-    if (!activeOrg) return
-    try {
-      await api.rejectJoin(activeOrg, reqId)
-      await loadJoinRequests()
-      toast.success("已拒绝")
-    } catch {
-      toast.error("操作失败")
-    }
-  }
 
   const pendingRequests = joinRequests.filter((r) => r.status === "pending")
 
+  /** 侧栏导航项（主导航 / 组织分组共用样式）。 */
+  const renderNavItem = (it: {
+    to: string
+    icon: typeof LayoutDashboard
+    label: string
+    match: (p: string) => boolean
+  }) => {
+    const Icon = it.icon
+    return (
+      <Link
+        key={it.to}
+        to={it.to}
+        className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
+          it.match(loc.pathname)
+            ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+            : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+        }`}
+      >
+        <Icon className="size-4" />
+        {it.label}
+      </Link>
+    )
+  }
+
   return (
-    <OrgContext.Provider value={{ activeOrg, memberships, loading: orgLoading, setActive: setActiveOrgId }}>
+    <OrgContext.Provider
+      value={{ activeOrg, memberships, loading: orgLoading, setActive: setActiveOrgId, refresh: reloadMemberships }}
+    >
       <CrumbsContext.Provider value={{ crumbs, setCrumbs }}>
         <div className="flex min-h-screen bg-background text-foreground">
           <div className="scanlines" aria-hidden />
@@ -229,18 +212,26 @@ export function AppShell() {
                   v{APP_VERSION}
                 </span>
               </Link>
-              {/* 团队切换器 */}
+              {/* 团队切换器（对齐原型 .org-switcher：26px 渐变方标 + 团队名 + Team · N 项目） */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex w-full items-center justify-between gap-2 rounded-md border bg-secondary px-2.5 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <Users className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate">
+                  <button className="flex w-full items-center gap-2.5 rounded-md border bg-secondary px-2.5 py-2 text-left transition-colors hover:border-primary/40">
+                    <span
+                      className="flex size-[26px] shrink-0 items-center justify-center rounded-sm text-xs font-bold text-white"
+                      style={{ background: "linear-gradient(135deg, var(--accent-brand), var(--signal))" }}
+                    >
+                      {initialOf(activeMembership?.org.name ?? null)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-semibold leading-tight">
                         {activeMembership?.org.name ?? "选择团队"}
                       </span>
-                      {pendingRequests.length > 0 && <Badge>{pendingRequests.length}</Badge>}
+                      <span className="block text-[11px] leading-tight text-muted-foreground">
+                        Team · {projectCount} 项目
+                      </span>
                     </span>
-                    <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+                    {pendingRequests.length > 0 && <Badge>{pendingRequests.length}</Badge>}
+                    <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="start">
@@ -262,7 +253,7 @@ export function AppShell() {
                     <Users className="size-4" /> 加入团队
                   </DropdownMenuItem>
                   {isOwner && (
-                    <DropdownMenuItem onClick={openMembers}>
+                    <DropdownMenuItem onClick={() => nav("/members")}>
                       <Users className="size-4" /> 成员管理
                       {pendingRequests.length > 0 && <Badge>{pendingRequests.length}</Badge>}
                     </DropdownMenuItem>
@@ -272,23 +263,11 @@ export function AppShell() {
             </div>
 
             <nav className="flex-1 space-y-1 p-3">
-              {NAV_MAIN.map((it) => {
-                const Icon = it.icon
-                return (
-                  <Link
-                    key={it.to}
-                    to={it.to}
-                    className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
-                      it.match(loc.pathname)
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <Icon className="size-4" />
-                    {it.label}
-                  </Link>
-                )
-              })}
+              {NAV_MAIN.map(renderNavItem)}
+              <div className="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                组织
+              </div>
+              {NAV_ORG.map(renderNavItem)}
               {platformAdmin && (
                 <Link
                   to="/admin"
@@ -403,71 +382,6 @@ export function AppShell() {
               <Button onClick={doCreateOrg} disabled={creatingOrg}>
                 {creatingOrg ? "创建中…" : "创建"}
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* 成员管理（owner）*/}
-        <Dialog open={membersOpen} onOpenChange={setMembersOpen}>
-          <DialogContent className="max-w-xl">
-            <DialogHeader>
-              <DialogTitle>成员管理</DialogTitle>
-              <DialogDescription>{activeMembership?.org.name}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {pendingRequests.length > 0 && (
-                <div className="space-y-2 rounded-lg border bg-secondary/40 p-3">
-                  <div className="text-sm font-medium">待审申请</div>
-                  {pendingRequests.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm">
-                        {r.user.email}
-                        {r.message && <span className="text-muted-foreground"> — {r.message}</span>}
-                      </span>
-                      <div className="flex shrink-0 gap-2">
-                        <Button size="sm" onClick={() => doApprove(r.id)}>
-                          通过
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => doReject(r.id)}>
-                          拒绝
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Input
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="输入邮箱邀请（须已注册）"
-                />
-                <Button onClick={doInvite} disabled={inviting}>
-                  {inviting ? "添加中…" : "邀请"}
-                </Button>
-              </div>
-              {members.length === 0 ? (
-                <div className="text-sm text-muted-foreground">暂无其他成员</div>
-              ) : (
-                <div className="divide-y">
-                  {members.map((m) => (
-                    <div key={m.userId} className="flex items-center justify-between py-2.5">
-                      <span className="flex items-center gap-2 text-sm">
-                        {m.email}
-                        <Badge variant="secondary">{m.role}</Badge>
-                      </span>
-                      {m.role !== "owner" && m.userId !== session?.user.id && (
-                        <Button variant="ghost" size="icon" title="移除" onClick={() => doRemoveMember(m.userId)}>
-                          <Trash2 className="size-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button onClick={() => setMembersOpen(false)}>完成</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
