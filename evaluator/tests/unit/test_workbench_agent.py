@@ -628,7 +628,7 @@ SUT_DISK = (
     "    login:\n"
     "      method: POST\n"
     "      path: https://jxb.example.com/auth/login\n"
-    "      body_template: '{\"u\": \"{{ username }}\"}'\n"
+    '      body_template: \'{"u": "{{ username }}"}\'\n'
     "    extract:\n"
     "      token_path: token\n"
 )
@@ -686,8 +686,7 @@ class TestEvidenceGateBaseline:
     def test_protocol_baseline_equality_exempt(self, tmp_path: Path) -> None:
         """agent_protocol 结论三元组与磁盘基线全等 → 豁免协议对账（无账本也过）。"""
         proto = (
-            "sut:\n  name: web\n  channel: agent_protocol\n"
-            "  base_url: https://web.example.com\n"
+            "sut:\n  name: web\n  channel: agent_protocol\n  base_url: https://web.example.com\n"
         )
         self._seed_disk_sut(tmp_path, "web.yaml", proto)
         server = PackageToolServer(tmp_path)
@@ -699,8 +698,7 @@ class TestEvidenceGateBaseline:
         self._seed_disk_sut(
             tmp_path,
             "web.yaml",
-            "sut:\n  name: web\n  channel: agent_protocol\n"
-            "  base_url: https://web.example.com\n",
+            "sut:\n  name: web\n  channel: agent_protocol\n  base_url: https://web.example.com\n",
         )
         server = PackageToolServer(tmp_path)
         asyncio.run(
@@ -2160,6 +2158,15 @@ class TestCliEntries:
             server=SimpleNamespace(root=tmp_path / "empty", staged_manifest_id=lambda: None)
         )
         assert _landing_hint(empty) is None
+
+    def test_landing_verb_matches_root_kind(self) -> None:
+        """落点动词区分草稿区归位与既有包原位（v4.12.3：edit_package 切根后横幅
+        曾一律称「归位」，实际是原位生效——文案与机制对齐）。"""
+        from agent_eval.cli.cmds.workbench_agent import _landing_verb
+
+        draft = Path("workspace/.staging/agent-eval-pkg-abcd1234")
+        assert _landing_verb(draft) == "归位"
+        assert _landing_verb(Path("proj/demo-package")) == "原位落盘"
 
     def test_edit_rejects_builtin(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from agent_eval.cli.cmds.workbench_agent import agent_edit_package

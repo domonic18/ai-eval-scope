@@ -151,6 +151,11 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     _render_outcome(result)
 
 
+def _landing_verb(root: Path) -> str:
+    """落点动词：草稿区根「归位」（落盘即迁 cwd/<id>-package/，v4.9）；其余原位。"""
+    return "归位" if root.name.startswith("agent-eval-pkg-") else "原位落盘"
+
+
 def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN001 — WorkbenchAgent
     """确认交互：回复已在流式直播中输出，这里展示 diff + 预计落点并询问。"""
     if diff:
@@ -158,9 +163,12 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
     landing = _landing_hint(agent) if agent is not None else None
     if landing:
         # 不预设门禁通过（实测：门禁打回后横幅仍称「确认落盘即归位」，用户误以为
-        # 已落盘）——归位是「确认 → 门禁通过 → 落盘」的链（v4.9 起落盘即归位，
-        # 不再等会话结束），任何一环失败都不归位
-        rprint(f"[green]确认后经校验门禁，通过即落盘并归位 → {landing}[/green]")
+        # 已落盘）——落盘是「确认 → 门禁通过 → 落盘」的链（v4.9 起落盘即归位，
+        # 不再等会话结束），任何一环失败都不落。动词区分草稿区归位与既有包原位
+        # （v4.12.3：edit_package 切根后横幅曾一律称「归位」，实际是原位生效）
+        rprint(
+            f"[green]确认后经校验门禁，通过即{_landing_verb(Path(agent.server.root))} → {landing}[/green]"
+        )
     return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
 
 
