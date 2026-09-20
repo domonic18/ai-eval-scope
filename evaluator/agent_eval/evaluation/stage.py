@@ -8,6 +8,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from agent_eval.core import exec_events
 from agent_eval.core.types import ConstraintTier, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.models import ConstraintResult, StageResult
@@ -72,6 +73,15 @@ class PipelineStage:
             # 补充耗时（如评估器未自行计算）
             if constraint_result.duration_ms == 0.0:
                 constraint_result.duration_ms = (time.monotonic() - ev_start) * 1000
+
+            # verbose 档过程事件（arch/15 §4.4）：评估器/结论/耗时——rule 与 LLM
+            # 判官同点埋，normal/quiet 档由事件日志器静默丢弃（旁路，不改指标逻辑）
+            exec_events.judge_evaluated(
+                evaluator=evaluator.name or evaluator.evaluator_id,
+                status=constraint_result.status.value,
+                score=constraint_result.score,
+                elapsed_ms=constraint_result.duration_ms,
+            )
 
             stage_result.constraint_results.append(constraint_result)
 

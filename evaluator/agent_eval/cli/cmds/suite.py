@@ -62,11 +62,25 @@ def plan(suite_file: str = typer.Option(..., "--file", help="suite.yaml 路径")
 def run_suite(
     suite_file: str = typer.Option(..., "--file", help="suite.yaml 路径"),
     dry_run: bool = typer.Option(False, "--dry-run", help="只打印将执行的 run 命令"),
+    log_level: str = typer.Option(
+        "normal",
+        "--log-level",
+        help="执行日志档位：quiet=仅结果行 | normal=默认进度 | "
+        "verbose=过程事件（SUT/judge/重试） | debug=全量原文",
+    ),
 ) -> None:
     """逐项执行矩阵（串行），结束后输出汇总对照表。"""
     from agent_eval.cli._stages import execute_stage, resolve_run_inputs
     from agent_eval.core.exceptions import AgentEvalError
+    from agent_eval.core.logging import (
+        install_exec_event_handler,
+        resolve_logging_level,
+        setup_logging,
+    )
     from agent_eval.storage.package import generate_run_id
+
+    setup_logging(level=resolve_logging_level(log_level))
+    install_exec_event_handler(enabled=log_level in ("verbose", "debug"))
 
     data = _load_suite(Path(suite_file))
     results: list[dict[str, Any]] = []

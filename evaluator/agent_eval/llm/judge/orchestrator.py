@@ -15,6 +15,7 @@ from typing import Any
 import structlog
 
 from agent_eval.config import JUDGE_ID_DATETIME_FORMAT
+from agent_eval.core import exec_events
 from agent_eval.core.exceptions import LLMError, LLMResponseError
 from agent_eval.llm.judge.prompt_store import PromptStore
 from agent_eval.llm.judge.recorder import JudgeRecorder
@@ -278,6 +279,10 @@ class JudgeOrchestrator:
                         sample_id=sample_id,
                         attempt=attempt,
                         error=str(e)[:200],
+                    )
+                    exec_events.retry(
+                        what="判官输出解析",
+                        detail=f"{constraint_id} 第 {attempt + 1} 次尝试解析失败，重试",
                     )
                     continue
                 break

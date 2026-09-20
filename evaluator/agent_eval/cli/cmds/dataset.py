@@ -30,14 +30,16 @@ def dataset_download(
     ),
     token: str | None = typer.Option(None, "--token", help="访问 token。默认读对应源的环境变量"),
     force: bool = typer.Option(False, "--force", help="目标目录已存在时强制重新下载"),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
+    log_level: str = typer.Option(
+        "normal", "--log-level", help="日志档位：quiet | normal | verbose | debug（debug=全量原文）"
+    ),
 ) -> None:
     """从 HuggingFace / ModelScope 下载评测数据集到本地 workspace。"""
-    from agent_eval.core.logging import setup_logging
+    from agent_eval.core.logging import resolve_logging_level, setup_logging
     from agent_eval.datasets import DatasetManager
     from agent_eval.datasets.registry import lookup
 
-    setup_logging(level="DEBUG" if verbose else "INFO")
+    setup_logging(level=resolve_logging_level(log_level))
     try:
         entry = lookup(name)
         label = entry.name if entry else name
@@ -59,9 +61,7 @@ def dataset_download(
 
 
 @dataset_app.command("list")
-def dataset_list(
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-) -> None:
+def dataset_list() -> None:
     """列出数据集索引中所有可下载的数据集（来源：assets/datasets/dataset_index.yaml）。"""
     from agent_eval.datasets import list_datasets
 

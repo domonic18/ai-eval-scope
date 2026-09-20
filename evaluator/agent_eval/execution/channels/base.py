@@ -7,12 +7,14 @@ jar，同一运行内复用）、凭证自动挂载、401/403 自动重登一次
 
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
 import httpx
 
+from agent_eval.core import exec_events
 from agent_eval.core.exceptions import SUTAuthError, SUTChannelError
 from agent_eval.execution.auth.provider import AuthProvider
 from agent_eval.execution.registry import SCHEDULED_CHANNELS, SUTSystemConfig
@@ -79,6 +81,7 @@ class SUTChannel(ABC):
         url = f"{self.sut.base_url.rstrip('/')}/{path.lstrip('/')}"
         session = await self.auth.get_session()
         merged = {**session.mount_headers(), **(headers or {})}
+        start = time.monotonic()
         try:
             response = await self.client.request(
                 method=method.upper(),
@@ -89,9 +92,21 @@ class SUTChannel(ABC):
                 timeout=timeout or self.sut.timeout,
             )
         except httpx.HTTPError as e:
+            exec_events.sut_request(
+                method=method.upper(),
+                url=url,
+                elapsed_ms=(time.monotonic() - start) * 1000,
+                error=str(e)[:120],
+            )
             raise SUTChannelError(
                 f"SUT 请求失败: {e}", details={"sut": self.sut.name, "url": url}
             ) from e
+        exec_events.sut_request(
+            method=method.upper(),
+            url=url,
+            status=response.status_code,
+            elapsed_ms=(time.monotonic() - start) * 1000,
+        )
 
         if response.status_code in (401, 403) and self.auth.auth.type != "none":
             # 会话失效自愈：自动重登一次并重放（频次限制内）
@@ -101,8 +116,13 @@ class SUTChannel(ABC):
                     details={"sut": self.sut.name, "status_code": response.status_code},
                 )
             self.auth.mark_auto_relogin()
+            exec_events.retry(
+                what="SUT 会话失效自动重登",
+                detail=f"{method.upper()} {path} → {response.status_code}，重登后重放",
+            )
             session = await self.auth.get_session(force=True)
             replay_headers = {**session.mount_headers(), **(headers or {})}
+            replay_start = time.monotonic()
             try:
                 response = await self.client.request(
                     method=method.upper(),
@@ -113,9 +133,23 @@ class SUTChannel(ABC):
                     timeout=timeout or self.sut.timeout,
                 )
             except httpx.HTTPError as e:
+                exec_events.sut_request(
+                    method=method.upper(),
+                    url=url,
+                    elapsed_ms=(time.monotonic() - replay_start) * 1000,
+                    replayed=True,
+                    error=str(e)[:120],
+                )
                 raise SUTChannelError(
                     f"SUT 重放请求失败: {e}", details={"sut": self.sut.name, "url": url}
                 ) from e
+            exec_events.sut_request(
+                method=method.upper(),
+                url=url,
+                status=response.status_code,
+                elapsed_ms=(time.monotonic() - replay_start) * 1000,
+                replayed=True,
+            )
         return response
 
 
