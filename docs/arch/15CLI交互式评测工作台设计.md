@@ -121,7 +121,7 @@ agent_eval/agent/
 | D-CLI-6 | **命令命名不设兼容层**：`scenario` / `models set|clear` 等新命名直接生效，无旧名别名 | 名字即语义（场景包 ≠ 打包执行包；配置模型 ≠ 登录模型），别名层只会延续误用 |
 | D-CLI-7 | **退出码集中映射**：`console/output.py::map_exit_code(exc)` 单点适配异常体系 → 0/1/2/3/130 | 契约可测试；新增异常不改命令层 |
 | D-CLI-8 | **`runs` 读本地索引优先**：`workspace/index/runs_index.json`（06 §3.8）列表，run 目录直读详情；平台态经 manifest 上传标记推断 | 零新存储；与 Web 平台解耦 |
-| D-CLI-9 | **Agent 执行 = 直通阻塞调用**（v4.11）：`run_evaluation` 与 CLI 共用同一渲染路径，执行期间宿主挂起 Agent 流式渲染、rich console 直出过程；LLM 只见紧凑摘要（run_id/指标/产物路径），不转述过程；执行不计会话预算（非 LLM 活动），Ctrl+C 按阶段路由 | 需求 2「Agent/命令行输出一致」的结构性保证——转述必然漂移；执行期单输出流，终端混排问题消解（req/04 开放问题 #7） |
+| D-CLI-9 | **Agent 执行 = 直通阻塞调用**（v4.11，v4.12 补编排真相源）：`run_evaluation` 经 `pipeline_core` 与 CLI 共用唯一编排与渲染路径，执行期间宿主经 render_bridge 挂起 Agent 流式渲染、rich console 直出过程；LLM 只见紧凑摘要（run_id/指标/产物路径），不转述过程；执行不计会话预算（非 LLM 活动，天然成立），Ctrl+C 执行期 = 协作取消中断（任务边界，产物已落盘） | 需求 2「Agent/命令行输出一致」的结构性保证——编排与转述双面漂移被单一真相源结构性消解；执行期单输出流，终端混排问题消解（req/04 开放问题 #7） |
 | D-CLI-10 | **受控出网域白名单制**（v4.11）：网络面按域开列（SUT 探测 §6.5、数据集下载 §6.11），每域单出口 + 域名白名单 + 确认门槛；其余工具面维持无网络红线 | 出网能力成为显式装配决策而非默认存在；§6.7 红线泛化（「任何新域的网络面以策略形式接入」）的实例化 |
 
 ### 2.4 复用清单（不重造边界）
@@ -838,11 +838,26 @@ class WorkbenchAgentConfig:
 红线）；**ToolSpec 描述即对外契约**（开源用户与 LLM 同读），描述与行为一致性纳入
 review 检查项。
 
-### 6.10 评测执行域（ExecutionToolServer，v4.11）
+### 6.10 评测执行域（ExecutionToolServer，v4.12）
 
 > 需求 req/04 §4.11（F-C-AGENT-01~06）：统一会话内「执行评测 → 看结果 → 上传」闭环——用户在
 > 对话中说「执行评测」，Agent 给出执行候选与摘要，确认后开始执行。核心约束是**输出直通**
 > （F-C-AGENT-03）：Agent 发起的执行与命令行执行内容、样式完全一致。
+
+**编排单一真相源（`pipeline_core` 抽取，v4.12 裁决）**：管线编排（解析→凭证→执行→评估→门禁→
+报告→上传→退出码映射）此前仅存在于 `cli/cmds/execute.py::execute_pipeline`，且与渲染（rprint）、
+退出（typer.Exit）交织——Agent 域若绕开它直拼 `_stages` 阶段函数将成**第三份编排拷贝**，
+「与 CLI 逐字节同源」必然漂移。落地形态（方案评审裁决：最彻底方案，否决手拼与直接调 CLI 壳）：
+
+- `cli/_stages.py` 新增 **`pipeline_core(params, *, progress=None, cancel_event=None) -> PipelineOutcome`**：
+  无渲染、无交互、无 typer 依赖的编排纯函数（模块既有 rprint/typer 残留不新增）；`params` 与 CLI
+  参数对象同构；`progress` 为阶段进度钩子（CLI 壳注入 rprint/进度视图，Agent 域注入**同款渲染**——
+  同一钩子契约保证输出一致）；`cancel_event` 供协作式取消（见 Ctrl+C 条）；退出码契约
+  （0 成功 / 1 配置执行失败 / 3 门禁未达标）作为 `PipelineOutcome.exit_code` 返回而非 raise；
+- `execute_pipeline` **薄壳化**：setup_logging → 调 `pipeline_core` → 渲染（rprint 阶段行/任务表/
+  JSON payload/`typer.Exit(code=outcome.exit_code)`）——**CLI 外部行为零变化**（重构验收 =
+  既有 CLI 输出回归 + 全量测试）；
+- Agent 域 `run_evaluation` 只消费 `pipeline_core`，永不复刻编排。
 
 **模块形态**：`agent/workbench/execution/`，复刻 sut_probe 组合模式（context 共享状态 + 域工具类 +
 `server.py` 薄委托壳），「一域一 server」边界不变。
@@ -855,26 +870,34 @@ review 检查项。
 
 **输出直通机制**（D-CLI-9，需求 2 的落地）：
 
-- `run_evaluation` 是**直通阻塞调用**：执行期间宿主挂起 Agent 流式渲染（`agent_stream` 停止
-  重绘后交棒），rich console 直出执行过程——渲染路径与 CLI 执行**同一条**（进度视图 +
-  `--log-level` 分档事件行，§4.4）；执行期单输出流，终端混排问题结构性消解（req/04 开放问题 #7）；
+- `run_evaluation` 是**直通阻塞调用**：执行核心经 **`asyncio.to_thread`** 在工作线程运行（不冻结
+  事件循环——ask_fn、流式、Ctrl+C 依赖它）；执行期宿主经 **render_bridge 挂起 Agent 流式渲染**
+  （host 每轮构造、ExecContext 持引用注入，与 ask_fn 同模式：suspend 后 `on_event` 事件丢弃、
+  rich console 交棒给执行渲染，结束 resume，恢复由宿主单点负责），渲染经 `pipeline_core` 的
+  progress 钩子走**与 CLI 同一条渲染路径**（进度视图 + `--log-level` 分档事件行，§4.4）；
+  执行期单输出流，终端混排问题结构性消解（req/04 开放问题 #7）；
 - **LLM 看不到过程输出、也不转述**：tool 返回值仅紧凑摘要（run_id / 指标 / 失败数 / 产物路径 /
-  是否上传）；结束后 Agent 基于摘要做一句总结 + 下一步建议，过程细节由用户回看直通输出或
+  退出码 / 是否上传）；结束后 Agent 基于摘要做一句总结 + 下一步建议，过程细节由用户回看直通输出或
   `show_run` 追问；
 - 非 JSON 形态专用：`--output-format json` 语义仍走 CLI 命令；Agent 会话内执行恒为交互形态，
   `--no-input` 旁路不存在（F-C-AGENT-06：执行工具**永不经 `--trust-agent` 旁路自主触发**，
-  不进信任模式工具白名单）。
+  不进信任模式工具白名单）；
+- **日志档位恢复**：执行按入参档位 `setup_logging` 是进程级全局态——执行结束由宿主恢复会话
+  原档位（render_bridge suspend/resume 同点负责）。
 
 **确认与安全门槛**：
 
 - **凭证缺失路径**：`preflight_sut_credentials` 的结构化缺失清单作为 tool 结果返回 → Agent 经
   ask_fn 隐藏输入逐字段引导补录（复用 `ensure_sut_credentials` 的「一次落盘、空输入整体取消」
   语义，§7.2）→ 复检通过重试；_stages 零交互纪律不破——域内交互全部走 ask_fn 单通道；
-- **Ctrl+C 按阶段路由**：Agent 流式阶段 = 中断当前轮（既有语义）；执行直通阶段 = 透传执行内核
-  （终止 / 跳过当前任务继续评估 / 保存已完成，F-C-EXEC-05），不触发会话 salvage——执行产物
-  落盘语义与 CLI 执行完全一致；
-- **预算豁免**：执行调用非 LLM 活动，不计会话 `BudgetGuard`（§6.6 缰绳只约束 Agent 自身推理，
-  防止长评测被会话预算误杀）；执行自身成本由评测配置的 judge 预算管（既有 budget_usd）。
+- **Ctrl+C 语义（v4.12 降级裁决，F-C-EXEC-05 三选询问拆出为 P2 独立立项）**：`pipeline_core`
+  任务循环加**协作式取消检查点**（`cancel_event` 任务边界粒度：置位后当前任务跑完即停）——
+  Agent 会话内 Ctrl+C = 宿主置位取消令牌并中断本轮，已完成任务产物与 run_manifest 已落盘、
+  可溯源（与 CLI 现状一致）；CLI 进程内 Ctrl+C 语义不变（裸中断）。三选菜单落内核后
+  CLI / 向导 / Agent 域同步受益；
+- **预算豁免**：**天然成立**（`BudgetGuard` 仅挂 `on_llm_end` 计会话机 token，`agent/core/callbacks.py`
+  ——工具执行不产生会话机 LLM 事件，评测 judge 走独立 client 不经会话回调）；以回归测试断言
+  长执行不烧会话预算（F-C-AGENT-04）；执行自身成本由评测配置的 judge 预算管（既有 budget_usd）。
 
 ### 6.11 数据集域（DatasetToolServer，v4.11）
 
@@ -991,3 +1014,4 @@ review 检查项。
 | v4.9 | 2026-09-17 | **落盘即归位**（用户实测反馈「确认后预告路径找不到包，须 Ctrl+C/空行退出才归位」，§6.3 重写）：首次确认落盘成功即把草稿挪到 `cwd/<id>-package/`——`PackageToolServer.rebind_root` 沙盒重定向（staging 内存态、root 无持久句柄，零残留）+ `WorkbenchAgent.relocate_root` 图重建（`{pkg_root}` 建图烘焙，对话消息宿主持有不丢）+ 归位注记进对话 + 会话记录文件随迁新 `session_key`（跨进程续作上下文不因归位断裂）；**同一会话可继续自然语言修改已归位的包**；`_finalize_new_package` 收窄为会话末兜底 + 改名同步（已归位未改名静默返回）；撞名红字报错留草稿位不打断会话；确认横幅/落盘提示同步新时序 |
 | v4.10 | 2026-09-17 | **写包链路系统性修复**（jxb-agent 创建会话转录复盘，§6.3 门禁族表 +1 行、中断续作要点重写）：①`update_manifest` 结构修复——曾手拼 `"package:\n" + safe_dump(扁平dict)` 落盘零缩进损坏清单（read_manifest 的 get 回退把坏结构读回「自洽」致 bug 隐身），改为 dump `{"package": merged}` 嵌套结构自带缩进；②**YAML 全量解析双防线**——`write_file` 对 `.yaml/.yml` fail-fast 预检（截断当场拒写未入暂存）+ `validate_package` 全视图解析打回（曾只扫 `rules/`，截断的 task_sets 靠 Agent 自检才发现）；③**跨进程续跑**（五阶段计划推迟的 MR4 落地）——每轮会话记录同步写入进度快照（暂存 + SKELETON.md 留档 + 证据账本，凭证态绝不入快照），重启续作自动恢复并向对话注入进度注记——「重启会话续作」从进度陷阱变为真实承诺，write_sut_config 免重探跨进程成立 |
 | v4.11 | 2026-09-20 | **评测执行域 + 数据集域 + 日志四档**（req/04 v1.6 用户需求四则，新 §6.10/§6.11/§4.4 + D-CLI-9/10）：①**评测执行域**——ExecutionToolServer（list_eval_targets/run_evaluation/list_runs/show_run/upload_run），统一会话内「执行→看结果→上传」闭环；**输出直通**（D-CLI-9）：执行期挂起 Agent 流式渲染、rich 直出与 CLI 同一渲染路径，LLM 只见紧凑摘要不转述；执行确认门槛永不被 `--trust-agent` 旁路、凭证缺失经 ask_fn 补录、Ctrl+C 按阶段路由、执行不计会话预算；②**数据集域**——DatasetToolServer（list_datasets/download_dataset 复用 DatasetManager），与 SUT 探测并列的**第二个受控出网域**（D-CLI-10 白名单制实例化）：域名白名单 + `workspace/datasets/` 写白名单 + token 不入对话/日志；③**`--log-level` 四档**（quiet/normal/verbose/debug）取代 `--verbose`，三形态（CLI/向导/Agent）同源，verbose 档补 SUT 请求响应摘要/judge 交互/重试事件埋点（只加事件不改指标逻辑）；会话机四工具面并列、横幅能力域/示例同步、`WorkbenchAgentConfig` 不变（新域零会话机改动，验证 §6.7 扩展机制） |
+| v4.12 | 2026-09-20 | **14b 设计评审裁决（req/04 v1.7）**：①**编排单一真相源**——新增 `pipeline_core`（§6.10）无渲染编排纯函数 + `PipelineOutcome`（退出码返回而非 raise），`execute_pipeline` 薄壳化（CLI 行为零变化为重构验收），Agent 域 `run_evaluation` 只消费 pipeline_core——否决「直拼 `_stages` 阶段函数」（第三份编排拷贝，逐字节同源必漂移）；②**直通机制补注**——`asyncio.to_thread` 包裹同步执行内核（事件循环保活性）+ render_bridge 注入接口（host 每轮构造、ExecContext 持引用，与 ask_fn 同模式）+ 执行后日志档位恢复；③**Ctrl+C 降级**——`pipeline_core` 任务循环协作式取消检查点（cancel_event 任务边界粒度），F-C-EXEC-05 三选询问拆出 P2 独立立项（先落内核，三形态同步受益）；④预算豁免确认为天然成立（BudgetGuard 仅 on_llm_end），收敛为回归断言 |
