@@ -210,7 +210,8 @@ class WorkbenchAgent:
         注记——同一机制，语义注记区分归位/切换）。图在下一次 ``_invoke`` 时重建
         （系统提示的 ``{pkg_root}`` 在建图时烘焙；对话消息由宿主持有，重建不丢
         上下文）。会话记录文件迁移到新 session_key——切换/归位后跨进程续作命中
-        同一记录，上下文不因迁移断裂。文件迁移失败仅丢跨进程续作（key 仍切换，
+        同一记录，上下文不因迁移断裂。目标已有记录时保育合并而非覆盖（v4.12.3，
+        :meth:`_conserve_target_record`）；迁移失败仅丢跨进程续作（key 仍切换，
         后续记录落新位），会话内不受影响。
         """
         final = Path(final_root).resolve()
@@ -221,19 +222,65 @@ class WorkbenchAgent:
         self.server.rebind_root(final)
         self._graph = None  # 系统提示烘焙了 {pkg_root}——下次调用重建
         new_file = old_file.parent / session_key(final)
-        try:
-            if old_file.exists():
-                old_file.replace(new_file)
-            skeleton = old_file.with_suffix(".SKELETON.md")
-            if skeleton.exists():
-                skeleton.replace(new_file.with_suffix(".SKELETON.md"))
-        except OSError:
-            pass  # 迁移失败仅影响跨进程续作；key 仍切换，后续记录落新位
+        if new_file.exists():
+            # 切到编辑过的既有包：目标记录是此前会话的对话史+账本快照，
+            # replace 会静默清零——并入当前会话（v4.12.3）
+            self._conserve_target_record(new_file)
+        else:
+            try:
+                if old_file.exists():
+                    old_file.replace(new_file)
+                skeleton = old_file.with_suffix(".SKELETON.md")
+                if skeleton.exists():
+                    skeleton.replace(new_file.with_suffix(".SKELETON.md"))
+            except OSError:
+                pass  # 迁移失败仅影响跨进程续作；key 仍切换，后续记录落新位
         self._session_store.session_file = new_file
         self._log("relocate_root", previous=str(previous), final=str(final))
         # 根变更事实进对话（沙盒根变了，Agent 须知道以新位置为准）——同放弃回滚
         # 的系统注记形态，防 Agent 仍引用旧根路径
         self._messages.append(("user", note or _RELOCATE_NOTE.format(previous, final)))
+
+    def _conserve_target_record(self, target_file: Path) -> None:
+        """目标已有会话记录：并入当前会话而非覆盖（edit_package 切根路径）。
+
+        归位/迁移路径目标 key 恒首次出现，走 move 分支；切到**编辑过的既有包**
+        时目标记录承载此前会话的对话史与证据账本快照——``Path.replace`` 会把它
+        静默清零（对话史丢失 + 「已落盘包续改免重探」承诺破裂）。保育语义：
+        ①目标对话并入当前会话记忆（目标史在前、本会话在后，裁剪上限防膨胀）；
+        ②目标账本快照合并恢复进探测账本（当前会话条目优先——同一 ref 以本会话
+        实测为准）；旧根侧记录文件保留原位。目标记录不可读时按无目标史处理。
+        """
+        try:
+            data = json.loads(target_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        target_dialogue = [
+            d
+            for d in data.get("dialogue", [])
+            if isinstance(d, dict) and d.get("role") and d.get("text")
+        ]
+        if target_dialogue:
+            self._session_store.dialogue[:0] = target_dialogue
+            self._session_store.dialogue = self._session_store.dialogue[
+                -self.config.max_dialogue_entries :
+            ]
+        snapshot = data.get("snapshot")
+        ledger = snapshot.get("ledger") if isinstance(snapshot, dict) else None
+        if isinstance(ledger, dict):
+            current = self.probe.ledger_snapshot()
+            merged = {
+                "verified_logins": {
+                    **ledger.get("verified_logins", {}),
+                    **current.get("verified_logins", {}),
+                },
+                "verified_protocols": {
+                    **ledger.get("verified_protocols", {}),
+                    **current.get("verified_protocols", {}),
+                },
+            }
+            restored = self.probe.restore_ledgers(merged)
+            self._log("relocate_ledger_merged", restored_logins=restored)
 
     # ─── 组装 ─────────────────────────────────────────────────────
 

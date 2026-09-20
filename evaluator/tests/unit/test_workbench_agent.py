@@ -7,6 +7,7 @@ LLM 链路以回放状态机 mock（monkeypatch ``WorkbenchAgent._invoke``），
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -21,7 +22,9 @@ from agent_eval.agent.workbench.agent import (
     _resume_messages,
     repair_orphan_tool_calls,
 )
+from agent_eval.agent.workbench.gates import sut_evidence_gate
 from agent_eval.agent.workbench.memory import session_key
+from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
 from agent_eval.agent.workbench.tools import PackageToolServer
 from agent_eval.core.exceptions import AgentError
 
@@ -610,6 +613,176 @@ class TestEditPackage:
         server.relocate_fn = None  # 防御：宿主装配缺失 → error 而非崩溃
         result = asyncio.run(server.edit_package("target/target"))
         assert "error" in result and "relocate_fn" in result["error"]
+
+
+# ── 证据对账门禁的磁盘基线豁免（v4.12.3：既有包轻量编辑不触发凭证重验） ──
+
+SUT_DISK = (
+    "sut:\n"
+    "  name: jxb-server\n"
+    "  channel: generic_http\n"
+    "  base_url: https://jxb.example.com\n"
+    "  auth:\n"
+    "    type: api_login\n"
+    "    credential_ref: jxb-login\n"
+    "    login:\n"
+    "      method: POST\n"
+    "      path: https://jxb.example.com/auth/login\n"
+    "      body_template: '{\"u\": \"{{ username }}\"}'\n"
+    "    extract:\n"
+    "      token_path: token\n"
+)
+
+
+class TestEvidenceGateBaseline:
+    """对账范围收窄至暂存增量：磁盘基线全等豁免，任何相对基线的变更仍需账本。"""
+
+    @staticmethod
+    def _seed_disk_sut(tmp_path: Path, name: str, content: str) -> None:
+        sut_dir = tmp_path / "sut_configs"
+        sut_dir.mkdir(parents=True, exist_ok=True)
+        (sut_dir / name).write_text(content, encoding="utf-8")
+
+    def test_untouched_disk_sut_not_reconciled(self, tmp_path: Path) -> None:
+        """用户场景复刻：只改 task_sets，磁盘既有 sut_config 不再要求本会话实测。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("task_sets/default.yaml", "cases: []\n"))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_rewritten_identical_sut_exempt(self, tmp_path: Path) -> None:
+        """本轮重写但与磁盘基线逐字段相同 → 豁免（无转述变形）。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("sut_configs/jxb-server.yaml", SUT_DISK))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_changed_login_path_requires_evidence(self, tmp_path: Path) -> None:
+        """本轮改 login.path = 新结论 → 仍需账本实测（拦截力不降）。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(
+            server.write_file(
+                "sut_configs/jxb-server.yaml", SUT_DISK.replace("/auth/login", "/auth/sso")
+            )
+        )
+        errors = sut_evidence_gate(server, SUTProbeToolServer())
+        assert errors and "未经本会话" in "\n".join(errors)
+
+    def test_deleted_sut_staged_passes_gate(self, tmp_path: Path) -> None:
+        """删除标记：无配置可对账（删除动作本身不在对账范围）。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.delete_file("sut_configs/jxb-server.yaml"))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_new_sut_without_baseline_still_gated(self, tmp_path: Path) -> None:
+        """无磁盘基线的新文件：收窄前行为保持（api_login 无账本打回）。"""
+        server = PackageToolServer(tmp_path)  # 磁盘无 sut_configs
+        asyncio.run(server.write_file("sut_configs/new.yaml", SUT_DISK))
+        errors = sut_evidence_gate(server, SUTProbeToolServer())
+        assert errors and "未经本会话" in "\n".join(errors)
+
+    def test_protocol_baseline_equality_exempt(self, tmp_path: Path) -> None:
+        """agent_protocol 结论三元组与磁盘基线全等 → 豁免协议对账（无账本也过）。"""
+        proto = (
+            "sut:\n  name: web\n  channel: agent_protocol\n"
+            "  base_url: https://web.example.com\n"
+        )
+        self._seed_disk_sut(tmp_path, "web.yaml", proto)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("sut_configs/web.yaml", proto))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_protocol_base_url_change_requires_evidence(self, tmp_path: Path) -> None:
+        """换 base_url 域 = 新结论 → 打回（协议主机必须本会话实测）。"""
+        self._seed_disk_sut(
+            tmp_path,
+            "web.yaml",
+            "sut:\n  name: web\n  channel: agent_protocol\n"
+            "  base_url: https://web.example.com\n",
+        )
+        server = PackageToolServer(tmp_path)
+        asyncio.run(
+            server.write_file(
+                "sut_configs/web.yaml",
+                "sut:\n  name: web\n  channel: agent_protocol\n"
+                "  base_url: https://other.example.com\n",
+            )
+        )
+        errors = sut_evidence_gate(server, SUTProbeToolServer())
+        assert errors and "未经 probe_protocol 实测" in "\n".join(errors)
+
+
+class TestRelocateRootConservation:
+    """relocate_root 对既有目标会话记录的保育：不覆盖、对话并入、账本合并恢复。"""
+
+    def _isolate_roots(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+        monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "project"))
+        monkeypatch.setenv("AGENT_EVAL_PACKAGE_DIR", str(tmp_path / "local"))
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "ws"))
+        src = tmp_path / "project" / "from-package"
+        dst = tmp_path / "project" / "target-package"
+        _seed_valid_package(src)
+        _seed_valid_package(dst)
+        (dst / "agent_eval.yaml").write_text(
+            "package:\n  id: target\n  scenario: target\n  version: 0.2.0\n",
+            encoding="utf-8",
+        )
+        return src, dst
+
+    @staticmethod
+    async def _confirm(question: str, *, options: Any, secret: bool) -> str:
+        return options[0] if options else "确认切换"
+
+    def test_existing_target_record_conserved(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """切到编辑过的既有包：目标对话史不丢、账本快照恢复且可续写。"""
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+        target_file = tmp_path / "ws" / "agent_sessions" / session_key(dst)
+        target_file.parent.mkdir(parents=True)
+        fact = {
+            "ref": "jxb-login",
+            "method": "POST",
+            "url": "https://jxb.example.com/auth/login",
+            "body_template": '{"u": "{{ username }}"}',
+            "token_path": "token",
+            "auth_snippet": "auth: {}",
+        }
+        target_file.write_text(
+            json.dumps(
+                {
+                    "root": str(dst),
+                    "dialogue": [
+                        {"role": "user", "text": "早前的问题"},
+                        {"role": "assistant", "text": "早前的回答"},
+                    ],
+                    "snapshot": {
+                        "staged": {},
+                        "ledger": {
+                            "verified_logins": {"jxb-login": fact},
+                            "verified_protocols": {},
+                        },
+                    },
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        agent = WorkbenchAgent(src, log_dir=tmp_path / "log", ask_fn=self._confirm)
+        result = asyncio.run(agent.server.edit_package("target/target"))
+
+        assert result["status"] == "switched"
+        assert agent._session_store.session_file == target_file
+        assert agent.probe.verified_login("jxb-login") is not None  # 账本合并恢复
+        agent._record_turn("新问题", "新回答")  # 续写不再覆盖目标史
+        data = json.loads(target_file.read_text(encoding="utf-8"))
+        texts = [d["text"] for d in data["dialogue"]]
+        assert "早前的问题" in texts and "新问题" in texts
+        # 合并后的账本随下一轮进度快照持久化
+        assert data["snapshot"]["ledger"]["verified_logins"]["jxb-login"]["ref"] == "jxb-login"
 
 
 # ── WorkbenchAgent 会话状态机（mock _invoke 回放） ────────────────────────
