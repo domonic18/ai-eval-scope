@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -219,8 +220,13 @@ def execute_stage(
     mode: str = "run",
     llm_role: str | None = None,
     max_turns: int | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> list[Any]:
-    """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。"""
+    """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。
+
+    cancel_event（Sprint 14b）：透传 run_task_set 的协作取消令牌（任务边界
+    粒度）；缺省 None 行为不变——CLI run/eval 形态既有调用方零改动。
+    """
     from agent_eval.agent.executor.agent import ExecutionAgent
     from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
     from agent_eval.agent.executor.sut_tools import SUTToolServer
@@ -277,7 +283,9 @@ def execute_stage(
         # 通道关闭必须与 run 同一 event loop（httpx client 绑定创建时的 loop，
         # 另起 asyncio.run 关旧 loop 上的 client 会 RuntimeError: Event loop is closed）
         try:
-            return await agent.run_task_set(run_inputs.task_set_model, run_id=run_id)
+            return await agent.run_task_set(
+                run_inputs.task_set_model, run_id=run_id, cancel_event=cancel_event
+            )
         finally:
             await channel.aclose()
 

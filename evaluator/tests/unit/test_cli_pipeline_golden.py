@@ -54,7 +54,7 @@ class FakeExecutionAgent:
         self._package_cls = ExecutionPackage
         self.extra_tool_servers = extra_tool_servers or []
 
-    async def run_task_set(self, task_set, *, run_id: str | None = None):
+    async def run_task_set(self, task_set, *, run_id: str | None = None, cancel_event=None):
         packages_root = Path(self.config.workspace_dir) / "runs" / (run_id or "r") / "packages"
         packages = []
         for task in task_set.tasks:
@@ -179,7 +179,7 @@ def test_golden_execution_failure(tmp_path, monkeypatch) -> None:
         def __init__(self, config, sut_tools=None, extra_tool_servers=None):
             self.config = config
 
-        async def run_task_set(self, task_set, *, run_id=None):
+        async def run_task_set(self, task_set, *, run_id=None, cancel_event=None):
             raise AgentEvalError("SUT 不可达")
 
     import agent_eval.execution.channels.base as channels_base

@@ -308,6 +308,53 @@ def test_run_task_set_isolates_task_failure(tmp_path, monkeypatch) -> None:
     assert _read_json(_pkg_root(tmp_path) / "t_b" / "manifest.json")["status"] == "success"
 
 
+def test_run_task_set_cancel_stops_at_task_boundary(tmp_path, monkeypatch) -> None:
+    """协作取消（Sprint 14b）：任务边界粒度——首任务完成后置位，次任务不启动。
+
+    已完成任务的包正常物化（cancelled 后返回部分列表，run_manifest 由
+    execute_stage 照常登记——Agent 域「产物可溯源」的根基）。
+    """
+    import threading
+
+    _fix_run_id(monkeypatch)
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    cancel = threading.Event()
+    original_ainvoke = graph.ainvoke
+
+    async def ainvoke_then_signal(payload, config=None):
+        result = await original_ainvoke(payload, config)
+        cancel.set()  # 宿主视角：首任务执行中收到 Ctrl+C（置位不抛）
+        return result
+
+    graph.ainvoke = ainvoke_then_signal
+
+    agent = _agent(tmp_path)
+    task_set = TaskSet(id="ts", name="批量", tasks=[_task("t_a"), _task("t_b")])
+    run_id, packages = asyncio.run(agent.run_task_set(task_set, cancel_event=cancel))
+
+    assert run_id == "r_fix"
+    assert [p.manifest.task_id for p in packages] == ["t_a"]  # 部分列表
+    assert len(graph.invocations) == 1  # 第二任务从未启动
+    assert (_pkg_root(tmp_path) / "t_a" / "manifest.json").exists()  # 已完成产物落盘
+    assert not (_pkg_root(tmp_path) / "t_b").exists()
+
+
+def test_run_task_set_cancel_preset_runs_nothing(tmp_path, monkeypatch) -> None:
+    """预置置位：零任务执行、零图调用（Agent 域 fast-fail 形态）。"""
+    import threading
+
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    agent = _agent(tmp_path)
+    cancel = threading.Event()
+    cancel.set()
+    task_set = TaskSet(id="ts", name="批量", tasks=[_task("t_a")])
+
+    run_id, packages = asyncio.run(agent.run_task_set(task_set, cancel_event=cancel))
+
+    assert packages == []
+    assert graph.invocations == []
+
+
 def test_prompt_contents(tmp_path) -> None:
     agent = _agent(tmp_path)
     system_prompt = agent._build_system_prompt()
