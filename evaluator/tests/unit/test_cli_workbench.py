@@ -139,6 +139,18 @@ class TestRuns:
         assert payload["run_id"] == "20260831_093012"
         assert payload["summary"]["metrics"]["chat:reward"] == 0.78
 
+    def test_run_detail_pure_data(self, tmp_path: Path) -> None:
+        """run_detail（Sprint 14b 提纯，Agent 执行域复用）：纯数据 + 缺目录 None。"""
+        assert runs.run_detail("nope", tmp_path) is None
+
+        _make_run(tmp_path, "20260831_093012")
+        detail = runs.run_detail("20260831_093012", tmp_path)
+        assert detail is not None
+        assert detail["run_id"] == "20260831_093012"
+        assert detail["summary"]["metrics"]["chat:reward"] == 0.78
+        assert detail["manifest"]["mode"] == "pipeline"
+        assert str(tmp_path) in detail["run_dir"]
+
 
 # ── 账号域：平台账号 (auth) 入口 ────────────────────────────────────────
 

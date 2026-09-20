@@ -23,9 +23,7 @@ from typer.testing import CliRunner
 
 from agent_eval.cli.main import app
 
-GOLDEN_DIR = (
-    Path(__file__).resolve().parent.parent / "fixtures" / "golden" / "pipeline_output"
-)
+GOLDEN_DIR = Path(__file__).resolve().parent.parent / "fixtures" / "golden" / "pipeline_output"
 REGEN = os.environ.get("AGENT_EVAL_REGEN_GOLDEN") == "1"
 
 TASK_SET_YAML = """
@@ -205,7 +203,9 @@ def test_golden_evaluation_failure(tmp_path, monkeypatch) -> None:
     _patch_exec(monkeypatch)
     monkeypatch.setattr(stages, "build_judge_context", lambda p, strict=False: object())
     monkeypatch.setattr(
-        stages, "evaluate_stage", lambda *a, **kw: (_ for _ in ()).throw(AgentEvalError("judge 不可用"))
+        stages,
+        "evaluate_stage",
+        lambda *a, **kw: (_ for _ in ()).throw(AgentEvalError("judge 不可用")),
     )
     monkeypatch.setattr(stages, "finalize_eval", lambda result, **kw: None)
 

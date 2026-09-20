@@ -361,6 +361,15 @@ def evaluate_stage(
             judge_ctx.renderer.close()
 
 
+def _backfill_sut_identity(result: Any) -> None:
+    """W6：回填 SUT 身份（包 metadata.sut_name@sut_version → run event）。"""
+    if result.samples:
+        sample_meta = getattr(result.samples[0], "metadata", None) or {}
+        result.sut_version = str(
+            sample_meta.get("sut_version") or sample_meta.get("sut_name") or ""
+        )
+
+
 def finalize_eval(result: Any, *, upload_override: bool | None, package_dir: str) -> None:
     """评估收尾：trace 刷新 + 摘要 + SUT 身份回填 + 平台上报（原 eval 6-8 段）。"""
     from agent_eval.cli._common import _flush_observability, _print_summary
@@ -369,12 +378,5 @@ def finalize_eval(result: Any, *, upload_override: bool | None, package_dir: str
     flush_traces()
     _print_summary(result.report)
     rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")
-
-    # W6：回填 SUT 身份（包 metadata.sut_name@sut_version → run event）
-    if result.samples:
-        sample_meta = getattr(result.samples[0], "metadata", None) or {}
-        result.sut_version = str(
-            sample_meta.get("sut_version") or sample_meta.get("sut_name") or ""
-        )
-
+    _backfill_sut_identity(result)
     _flush_observability(result, upload_override=upload_override, package_dir=package_dir)
