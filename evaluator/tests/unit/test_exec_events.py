@@ -15,7 +15,13 @@ from agent_eval.core.exec_events import EXEC_EVENT_LOGGER, judge_evaluated, retr
 
 @pytest.fixture
 def _capture():
-    """挂临时 handler 捕获事件消息（渲染器行为无关，直接捕 logger 输出）。"""
+    """挂临时 handler 捕获事件消息（渲染器行为无关，直接捕 logger 输出）。
+
+    自足化：显式 pin own-level=INFO（退出还原）。隔离态下 exec logger 的
+    own-level 依赖 ``setup_logging`` 调用才置位——若同进程此前无人调用
+    （xdist load 分布 / 裸文件序），NOTSET 回退 root 默认 WARNING，INFO 事件
+    全灭、捕获恒空（曾致 make test 间歇 7 failed）。
+    """
     records: list[str] = []
 
     class _List(logging.Handler):
@@ -24,9 +30,12 @@ def _capture():
 
     handler = _List()
     logger = logging.getLogger(EXEC_EVENT_LOGGER)
+    saved_level = logger.level
+    logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     yield records
     logger.removeHandler(handler)
+    logger.setLevel(saved_level)
 
 
 def test_sut_request_success_line(_capture) -> None:
