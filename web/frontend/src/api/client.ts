@@ -144,6 +144,7 @@ export const api = {
       id: string
       status: string
       message: string | null
+      createdAt: string
       user: { id: string; email: string; name: string | null }
     }[]
   },
@@ -156,11 +157,31 @@ export const api = {
   async listMembers(orgId: string) {
     return (await http.get(`/orgs/${orgId}/members`)).data.members
   },
+  /** 已注册邮箱 → 直加入；未注册 → 建待接受邀请（对方注册后自动加入）。 */
   async inviteMember(orgId: string, email: string, role: string) {
-    return (await http.post(`/orgs/${orgId}/members`, { email, role })).data.member
+    return (await http.post(`/orgs/${orgId}/members`, { email, role })).data.member as
+      | { kind: "member"; userId: string; email: string; role: string }
+      | { kind: "invitation"; email: string; role: string }
+  },
+  async listInvitations(orgId: string) {
+    return (await http.get(`/orgs/${orgId}/invitations`)).data.invitations as import("../types").OrgInvitationRow[]
+  },
+  async resendInvitation(orgId: string, id: string) {
+    return (await http.post(`/orgs/${orgId}/invitations/${id}/resend`)).data as { resent: boolean }
+  },
+  async revokeInvitation(orgId: string, id: string) {
+    return (await http.post(`/orgs/${orgId}/invitations/${id}/revoke`)).data as { revoked: boolean }
   },
   async removeMember(orgId: string, userId: string) {
     return (await http.delete(`/orgs/${orgId}/members/${userId}`)).data
+  },
+  /** 角色变更 / 所有权转移（demoteSelf：提升他人同时降级自己，事务原子）。 */
+  async updateMemberRole(orgId: string, userId: string, role: string, demoteSelf = false) {
+    return (await http.patch(`/orgs/${orgId}/members/${userId}`, { role, demoteSelf })).data as {
+      userId: string
+      role: string
+      selfDemoted: boolean
+    }
   },
   async projectRuns(projectId: string, page = 1, size = 50) {
     return (await http.get(`/projects/${projectId}/runs`, { params: { page, size } })).data

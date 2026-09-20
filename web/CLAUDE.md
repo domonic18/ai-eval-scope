@@ -109,7 +109,11 @@ make web-typecheck      # = cd web/backend && npm run typecheck
 
 - `GET /health`、`GET /api/health` — 健康检查（db + object_storage + schema_version）
 - `POST /api/v1/auth/{register,login,refresh}`、`GET /api/v1/auth/me` — 账号与 JWT
-- `GET|POST /api/v1/orgs/:org/members`、`DELETE /api/v1/orgs/:org/members/:userId` — 组织成员（owner）
+- `GET /api/v1/orgs/:org/members` — 成员列表（成员可读，含 lastActive 最近登录）
+- `POST /api/v1/orgs/:org/members` — 邀请成员（owner）：已注册邮箱直接加入；未注册建待接受邀请，对方注册后自动加入
+- `PATCH /api/v1/orgs/:org/members/:userId` — 角色变更 / 所有权转移（owner；`{ role, demoteSelf? }`，净值防呆保证至少 1 名 owner）
+- `GET /api/v1/orgs/:org/invitations`、`POST /api/v1/orgs/:org/invitations/:id/{resend,revoke}` — 待接受邀请管理（owner）
+- `DELETE /api/v1/orgs/:org/members/:userId` — 移除成员（owner）
 - `GET|POST /api/v1/orgs/:org/projects` — 组织下项目
 - `GET|PATCH /api/v1/projects/:id`、`POST /api/v1/projects/:id/{archive,unarchive}` — 项目管理
 - `GET|POST /api/v1/projects/:id/keys`、`POST /api/v1/projects/:id/keys/:keyId/revoke` — API Key 管理

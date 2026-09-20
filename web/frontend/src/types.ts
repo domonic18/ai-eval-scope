@@ -20,6 +20,36 @@ export interface Membership {
   org: { id: string; name: string; slug: string }
 }
 
+/** 组织成员行（GET /orgs/:org/members，成员页表格）。 */
+export interface MemberRow {
+  userId: string
+  role: string
+  email: string
+  name: string | null
+  joinedAt: string
+  /** 最近登录时间（「最近活跃」列）；null = 从未登录。 */
+  lastActive: string | null
+}
+
+/** 待接受邀请行（GET /orgs/:org/invitations，owner 专属）。 */
+export interface OrgInvitationRow {
+  id: string
+  email: string
+  role: string
+  createdAt: string
+  resentAt: string | null
+  inviter: { id: string; name: string | null; email: string }
+}
+
+/** 加入申请行（GET /orgs/:org/join-requests，owner 待审批区块）。 */
+export interface JoinRequestRow {
+  id: string
+  status: string
+  message: string | null
+  createdAt: string
+  user: { id: string; email: string; name: string | null }
+}
+
 export interface DashboardProject {
   id: string
   name: string
