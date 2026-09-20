@@ -37,11 +37,20 @@ def base_url_host(base_url: str) -> str:
 
 
 def sut_evidence_gate(server: PackageToolServer, probe: SUTProbeToolServer) -> list[str]:
-    """落盘对账门禁：sut_configs 的结论字段必须逐字段对上本会话的实测证据。"""
+    """落盘对账门禁：本轮暂存的 sut_configs 结论字段必须逐字段对上实测证据。
+
+    对账范围是**暂存增量**（v4.12.3）：磁盘既有且本轮未动的 sut_config 是此前
+    已落盘放行的结论，不再重复对账（既有包轻量编辑不触发凭证重验——实测事故：
+    只删一条用例也被要求本会话重做登录实测）；本轮重写但与磁盘基线逐字段相同
+    的 auth/协议结论同样豁免（无转述变形）。任何相对基线的变更都回到账本对账
+    ——新结论必须本会话实测，拦截力不降。
+    """
     errors: list[str] = []
-    for rel, content in sorted(server.view().items()):
+    for rel, content in sorted(server.staging.items()):
         if not rel.startswith("sut_configs/") or not rel.endswith((".yaml", ".yml")):
             continue
+        if content is None:
+            continue  # 删除标记：无配置可对账（结构合法性由 validate 层管）
         try:
             data = yaml.safe_load(content) or {}
         except yaml.YAMLError:
@@ -49,26 +58,68 @@ def sut_evidence_gate(server: PackageToolServer, probe: SUTProbeToolServer) -> l
         sut = data.get("sut")
         if not isinstance(sut, dict):
             continue
+        baseline = _disk_baseline_sut(server, rel)
         try:
             # 执行器同款预处理（SUTRegistry.load：expand_env_refs 后解析）——
             # 对账面对的必须是「运行时会打到的值」，env 缺省形态不误判变形
             sut = expand_env_refs(sut)
         except Exception:  # noqa: BLE001 — 未定义 env 由 validate 层上报
             continue
-        errors += _reconcile_protocol(rel, sut, probe)
-        errors += _reconcile_login(rel, sut, probe)
+        errors += _reconcile_protocol(rel, sut, probe, baseline=baseline)
+        errors += _reconcile_login(rel, sut, probe, baseline=baseline)
     return errors
 
 
-def _reconcile_protocol(rel: str, sut: dict[str, Any], probe: SUTProbeToolServer) -> list[str]:
+def _disk_baseline_sut(server: PackageToolServer, rel: str) -> dict[str, Any] | None:
+    """磁盘基线的 sut 段（运行时值口径）：无既有文件/解析失败/结构异常 → None。
+
+    None = 保守侧全量对账（新建包磁盘无该文件，行为与收窄前完全一致）。
+    """
+    raw = server.disk_text(rel)
+    if raw is None:
+        return None
+    try:
+        data = yaml.safe_load(raw) or {}
+    except yaml.YAMLError:
+        return None
+    sut = data.get("sut")
+    if not isinstance(sut, dict):
+        return None
+    try:
+        return expand_env_refs(sut)
+    except Exception:  # noqa: BLE001 — 基线 env 异常按无基线处理
+        return None
+
+
+def _protocol_conclusion(sut: dict[str, Any]) -> tuple[str, str, str]:
+    """协议对账关注的结论三元组：通道 + 接口域 + 协议形态（运行时值口径）。
+
+    三元组与磁盘基线全等 = 协议结论相对已放行版本无任何变化 → 豁免对账；
+    任一不同（尤其换 base_url 域、换 flavor）= 新结论 → 须本会话实测。
+    """
+    return (
+        str(sut.get("channel", "")).lower(),
+        base_url_host(str(sut.get("base_url", ""))),
+        str(sut.get("protocol_flavor", "commands")),
+    )
+
+
+def _reconcile_protocol(
+    rel: str,
+    sut: dict[str, Any],
+    probe: SUTProbeToolServer,
+    *,
+    baseline: dict[str, Any] | None = None,
+) -> list[str]:
     """通道排期 + 协议声明 vs 协议账本：未排期通道打回；agent_protocol 须 host
-    实测过，且矩阵核心端点为 ✅。"""
+    实测过，且矩阵核心端点为 ✅。结论三元组与磁盘基线全等时豁免（v4.12.3）。"""
     channel = str(sut.get("channel", "")).lower()
     if not channel:
         return []  # 缺 channel 由 validate_package 的 schema 校验上报，门禁不重复
     if channel not in SCHEDULED_CHANNELS:
         # 实测教训：协议探测受挫后 Agent 自行降级写预留通道——创建侧当时全放行，
         # 执行期工厂才报错，用户答完 5 个交互才见失败。拦截前移到落盘前
+        # （安全属性：无条件打回，不因基线豁免——通道降级永远不是已验证结论）
         return [
             f"{rel} 声明 channel: {channel}，该通道预留未排期（本期排期通道 "
             f"{'、'.join(SCHEDULED_CHANNELS)}）。探测受挫不是换通道的理由——须把证据"
@@ -78,6 +129,8 @@ def _reconcile_protocol(rel: str, sut: dict[str, Any], probe: SUTProbeToolServer
     if channel == "generic_http":
         # 无协议端点语义，协议账本对账不适用（登录对账仍由 _reconcile_login 覆盖）
         return []
+    if baseline is not None and _protocol_conclusion(sut) == _protocol_conclusion(baseline):
+        return []  # 与磁盘基线结论全等：此前已放行，无新结论不重复对账
     host = base_url_host(str(sut.get("base_url", "")))
     fact = probe.verified_protocol(host) if host else None
     if fact is None:
@@ -112,8 +165,18 @@ def _reconcile_protocol(rel: str, sut: dict[str, Any], probe: SUTProbeToolServer
     return []
 
 
-def _reconcile_login(rel: str, sut: dict[str, Any], probe: SUTProbeToolServer) -> list[str]:
-    """登录配置 vs 登记账本：解析出的最终 URL/字段组合须与实测事实一致。"""
+def _reconcile_login(
+    rel: str,
+    sut: dict[str, Any],
+    probe: SUTProbeToolServer,
+    *,
+    baseline: dict[str, Any] | None = None,
+) -> list[str]:
+    """登录配置 vs 登记账本：解析出的最终 URL/字段组合须与实测事实一致。
+
+    base_url + auth 与磁盘基线逐字段全等时豁免（v4.12.3）——既有包轻量编辑
+    不重验已放行的登录结论；结构性错误（缺 login.path）与任何变形不豁免。
+    """
     auth = sut.get("auth")
     if not isinstance(auth, dict) or str(auth.get("type", "none")) not in (
         "api_login",
@@ -127,6 +190,14 @@ def _reconcile_login(rel: str, sut: dict[str, Any], probe: SUTProbeToolServer) -
             "登录接口必须出自本会话 request+declare_token 实测（declare_token 成功时"
             "返回 sut_config_auth_snippet，原样写入即可）"
         ]
+    if baseline is not None:
+        base_auth = baseline.get("auth")
+        if (
+            isinstance(base_auth, dict)
+            and str(sut.get("base_url", "")) == str(baseline.get("base_url", ""))
+            and auth == base_auth
+        ):
+            return []  # 与磁盘基线全等：已落盘放行过的登录结论，不重复对账
     ref = str(auth.get("credential_ref") or sut.get("name") or "")
     fact = probe.verified_login(ref)
     actual_url = resolve_login_url(str(sut.get("base_url", "")), str(login.get("path", "")))

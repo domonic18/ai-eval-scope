@@ -257,6 +257,18 @@ class PackageToolServer(ToolExporterMixin):
         """暂存视图（宿主门禁读取：如 agent_protocol 通道必须经 probe_protocol 实测）。"""
         return self._view()
 
+    def disk_text(self, rel_path: str) -> str | None:
+        """磁盘原文（不含暂存覆盖）——落盘对账门禁的基线读取口（v4.12.3）。
+
+        与 :meth:`read_file`（分级授权、暂存优先、截断）不同：这是机械通道，
+        仅供门禁取「此前已落盘放行」的基线内容；越界/缺失/不可读一律 None
+        （保守侧：无基线 = 全量对账）。
+        """
+        try:
+            return self._disk_text(self._resolve_in(rel_path))
+        except ValueError:
+            return None
+
     def rebind_root(self, new_root: Path) -> None:
         """重绑包根（包归位后调用）：后续读写/diff/门禁以新位置为准。
 
@@ -711,67 +723,6 @@ class PackageToolServer(ToolExporterMixin):
             }
         if self.relocate_fn is None:
             return {"error": "宿主未装配切根能力（relocate_fn 缺失）"}
-        from agent_eval.packages import MANIFEST_FILENAME, PackageManager
-
-        target_root: Path | None = None
-        candidate = Path(ref).expanduser()
-        if ref and (candidate / MANIFEST_FILENAME).is_file():
-            target_root = candidate.resolve()
-        else:
-            try:
-                pkg = PackageManager().resolve_ref(ref)
-            except Exception as e:  # noqa: BLE001 — 解析失败转结构化错误（带指路）
-                return {
-                    "status": "not_found",
-                    "reason": f"无法解析场景包 {ref!r}: {e}",
-                    "next_step": "用 list_packages 查看可用包（ref 取 scenario 或 scenario/id 段）",
-                }
-            if pkg.source == "builtin":
-                return {
-                    "status": "refused",
-                    "reason": f"内置包只读: {pkg.manifest.ref}——改造走 fork（scenario new，换新 id）",
-                }
-            target_root = Path(pkg.root).resolve()
-        assert target_root is not None
-        if target_root == self.root:
-            return {"status": "already", "root": str(self.root), "note": "当前会话已在该包上编辑"}
-        if self.staging:
-            return {
-                "status": "refused",
-                "reason": "暂存区非空——跨根切换会造成脏暂存；先请用户「放弃」回滚或提交当前草稿，再切换",
-            }
-        old_root = self.root
-        answer = await self.ask_fn(
-            f"切换到原位编辑：\n  当前: {old_root}\n  目标: {target_root}\n"
-            "切换后读写与确认落盘直接作用于该包（当前草稿不再随会话推进）。确认切换？",
-            options=[_CONFIRM, "取消"],
-            secret=False,
-        )
-        if answer != _CONFIRM:
-            return {"status": "declined", "note": "未切换——仍在当前会话目标上"}
-        # 旧根态不跨根携带：骨架归档（跨根携带会让旧包开槽卡住新包 validate）、
-        # 外部路径授权账本（授权针对旧根路径，对新根无意义且越权）
-        self.skeleton_archive = None
-        self._granted.clear()
-        self._denied.clear()
-        self.relocate_fn(
-            target_root,
-            note=(
-                f"（会话目标已切换：沙盒根从 {old_root} 迁移到 {target_root}——这是既有包的"
-                "原位编辑，非归位。此后的文件读写、校验、确认落盘以新位置为准）"
-            ),
-        )
-        return {
-            "status": "switched",
-            "root": str(target_root),
-            "note": "已切换到原位编辑——read_file 定位后小步修改，validate_package + "
-            "preview_diff 后请用户确认，落盘原位生效；轻量修改无需 SKELETON/五阶段/fork",
-        }
-        if self.ask_fn is None:
-            return {
-                "status": "refused",
-                "reason": "非交互环境不支持会话内切换编辑目标——请用 agent-eval scenario edit <ref>",
-            }
         from agent_eval.packages import MANIFEST_FILENAME, PackageManager
 
         target_root: Path | None = None
