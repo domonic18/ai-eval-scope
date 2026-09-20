@@ -1802,6 +1802,27 @@ class TestAgentTurn:
         assert not agent.server.staging
         assert not (tmp_path / "rules").exists()
 
+    def test_turn_keyboard_interrupt_salvages_and_reraises(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 交互桥 ^C 以 KI 形态穿透工具层（v4.12.4）：turn 捕 BaseException →
+        # salvage 保现场 → re-raise 交宿主呈现中断；KI 与 CancelledError 同归
+        # reason="interrupted"（日志/事件语义，行为同为 raise）
+        async def boom(
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            await self.server.write_file("rules/a.yaml", RULES)
+            raise KeyboardInterrupt
+
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", boom)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert agent.server.staging  # salvage 保现场
+        assert agent._dialogue and agent._dialogue[-1]["text"] == "生成包"
+
     def test_emit_tool_events_from_updates(self) -> None:
         from agent_eval.agent.workbench.messages import emit_tool_events as _emit_tool_events
 
@@ -2250,6 +2271,51 @@ class TestCliEntries:
         assert not agent.server.staging  # 「放弃」= 唯一回滚触发器
         assert not (tmp_path / "rules" / "a.yaml").exists()  # 暂存未落盘
 
+    def test_repl_idle_ctrlc_armed_double_press_exits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # 空闲态 ^C 二按退出（v4.12.4 对齐 Claude Code）：首按只武装提示不退会话，
+        # 二按才退出——误触不再有清场代价
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        _seed_valid_package(tmp_path)
+        presses = iter([typer.Abort, typer.Abort])
+
+        def fake_ask(prompt: str) -> str:
+            raise next(presses)
+
+        monkeypatch.setattr(sa, "ask", fake_ask)
+        sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), None)
+        out = capsys.readouterr().out
+        assert "再按一次退出" in out  # 首按 armed 提示
+        assert "会话结束" in out  # 二按退出
+
+    def test_repl_idle_ctrlc_armed_resets_on_input(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # ^C 武装后输入任意内容即重置——误触用户正常续用，无残留状态
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        _seed_valid_package(tmp_path)
+        monkeypatch.setattr(
+            "agent_eval.agent.workbench.agent.run_turn",
+            lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
+                reply="ok", diff="", staged=False
+            ),
+        )
+        presses = iter([typer.Abort, "接着干", typer.Abort, typer.Abort])
+
+        def fake_ask(prompt: str) -> str:
+            item = next(presses)
+            if isinstance(item, str):
+                return item
+            raise item
+
+        monkeypatch.setattr(sa, "ask", fake_ask)
+        sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), None)
+        out = capsys.readouterr().out
+        assert out.count("再按一次退出") == 2  # 首按与重置后各武装一次，二按才退
+
     def test_emitter_renders_checkpoint_phase(self, capsys) -> None:
         # P1 自动分段：checkpoint 事件 → 「已自动续跑」提示行
         from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
@@ -2391,6 +2457,78 @@ class TestCliEntries:
         sa._session(agent, None, show_intro=False)
         sa._session(agent, None)
         assert calls == [True]
+
+
+# ── 交互等待期 Ctrl+C（v4.12.4 五态统一）：选择器 ^C = 中断本轮 ──────────────
+
+
+class TestInterruptBridge:
+    """宿主桥把 click 的 Abort（Exception 子类）转回 KI（BaseException）——
+
+    KI 穿透工具层 `except Exception` 兜底直达 turn() 统一暂停语义。实测事故：
+    Abort 被 _json_tool 吞成 `{"type":"Abort","message":""}` 回流 LLM，诱发重试；
+    SIG_IGN 滞留整轮后 ^C 全面失效，空回车落默认「允许」放行外发。
+    """
+
+    def test_ask_fn_options_abort_becomes_ki(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        def boom(label: str, options: list[str], **kwargs: Any) -> str:
+            raise typer.Abort
+
+        monkeypatch.setattr(sa, "select", boom)
+        ask_fn = sa._make_ask_fn()
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(ask_fn("允许探测？", options=["允许", "不允许"], secret=False))
+
+    def test_ask_fn_secret_abort_becomes_ki(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        def boom(label: str, **kwargs: Any) -> str:
+            raise typer.Abort
+
+        monkeypatch.setattr(sa, "ask", boom)
+        ask_fn = sa._make_ask_fn()
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(ask_fn("录入 phone", options=None, secret=True))
+
+    def test_cli_confirm_abort_becomes_ki(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        def boom(label: str, options: list[str], **kwargs: Any) -> str:
+            raise typer.Abort
+
+        monkeypatch.setattr(sa, "select", boom)
+        with pytest.raises(KeyboardInterrupt):
+            sa._cli_confirm("回复", "diff 内容", None)
+
+    def test_json_tool_keyboard_interrupt_not_swallowed(self) -> None:
+        # KI 是控制流信号不是工具错误：`except Exception` 兜底不得吞掉
+        # （回归守卫——兜底若被改宽成 BaseException，五态统一在机制上瓦解）
+        from agent_eval.agent.core.tools import ToolExporterMixin
+
+        async def ki_tool() -> str:
+            raise KeyboardInterrupt
+
+        wrapped = ToolExporterMixin()._json_tool(ki_tool)
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(wrapped())
+
+    def test_json_tool_empty_message_falls_back_to_type_name(self) -> None:
+        # str 为空的异常（click Abort 无参构造）至少可解释——空 message 曾诱发
+        # Agent 盲目反问卡点
+        from agent_eval.agent.core.tools import ToolExporterMixin
+
+        class _SilentError(Exception):
+            pass
+
+        async def fail() -> str:
+            raise _SilentError()
+
+        wrapped = ToolExporterMixin()._json_tool(fail)
+        payload = json.loads(asyncio.run(wrapped()))
+        assert payload["status"] == "failed"
+        assert payload["error"]["message"] == "_SilentError"
 
 
 # ── 落盘即归位（v4.9）：首次确认落盘即归位 + 沙盒重定向 + 会话记录迁移 ────

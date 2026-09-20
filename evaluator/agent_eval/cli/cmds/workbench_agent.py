@@ -4,8 +4,8 @@
 过程**流式直播**（claude code 式：回复 token 直出 + 工具调用行实时可见）；每轮展示
 diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘（草稿区会话落盘即归位
 ``cwd/<id>-package/``，沙盒同步重定向，同一会话可继续自然语言修改已归位的包）。
-空行退出会话；Ctrl+C 暂停当前轮（进度保留，输入「继续」接着跑、「放弃」回滚暂存
-——§6.7 D-WB-4）。
+空行退出会话；Ctrl+C 中断当前轮（进度保留，直接说下一步即可接着干、「放弃」回滚
+暂存——§6.7 D-WB-4）；空闲提示符上连按两次退出（对齐 Claude Code，v4.12.4）。
 非交互形态（CI）需 ``--instruction`` + ``--yes --trust-agent`` 双开关。
 """
 
@@ -169,7 +169,10 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
         rprint(
             f"[green]确认后经校验门禁，通过即{_landing_verb(Path(agent.server.root))} → {landing}[/green]"
         )
-    return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
+    try:
+        return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
+    except typer.Abort:
+        raise KeyboardInterrupt from None  # 落盘确认 ^C = 中断本轮（v4.12.4，同 ask_fn 桥）
 
 
 def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
@@ -272,8 +275,10 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
         try:
             _run_one(agent, text)
         except (KeyboardInterrupt, asyncio.CancelledError):
-            rprint("\n[yellow]⏸ 已暂停（进度已保留：暂存草稿与对话上下文完整）[/yellow]")
-            rprint("[dim]输入「继续」接着跑，或直接说下一步；输入「放弃」回滚本轮暂存改动[/dim]")
+            # 中断措辞去状态化（v4.12.4，对齐 Claude Code）：中断即回提示符，
+            # 任意输入自然续跑（checkpoint 已回对话，「继续」从来不是魔法词）
+            rprint("\n[yellow]⏹ 已中断（进度已保留：暂存草稿与对话上下文完整）[/yellow]")
+            rprint("[dim]直接说下一步即可接着干；输入「放弃」回滚本轮暂存改动[/dim]")
         except Exception as e:  # noqa: BLE001 — 会话内错误可见可继续下一轮
             rprint(f"[red]❌ 本轮失败: {e}[/red]")
             rprint("[dim]进度已保留——可直接重试；输入「放弃」回滚本轮暂存改动[/dim]")
@@ -288,22 +293,30 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
         rprint("[yellow]↩️ 已放弃暂存改动（磁盘未受影响，对话上下文保留）[/yellow]")
         return True
 
-    rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 暂停当前轮）[/dim]")
+    rprint(
+        f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 中断当前轮，连按两次退出）[/dim]"
+    )
     resumed = getattr(agent, "resumed_dialogue_count", 0)
     if resumed:
         rprint(f"[dim]已续接此前会话记录（{resumed} 条对话），Agent 可延续此前的讨论上下文[/dim]")
     if first_text:
         _attempt(first_text)
+    quit_armed = False  # 空闲态 ^C 二按退出（v4.12.4 对齐 Claude Code：首按不清场）
     while True:
         try:
             text = ask("你>")
         except typer.Abort:
-            rprint()
-            _bye()
-            return
+            if quit_armed:
+                rprint()
+                _bye()
+                return
+            quit_armed = True
+            rprint("[dim]^C 再按一次退出会话（误触？直接继续输入即可）[/dim]")
+            continue
         if not text.strip():
             _bye()
             return
+        quit_armed = False
         if _maybe_abandon(text):
             continue
         _attempt(text)
@@ -361,16 +374,25 @@ def _make_ask_fn() -> Any:
         rprint(f"[bold]? {question}[/bold]")
 
     async def ask_fn(question: str, *, options: list[str] | None, secret: bool) -> str:
-        if secret:
+        try:
+            if secret:
+                _show(question)
+                return ask("└─ 输入（隐藏回显）", hide=True)
+            if options:
+                _show(question)
+                return select("└─ 选择", options)
+            if len(question) <= _ASK_INLINE_QUESTION_CHARS:
+                return ask(f"? {question}")
             _show(question)
-            return ask("└─ 输入（隐藏回显）", hide=True)
-        if options:
-            _show(question)
-            return select("└─ 选择", options)
-        if len(question) <= _ASK_INLINE_QUESTION_CHARS:
-            return ask(f"? {question}")
-        _show(question)
-        return ask("└─ 输入")
+            return ask("└─ 输入")
+        except typer.Abort:
+            # 交互等待期 Ctrl+C = 中断本轮（v4.12.4 五态语义，对齐 Claude Code）：
+            # click 把 KI 降级成 Abort（Exception 子类），不转回会被工具层
+            # `except Exception` 吞成 failed 结果回流 LLM（实测事故：Abort 空
+            # message 诱发 Agent 反复重试，SIG_IGN 滞留整轮后 ^C 全面失效，空回车
+            # 落默认「允许」放行外发）。KI 是 BaseException——穿透工具层直达
+            # turn() 统一暂停语义（salvage 保现场，宿主 _attempt 呈现中断）
+            raise KeyboardInterrupt from None
 
     return ask_fn
 

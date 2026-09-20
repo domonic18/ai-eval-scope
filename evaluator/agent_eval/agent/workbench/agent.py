@@ -425,8 +425,8 @@ class WorkbenchAgent:
                         )
                     continue
                 reply = _last_ai_text(self._messages)
-                if isinstance(exc, asyncio.CancelledError):
-                    reason = "interrupted"
+                if isinstance(exc, (KeyboardInterrupt, asyncio.CancelledError)):
+                    reason = "interrupted"  # 交互桥 ^C 以 KI 形态到达（v4.12.4）
                 elif _is_recursion_limit(exc):
                     reason = "segment_limit"
                 elif isinstance(exc, BudgetExceededError):
