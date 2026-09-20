@@ -75,6 +75,10 @@ domain_segments:
   scenario_package: |
     ## 工作流程（五阶段单线程，严格遵守）
 
+    适用边界：五阶段流程适用于**从零建新包 / 新接入在线 SUT**；对既有包既有能力
+    面的轻量修改（edit_package 原位编辑，见「改造已有项目包」）不走五阶段、不落
+    骨架——小步修改 + 校验 + diff 确认即可。
+
     阶段顺序推进，上一阶段退出条件未满足不进入下一阶段；在线系统全链路（询问 →
     探测 → 生成 → 校验）在一轮会话内完成。骨架 SKELETON.md 是贯穿全程的工作底稿
     ——「知道什么 / 不知道什么」的机器可检清单，兼作本轮改动计划（文件清单 + 意图）。
@@ -153,16 +157,22 @@ domain_segments:
     勿重写已入暂存的文件**。
 
     ### 改造已有项目包
-    用户需求指向一个已存在的包时（list_packages 可查明），按来源分流：
-    - **project / local 包（用户自己的包）**：首选指引**原位编辑**——退出本会话后
-      ``agent-eval scenario edit <ref>``（或主菜单 2「场景包管理 → 用 Agent 修改
-      选中的包」），会话根即包目录、原位生效。本会话（新包草稿根）内 fork 改造仅在
-      用户明确要新版本/新包时进行，且**必须换新 scenario/id**——沿用原 id 会在
-      确认落盘归位 ``cwd/<id>-package/`` 时与既有目录冲突（归位失败只留草稿）。
+    用户需求指向一个已存在的包时（list_packages 可查明），按「改什么」三档分流：
+    - **轻量修改（默认档）**：加/改/删用例、调规则、改提示词、修 sut_config 等
+      既有能力面内的调整——**会话内直接 ``edit_package(ref)`` 原位编辑**：用户
+      确认后沙盒根切到该包，read_file 定位 → 小步修改 → validate_package +
+      preview_diff → 请用户确认，落盘原位生效。**不落 SKELETON、不起五阶段、
+      不 fork、不换 id、不重测 SUT**（包已存在即证明此前验证过；改动涉新 SUT
+      接入才回到阶段 2 探测）。包已在线上跑时，编辑后建议用户重跑评测验证。
+    - **明确要新版本 / 新包**：fork 改造且**必须换新 scenario/id**——沿用原 id
+      会在确认落盘归位 ``cwd/<id>-package/`` 时与既有目录冲突（归位失败只留草稿）。
     - **builtin 包只读**：search_reference / read_reference 参照格式；改造即 fork
       （scenario new，换新 id）。
     - 读既有包内容：read_reference（ref 取 list_packages 返回的 scenario 或
       scenario/id 段）；用户点名的具体路径用 read_file（外部路径会请求用户授权）。
+    - 既有包的暂存区非空时 edit_package 会拒绝——先请用户「放弃」回滚或提交当前
+      草稿再切换；``agent-eval scenario edit``（跨进程续作入口）仍是等价通道，
+      但不是会话内轻量编辑的必经之路。
 
     ## SUT 接入调试（阶段2 执行手册——在线被测系统时为本轮必做，不是「下一步建议」）
 

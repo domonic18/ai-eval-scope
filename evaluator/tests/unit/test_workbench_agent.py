@@ -21,6 +21,7 @@ from agent_eval.agent.workbench.agent import (
     _resume_messages,
     repair_orphan_tool_calls,
 )
+from agent_eval.agent.workbench.memory import session_key
 from agent_eval.agent.workbench.tools import PackageToolServer
 from agent_eval.core.exceptions import AgentError
 
@@ -446,7 +447,7 @@ class TestSandbox:
         self._isolate_package_roots(tmp_path, monkeypatch)
         server = PackageToolServer(tmp_path)
         notes = asyncio.run(server.list_packages())["notes"]
-        assert "scenario edit" in notes and "换新 scenario/id" in notes
+        assert "edit_package" in notes and "换新 scenario/id" in notes
         assert "read_reference" in notes
         # 空结果给创建指引（project/local 隔离为空，仍剩 builtin → 需显式过滤 project）
         empty = asyncio.run(server.list_packages("project"))
@@ -472,7 +473,143 @@ class TestSandbox:
     def test_tool_specs_include_list_packages(self) -> None:
         names = PackageToolServer(Path()).get_tool_names()
         assert "list_packages" in names
-        assert len(PackageToolServer.TOOL_SPECS) == 13
+        assert "edit_package" in names
+        assert len(PackageToolServer.TOOL_SPECS) == 14
+
+
+# ── edit_package：会话内切换到既有包原位编辑（arch/15 v4.12.2 路由修复） ──
+
+
+class TestEditPackage:
+    """既有包轻量编辑正道：门槛分支 + 切根生命周期（含会话记录迁移）。"""
+
+    def _isolate_roots(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+        """三源发现根 + workspace 全部钉到 tmp；返回（源包根，目标包根）。"""
+        monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "project"))
+        monkeypatch.setenv("AGENT_EVAL_PACKAGE_DIR", str(tmp_path / "local"))
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "ws"))
+        src = tmp_path / "project" / "from-package"
+        dst = tmp_path / "project" / "target-package"
+        _seed_valid_package(src)
+        _seed_valid_package(dst)
+        (dst / "agent_eval.yaml").write_text(
+            "package:\n  id: target\n  scenario: target\n  version: 0.2.0\n",
+            encoding="utf-8",
+        )
+        return src, dst
+
+    @staticmethod
+    async def _confirm(question: str, *, options: list[str] | None, secret: bool) -> str:
+        assert "切换" in question and "目标" in question
+        return options[0] if options else "确认切换"
+
+    @staticmethod
+    def _no_relocate(root: Path, *, note: str | None = None) -> None:
+        raise AssertionError("拒绝/取消路径不应触发切根")
+
+    def test_refused_non_interactive(self) -> None:
+        server = PackageToolServer(Path.cwd())  # ask_fn=None：无确认通道
+        result = asyncio.run(server.edit_package("anywhere/any"))
+        assert result["status"] == "refused" and "scenario edit" in result["reason"]
+
+    def test_refused_builtin_readonly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._isolate_roots(tmp_path, monkeypatch)
+        asked: list[str] = []
+
+        async def ask(question: str, *, options: Any, secret: bool) -> str:
+            asked.append(question)
+            return "确认切换"
+
+        server = PackageToolServer(tmp_path, ask_fn=ask)
+        server.relocate_fn = self._no_relocate
+        result = asyncio.run(server.edit_package("chat/chat"))
+        assert result["status"] == "refused" and "fork" in result["reason"]
+        assert asked == []  # 拒绝发生在确认之前
+
+    def test_not_found_points_to_list_packages(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._isolate_roots(tmp_path, monkeypatch)
+        server = PackageToolServer(tmp_path, ask_fn=self._confirm)
+        server.relocate_fn = self._no_relocate
+        result = asyncio.run(server.edit_package("ghost/nothing"))
+        assert result["status"] == "not_found" and "list_packages" in result["next_step"]
+
+    def test_already_on_target_root(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        src, _dst = self._isolate_roots(tmp_path, monkeypatch)
+        server = PackageToolServer(src, ask_fn=self._confirm)
+        server.relocate_fn = self._no_relocate
+        result = asyncio.run(server.edit_package(str(src)))
+        assert result["status"] == "already"
+
+    def test_refused_when_staging_nonempty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+
+        async def never(question: str, *, options: Any, secret: bool) -> str:
+            raise AssertionError("staging 非空应在确认之前拒绝")
+
+        server = PackageToolServer(src, ask_fn=never)
+        server.relocate_fn = self._no_relocate
+        asyncio.run(server.write_file("rules/extra.yaml", "x: 1\n"))
+        result = asyncio.run(server.edit_package("target/target"))
+        assert result["status"] == "refused" and "放弃" in result["reason"]
+        assert server.has_staged_changes and server.root == src.resolve()
+
+    def test_declined_does_not_switch(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+
+        async def decline(question: str, *, options: Any, secret: bool) -> str:
+            return "取消"
+
+        server = PackageToolServer(src, ask_fn=decline)
+        server.relocate_fn = self._no_relocate
+        server.skeleton_archive = "keep-me"
+        result = asyncio.run(server.edit_package("target/target"))
+        assert result["status"] == "declined"
+        assert server.root == src.resolve()  # 未切根
+        assert server.skeleton_archive == "keep-me"  # 旧根态不动
+
+    def test_switch_lifecycle_with_real_agent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """快乐路径：确认后切根 + 图重建标记 + 旧根态清账 + 注记进对话 + 记录迁移。"""
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+        agent = WorkbenchAgent(src, log_dir=tmp_path / "log", ask_fn=self._confirm)
+        # 前置：模拟会话已有目标图与旧根态，切换后应全部复位/清账
+        agent._graph = object()
+        agent.server.skeleton_archive = "stale-skeleton"
+        agent.server._granted.add(tmp_path / "outside")
+        agent._session_store.record("hi", "hello", str(src))
+        old_file = agent._session_store.session_file
+        assert old_file.exists()
+
+        result = asyncio.run(agent.server.edit_package("target/target"))
+
+        assert result["status"] == "switched"
+        assert agent.server.root == dst.resolve()
+        assert agent._graph is None  # 图重建标记：下次调用烘焙新 {pkg_root}
+        assert agent.server.skeleton_archive is None  # 骨架归档不跨根携带
+        assert agent.server._granted == set()  # 授权账本不跨根携带
+        assert agent.server.staging == {}  # 切根前 staging 为空（守卫隐含）
+        # 系统注记进对话（Agent 知道以新位置为准）
+        kind, text = agent._messages[-1]
+        assert kind == "user" and "会话目标已切换" in text and str(dst) in text
+        # 会话记录迁移：新 key 落位、旧 key 清除、store 指向新文件
+        new_file = old_file.parent / session_key(dst)
+        assert agent._session_store.session_file == new_file
+        assert new_file.exists() and not old_file.exists()
+
+    def test_relocate_fn_missing_defensive(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path, ask_fn=self._confirm)
+        server.relocate_fn = None  # 防御：宿主装配缺失 → error 而非崩溃
+        result = asyncio.run(server.edit_package("target/target"))
+        assert "error" in result and "relocate_fn" in result["error"]
 
 
 # ── WorkbenchAgent 会话状态机（mock _invoke 回放） ────────────────────────

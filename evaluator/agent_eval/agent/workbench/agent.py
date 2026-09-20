@@ -85,6 +85,11 @@ _TODO_SYSTEM_PROMPT = (
     "重写更新状态；过程中发现的新子任务随时补录；简单任务（一两步）不必建清单。"
 )
 
+# 根迁移默认注记（归位语义；edit_package 切根经 relocate_root(note=...) 覆盖）
+_RELOCATE_NOTE = (
+    "（包已归位：沙盒根从 {} 迁移到 {}，包内容不变。此后的文件读写、校验、落盘以新位置为准）"
+)
+
 
 class WorkbenchAgent:
     """工作台会话 Agent（一个实例 = 一次 REPL 会话，跨轮共享历史与暂存）。
@@ -121,6 +126,9 @@ class WorkbenchAgent:
         # 机械物化通道：write_sut_config 从探测账本原样注入 auth（两 server 构造
         # 互需对方能力，probe 先带 fact_sink 装配，账本在此回绑包沙盒）
         self.server.ledger = self.probe
+        # 会话目标切换：edit_package 的切根执行体（构造后注入，与 ledger 同风格
+        # 解环——server 构造在先，relocate_root 是宿主方法）
+        self.server.relocate_fn = self.relocate_root
         self.llm_role = llm_role
         self._messages: list[Any] = []
         # 预算护栏会话级累计（跨段/跨轮不清零）；内存检查点仅作事故现场保存器
@@ -194,15 +202,16 @@ class WorkbenchAgent:
             user_text, reply, str(self.server.root), snapshot=self._progress_snapshot()
         )
 
-    def relocate_root(self, final_root: Path) -> None:
-        """包归位后重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
+    def relocate_root(self, final_root: Path, *, note: str | None = None) -> None:
+        """重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
 
-        首次确认落盘即归位（v4.9）后由宿主调用——同一会话的后续轮次直接自然语言
-        修改已归位的包。图在下一次 ``_invoke`` 时重建（系统提示的 ``{pkg_root}`` 在
-        建图时烘焙；对话消息由宿主持有，重建不丢上下文）。会话记录文件迁移到新
-        session_key——归位后跨进程续作（``--output`` 指回）命中同一记录，上下文不
-        因归位断裂。文件迁移失败仅丢跨进程续作（key 仍切换，后续记录落新位），
-        会话内不受影响。
+        两个调用方：①包归位（v4.9，首次确认落盘后宿主调用，默认注记）；②既有
+        包原位编辑（v4.12.2，edit_package 切根，经 ``note`` 传「会话目标已切换」
+        注记——同一机制，语义注记区分归位/切换）。图在下一次 ``_invoke`` 时重建
+        （系统提示的 ``{pkg_root}`` 在建图时烘焙；对话消息由宿主持有，重建不丢
+        上下文）。会话记录文件迁移到新 session_key——切换/归位后跨进程续作命中
+        同一记录，上下文不因迁移断裂。文件迁移失败仅丢跨进程续作（key 仍切换，
+        后续记录落新位），会话内不受影响。
         """
         final = Path(final_root).resolve()
         previous = self.server.root
@@ -222,15 +231,9 @@ class WorkbenchAgent:
             pass  # 迁移失败仅影响跨进程续作；key 仍切换，后续记录落新位
         self._session_store.session_file = new_file
         self._log("relocate_root", previous=str(previous), final=str(final))
-        # 归位事实进对话（沙盒根变了，Agent 须知道以新位置为准）——同放弃回滚的
-        # 系统注记形态，防 Agent 仍引用旧草稿路径
-        self._messages.append(
-            (
-                "user",
-                f"（包已归位：沙盒根从 {previous} 迁移到 {final}，包内容不变。"
-                "此后的文件读写、校验、落盘以新位置为准）",
-            )
-        )
+        # 根变更事实进对话（沙盒根变了，Agent 须知道以新位置为准）——同放弃回滚
+        # 的系统注记形态，防 Agent 仍引用旧根路径
+        self._messages.append(("user", note or _RELOCATE_NOTE.format(previous, final)))
 
     # ─── 组装 ─────────────────────────────────────────────────────
 
