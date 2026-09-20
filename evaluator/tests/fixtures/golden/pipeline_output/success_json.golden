@@ -11,5 +11,6 @@ exit_code=0
 ┡━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ t_pipe_1 │ success │ pkg_<RUN_ID>_t_pipe_1 │
 └──────────┴─────────┴──────────────────────────────┘
+✅ 评估完成 — 结果已保存至 workspace
 ✅ 流水线完成 — <TMP>/ws/runs/<RUN_ID>
 {"run_id": "<RUN_ID>", "mode": "pipeline", "package_ref": null, "task_set": "<TMP>/task_set.yaml", "sut": {"name": "cw-agent", "base_url": "https://ap.example.com"}, "total": 1, "succeeded": 1, "packages": [{"task_id": "t_pipe_1", "status": "success", "output": "pkg_<RUN_ID>_t_pipe_1"}], "run_dir": "<TMP>/ws/runs/<RUN_ID>", "metrics": {"edu:reward": 4.5}, "total_samples": 1}

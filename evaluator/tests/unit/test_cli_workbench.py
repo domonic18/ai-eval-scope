@@ -423,11 +423,22 @@ class _WizardStubs:
         import agent_eval.cli._stages as stages
         import agent_eval.storage.package as storage_pkg
 
+        # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会渗入 pipeline 直调测试
+        # （core 内联上报段真发平台，禁联网）——显式钉死为关
+        monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
         monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
         monkeypatch.setattr(
             stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/rules/chat-quality.yaml"
         )
         monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())
+        # pipeline_core 成功路径触达 result.report/samples/gate（终态 payload+回填）
+        from types import SimpleNamespace
+
+        fake_result = SimpleNamespace(
+            samples=[],
+            report=SimpleNamespace(metrics={}, total_samples=0),
+            gate={"mode": "off", "enabled": False, "passed": True},
+        )
         monkeypatch.setattr(
             stages,
             "execute_stage",
@@ -436,7 +447,7 @@ class _WizardStubs:
         monkeypatch.setattr(
             stages,
             "evaluate_stage",
-            lambda *a, **k: (self.calls.setdefault("evaluate", dict(k)), object())[1],
+            lambda *a, **k: (self.calls.setdefault("evaluate", dict(k)), fake_result)[1],
         )
         monkeypatch.setattr(
             stages,
@@ -464,7 +475,8 @@ class TestExecuteActionDirectCall:
         assert isinstance(stubs.calls["execute"]["workspace_root"], Path)
         stubs.no_options_info(stubs.calls["execute"])
         stubs.no_options_info(stubs.calls["evaluate"])
-        stubs.no_options_info(stubs.calls["finalize"])
+        # pipeline 已不经 finalize_eval（core 事件序自编排，arch/15 v4.12）——
+        # 上报等价面 observability_flush 的回归在 test_cli_pipeline 门禁用例
 
     def test_execute_run_minimal_kwargs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

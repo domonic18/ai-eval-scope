@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from types import SimpleNamespace
 
 from typer.testing import CliRunner
 
@@ -66,6 +67,9 @@ def _patch_exec(monkeypatch):
         async def aclose(self) -> None:
             pass
 
+    # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会经 load_dotenv 渗入测试，
+    # core 内联的上报段将真发平台（禁联网 + 输出漂移）——显式钉死为关
+    monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
     monkeypatch.setattr(execution_agent_mod, "ExecutionAgent", FakeExecutionAgent)
     monkeypatch.setattr(channels_base, "create_channel", lambda sut: FakeChannel())
 
@@ -81,8 +85,12 @@ def test_pipeline_success_single_run_id(tmp_path, monkeypatch) -> None:
 
     eval_calls: dict = {}
 
+    # pipeline_core 成功路径需 result.report（payload 指标真相）/ result.samples
+    # （SUT 身份回填）；_print_summary 对非 MetricsReport isinstance 门控静默跳过
     class FakeResult:
         mode = "pipeline"
+        samples: list = []
+        report = SimpleNamespace(metrics={}, total_samples=2)
 
     def fake_evaluate_stage(packages_dir, judge_ctx, **kwargs):
         eval_calls.update(kwargs)
@@ -184,8 +192,12 @@ def test_pipeline_gate_and_report_formats_passthrough(tmp_path, monkeypatch) -> 
 
     eval_calls: dict = {}
 
+    # pipeline_core 成功路径需 result.report（payload 指标真相）/ result.samples
+    # （SUT 身份回填）；_print_summary 对非 MetricsReport isinstance 门控静默跳过
     class FakeResult:
         mode = "pipeline"
+        samples: list = []
+        report = SimpleNamespace(metrics={}, total_samples=2)
 
     def fake_evaluate_stage(packages_dir, judge_ctx, **kwargs):
         eval_calls.update(kwargs)
@@ -250,12 +262,19 @@ def test_pipeline_gate_failure_exits_3(tmp_path, monkeypatch) -> None:
     sut_cfg.write_text(SUT_YAML, encoding="utf-8")
     _patch_exec(monkeypatch)
 
+    import agent_eval.cli._common as common
     import agent_eval.cli._stages as stages
 
-    finalized: list = []
+    # core 不再调 finalize_eval（事件序自编排）——「上报已完成」等价断言：
+    # observability_flush 在 gate 判定前已被调用（UPLOAD 事件先于 exit 3）
+    flushed: list = []
 
+    # pipeline_core 成功路径需 result.report（payload 指标真相）/ result.samples
+    # （SUT 身份回填）；_print_summary 对非 MetricsReport isinstance 门控静默跳过
     class FakeResult:
         mode = "pipeline"
+        samples: list = []
+        report = SimpleNamespace(metrics={}, total_samples=2)
         gate = {
             "mode": "strict",
             "enabled": True,
@@ -266,7 +285,12 @@ def test_pipeline_gate_failure_exits_3(tmp_path, monkeypatch) -> None:
 
     monkeypatch.setattr(stages, "build_judge_context", lambda p, strict=False: object())
     monkeypatch.setattr(stages, "evaluate_stage", lambda *a, **kw: FakeResult())
-    monkeypatch.setattr(stages, "finalize_eval", lambda result, **kw: finalized.append(result))
+
+    def fake_flush(result, *, upload_override, package_dir=None):
+        flushed.append(result)
+        return {"enabled": False}
+
+    monkeypatch.setattr(common, "observability_flush", fake_flush)
 
     result = runner.invoke(
         app,
@@ -286,7 +310,7 @@ def test_pipeline_gate_failure_exits_3(tmp_path, monkeypatch) -> None:
     )
     assert result.exit_code == 3, result.output
     assert "质量门禁未达标" in result.output
-    assert finalized, "门禁失败不阻断 finalize（上报已完成）"
+    assert flushed, "门禁失败不阻断上报（flush 先于 gate 判定）"
 
 
 def test_pipeline_json_payload_uses_report_fr4(tmp_path, monkeypatch) -> None:
@@ -303,8 +327,11 @@ def test_pipeline_json_payload_uses_report_fr4(tmp_path, monkeypatch) -> None:
         metrics = {"edu:reward": 4.5}
         total_samples = 1
 
+    # pipeline_core 成功路径需 result.report（payload 指标真相）/ result.samples
+    # （SUT 身份回填）；_print_summary 对非 MetricsReport isinstance 门控静默跳过
     class FakeResult:
         mode = "pipeline"
+        samples: list = []
         report = FakeReport()
         gate = {"mode": "off", "enabled": False, "passed": True}
 

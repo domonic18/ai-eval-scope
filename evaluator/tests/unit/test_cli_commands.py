@@ -639,6 +639,7 @@ class _FlowStubs:
         self.eval_result = SimpleNamespace(
             run_id="20260101_000000",
             report=self.report,
+            samples=[],  # pipeline_core 的 SUT 身份回填触达（空列表跳过）
             gate={"mode": "off", "enabled": False, "passed": True},
         )
 
@@ -646,6 +647,9 @@ class _FlowStubs:
         import agent_eval.cli._stages as stages
         import agent_eval.storage.package as storage_pkg
 
+        # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会渗入 pipeline json 测试
+        # （core 内联上报段真发平台，禁联网）——显式钉死为关
+        monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
         monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
         monkeypatch.setattr(stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/r.yaml")
         monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())

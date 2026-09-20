@@ -85,6 +85,9 @@ def _patch_eval_ok(monkeypatch, result) -> None:
     """评估段假通过：build_judge_context/evaluate_stage/finalize_eval 三边界。"""
     import agent_eval.cli._stages as stages
 
+    # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会经 load_dotenv 渗入测试，
+    # core 内联的上报段将真发平台（禁联网 + 输出漂移）——显式钉死为关
+    monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
     monkeypatch.setattr(stages, "build_judge_context", lambda p, strict=False: object())
     monkeypatch.setattr(stages, "evaluate_stage", lambda *a, **kw: result)
     monkeypatch.setattr(stages, "finalize_eval", lambda result, **kw: None)
@@ -97,6 +100,8 @@ class _FakeReport:
 
 class _FakeResult:
     mode = "pipeline"
+    # pipeline_core 成功路径触达：samples（SUT 身份回填，空列表跳过）
+    samples: list = []
     report = _FakeReport()
     gate = {"mode": "off", "enabled": False, "passed": True}
 
