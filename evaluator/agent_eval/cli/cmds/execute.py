@@ -42,7 +42,12 @@ def run(
     max_turns: int | None = typer.Option(
         None, "--max-turns", help="已废弃：轮次预算由 interaction_policy 声明，此参数不再生效"
     ),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
+    log_level: str = typer.Option(
+        "normal",
+        "--log-level",
+        help="执行日志档位：quiet=仅结果行 | normal=默认进度 | "
+        "verbose=过程事件（SUT/judge/重试） | debug=全量原文",
+    ),
 ) -> None:
     """执行被测 Agent（ExecutionAgent/DeepAgents 驱动），生成 ExecutionPackage。"""
     execute_run(
@@ -54,7 +59,7 @@ def run(
         output_dir=output_dir,
         llm_role=llm_role,
         max_turns=max_turns,
-        verbose=verbose,
+        log_level=log_level,
     )
 
 
@@ -102,19 +107,24 @@ def execute_run(
     output_dir: str | None = None,
     llm_role: str | None = None,
     max_turns: int | None = None,
-    verbose: bool = False,
+    log_level: str = "normal",
 ) -> None:
     """执行动作（纯函数，向导/工作台复用；理由见 execute_eval docstring）。"""
     from pathlib import Path
 
     from agent_eval.cli._stages import execute_stage, resolve_run_inputs
     from agent_eval.cli.console.output import emit_json, is_json
-    from agent_eval.cli.console.render import print_task_table, stage_progress
+    from agent_eval.cli.console.render import print_task_table, progress_mode, stage_progress
     from agent_eval.core.exceptions import AgentEvalError
-    from agent_eval.core.logging import setup_logging
+    from agent_eval.core.logging import (
+        install_exec_event_handler,
+        resolve_logging_level,
+        setup_logging,
+    )
     from agent_eval.storage.package import generate_run_id
 
-    setup_logging(level="DEBUG" if verbose else "INFO")
+    setup_logging(level=resolve_logging_level(log_level))
+    install_exec_event_handler(enabled=log_level in ("verbose", "debug"))
 
     try:
         inputs = resolve_run_inputs(
@@ -153,7 +163,7 @@ def execute_run(
 
     workspace_root = Path(output_dir) if output_dir else _paths.default_workspace
     try:
-        with stage_progress(enabled=not verbose and not is_json()) as sp:
+        with stage_progress(mode=progress_mode(log_level)) as sp:
             sp.advance(f"执行 {len(inputs.task_set_model.tasks)} 个任务（SUT: {inputs.sut.name}）")
             packages = execute_stage(
                 inputs,
@@ -249,7 +259,12 @@ def pipeline(
         "--report-formats",
         help="追加报告格式（可重复/逗号分隔）：junit=reports/junit.xml，txt=reports/summary.txt",
     ),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
+    log_level: str = typer.Option(
+        "normal",
+        "--log-level",
+        help="执行日志档位：quiet=仅结果行 | normal=默认进度 | "
+        "verbose=过程事件（SUT/judge/重试） | debug=全量原文",
+    ),
 ) -> None:
     """一体化流水线：执行被测 Agent → 评估 → 报告/上传（单 run_id 贯通，Sprint 9）。"""
     execute_pipeline(
@@ -268,7 +283,7 @@ def pipeline(
         no_cache=no_cache,
         gate=gate,
         report_formats=list(report_formats) if report_formats else None,
-        verbose=verbose,
+        log_level=log_level,
     )
 
 
@@ -305,7 +320,7 @@ def execute_pipeline(
     no_cache: bool = False,
     gate: str = "off",
     report_formats: list[str] | None = None,
-    verbose: bool = False,
+    log_level: str = "normal",
 ) -> None:
     """流水线动作（纯函数，向导/工作台复用；组织约定见 arch/15 §2.2）。
 
@@ -321,13 +336,18 @@ def execute_pipeline(
         resolve_run_inputs,
     )
     from agent_eval.cli.console.output import emit_json, is_json
-    from agent_eval.cli.console.render import print_task_table, stage_progress
+    from agent_eval.cli.console.render import print_task_table, progress_mode, stage_progress
     from agent_eval.core.exceptions import AgentEvalError, GateConfigError
-    from agent_eval.core.logging import setup_logging
+    from agent_eval.core.logging import (
+        install_exec_event_handler,
+        resolve_logging_level,
+        setup_logging,
+    )
     from agent_eval.reporting.gate import normalize_gate
     from agent_eval.storage.package import generate_run_id
 
-    setup_logging(level="DEBUG" if verbose else "INFO")
+    setup_logging(level=resolve_logging_level(log_level))
+    install_exec_event_handler(enabled=log_level in ("verbose", "debug"))
     strict = on_missing == "strict"
     formats = _parse_report_formats(report_formats)
 
@@ -378,7 +398,7 @@ def execute_pipeline(
 
     # ── 阶段 1：执行（清单 mode=pipeline，崩溃可溯源）──
     try:
-        with stage_progress(enabled=not verbose and not is_json()) as sp:
+        with stage_progress(mode=progress_mode(log_level)) as sp:
             sp.advance(f"执行 {len(inputs.task_set_model.tasks)} 个任务（SUT: {inputs.sut.name}）")
             packages = execute_stage(
                 inputs,
@@ -410,7 +430,7 @@ def execute_pipeline(
         "packages": [str(p.output_dir or p.manifest.package_id) for p in packages],
     }
     try:
-        with stage_progress(enabled=not verbose and not is_json()) as sp:
+        with stage_progress(mode=progress_mode(log_level)) as sp:
             sp.advance("评估（Rule-based + LLM Judge）")
             judge_ctx = build_judge_context(rule_set_path, strict=strict)
             scenario_pkg_dir = inputs.resolved_pkg.root if inputs.resolved_pkg else None

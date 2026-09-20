@@ -569,20 +569,83 @@ class TestJsonOutput:
 
 
 class TestProgressView:
-    def test_stage_progress_disabled_is_silent(self, capsys: object) -> None:
+    def test_stage_progress_off_is_silent(self, capsys: object) -> None:
         from agent_eval.cli.console.render import stage_progress
 
-        with stage_progress(enabled=False) as sp:
+        with stage_progress(mode="off") as sp:
             sp.advance("执行")
-        assert capsys.readouterr().out == ""
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert captured.err == ""
+
+    def test_stage_progress_lines_prints_stage_line(self, capsys: object) -> None:
+        """verbose 档（lines）：stderr ``[stage]`` 阶段行直出（事件行的承载底座）。"""
+        from agent_eval.cli.console.render import stage_progress
+
+        with stage_progress(mode="lines") as sp:
+            sp.advance("评估")
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "[stage] 评估" in captured.err
+        assert sp.last_label == "评估"
 
     def test_stage_progress_never_writes_stdout(self, capsys: object) -> None:
         """进度行固定走 stderr（含非 TTY fallback），stdout 保持纯净。"""
         from agent_eval.cli.console.render import stage_progress
 
-        with stage_progress(enabled=True) as sp:
+        with stage_progress(mode="spinner") as sp:
             sp.advance("评估")
         assert capsys.readouterr().out == ""
+
+    @pytest.mark.parametrize(
+        ("level", "expected"),
+        [("quiet", "off"), ("normal", "spinner"), ("verbose", "lines"), ("debug", "off")],
+    )
+    def test_progress_mode_maps_levels(self, level: str, expected: str) -> None:
+        from agent_eval.cli.console.render import progress_mode
+
+        assert progress_mode(level) == expected
+
+    def test_progress_mode_json_forces_off(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """json 形态一律 off（进度即人读输出，stdout 纯 JSON 契约优先）。"""
+        from agent_eval.cli.console import output as output_mod
+        from agent_eval.cli.console.render import progress_mode
+
+        monkeypatch.setattr(output_mod, "is_json", lambda: True)
+        assert progress_mode("normal") == "off"
+        assert progress_mode("verbose") == "off"
+
+
+class TestLogLevelContract:
+    """--log-level 四档契约（F-C-EXEC-07，Sprint 14a）。"""
+
+    def test_run_help_exposes_log_level_without_verbose(self) -> None:
+        result = runner.invoke(app, ["run", "--help"])
+        assert result.exit_code == 0
+        assert "--log-level" in result.output
+        assert "--verbose" not in result.output
+
+    def test_pipeline_help_exposes_log_level(self) -> None:
+        result = runner.invoke(app, ["pipeline", "--help"])
+        assert result.exit_code == 0
+        assert "--log-level" in result.output
+
+    def test_verbose_flag_is_rejected(self) -> None:
+        """--verbose 一次性移除（D-CLI-6 无别名）：误用即 usage error。"""
+        result = runner.invoke(app, ["run", "--verbose"])
+        assert result.exit_code != 0
+
+    def test_no_verbose_flag_left_in_source(self) -> None:
+        """全仓 --verbose 清零 grep 门禁（教程/CI 片段已清理，源码为最后一道闸）。"""
+        import agent_eval
+
+        root = Path(agent_eval.__file__).parent
+        offenders = [
+            str(p.relative_to(root))
+            for p in sorted(root.rglob("*.py"))
+            if "--verbose" in p.read_text(encoding="utf-8")
+        ]
+        assert offenders == []
 
     def test_print_task_table_lists_tasks(self, tmp_path: Path) -> None:
         from agent_eval.cli.console.render import print_task_table

@@ -477,9 +477,10 @@ class TestExecuteActionDirectCall:
         stubs = _WizardStubs(tmp_path)
         stubs.patch(monkeypatch)
 
-        # 3 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline → y 确认 → 6 退出
+        # 3 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline
+        # → 1 normal 日志档位 → y 确认 → 6 退出
         # （主菜单首位是工作台 Agent 一级入口，arch/15 §3.5）
-        result = runner.invoke(app, ["start"], input="3\n1\n1\n1\n1\n1\ny\n6\n")
+        result = runner.invoke(app, ["start"], input="3\n1\n1\n1\n1\n1\n1\ny\n6\n")
         assert result.exit_code == 0, result.output
         assert "等价命令" in result.output
         # 动作层被真实调用且未崩溃（此前在此处报 OptionInfo TypeError）
@@ -612,6 +613,7 @@ class TestExecDomain:
                 "api（agent_protocol）",
                 "quality",
                 "pipeline（执行 + 评估 + 报告）",
+                "normal（默认进度）",
             ]
         )
         seen_options: dict[str, list[str]] = {}
