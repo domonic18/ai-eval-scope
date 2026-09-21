@@ -2327,14 +2327,16 @@ class TestCliEntries:
         finish()
         assert "已自动续跑（第 2 / 3 段" in capsys.readouterr().out
 
-    def test_intro_text_from_asset(self, tmp_path: Path) -> None:
-        # §6.10 横幅资产化：{root}/{domains} 展开，示例与红线同源（CLI 只渲染）
+    def test_banner_data_from_asset(self, tmp_path: Path) -> None:
+        # §6.8 横幅资产化（v4.13.2 结构化 banner 段）：{root}/{domains} 展开，CLI 只渲染
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
-        intro = agent.intro_text()
-        assert "工作台 Agent" in intro
-        assert str(tmp_path) in intro  # {root}
-        assert "场景包工程 · SUT 接入调试" in intro  # {domains} 与系统提示同源
-        assert "暂存" in intro and "Ctrl+C" in intro  # 红线与控制方式
+        parts = agent.banner_data()
+        assert "工作台 Agent" in parts["identity"]
+        assert parts["root"] == str(tmp_path)  # {root}
+        assert "场景包工程 · SUT 接入调试" in parts["domains"]  # {domains} 与系统提示同源
+        assert "暂存" in parts["rules"] and "Ctrl+C" in parts["control"]  # 红线与控制
+        assert any("gsm8k" in ex for ex in parts["examples"])  # 数据集域示例随 v4.13 增装
+        assert parts["homepage"] == "https://github.com/domonic18/ai-eval-scope"
 
     def test_session_renders_intro_banner(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
@@ -2377,13 +2379,14 @@ class TestCliEntries:
         sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
         assert capsys.readouterr().out == ""
 
-    def test_intro_renders_markdown_not_raw(
+    def test_intro_renders_rich_banner(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
-        # v4.13.1 用户验收反馈：横幅曾用 rich Text 纯文本渲染，** 加粗符原样透出。
-        # Markdown 渲染后标记不透出、列表成条目、元信息两行不并段（软换行拼接守卫）
+        # v4.13.2 欢迎首屏富渲染（cli/console/banner.py）：wordmark、结构字形与版本
+        # 脚注在 TTY 输出；无 markdown 标记透出；元信息行独立不并段
         import sys as _sys
 
+        from agent_eval import __version__
         from agent_eval.cli.cmds import workbench_agent as sa
         from agent_eval.cli.console.output import set_output_format
 
@@ -2402,14 +2405,13 @@ class TestCliEntries:
         monkeypatch.setattr(sa.sys, "stdout", _Tty(_sys.stdout))
         sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
         out = capsys.readouterr().out
-        # 宽度随环境浮动（capsys 假 stdout 按 rich 默认宽折行）——断言折行容忍
-        assert "你好，我是" in out and "工作台 Agent" in out
-        assert "**" not in out  # markdown 标记经渲染不透出（曾以 Text 纯文本透出）
-        assert "•" in out  # 列表渲染成条目（Text 纯文本路径无此形态）
+        assert "AGENT EVAL" in out  # wordmark（假终端 80 列 → 单行降级形态）
+        assert "工作台 Agent" in out and "把评测工程" in out  # 身份与 slogan
+        assert "✦" in out and "▸" in out  # 分区结构字形
+        assert f"v{__version__}" in out and "github.com/domonic18" in out  # 脚注
+        assert "**" not in out  # markdown 标记不透出
         meta = [ln for ln in out.splitlines() if "当前任务对象" in ln]
-        assert meta and all("可用能力域" not in ln for ln in meta)  # 元信息两行不并段
-        rule = [ln for ln in out.splitlines() if "规则：" in ln]
-        assert rule and all("控制：" not in ln for ln in rule)  # 规则/控制不并段
+        assert meta and all("可用能力域" not in ln for ln in meta)  # 元信息不并段
 
     def test_agent_entry_direct_conversation_no_menu(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -3199,8 +3201,8 @@ class TestPromptAssets:
     def test_intro_mentions_package_listing(self) -> None:
         from agent_eval.agent.workbench.prompts import load_prompts
 
-        intro = str(load_prompts()["intro"])  # intro 是多行字符串而非 mapping
-        assert "有哪些评测场景包" in intro
+        examples = load_prompts()["banner"]["examples"]  # v4.13.2 结构化 banner 段
+        assert any("有哪些评测场景包" in ex for ex in examples)
 
 
 class TestSessionMachine:

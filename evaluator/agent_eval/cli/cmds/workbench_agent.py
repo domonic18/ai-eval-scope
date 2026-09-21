@@ -235,24 +235,15 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
 
 
 def _render_intro(agent: Any) -> None:  # noqa: ANN001 — WorkbenchAgent
-    """启动自我介绍横幅（§6.8）：资产文案 rich Panel + Markdown 渲染；--json 与非 TTY 静默。"""
-    from rich.markdown import Markdown
-    from rich.panel import Panel
-
+    """启动欢迎首屏（§6.8 v4.13.2）：渐变 logo 富渲染；--json 与非 TTY 静默。"""
     from agent_eval.cli.console.output import is_json
 
     if is_json() or not sys.stdout.isatty():
         return
-    text = agent.intro_text()
-    if not text:
-        return
-    # 定宽上限：超宽终端不拉满整行（CJK 双宽下超宽 Panel 易被终端渲染截断）
-    from rich.console import Console
+    from agent_eval import __version__
+    from agent_eval.cli.console.banner import render_banner
 
-    width = min(Console().width or 100, 100)
-    rprint(
-        Panel(Markdown(text.rstrip()), border_style="cyan", title="工作台 Agent", width=width)
-    )
+    render_banner(agent.banner_data(), __version__)
 
 
 def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> None:

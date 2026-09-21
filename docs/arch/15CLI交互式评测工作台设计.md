@@ -770,42 +770,33 @@ prompt 段 + 档位登记，**不改会话机**。
 
 ### 6.8 启动横幅与自我介绍
 
-对标 Claude Code 首屏（欢迎框 + cwd + tips）：新用户进入会话先获得一段自我介绍——
-我是谁、能做什么、怎么用。
+对标开源 CLI 首屏（Gemini CLI 渐变 logo / Claude Code slogan + tips 直入对话）：新用户
+进入会话先获得一段欢迎屏——我是谁、能做什么、怎么用、在哪找源码。
 
-**内容要素**：身份一句话 → 当前任务对象 `{root}` + 能力域 `{domains}` → 使用示例 2–4 条
-（须与档位真实能力一致，不得宣传未装配域）→ 红线与确认方式 → 控制方式，顺序固定。
+**内容要素**：wordmark + 身份与 slogan → 当前任务对象 `{root}` + 能力域 `{domains}` →
+使用示例（须与档位真实能力一致，不得宣传未装配域）→ 红线与确认方式 → 控制方式 →
+版本与主页脚注，顺序固定。
 
-**成稿（场景包域 + SUT 接入调试档位；`{root}` 渲染为实际路径）**：
-
-> 你好，我是 **agent-eval 工作台 Agent**——你用自然语言下需求，我调用工具逐步完成
-> 评测工程中的多步操作。
->
-> 当前任务对象：`{root}`　　可用能力域：场景包工程 · SUT 接入调试 · 评测执行 · 数据集
->
-> 可以这样用我：
-> - 「创建一个代码安全评测场景包，被测系统入口 https://…」——给页面登录地址即可，
->   我会探测登录接口与 agent 协议、实测验证后才写入配置
-> - 「参照 chat 包，把规则集换成幻觉检测，再加 5 条考卷」
-> - 「执行评测」——我列出可执行的场景包给你确认，执行过程与命令行完全一致
-> - 「下载 gsm8k 数据集」——确认来源与目录后经白名单源下载
-> - 「这个包执行报 404，帮我排查 SUT 配置」
->
-> 规则：所有文件改动先进暂存区，给你看 diff、你确认后才落盘；执行评测每次都需你确认后
-> 才开始；凭证只在会话内隐藏输入，不写进任何文件或日志。
-> 控制：Ctrl+C 随时中断（已完成进度保留，说「继续」接着干），输入空行退出。
+**文案资产化（v4.13.2 起结构化 `banner:` 段，取代 v4.11–v4.13.1 的整块 `intro:` markdown）**：
+`identity` / `slogan` / `homepage` / `examples_label` / `examples[]` / `rules` / `control`，
+`{root}`/`{domains}` 字面 replace 由 `banner_parts()` 注入。示例必须与档位真实能力一致，
+新域上线改资产即更新介绍。渲染样貌以 `agent-eval agent new` 实际输出为准（渐变 logo 与
+配色是表现层，不入资产）。
 
 **实现要点**：
 
-- 文案落提示词资产独立 `intro` 小节，`intro_text()` 以 `{root}`/`{domains}` 字面 replace
-  渲染；CLI 只渲染不写死——新域上线改资产即更新介绍，不改代码。
-- 渲染：rich Panel 定宽 ≤100 列（防 CJK 双宽截断），REPL 启动时、会话日志行之前；
-  `--json` 与非 TTY 静默跳过。横幅经 **rich Markdown 渲染**（v4.13.1，曾用 `Text`
-  纯文本透出 `**` 加粗符）——`intro` 资产按 markdown 语义成稿：条目/段落各占一个
-  逻辑行，**句中不加硬换行**（rich 重排把软换行按空格拼接，句中断行会在拼接点
-  注入空格；元信息与规则/控制各成条目或独立段落，防并段）。
+- 富渲染落 `cli/console/banner.py`（表现层专属）：ANSI Shadow 字形表 + 拼装函数生成
+  「AGENT EVAL」wordmark（零依赖，对齐由构造保证），竖直渐变色带（青→蓝→紫→洋红）
+  按列分段着色；终端放不下（< logo 宽 + 4 列）降级单行逐字渐变 wordmark。
+- 分区配色：`✦` 身份加粗 + slogan 斜体洋红；`◆` 元信息/规则/控制标签着色、内容压暗；
+  能力域按「·」分段轮换配色、尾注压暗；示例 `▸` 子弹轮换配色、「——」解释压暗；
+  脚注右对齐 `v{version} · github.com/…`（主页带终端超链接）。横幅定宽 ≤100 列
+  （防 CJK 双宽截断），REPL 启动时、会话日志行之前；`--json` 与非 TTY 静默跳过。
 - **横幅先于任何输入**：主菜单一级入口渲染横幅后直入 REPL（`show_intro=False` 抑制重复
   渲染）；LLM preflight 阻断仍在横幅之前（无模型 Agent 不可用）。
+- 演进注记：v4.11–v4.13.0 为 Panel + `Text` 纯文本（曾原样透出 `**` 加粗符）；
+  v4.13.1 改 rich Markdown（发现软换行按空格拼接重排，资产须句中不加硬换行）；
+  v4.13.2 起结构化资产 + 专属渲染器，文案与表现彻底分离。
 
 ### 6.9 结构知识外置与配置归集
 
@@ -1073,3 +1064,4 @@ review 检查项。
 | v4.12.4 | 2026-09-20 | **Ctrl+C 五态语义统一（用户验收反馈：凭证外发确认上 ^C 无法中断，空回车落默认「允许」放行真外发）**：①**交互桥 Abort→KI**（§6.6 新增五态状态机表）——ask_fn/_cli_confirm 桥把 click `Abort`（Exception 子类，曾被工具层 `except Exception` 吞成 `{"type":"Abort","message":""}` 回流 LLM 诱发重试、SIG_IGN 滞留整轮后 ^C 全面失效）转回 `KeyboardInterrupt` 穿透工具层直达 turn() 统一暂停语义；②turn() KI 归 reason=interrupted（曾落 error）；③`_json_tool` 空 message 回退类名；④空闲提示符 ^C 二按退出（首按 armed 提示不清场、输入即重置，曾一次 ^C 即退会话——对齐 Claude Code）；⑤授权/确认类选择器空回车不再默认放行（`select(no_default=True)`：提示改「输入编号」、空输入重问——隐式默认曾是安全纵伤）；⑥中断措辞去魔法词（「直接说下一步即可接着干」）。普通 CLI 命令 Abort→exit 130 语义零变化 |
 | v4.13 | 2026-09-21 | **数据集域实施（Sprint 14c，§6.11 v4.11 设计稿落地，req/04 §4.12 F-C-DATA-01~04）**：`agent/workbench/datasets/` 第三域包（DatasetToolServer：list_datasets/download_dataset）——workbench 会话内「查 → 下」评测数据集（「下载 gsm8k 数据集」即用）；**第二受控出网域**兑现（D-CLI-10）：出网仅经 DatasetManager 单出口、写路径白名单 `workspace/datasets/{name}/`、下载确认照 run_eval 三段式不可旁路（ask_fn None 即 refused）；**较设计稿收紧**：工具签名不暴露 output/token 参数（写白名单与 token 红线由签名结构性保证，HF/MS SDK 直读环境变量）；equiv 单点新增 `dataset_argv`（子命令+位置参数形态）；prompts 增「## 数据集」段 + intro 示例；`WorkbenchAgentConfig` 零改动（§6.7 扩展机制第三次验证）。F-C-DATA-05（数据集驱动考卷生成）维持 P2 独立立项不承诺 |
 | v4.13.1 | 2026-09-21 | **启动横幅 Markdown 渲染（用户验收反馈：横幅以纯文本透出 `**` 加粗符）**：`_render_intro` 渲染器 `Text` → `Markdown`（与非流式回复同源）——加粗/列表/链接生效；配套 `intro` 资产按 markdown 语义成稿（§6.8）：元信息与示例成列表条目、规则/控制独立段落，**句中不加硬换行**（rich 重排把软换行按空格拼接，句中断行会在拼接点注入空格；实测「当前任务对象/可用能力域」「规则/控制」并段）。回归测试守卫：标记不透出、列表成条目、两处不并段 |
+| v4.13.2 | 2026-09-21 | **欢迎首屏富渲染（用户验收反馈：要开源 CLI 风格的炫酷首屏——排版之外要有 slogan 与配色）**：新表现层模块 `cli/console/banner.py`——ANSI Shadow 字形表拼装「AGENT EVAL」wordmark（零依赖，对齐由构造保证），竖直渐变色带（青→蓝→紫→洋红）着色，窄终端降级单行逐字渐变；分区配色（✦ 身份+slogan 斜体洋红 / ◆ 元信息与规则控制标签着色内容压暗 / ▸ 示例子弹轮换配色+解释压暗）；脚注右对齐版本 + GitHub 主页（终端超链接）。**文案资产同步结构化**：`intro:` 整块 markdown → `banner:` 段（identity/slogan/homepage/examples_label/examples/rules/control），`banner_parts()` 注入 `{root}`/`{domains}`——文案与表现彻底分离；`render_intro`/`intro_text` 删除（DRY，纯文本形态无消费方）。§6.8 成稿小节改资产键说明 + 演进注记 |

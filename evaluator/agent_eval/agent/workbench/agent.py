@@ -57,11 +57,11 @@ from agent_eval.agent.workbench.messages import (
     stream_collect,
 )
 from agent_eval.agent.workbench.prompts import (
-    load_prompts as _load_prompts,
+    banner_parts,
+    render_first_turn,
 )
 from agent_eval.agent.workbench.prompts import (
-    render_first_turn,
-    render_intro,
+    load_prompts as _load_prompts,
 )
 from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
 from agent_eval.agent.workbench.tool_filter import build_toolset_filter
@@ -595,9 +595,9 @@ class WorkbenchAgent:
 
     # ─── 自我介绍横幅（文案资产化，CLI 只渲染不写死） ────────────────
 
-    def intro_text(self) -> str:
-        """渲染启动横幅文案（{root}/{domains} 字面 replace；资产无 intro 段返回空）。"""
-        return render_intro(_load_prompts(), self.domain, str(self.server.root))
+    def banner_data(self) -> dict[str, Any]:
+        """横幅结构化文案（§6.8）：CLI 富渲染的文案真相源（logo/配色是表现层）。"""
+        return banner_parts(_load_prompts(), self.domain, str(self.server.root))
 
     # ─── 首轮模板 ─────────────────────────────────────────────────
 
