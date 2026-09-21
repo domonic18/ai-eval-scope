@@ -143,6 +143,9 @@ dev = [
     # 自引用 extras：拉起测试所需的运行时依赖（uv 支持 root 自引用）
     "ai-eval-scope[llm]",
     "ai-eval-scope[vision]",
+    # 执行域单测（test_execution_server_assembles_five_tools）导出 LangChain Tool
+    # 需要 langchain-core——CI 干净环境曾因此红（PyPI 流水线 #40）
+    "ai-eval-scope[agent]",
     "types-jsonschema>=4.26.0.20260518",
     "types-markdown>=3.10.2.20260712",
 ]
