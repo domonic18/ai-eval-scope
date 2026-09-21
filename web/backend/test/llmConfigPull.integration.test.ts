@@ -71,7 +71,7 @@ describe("GET /api/public/llm-config", () => {
       modelName: "text-default",
       baseUrl: "https://t.example.com",
       apiKey: "sk-text-def",
-      extra: { max_tokens: 1024 },
+      extra: { max_tokens: 1024, timeout_sec: 600 },
       isDefault: true,
     })
     await createModel(app, admin.accessToken, {
@@ -95,6 +95,8 @@ describe("GET /api/public/llm-config", () => {
     expect(pull.body.roles.text.model).toBe("text-default")
     expect(pull.body.roles.text.api_key).toBe("sk-text-def")
     expect(pull.body.roles.text.max_tokens).toBe(1024)
+    // timeout_sec 透传：大 prompt 线路需按线路配置单调用超时（回归 2 事故）
+    expect(pull.body.roles.text.timeout_sec).toBe(600)
     expect(pull.body.roles.vision).toMatchObject({
       provider: "anthropic",
       model: "vision-model",
