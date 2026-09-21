@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_eval.agent.core.callbacks import BudgetGuard
+from agent_eval.agent.workbench.datasets import DatasetToolServer
 from agent_eval.agent.workbench.execution import ExecutionToolServer
 from agent_eval.agent.workbench.gates import sut_evidence_gate
 from agent_eval.agent.workbench.memory import (
@@ -176,6 +177,14 @@ class WorkbenchAgent:
             workspace_root=paths.default_workspace,
             log_path=self._log_path,
         )
+        # 数据集域（Sprint 14c，arch/15 v4.13 §6.11）：会话内「查 → 下」数据集。
+        # 与 SUT 探测并列的第二个受控出网域——出网仅经 DatasetManager 单出口，
+        # 写路径白名单 workspace/datasets/，下载必经用户确认（tools ①③）
+        self.datasets = DatasetToolServer(
+            ask_fn=ask_fn,
+            workspace_root=paths.default_workspace,
+            log_path=self._log_path,
+        )
 
     # ─── 会话记忆（跨进程续作） ────────────────────────────────────
 
@@ -297,6 +306,7 @@ class WorkbenchAgent:
             *PackageToolServer.TOOL_SPECS,
             *SUTProbeToolServer.TOOL_SPECS,
             *ExecutionToolServer.TOOL_SPECS,
+            *DatasetToolServer.TOOL_SPECS,
         ]
         return "\n".join(f"- {s.name}: {s.description}" for s in specs)
 
@@ -347,6 +357,7 @@ class WorkbenchAgent:
             *self.server.to_langchain_tools(),
             *self.probe.to_langchain_tools(),
             *self.execution.to_langchain_tools(),
+            *self.datasets.to_langchain_tools(),
             *todo_mw.tools,
         ]
         return create_deep_agent(

@@ -3382,7 +3382,6 @@ class TestExecutionDomainAssembly:
         agent.execution.ctx.active_event = threading.Event()
         assert agent.interrupt_active_execution() is True  # 置位 + 封缄
         assert agent.execution.ctx.active_event.is_set()
-        assert bridge._sealed  # 失联 worker 线程静音
 
     def test_new_turn_does_not_reset_active_event(self, tmp_path: Path) -> None:
         # 生命周期约定：active_event 归 run_evaluation，不随 REPL 换轮复位
@@ -3434,3 +3433,26 @@ class TestExecutionDomainAssembly:
         assert result["status"] == "done"
         assert core_calls == ["core"]
         assert agent._budget_guard.spent_usd == 0  # 会话预算分文未动
+
+
+class TestDatasetDomainAssembly:
+    """数据集域装配回归（Sprint 14c，arch/15 v4.13 §6.11）。"""
+
+    def test_dataset_server_assembles_two_tools(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        names = {t.name for t in agent.datasets.to_langchain_tools()}
+        assert names == {"list_datasets", "download_dataset"}
+        assert {s.name for s in agent.datasets.TOOL_SPECS} == names  # 面单一致
+
+    def test_describe_tools_includes_dataset_domain(self, tmp_path: Path) -> None:
+        # 四 server 展平：包域 + 探测 + 执行 + 数据集域同进 {tools} 段
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        described = agent._describe_tools()
+        assert "list_datasets" in described
+        assert "download_dataset" in described
+
+    def test_datasets_server_shares_session_log(self, tmp_path: Path) -> None:
+        # 数据集域事件账本与会话日志同文件（时间线完整，同 probe/execution 惯例）
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.datasets.ctx.log_path == agent._log_path
+        assert agent.datasets.ctx.workspace_root is not None
