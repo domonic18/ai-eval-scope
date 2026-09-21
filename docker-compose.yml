@@ -122,6 +122,9 @@ services:
       # 输入下载 presign 以内部端点（minio:9000）签发：.env 的 PLATFORM_S3_EXTERNAL_ENDPOINT
       # 是宿主回环地址（宿主 CLI 上传用），容器内不可达，且签名 Host 不可事后改写。
       EVALEXECUTOR_INPUT_PRESIGN_AUDIENCE: internal
+      # 制品上传 presigned PUT 同理：executor 进程内 evaluator 观测 sink 声明 internal，
+      # 否则签发的上传 URL 宿主回环地址在容器内全部拒连（回归 2 事故）。
+      AGENT_EVAL_PRESIGN_AUDIENCE: internal
     depends_on:
       postgres:
         condition: service_healthy

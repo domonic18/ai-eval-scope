@@ -67,8 +67,16 @@ class IngestionClient:
 
     # ── 制品 presigned 上传 ──
     def presign_put(self, request: dict[str, Any]) -> dict[str, Any]:
-        """POST /api/public/artifacts/url 申请 presigned PUT。返回 {object_key, upload_url, headers, expires_at}。"""
-        body = json.dumps(request, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        """POST /api/public/artifacts/url 申请 presigned PUT。返回 {object_key, upload_url, headers, expires_at}。
+
+        声明上传方网络位置（cfg.presign_audience）：executor 容器内只有 internal
+        端点可达，宿主 CLI 走默认 external——平台据此选端点签名（MinIO/COS 严格
+        校验签名 Host，URL 不可事后改写）。旧版平台忽略未知字段，向后兼容。"""
+        body = json.dumps(
+            {**request, "audience": self.cfg.presign_audience},
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
         presigned: dict[str, Any] = self._bearer_post(
             self.cfg.artifacts_url, body, parse_ingest=False
         )
