@@ -163,11 +163,21 @@ export class S3Storage {
     return { url, method: "PUT", headers, expiresAt: epochNow() + ttl }
   }
 
-  /** 签发下载 URL（短时效 ≤15min，§十三）。 */
-  async presignGet(p: { key: string; ttlSec?: number }): Promise<PresignGetResult> {
+  /** 签发下载 URL（短时效 ≤15min，§十三）。
+   *
+   * audience 决定用哪个端点签名（MinIO/COS 严格校验签名 Host，URL 不可事后改写）：
+   * - "external"（默认）：对外端点——浏览器 / 宿主 CLI 等平台外消费者可达；
+   * - "internal"：内部端点——与 web 同内网的容器内消费者（本地栈 executor）可达，
+   *   而 external 是宿主回环地址时容器内不可达（docker-compose 本地栈拓扑）。
+   * 生产两者同为公网 COS 域名，语义等价。 */
+  async presignGet(p: {
+    key: string
+    ttlSec?: number
+    audience?: "external" | "internal"
+  }): Promise<PresignGetResult> {
     const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900)
     const url = await getSignedUrl(
-      this.presignClient,
+      p.audience === "internal" ? this.client : this.presignClient,
       new GetObjectCommand({ Bucket: this.bucket, Key: p.key }),
       { expiresIn: ttl },
     )

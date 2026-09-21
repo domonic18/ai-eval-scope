@@ -119,6 +119,9 @@ services:
       # executor 经 ResultSink 回传结果/制品到 web（web 再落 minio）；容器内走 compose 服务名。
       AGENT_EVAL_HOST: http://web:9000
       AGENT_EVAL_UPLOAD: "true"
+      # 输入下载 presign 以内部端点（minio:9000）签发：.env 的 PLATFORM_S3_EXTERNAL_ENDPOINT
+      # 是宿主回环地址（宿主 CLI 上传用），容器内不可达，且签名 Host 不可事后改写。
+      EVALEXECUTOR_INPUT_PRESIGN_AUDIENCE: internal
     depends_on:
       postgres:
         condition: service_healthy

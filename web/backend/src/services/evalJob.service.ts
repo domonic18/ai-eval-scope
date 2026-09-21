@@ -395,10 +395,13 @@ export function createEvalJobService(tenant: Tenant) {
    */
   async function refreshInputUrl(
     jobId: string,
+    audience?: "external" | "internal",
   ): Promise<{ url: string; expires_at: number } | null> {
     const job = await repo.findById(jobId)
     if (!job) return null
-    const presigned = await storage.presignGet({ key: job.inputObjectKey })
+    // input-url 端点唯一消费者是 executor（容器/云函数侧）；本地栈 executor 与 web 同内网，
+    // 而 external presign 是宿主回环地址——由调用方（executor env）声明所辖网络（audience）。
+    const presigned = await storage.presignGet({ key: job.inputObjectKey, audience })
     return { url: presigned.url, expires_at: presigned.expiresAt }
   }
 

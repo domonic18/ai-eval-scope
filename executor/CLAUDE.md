@@ -39,7 +39,7 @@ executor/
 ## 配置
 
 - 环境变量从仓库根 `.env` 读取；复用 Web 的 `PLATFORM_DATABASE_URL`、`PLATFORM_KEY_ENCRYPTION_KEY`。
-- executor 自身（`EVALEXECUTOR_*`）：`WORKER_ENABLED` / `WORKER_CONCURRENCY` / `WEB_BASE_URL` / `WORKSPACE` / `POLL_INTERVAL_SEC` / `HTTP_TIMEOUT_SEC`。
+- executor 自身（`EVALEXECUTOR_*`）：`WORKER_ENABLED` / `WORKER_CONCURRENCY` / `WEB_BASE_URL` / `WORKSPACE` / `POLL_INTERVAL_SEC` / `HTTP_TIMEOUT_SEC` / `INPUT_PRESIGN_AUDIENCE`（重签输入下载 URL 的签名端点：默认 external；容器内 executor 与 web 同内网而对外端点不可达时设 internal——签名 Host 不可事后改写）。
 - 评估器回传透传 `AGENT_EVAL_*`；镜像须 `AGENT_EVAL_UPLOAD=true`（见 Dockerfile）。
 
 ## 代码风格（强制）

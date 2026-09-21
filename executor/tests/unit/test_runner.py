@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -271,6 +272,30 @@ async def test_refresh_input_url_returns_fresh_url(
     call_url = client.get.call_args.args[0]
     assert call_url == f"http://web:9000/api/v1/jobs/{sample_job.job_id}/input-url"
     assert client.get.call_args.kwargs["headers"] == {"Authorization": "Bearer eval-token"}
+    # 未配置 audience（默认 external）：不带 query，web 沿用对外端点签发
+    assert client.get.call_args.kwargs["params"] is None
+
+
+async def test_refresh_input_url_passes_audience_param(
+    sample_job: EvalJob, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """EVALEXECUTOR_INPUT_PRESIGN_AUDIENCE 非空 → 以 audience query 声明下载方网络。
+
+    本地栈 external 端点是宿主回环地址（容器内不可达），executor 须让 web 以内部端点
+    签发——签名 Host 不可事后改写，只能在签发侧选择端点。
+    """
+    _patch_refresh_env(monkeypatch)
+    client, _ = _patch_http(monkeypatch, _FakeResp(200, {"url": "http://minio:9000/fresh?sig=2"}))
+    monkeypatch.setattr(
+        runner_mod,
+        "get_settings",
+        lambda: SimpleNamespace(input_presign_audience="internal"),
+    )
+
+    url = await runner_mod.refresh_input_url(sample_job)
+
+    assert url == "http://minio:9000/fresh?sig=2"
+    assert client.get.call_args.kwargs["params"] == {"audience": "internal"}
 
 
 async def test_refresh_input_url_none_on_bad_status(

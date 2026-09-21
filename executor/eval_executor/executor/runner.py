@@ -157,10 +157,20 @@ async def refresh_input_url(job: EvalJob) -> str | None:
             return None
         import httpx
 
+        # audience：声明下载方所在网络（EVALEXECUTOR_INPUT_PRESIGN_AUDIENCE）。
+        # presigned URL 的签名 Host 不可事后改写——容器内 executor 需让 web 以内部端点
+        # 签发（本地栈 external 是宿主回环地址，容器内不可达）；默认空 = 沿用 external。
+        settings = get_settings()
+        params = (
+            {"audience": settings.input_presign_audience}
+            if settings.input_presign_audience
+            else None
+        )
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(
                 f"{cfg.host}/api/v1/jobs/{job.job_id}/input-url",
                 headers={"Authorization": f"Bearer {token}"},
+                params=params,
             )
         if resp.status_code == 200:
             url = (resp.json() or {}).get("url")
