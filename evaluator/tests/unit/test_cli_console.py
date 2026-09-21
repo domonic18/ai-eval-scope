@@ -207,6 +207,18 @@ class TestEquiv:
             "./workspace",
         ]
 
+    def test_dataset_argv_positional_and_flags(self) -> None:
+        argv = equiv.dataset_argv("gsm8k", source="ms", revision=None, force=False)
+        assert argv == ["agent-eval", "dataset", "download", "gsm8k", "--source", "ms"]
+        assert equiv.render(argv) == "agent-eval dataset download gsm8k --source ms"
+        assert equiv.dataset_argv("gsm8k", force=True) == [
+            "agent-eval",
+            "dataset",
+            "download",
+            "gsm8k",
+            "--force",
+        ]
+
 
 # ── pipeline_render：渲染门 seal（僵尸线程静音）────────────────────────
 

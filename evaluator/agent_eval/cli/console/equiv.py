@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import shlex
 
-__all__ = ["eval_argv", "pipeline_argv", "render", "run_argv", "upload_argv"]
+__all__ = ["dataset_argv", "eval_argv", "pipeline_argv", "render", "run_argv", "upload_argv"]
 
 
 def _argv(cmd: str, **flags: object) -> list[str]:
@@ -38,6 +38,20 @@ def eval_argv(**flags: object) -> list[str]:
 
 def upload_argv(run: str, workspace: str = "./workspace") -> list[str]:
     return _argv("upload", run=run, workspace=workspace)
+
+
+def dataset_argv(name: str, **flags: object) -> list[str]:
+    """dataset download 的等价命令（子命令 + 位置参数，不适配 _argv 的单层形态）。"""
+    argv = ["agent-eval", "dataset", "download", name]
+    for key, value in flags.items():
+        if value is None or value is False or value == "":
+            continue
+        flag = "--" + key.replace("_", "-")
+        if value is True:
+            argv.append(flag)
+        else:
+            argv.extend([flag, str(value)])
+    return argv
 
 
 def render(argv: list[str]) -> str:
