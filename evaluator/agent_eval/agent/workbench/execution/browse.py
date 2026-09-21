@@ -17,7 +17,8 @@ class BrowseTool:
         self.ctx = ctx
 
     def _ws(self) -> Path | None:
-        return self.ctx.workspace_root
+        root: Path | None = self.ctx.workspace_root  # ctx 为运行期注入——显式收窄
+        return root
 
     async def list_runs(self, limit: int = 10) -> dict[str, Any]:
         from agent_eval.cli.cmds.runs import scan_runs

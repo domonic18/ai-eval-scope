@@ -12,7 +12,7 @@ diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘（草�
 from __future__ import annotations
 
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -82,7 +82,7 @@ def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]
 
 
 @contextmanager
-def _graceful_exec_interrupt(agent: Any):  # noqa: ANN001 — WorkbenchAgent
+def _graceful_exec_interrupt(agent: Any) -> Iterator[None]:  # noqa: ANN001 — WorkbenchAgent
     """交互会话的 SIGINT 分流（Sprint 14b，仅 _run_one 装配；非交互维持现行 KI 语义）。
 
     评测执行期首按 Ctrl+C：协作中断（当前任务完成后停止）——不抛 KI，tool future
