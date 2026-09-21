@@ -14,6 +14,7 @@ import time
 from typing import Any, cast
 
 import openai
+import structlog
 from openai.types.chat import ChatCompletionMessageParam
 
 from agent_eval.config import ProviderConfig
@@ -34,6 +35,8 @@ _DEEPSEEK_DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
 # 瞬时错误重试参数（网络超时/连接失败/限流/5xx）
 _MAX_RETRIES = 3
 _RETRY_BASE_DELAY = 1.0
+
+LOG = structlog.get_logger("llm.openai")
 
 
 def _is_retryable(e: openai.APIError) -> bool:
@@ -84,10 +87,14 @@ class OpenAICompatClient(LLMClient):
         base_url = config.base_url
         if not base_url and config.provider == "deepseek":
             base_url = _DEEPSEEK_DEFAULT_BASE_URL
+        # timeout/max_retries 必须显式：SDK 默认 read 600s + 内层重试 2 次，与外层重试
+        # 链叠加成几十分钟无日志挂起（本地 docker 栈回归事故：job 卡 54 分钟）。
+        # 重试单源化到本模块外层循环（有日志、有退避、次数可控），SDK 内层一律禁用。
         self._client = openai.OpenAI(
             api_key=config.api_key,
             base_url=base_url,
             timeout=config.timeout_sec,
+            max_retries=0,
         )
 
     @property
@@ -139,7 +146,18 @@ class OpenAICompatClient(LLMClient):
             except openai.APIError as e:
                 # 瞬时错误（超时/连接/限流/5xx）指数退避重试；不可重试或耗尽则映射抛出
                 if attempt < _MAX_RETRIES and _is_retryable(e):
-                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
+                    delay = _RETRY_BASE_DELAY * (2**attempt)
+                    # 每次重试必须留痕：静默重试链曾把单约束拖成几十分钟无日志挂起
+                    LOG.warning(
+                        "llm.call.retry",
+                        provider=self._name,
+                        model=self._config.model,
+                        attempt=attempt + 1,
+                        max_retries=_MAX_RETRIES,
+                        error=type(e).__name__,
+                        delay_sec=delay,
+                    )
+                    time.sleep(delay)
                     continue
                 raise _map_openai_error(e, self._name, self._config.model) from e
 

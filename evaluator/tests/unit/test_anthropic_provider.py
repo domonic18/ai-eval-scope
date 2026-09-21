@@ -24,7 +24,8 @@ def _config() -> ProviderConfig:
 
 
 class TestTimeout:
-    """timeout 显式透传（本地 docker 栈回归事故：SDK 默认 read 600s × 重试链 = 几十分钟挂起）。"""
+    """timeout 显式透传 + SDK 内层重试禁用（本地 docker 栈回归事故：SDK 默认 read 600s
+    × 内层重试 2 次 × 外层重试链 = 几十分钟无日志挂起）。"""
 
     @staticmethod
     def _effective_timeout(client: AnthropicCompatClient) -> float:
@@ -41,6 +42,11 @@ class TestTimeout:
         cfg.timeout_sec = 30.0
         client = AnthropicCompatClient("text", cfg)
         assert self._effective_timeout(client) == 30.0
+
+    def test_sdk_inner_retries_disabled(self) -> None:
+        # 重试单源化到本模块外层循环（有日志、有退避、次数可控），SDK 内层必须为 0
+        client = AnthropicCompatClient("text", _config())
+        assert client._client.max_retries == 0
 
 
 def _client_with_fake(
