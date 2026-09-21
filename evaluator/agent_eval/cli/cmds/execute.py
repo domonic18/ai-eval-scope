@@ -290,9 +290,10 @@ def _render_outcome(outcome: PipelineOutcome) -> None:
     elif outcome.stage == "evaluate":
         rprint(f"[bold red]❌ 评估失败:[/bold red] {outcome.error}")
     elif outcome.stage == "gate":
-        failures = "；".join(outcome.gate.get("failures") or [])
+        gate = outcome.gate or {}  # gate 阶段语义上必非 None——类型收窄兜底
+        failures = "；".join(gate.get("failures") or [])
         rprint(
-            f"[red]❌ 质量门禁未达标[/red]（--gate {outcome.gate.get('mode')}）: "
+            f"[red]❌ 质量门禁未达标[/red]（--gate {gate.get('mode')}）: "
             f"{failures or '详见 summary.json gate 字段'}"
         )
 

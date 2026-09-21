@@ -86,7 +86,9 @@ def _disk_baseline_sut(server: PackageToolServer, rel: str) -> dict[str, Any] | 
     if not isinstance(sut, dict):
         return None
     try:
-        return expand_env_refs(sut)
+        # expand_env_refs 签名为 (Any) -> Any——显式收窄，避免 no-any-return
+        expanded: dict[str, Any] = expand_env_refs(sut)
+        return expanded
     except Exception:  # noqa: BLE001 — 基线 env 异常按无基线处理
         return None
 
