@@ -4,8 +4,8 @@
 过程**流式直播**（claude code 式：回复 token 直出 + 工具调用行实时可见）；每轮展示
 diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘（草稿区会话落盘即归位
 ``cwd/<id>-package/``，沙盒同步重定向，同一会话可继续自然语言修改已归位的包）。
-空行退出会话；Ctrl+C 暂停当前轮（进度保留，输入「继续」接着跑、「放弃」回滚暂存
-——§6.7 D-WB-4）。
+空行退出会话；Ctrl+C 中断当前轮（进度保留，直接说下一步即可接着干、「放弃」回滚
+暂存——§6.7 D-WB-4）；空闲提示符上连按两次退出（对齐 Claude Code，v4.12.4）。
 非交互形态（CI）需 ``--instruction`` + ``--yes --trust-agent`` 双开关。
 """
 
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -80,20 +81,61 @@ def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]
     return None if is_json() else make_stream_emitter()
 
 
+@contextmanager
+def _graceful_exec_interrupt(agent: Any):  # noqa: ANN001 — WorkbenchAgent
+    """交互会话的 SIGINT 分流（Sprint 14b，仅 _run_one 装配；非交互维持现行 KI 语义）。
+
+    评测执行期首按 Ctrl+C：协作中断（当前任务完成后停止）——不抛 KI，tool future
+    拿 cancelled 摘要正常收轮；无活跃执行或二按：屏蔽后续信号后抛 KI，走现行
+    `_attempt` 暂停语义（进度保留，「继续」接着跑）。
+
+    二按前置 ``SIG_IGN``（v4.12.1 硬中断终局隔离）：KI 打断 asyncio.run 的
+    teardown（cancel tasks / shutdown asyncgens）期间若再进信号，会击穿
+    ``run_forever`` 登记/清理 running-loop 线程态的窗口——泄漏后本轮报
+    「Cannot close a running event loop」、后续轮报「asyncio.run() cannot be
+    called from a running event loop」，会话报废。等待侧已 daemon 化（零 join），
+    teardown 毫秒级，屏蔽窗体感不可见；contextmanager 退出即复原。
+    """
+    import signal
+
+    previous = signal.getsignal(signal.SIGINT)
+    state = {"pressed": False}
+
+    def _handler(signum: int, frame: Any) -> None:  # noqa: ARG001 — signal 回调签名
+        if not state["pressed"] and agent.interrupt_active_execution():
+            state["pressed"] = True
+            rprint("\n[yellow]⏳ 正在中断评测（当前任务完成后停止；再按一次立即暂停）[/yellow]")
+            return  # 不抛 KI：worker 消化取消令牌后以 cancelled 摘要收轮
+        signal.signal(signal.SIGINT, signal.SIG_IGN)  # teardown 期屏蔽按键风暴
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, _handler)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, previous)
+
+
 def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     """执行并渲染一轮：流式直播（回复不重复打印）或非流式兜底。"""
     from agent_eval.agent.workbench.agent import run_turn
+    from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
 
     emit, finish = _stream_pair() or (None, None)
     if emit:
         rprint("[dim]⏳ Agent 工作中（流式输出，Ctrl+C 中断本轮）…[/dim]")
+    # 执行域渲染桥（Sprint 14b）：emit=None（JSON）时桥仍在——gated_emit 自然
+    # no-op、管线渲染照常直出；桥每轮新建并与 agent 绑定（emitter 是逐轮产物）
+    bridge = ExecutionRenderBridge(emit, finish)
+    agent.bind_render_bridge(bridge)
     try:
-        result = run_turn(
-            agent,
-            text,
-            confirm_fn=lambda reply, diff: _cli_confirm(reply, diff, agent),
-            on_event=emit,
-        )
+        with _graceful_exec_interrupt(agent):
+            result = run_turn(
+                agent,
+                text,
+                confirm_fn=lambda reply, diff: _cli_confirm(reply, diff, agent),
+                on_event=bridge.gated_emit,
+            )
     finally:
         if finish:
             finish()
@@ -109,6 +151,11 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     _render_outcome(result)
 
 
+def _landing_verb(root: Path) -> str:
+    """落点动词：草稿区根「归位」（落盘即迁 cwd/<id>-package/，v4.9）；其余原位。"""
+    return "归位" if root.name.startswith("agent-eval-pkg-") else "原位落盘"
+
+
 def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN001 — WorkbenchAgent
     """确认交互：回复已在流式直播中输出，这里展示 diff + 预计落点并询问。"""
     if diff:
@@ -116,10 +163,16 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
     landing = _landing_hint(agent) if agent is not None else None
     if landing:
         # 不预设门禁通过（实测：门禁打回后横幅仍称「确认落盘即归位」，用户误以为
-        # 已落盘）——归位是「确认 → 门禁通过 → 落盘」的链（v4.9 起落盘即归位，
-        # 不再等会话结束），任何一环失败都不归位
-        rprint(f"[green]确认后经校验门禁，通过即落盘并归位 → {landing}[/green]")
-    return select("确认变更", ["全部应用", "放弃"]) == "全部应用"
+        # 已落盘）——落盘是「确认 → 门禁通过 → 落盘」的链（v4.9 起落盘即归位，
+        # 不再等会话结束），任何一环失败都不落。动词区分草稿区归位与既有包原位
+        # （v4.12.3：edit_package 切根后横幅曾一律称「归位」，实际是原位生效）
+        rprint(
+            f"[green]确认后经校验门禁，通过即{_landing_verb(Path(agent.server.root))} → {landing}[/green]"
+        )
+    try:
+        return select("确认变更", ["全部应用", "放弃"], no_default=True) == "全部应用"
+    except typer.Abort:
+        raise KeyboardInterrupt from None  # 落盘确认 ^C = 中断本轮（v4.12.4，同 ask_fn 桥）
 
 
 def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
@@ -213,12 +266,19 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
     if show_intro:
         _render_intro(agent)
 
+    def _bye() -> None:
+        # 退出兜底：worker 线程仍在消化取消令牌时置位（僵尸静音由桥封缄保证）
+        agent.interrupt_active_execution()
+        rprint("👋 会话结束")
+
     def _attempt(text: str) -> None:
         try:
             _run_one(agent, text)
         except (KeyboardInterrupt, asyncio.CancelledError):
-            rprint("\n[yellow]⏸ 已暂停（进度已保留：暂存草稿与对话上下文完整）[/yellow]")
-            rprint("[dim]输入「继续」接着跑，或直接说下一步；输入「放弃」回滚本轮暂存改动[/dim]")
+            # 中断措辞去状态化（v4.12.4，对齐 Claude Code）：中断即回提示符，
+            # 任意输入自然续跑（checkpoint 已回对话，「继续」从来不是魔法词）
+            rprint("\n[yellow]⏹ 已中断（进度已保留：暂存草稿与对话上下文完整）[/yellow]")
+            rprint("[dim]直接说下一步即可接着干；输入「放弃」回滚本轮暂存改动[/dim]")
         except Exception as e:  # noqa: BLE001 — 会话内错误可见可继续下一轮
             rprint(f"[red]❌ 本轮失败: {e}[/red]")
             rprint("[dim]进度已保留——可直接重试；输入「放弃」回滚本轮暂存改动[/dim]")
@@ -233,21 +293,30 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
         rprint("[yellow]↩️ 已放弃暂存改动（磁盘未受影响，对话上下文保留）[/yellow]")
         return True
 
-    rprint(f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 暂停当前轮）[/dim]")
+    rprint(
+        f"[dim]会话日志: {agent.log_path}（输入空行退出；Ctrl+C 中断当前轮，连按两次退出）[/dim]"
+    )
     resumed = getattr(agent, "resumed_dialogue_count", 0)
     if resumed:
         rprint(f"[dim]已续接此前会话记录（{resumed} 条对话），Agent 可延续此前的讨论上下文[/dim]")
     if first_text:
         _attempt(first_text)
+    quit_armed = False  # 空闲态 ^C 二按退出（v4.12.4 对齐 Claude Code：首按不清场）
     while True:
         try:
             text = ask("你>")
         except typer.Abort:
-            rprint("\n👋 会话结束")
-            return
+            if quit_armed:
+                rprint()
+                _bye()
+                return
+            quit_armed = True
+            rprint("[dim]^C 再按一次退出会话（误触？直接继续输入即可）[/dim]")
+            continue
         if not text.strip():
-            rprint("👋 会话结束")
+            _bye()
             return
+        quit_armed = False
         if _maybe_abandon(text):
             continue
         _attempt(text)
@@ -305,16 +374,25 @@ def _make_ask_fn() -> Any:
         rprint(f"[bold]? {question}[/bold]")
 
     async def ask_fn(question: str, *, options: list[str] | None, secret: bool) -> str:
-        if secret:
+        try:
+            if secret:
+                _show(question)
+                return ask("└─ 输入（隐藏回显）", hide=True)
+            if options:
+                _show(question)
+                return select("└─ 选择", options, no_default=True)
+            if len(question) <= _ASK_INLINE_QUESTION_CHARS:
+                return ask(f"? {question}")
             _show(question)
-            return ask("└─ 输入（隐藏回显）", hide=True)
-        if options:
-            _show(question)
-            return select("└─ 选择", options)
-        if len(question) <= _ASK_INLINE_QUESTION_CHARS:
-            return ask(f"? {question}")
-        _show(question)
-        return ask("└─ 输入")
+            return ask("└─ 输入")
+        except typer.Abort:
+            # 交互等待期 Ctrl+C = 中断本轮（v4.12.4 五态语义，对齐 Claude Code）：
+            # click 把 KI 降级成 Abort（Exception 子类），不转回会被工具层
+            # `except Exception` 吞成 failed 结果回流 LLM（实测事故：Abort 空
+            # message 诱发 Agent 反复重试，SIG_IGN 滞留整轮后 ^C 全面失效，空回车
+            # 落默认「允许」放行外发）。KI 是 BaseException——穿透工具层直达
+            # turn() 统一暂停语义（salvage 保现场，宿主 _attempt 呈现中断）
+            raise KeyboardInterrupt from None
 
     return ask_fn
 

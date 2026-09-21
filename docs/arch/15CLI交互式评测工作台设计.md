@@ -121,7 +121,7 @@ agent_eval/agent/
 | D-CLI-6 | **命令命名不设兼容层**：`scenario` / `models set|clear` 等新命名直接生效，无旧名别名 | 名字即语义（场景包 ≠ 打包执行包；配置模型 ≠ 登录模型），别名层只会延续误用 |
 | D-CLI-7 | **退出码集中映射**：`console/output.py::map_exit_code(exc)` 单点适配异常体系 → 0/1/2/3/130 | 契约可测试；新增异常不改命令层 |
 | D-CLI-8 | **`runs` 读本地索引优先**：`workspace/index/runs_index.json`（06 §3.8）列表，run 目录直读详情；平台态经 manifest 上传标记推断 | 零新存储；与 Web 平台解耦 |
-| D-CLI-9 | **Agent 执行 = 直通阻塞调用**（v4.11）：`run_evaluation` 与 CLI 共用同一渲染路径，执行期间宿主挂起 Agent 流式渲染、rich console 直出过程；LLM 只见紧凑摘要（run_id/指标/产物路径），不转述过程；执行不计会话预算（非 LLM 活动），Ctrl+C 按阶段路由 | 需求 2「Agent/命令行输出一致」的结构性保证——转述必然漂移；执行期单输出流，终端混排问题消解（req/04 开放问题 #7） |
+| D-CLI-9 | **Agent 执行 = 直通阻塞调用**（v4.11，v4.12 补编排真相源）：`run_evaluation` 经 `pipeline_core` 与 CLI 共用唯一编排与渲染路径，执行期间宿主经 render_bridge 挂起 Agent 流式渲染、rich console 直出过程；LLM 只见紧凑摘要（run_id/指标/产物路径），不转述过程；执行不计会话预算（非 LLM 活动，天然成立），Ctrl+C 执行期 = 协作取消中断（任务边界，产物已落盘） | 需求 2「Agent/命令行输出一致」的结构性保证——编排与转述双面漂移被单一真相源结构性消解；执行期单输出流，终端混排问题消解（req/04 开放问题 #7） |
 | D-CLI-10 | **受控出网域白名单制**（v4.11）：网络面按域开列（SUT 探测 §6.5、数据集下载 §6.11），每域单出口 + 域名白名单 + 确认门槛；其余工具面维持无网络红线 | 出网能力成为显式装配决策而非默认存在；§6.7 红线泛化（「任何新域的网络面以策略形式接入」）的实例化 |
 
 ### 2.4 复用清单（不重造边界）
@@ -207,10 +207,12 @@ Agent 是工作台的首选工作方式——不是某个域里的一个动作�
   改已有包 / 排查」都是会话里的一句话，不由菜单分流（对标 claude：打开即对话，
   能力介绍先行）。默认任务对象 = 新包草稿（`workspace/.staging`，首次确认落盘即按清单 id
   归位 `cwd/<id>-package/`（v4.9），空会话退出清理草稿，见 §6.3）；改已有包经 `list_packages`
-  三源发现（v4.4）+ `read_reference` 直读既有内容——project/local 包首选
-  `scenario edit` 原位编辑（会话根即包目录），本会话内 fork 改造必须**换新 scenario/id**
-  （沿用原 id 归位时与既有目录冲突）；prompts 域段「改造已有项目包」规约按来源分流，
-  `scenario new/edit --mode agent` 命令与域内快捷方式保留为显式直达。
+  三源发现（v4.4）+ `read_reference` 直读既有内容——**project/local 包轻量修改默认
+  `edit_package(ref)` 会话内原位切根**（v4.12.2，§6.5：用户确认后沙盒根切到该包，
+  落盘原位生效，不走骨架/五阶段/fork），明确要新版本/新包才 fork 且**换新 scenario/id**
+  （沿用原 id 归位时与既有目录冲突）；prompts 域段「改造已有项目包」规约按「改什么」
+  三档分流，`scenario new/edit --mode agent` 命令与域内快捷方式保留为显式直达
+  （`scenario edit` 为跨进程续作的等价通道，非会话内轻量编辑的必经之路）。
 - **域内入口 = 档位快捷方式**：场景包域两项标签为「用 Agent 创建场景包」「用 Agent
   修改选中的包」——语义是「预载对象上下文的快捷方式」（改包先经 `select_editable_ref`
   选定，选中对象注入首条上下文；对标在仓库目录里启动 claude，cwd 即上下文）。
@@ -399,6 +401,7 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 | `search_reference` | 按文件名检索内置包（courseware/chat/code），返回命中文件与各包真实文件清单 |
 | `read_reference` | 只读**已发现包（三源）**文件内容（ref + 包内 path，ref 走 `PackageManager.resolve_ref`）——Agent 参照真实格式的**合法通道**（`read_file` 对包外路径受分级授权约束，防反复试探） |
 | `list_evaluators` | 当前可用评估器注册 ID 的注册表实时快照（含本包 entry_points 声明）——rules 的 `evaluator` 字段从此清单**原样复制，勿凭记忆臆造**（copy, don't recall：示范强于指令） |
+| `edit_package`（v4.12.2） | **会话目标切换到既有包原位编辑**（既有包轻量修改的正道，验收事故修复——曾规约「退出会话走 scenario edit 或 fork」致加 1 条用例触发全建包流程）：非交互 refused（切写域须确认通道，与 run_evaluation 同策略）→ 定址（路径含清单直取 / `resolve_ref`；builtin 只读拒绝并指引 fork）→ 守卫（目标=当前根提示已在编辑；**staging 非空拒绝**——rebind_root「调用时 staging 已清」不变式，指引先放弃/提交）→ `ask_fn` 确认（展示当前根→目标根）→ 清旧根态（**骨架归档置 None**——跨根携带会让旧包开槽卡住新包 validate；授权账本按根记账，一并清空）→ `relocate_fn`（宿主 `relocate_root(note=…)`：server 重绑 + 图重建 + **会话记录迁移**——切换后跨进程续作命中新包 key）。切根后落盘语义由既有路径保证：非草稿前缀根，确认后**原位生效不归位**（§6.3 归位判定不变）。**切根保育**（v4.12.3）：目标 session record 已存在时不 `replace`（曾静默覆盖目标对话史+账本快照——独立数据损失 bug）——目标对话并入会话记忆（目标史在前，裁剪 `max_dialogue_entries`）、其账本快照按 key 合并恢复（当前会话条目优先），「已落盘包续改免重探」（v4.10）从同根重启扩展到切根路径 |
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff（宿主确认界面同源） |
 | `write_sut_config`（v4.7） | **机械物化**（§6.5 五阶段之阶段 3）：filename 传 `sut_configs/<名字>.yaml` 或裸名 `<名字>.yaml`（机械归位 sut_configs/，v4.9——守卫曾只认带前缀形态却自称「只写平铺文件」，裸名被拒且错误不指路，Agent 在 payload 结构上空转多轮）；agent 只给决策字段（name/channel/base_url/timeout/request_template/response_mapping 等），服务端从探测证据账本取该 ref 的 `auth_snippet` **verbatim 注入 auth 段**——「验证→配置」的传递不经 LLM 转述；无账本事实即拒绝并引导先 request 实测 + declare_token；注入后**内联执行器同款 schema 校验**（未知键/模板变量审计当场打回）才入暂存；`auth` 键手写一律拒绝（防转述变形）——取代「snippet 原样粘贴」纪律，转述类打回在机制上消失。`write_file` 写 sut_configs 的旧路径保留兜底（auth_chain 链式认证等未落地形态） |
 
@@ -468,7 +471,7 @@ REF 则直接定址；此前归位压到会话结束，实测用户确认后在�
 | 判官模板变量契约 | `user_prompt_template` 只能用所引评估器实际注入的变量——评估器以类级 `prompt_variables` 声明契约（渐进声明：未声明的不参与对账）；jinja2 `meta.find_undeclared_variables` 对账，越界随可用清单打回 | `{{ response }}` vs `content` 注入集错位 → StrictUndefined 渲染失败 → 规则全 0 分 |
 | SUT 未知键拒绝（`registry.validate_sut_config_document`） | 以执行器模型 `model_fields` 为白名单（运行时 `extra="allow"` 前向兼容意味着发明字段被**静默丢弃**）并**递归下钻 `sut.request_template.steps[i]` 与 `steps[i].poll`**（v4.7：steps 链/poll 步同样白名单化，幻觉字段逐项点名打回并附该层合法字段清单），复用 `SUTSystemConfig` 校验必填/枚举/`${VAR}` 展开；`SUTRegistry.load` **装载卡口**（v4.7）：执行入口同源复检，违例 raise `SUTChannelError`——绕过工作台手改的配置照样被拦（arch/03 §4.0.3） | 自造 `login.base_url` 字段被静默丢弃 → 执行时拼回页面域 404；GitHub Actions 肌肉记忆 `kind/depends_on/until` 写进 steps → Pydantic 静默丢弃 → 全部任务 run_error（jxb 20260917_003025，11/11） |
 | 骨架开槽检查（v4.7，`skeleton_gate_errors`） | 暂存含 `SKELETON.md` 时：`- [ ]` 开槽全部列出打回（带逐条原文）；`- [x]` 闭槽必含「证据：」——**闭槽 = 有证据的结论，不是表态**；opt-in——无骨架的会话（克隆/fork 内置包）行为零变化 | 配置在事实未齐时渐进成形，证据与幻觉混在同一文件；探索结论散在头注释里、后续改登录方式无处重开 |
-| 通道排期校验（v4.7.3 起） | `channel` ∈ `SCHEDULED_CHANNELS`（`agent_protocol`/`generic_http`，与执行工厂同源单点）；预留通道（如 `browser`）落盘即打回，错误文案自带「探测受挫不是换通道的理由……**不得静默降级改写落盘**」行动指引；generic_http 免协议端点对账（无协议语义），登录对账照走 | 协议探测受挫后 Agent 静默降级写预留通道 → 落盘成功、答完 5 个交互到执行工厂才报「预留未排期」 |
+| 通道排期校验（v4.7.3 起） | `channel` ∈ `SCHEDULED_CHANNELS`（`agent_protocol`/`generic_http`，与执行工厂同源单点）；预留通道（如 `browser`）落盘即打回，错误文案自带「探测受挫不是换通道的理由……**不得静默降级改写落盘**」行动指引；generic_http 免协议端点对账（无协议语义），登录对账照走（限本轮暂存增量，v4.12.3 §6.5 ③） | 协议探测受挫后 Agent 静默降级写预留通道 → 落盘成功、答完 5 个交互到执行工厂才报「预留未排期」 |
 | YAML 全量解析双防线（v4.10） | ①**写入时 fail-fast**：`write_file` 对 `.yaml/.yml` 内容先 `safe_load`，解析失败当场拒写（未入暂存，错误带摘要与截断提示）——「靠 Agent read_file 自检才发现截断」的一整轮消失；②**校验时全量解析**：`validate_package` 对暂存视图**所有** `.yaml/.yml`（除清单——load_manifest 已覆盖；除 `sut_configs/`——另有解析+schema 校验）解析打回，旁路写入的截断文件（旧快照恢复等）照样拦下 | `task_sets/smoke.yaml` 首写被截断，解析门禁只扫 `rules/` 时漏网，靠 Agent 自检才发现；未自检即可带伤落盘 |
 
 引擎侧配套守卫：评估器**尝试创建且全部失败即中止**（部分失败跳过语义保留）——防
@@ -634,7 +637,7 @@ is closed`（暂停恢复/新指令后的轮首必炸，偶发性取决于池中
 |---|---|---|
 | ① 同构词汇（消除转换需求） | `declare_token` 渲染的 `auth` 段与执行器词汇同构：`token_source` 三态（`Bearer / header:<X> / cookie`）即执行器 `SUTSession.token_type`，cookie 自 Set-Cookie 提取落 `session_cookie` 形态（执行器靠共享 client 的 cookie jar 承载登录态，语义 1:1）；凭证仅 `credential_ref` 引用 | `workbench/sut_probe/tokens.py` |
 | ② 工具返回即产物（装配在证据产生处完成一次） | 声明成功时由**工具机械渲染** `sut_config_auth_snippet`（auth: 段 YAML，词汇零翻译）并登记证据账本；Agent 的职责原为「原样粘贴」（v4.7 起由环 ④ 取代——连粘贴也不需要了） | `workbench/sut_probe/tokens.py::_render_auth_snippet` |
-| ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path/token_source/expires_in_path；协议核心端点 ✅）——不一致打回并携带权威片段 | `workbench/gates.py::sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
+| ③ 落盘对账（变形必被打回） | 提交门禁用**执行器同款** `resolve_login_url` 把暂存配置还原成「实际会打到哪个 URL」，与账本逐字段对账（登录 URL/method/body_template/token_path/token_source/expires_in_path；协议核心端点 ✅）——不一致打回并携带权威片段。**对账范围 = 本轮暂存增量**（v4.12.3，验收事故修复：既有包只删一条用例也被要求重做登录实测）：磁盘既有且本轮未动的 sut_config 是此前已落盘放行的结论，不再重复对账；本轮重写但与磁盘基线逐字段相同的 auth（base_url+auth 全等）/ 协议结论（通道+接口域+flavor 三元组全等）同样豁免（无转述变形）；结构性错误（缺 login.path）与未排期通道**无条件打回不豁免**；磁盘无基线（新建包）/ 解析失败保守走全量对账 | `workbench/gates.py::sut_evidence_gate`（取代 `_sut_protocol_gate` 点查） |
 | ④ 机械物化（转述通道关闭，v4.7） | `write_sut_config` 从账本 `auth_snippet` **verbatim 注入** auth 段（yaml 语义级与实测一致，非逐字符比对再打回）——jxb 事故中「验证过了又来一遍登录实测」的根因（LLM 抄写 snippet → 对账打回 → 重探成修复环最优解）在机制上消失；修复环只改决策字段，不再重探 | `workbench/tools.py::write_sut_config`（§6.2） |
 
 配套修正：
@@ -671,6 +674,26 @@ is closed`（暂停恢复/新指令后的轮首必炸，偶发性取决于池中
 
 REPL 处置闭环：中断/瞬时错误上抛 → CLI 打印「⏸ 已暂停（进度已保留…）」；「继续」重跑；
 「放弃」走唯一回滚触发器。
+
+#### Ctrl+C 五态状态机（v4.12.4，对齐 Claude Code：^C 永远立即生效，中断的是当前活动而非会话）
+
+会话生命周期五个状态下 ^C 走同一条收口（`_attempt` 的暂停语义），此前五态各自演进
+（v4.12 → v4.12.1 → …）曾致交互等待期 ^C 被吞成工具 failed 结果回流 LLM——**用户中断
+是控制流信号不是工具错误**，宿主桥在终端 I/O 边界把 click `Abort`（Exception 子类）
+转回 `KeyboardInterrupt`（BaseException 天然穿透工具层 `except Exception` 兜底）：
+
+| 状态 | 首按 ^C | 再按 ^C |
+|---|---|---|
+| 空闲提示符（你>） | 清行 +「再按一次退出」armed 提示，**不退出**（输入任意内容即重置） | 退出会话 |
+| 生成/工具中 | 立即中断本轮（KI 穿透）→ salvage → 回提示符，部分产出/上下文保留 | 已回提示符 |
+| 评测执行中 | 协作中断：当前任务完成后停止（v4.12） | 立即中断（v4.12.1 穿透） |
+| 交互选择器（ask_user/授权/确认） | **中断本轮**（Abort→KI 桥；选择器作废，不默认、不放行） | 同左 |
+| teardown 瞬态 | SIG_IGN 屏蔽（v4.12.1，护 asyncio.run 收尾毫秒级窗口） | 同左 |
+
+配套裁决：授权/确认类选择器**空回车不再默认放行**（`select(no_default=True)`：host
+授权/凭证外发/执行确认/落盘确认，提示改「输入编号」、空输入重问——隐式默认曾是安全
+纵伤，编号列表又从未展示默认态）；中断措辞去魔法词（「直接说下一步即可接着干」——
+checkpoint 已回对话，任意输入自然续跑，「继续」从来不是机制）。
 
 #### salvage：撞线保现场（根治失忆）
 
@@ -838,11 +861,26 @@ class WorkbenchAgentConfig:
 红线）；**ToolSpec 描述即对外契约**（开源用户与 LLM 同读），描述与行为一致性纳入
 review 检查项。
 
-### 6.10 评测执行域（ExecutionToolServer，v4.11）
+### 6.10 评测执行域（ExecutionToolServer，v4.12）
 
 > 需求 req/04 §4.11（F-C-AGENT-01~06）：统一会话内「执行评测 → 看结果 → 上传」闭环——用户在
 > 对话中说「执行评测」，Agent 给出执行候选与摘要，确认后开始执行。核心约束是**输出直通**
 > （F-C-AGENT-03）：Agent 发起的执行与命令行执行内容、样式完全一致。
+
+**编排单一真相源（`pipeline_core` 抽取，v4.12 裁决）**：管线编排（解析→凭证→执行→评估→门禁→
+报告→上传→退出码映射）此前仅存在于 `cli/cmds/execute.py::execute_pipeline`，且与渲染（rprint）、
+退出（typer.Exit）交织——Agent 域若绕开它直拼 `_stages` 阶段函数将成**第三份编排拷贝**，
+「与 CLI 逐字节同源」必然漂移。落地形态（方案评审裁决：最彻底方案，否决手拼与直接调 CLI 壳）：
+
+- `cli/_stages.py` 新增 **`pipeline_core(params, *, progress=None, cancel_event=None) -> PipelineOutcome`**：
+  无渲染、无交互、无 typer 依赖的编排纯函数（模块既有 rprint/typer 残留不新增）；`params` 与 CLI
+  参数对象同构；`progress` 为阶段进度钩子（CLI 壳注入 rprint/进度视图，Agent 域注入**同款渲染**——
+  同一钩子契约保证输出一致）；`cancel_event` 供协作式取消（见 Ctrl+C 条）；退出码契约
+  （0 成功 / 1 配置执行失败 / 3 门禁未达标）作为 `PipelineOutcome.exit_code` 返回而非 raise；
+- `execute_pipeline` **薄壳化**：setup_logging → 调 `pipeline_core` → 渲染（rprint 阶段行/任务表/
+  JSON payload/`typer.Exit(code=outcome.exit_code)`）——**CLI 外部行为零变化**（重构验收 =
+  既有 CLI 输出回归 + 全量测试）；
+- Agent 域 `run_evaluation` 只消费 `pipeline_core`，永不复刻编排。
 
 **模块形态**：`agent/workbench/execution/`，复刻 sut_probe 组合模式（context 共享状态 + 域工具类 +
 `server.py` 薄委托壳），「一域一 server」边界不变。
@@ -855,26 +893,45 @@ review 检查项。
 
 **输出直通机制**（D-CLI-9，需求 2 的落地）：
 
-- `run_evaluation` 是**直通阻塞调用**：执行期间宿主挂起 Agent 流式渲染（`agent_stream` 停止
-  重绘后交棒），rich console 直出执行过程——渲染路径与 CLI 执行**同一条**（进度视图 +
-  `--log-level` 分档事件行，§4.4）；执行期单输出流，终端混排问题结构性消解（req/04 开放问题 #7）；
+- `run_evaluation` 是**直通阻塞调用**：执行核心经 **daemon 单飞线程 + `asyncio.wrap_future`**
+  在工作线程运行（v4.12.1 起，见硬中断终局条——to_thread 落默认线程池会被 teardown join，
+  弃用；不冻结事件循环——ask_fn、流式、Ctrl+C 依赖它）；执行期宿主经 **render_bridge 挂起 Agent 流式渲染**
+  （host 每轮构造、ExecContext 持引用注入，与 ask_fn 同模式：suspend 后 `on_event` 事件丢弃、
+  rich console 交棒给执行渲染，结束 resume，恢复由宿主单点负责），渲染经 `pipeline_core` 的
+  progress 钩子走**与 CLI 同一条渲染路径**（进度视图 + `--log-level` 分档事件行，§4.4）；
+  执行期单输出流，终端混排问题结构性消解（req/04 开放问题 #7）；
 - **LLM 看不到过程输出、也不转述**：tool 返回值仅紧凑摘要（run_id / 指标 / 失败数 / 产物路径 /
-  是否上传）；结束后 Agent 基于摘要做一句总结 + 下一步建议，过程细节由用户回看直通输出或
+  退出码 / 是否上传）；结束后 Agent 基于摘要做一句总结 + 下一步建议，过程细节由用户回看直通输出或
   `show_run` 追问；
 - 非 JSON 形态专用：`--output-format json` 语义仍走 CLI 命令；Agent 会话内执行恒为交互形态，
   `--no-input` 旁路不存在（F-C-AGENT-06：执行工具**永不经 `--trust-agent` 旁路自主触发**，
-  不进信任模式工具白名单）。
+  不进信任模式工具白名单）；
+- **日志档位恢复**：执行按入参档位 `setup_logging` 是进程级全局态——执行结束由宿主恢复会话
+  原档位（render_bridge suspend/resume 同点负责）。
 
 **确认与安全门槛**：
 
 - **凭证缺失路径**：`preflight_sut_credentials` 的结构化缺失清单作为 tool 结果返回 → Agent 经
   ask_fn 隐藏输入逐字段引导补录（复用 `ensure_sut_credentials` 的「一次落盘、空输入整体取消」
   语义，§7.2）→ 复检通过重试；_stages 零交互纪律不破——域内交互全部走 ask_fn 单通道；
-- **Ctrl+C 按阶段路由**：Agent 流式阶段 = 中断当前轮（既有语义）；执行直通阶段 = 透传执行内核
-  （终止 / 跳过当前任务继续评估 / 保存已完成，F-C-EXEC-05），不触发会话 salvage——执行产物
-  落盘语义与 CLI 执行完全一致；
-- **预算豁免**：执行调用非 LLM 活动，不计会话 `BudgetGuard`（§6.6 缰绳只约束 Agent 自身推理，
-  防止长评测被会话预算误杀）；执行自身成本由评测配置的 judge 预算管（既有 budget_usd）。
+- **Ctrl+C 语义（v4.12 降级裁决，F-C-EXEC-05 三选询问拆出为 P2 独立立项）**：`pipeline_core`
+  任务循环加**协作式取消检查点**（`cancel_event` 任务边界粒度：置位后当前任务跑完即停）——
+  Agent 会话内 Ctrl+C = 宿主置位取消令牌并中断本轮，已完成任务产物与 run_manifest 已落盘、
+  可溯源（与 CLI 现状一致）；CLI 进程内 Ctrl+C 语义不变（裸中断）。三选菜单落内核后
+  CLI / 向导 / Agent 域同步受益；
+- **硬中断终局（v4.12.1，实测事故修复：二按 Ctrl+C 后会话报废）**：事故链 = 二按 KI 打断
+  `asyncio.run` teardown → `Runner.close` join `to_thread` 默认池（上限 300s，当前任务分钟级
+  时终端冻结）→ 连按的 KI 击穿 `run_forever` 登记/清理 running-loop 线程态的窗口 → 泄漏后
+  本轮报「Cannot close a running event loop」、后续轮报「asyncio.run() cannot be called from
+  a running event loop」。修复三件套：①执行核心改 **daemon 单飞线程**（`_spawn_pipeline_worker` +
+  `wrap_future`）——teardown 无可 join，turn 即时收轮，worker 后台到任务边界收尾（cancelled
+  产物照常落盘）；②KI/取消后 `active_event` **保留为僵尸 worker 取消通道**（busy 守卫加
+  `worker_alive` 双判据 + 下一轮入口 reap 残留令牌，僵尸存活期拒绝并发评测）；③SIGINT handler
+  二按前置 `SIG_IGN`（contextmanager 退出复原）——teardown 期屏蔽按键风暴，信号窗口不可再击穿。
+  取消粒度仍为任务边界（当前任务不可打断，分钟级收尾属预期，busy 提示如实转述）；
+- **预算豁免**：**天然成立**（`BudgetGuard` 仅挂 `on_llm_end` 计会话机 token，`agent/core/callbacks.py`
+  ——工具执行不产生会话机 LLM 事件，评测 judge 走独立 client 不经会话回调）；以回归测试断言
+  长执行不烧会话预算（F-C-AGENT-04）；执行自身成本由评测配置的 judge 预算管（既有 budget_usd）。
 
 ### 6.11 数据集域（DatasetToolServer，v4.11）
 
@@ -991,3 +1048,8 @@ review 检查项。
 | v4.9 | 2026-09-17 | **落盘即归位**（用户实测反馈「确认后预告路径找不到包，须 Ctrl+C/空行退出才归位」，§6.3 重写）：首次确认落盘成功即把草稿挪到 `cwd/<id>-package/`——`PackageToolServer.rebind_root` 沙盒重定向（staging 内存态、root 无持久句柄，零残留）+ `WorkbenchAgent.relocate_root` 图重建（`{pkg_root}` 建图烘焙，对话消息宿主持有不丢）+ 归位注记进对话 + 会话记录文件随迁新 `session_key`（跨进程续作上下文不因归位断裂）；**同一会话可继续自然语言修改已归位的包**；`_finalize_new_package` 收窄为会话末兜底 + 改名同步（已归位未改名静默返回）；撞名红字报错留草稿位不打断会话；确认横幅/落盘提示同步新时序 |
 | v4.10 | 2026-09-17 | **写包链路系统性修复**（jxb-agent 创建会话转录复盘，§6.3 门禁族表 +1 行、中断续作要点重写）：①`update_manifest` 结构修复——曾手拼 `"package:\n" + safe_dump(扁平dict)` 落盘零缩进损坏清单（read_manifest 的 get 回退把坏结构读回「自洽」致 bug 隐身），改为 dump `{"package": merged}` 嵌套结构自带缩进；②**YAML 全量解析双防线**——`write_file` 对 `.yaml/.yml` fail-fast 预检（截断当场拒写未入暂存）+ `validate_package` 全视图解析打回（曾只扫 `rules/`，截断的 task_sets 靠 Agent 自检才发现）；③**跨进程续跑**（五阶段计划推迟的 MR4 落地）——每轮会话记录同步写入进度快照（暂存 + SKELETON.md 留档 + 证据账本，凭证态绝不入快照），重启续作自动恢复并向对话注入进度注记——「重启会话续作」从进度陷阱变为真实承诺，write_sut_config 免重探跨进程成立 |
 | v4.11 | 2026-09-20 | **评测执行域 + 数据集域 + 日志四档**（req/04 v1.6 用户需求四则，新 §6.10/§6.11/§4.4 + D-CLI-9/10）：①**评测执行域**——ExecutionToolServer（list_eval_targets/run_evaluation/list_runs/show_run/upload_run），统一会话内「执行→看结果→上传」闭环；**输出直通**（D-CLI-9）：执行期挂起 Agent 流式渲染、rich 直出与 CLI 同一渲染路径，LLM 只见紧凑摘要不转述；执行确认门槛永不被 `--trust-agent` 旁路、凭证缺失经 ask_fn 补录、Ctrl+C 按阶段路由、执行不计会话预算；②**数据集域**——DatasetToolServer（list_datasets/download_dataset 复用 DatasetManager），与 SUT 探测并列的**第二个受控出网域**（D-CLI-10 白名单制实例化）：域名白名单 + `workspace/datasets/` 写白名单 + token 不入对话/日志；③**`--log-level` 四档**（quiet/normal/verbose/debug）取代 `--verbose`，三形态（CLI/向导/Agent）同源，verbose 档补 SUT 请求响应摘要/judge 交互/重试事件埋点（只加事件不改指标逻辑）；会话机四工具面并列、横幅能力域/示例同步、`WorkbenchAgentConfig` 不变（新域零会话机改动，验证 §6.7 扩展机制） |
+| v4.12 | 2026-09-20 | **14b 设计评审裁决（req/04 v1.7）**：①**编排单一真相源**——新增 `pipeline_core`（§6.10）无渲染编排纯函数 + `PipelineOutcome`（退出码返回而非 raise），`execute_pipeline` 薄壳化（CLI 行为零变化为重构验收），Agent 域 `run_evaluation` 只消费 pipeline_core——否决「直拼 `_stages` 阶段函数」（第三份编排拷贝，逐字节同源必漂移）；②**直通机制补注**——`asyncio.to_thread` 包裹同步执行内核（事件循环保活性）+ render_bridge 注入接口（host 每轮构造、ExecContext 持引用，与 ask_fn 同模式）+ 执行后日志档位恢复；③**Ctrl+C 降级**——`pipeline_core` 任务循环协作式取消检查点（cancel_event 任务边界粒度），F-C-EXEC-05 三选询问拆出 P2 独立立项（先落内核，三形态同步受益）；④预算豁免确认为天然成立（BudgetGuard 仅 on_llm_end），收敛为回归断言 |
+| v4.12.1 | 2026-09-20 | **硬中断终局隔离（14b 验收实测事故修复）**：执行核心 `asyncio.to_thread` → daemon 单飞线程 + `wrap_future`（teardown 零 join，二按 KI 后 turn 即时收轮、worker 后台到任务边界收尾）；KI/取消保留 `active_event` 作僵尸 worker 取消通道（busy 守卫 `worker_alive` 双判据 + 下一轮入口 reap）；SIGINT handler 二按前置 `SIG_IGN`（teardown 期屏蔽按键风暴，退出复原）——三件套合围「Cannot close a running event loop」会话报废链（§6.10 硬中断终局条）；取消粒度维持任务边界不变 |
+| v4.12.2 | 2026-09-20 | **既有包轻量编辑路由修复（用户验收反馈：加 1 条用例触发全建包流程）**：①新增 `edit_package` 会话目标切换工具（§6.2 新行）——非交互/builtin/staging 非空多级守卫 + ask_fn 确认 + 骨架归档/授权账本清账 + `relocate_root(note=…)` 切根（会话记录随迁，注记进对话）；②`relocate_root` 参数化注记（归位/切根同一机制、语义注记区分），`relocate_fn` 构造后注入（与 ledger 同风格解环）；③prompts「改造已有项目包」三档分流重写——**轻量修改默认档 = 会话内 edit_package 原位编辑**（不落骨架/不起五阶段/不 fork/不重测 SUT），fork 仅限明确要新版本/新包，删除「首选指引退出本会话」（`scenario edit` 降级为等价通道提及）；五阶段适用边界置顶（从零建新包 / 新接入在线 SUT）；④`list_packages` notes 同步改路由。`WorkbenchAgentConfig` 零改动（§6.7） |
+| v4.12.3 | 2026-09-20 | **既有包编辑证据门禁豁免（用户验收反馈：只删一条用例仍触发凭证重验）**：①**对账门禁收窄至暂存增量**（§6.5 ③，回归文档原意）——`sut_evidence_gate` 遍历源 view() → staging，磁盘既有未动的 sut_config 不再重复对账；与磁盘基线逐字段全等的 auth（base_url+auth）/ 协议结论（通道+接口域+flavor 三元组）豁免，结构性错误与未排期通道无条件打回、磁盘无基线保守全量对账（新建包行为不变，安全属性不降）；②**切根保育**（§6.2）——`relocate_root` 目标记录已存在时不覆盖：目标对话并入 + 账本快照合并恢复（曾静默清零对话史+账本）；③横幅文案按草稿前缀区分「归位/原位落盘」（edit_package 原位场景曾误称归位）；④prompts 豁免规约——不因对账提示重探登录、不发起「允许/不允许」类确认（该询问无代码消费，属无效解锁动作）；⑤edit_package 尾部不可达残段清理（v4.12.2 编辑事故善后） |
+| v4.12.4 | 2026-09-20 | **Ctrl+C 五态语义统一（用户验收反馈：凭证外发确认上 ^C 无法中断，空回车落默认「允许」放行真外发）**：①**交互桥 Abort→KI**（§6.6 新增五态状态机表）——ask_fn/_cli_confirm 桥把 click `Abort`（Exception 子类，曾被工具层 `except Exception` 吞成 `{"type":"Abort","message":""}` 回流 LLM 诱发重试、SIG_IGN 滞留整轮后 ^C 全面失效）转回 `KeyboardInterrupt` 穿透工具层直达 turn() 统一暂停语义；②turn() KI 归 reason=interrupted（曾落 error）；③`_json_tool` 空 message 回退类名；④空闲提示符 ^C 二按退出（首按 armed 提示不清场、输入即重置，曾一次 ^C 即退会话——对齐 Claude Code）；⑤授权/确认类选择器空回车不再默认放行（`select(no_default=True)`：提示改「输入编号」、空输入重问——隐式默认曾是安全纵伤）；⑥中断措辞去魔法词（「直接说下一步即可接着干」）。普通 CLI 命令 Abort→exit 130 语义零变化 |

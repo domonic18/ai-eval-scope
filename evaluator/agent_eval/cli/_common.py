@@ -14,11 +14,14 @@ from rich.table import Table
 __all__ = [
     "Table",
     "ensure_sut_credentials",
+    "observability_enabled",
+    "observability_flush",
     "rprint",
     "_check_llm_availability",
     "_flush_observability",
     "_init_judge_orchestrator",
     "_print_summary",
+    "_render_upload_receipt",
 ]
 
 
@@ -192,50 +195,115 @@ def _print_summary(result: object) -> None:
     rprint("")
 
 
-def _flush_observability(
-    result: object, *, upload_override: bool | None, package_dir: str | None = None
-) -> None:
-    """评估完成后把结果推送到可观测平台（ResultSink，Sprint 7e）。
+def _run_workspace_of(result: object) -> Any:
+    """从 EvalResult 提取 run workspace 根（observability 队列目录锚点）。"""
+    rw = getattr(result, "run_workspace", None)
+    if rw is not None:
+        return getattr(rw, "root", None) or (rw.path if hasattr(rw, "path") else None)
+    return None
 
-    未配置凭据（enabled=False）→ 静默跳过。失败不阻断 eval 命令（已落本地 workspace + 入离线队列）。
-    """
-    from agent_eval.observability import ResultSink, load_config
+
+def observability_enabled(result: object, *, upload_override: bool | None) -> bool:
+    """是否启用平台上报（load_config 仅读 env，重复调用无害）。"""
+    from agent_eval.observability import load_config
 
     # 队列目录必须随 run workspace：config 的回退是 CWD 相对路径（.ingest_queue），
     # 而容器里 CWD 常是只读的场景包挂载（:ro）——创建即炸会吞掉整个推送，
     # 且表现为「构建绿但平台无数据」（构建 #10-#18 实录）。先取 workspace 再建配置。
-    run_workspace = None
-    rw = getattr(result, "run_workspace", None)
-    if rw is not None:
-        run_workspace = getattr(rw, "root", None) or (rw.path if hasattr(rw, "path") else None)
-    cfg = load_config(workspace=run_workspace, upload_override=upload_override)
-    if not cfg.enabled:
-        return
+    cfg = load_config(workspace=_run_workspace_of(result), upload_override=upload_override)
+    return bool(cfg.enabled)
 
-    rprint("[blue]可观测平台:[/blue] 推送结果中…")
-    # 查看页地址确定性拼装（/run/:id，后端按 externalRunId 兼容查询）——Jenkins
-    # console 正则提取进构建描述；URL 不依赖推送成败，离线重放成功后同样有效
-    run_id = str(getattr(result, "run_id", "") or "")
-    view_url = cfg.run_view_url(run_id)
+
+def observability_flush(
+    result: object, *, upload_override: bool | None, package_dir: str | None = None
+) -> dict:
+    """把结果推送到可观测平台（无渲染核心，workbench/管线共用；Sprint 7e→14b 拆分）。
+
+    回执（异常全吞——推送失败不阻断评估结论，已落本地 workspace + 入离线队列）::
+
+        {"enabled", "init_error", "error", "sent", "queued",
+         "artifacts_uploaded", "artifacts_failed", "replayed", "view_url"}
+
+    ``enabled=False``（未配置凭据）时计数键为缺省 0。``view_url`` 查看页地址
+    确定性拼装（/run/:id），不依赖推送成败，离线重放成功后同样有效。
+    """
+    from agent_eval.observability import ResultSink, load_config
+
+    receipt: dict = {
+        "enabled": False,
+        "init_error": "",
+        "error": "",
+        "sent": 0,
+        "queued": 0,
+        "artifacts_uploaded": 0,
+        "artifacts_failed": 0,
+        "replayed": 0,
+        "view_url": "",
+    }
+    cfg = load_config(workspace=_run_workspace_of(result), upload_override=upload_override)
+    if not cfg.enabled:
+        return receipt
+    receipt["enabled"] = True
+    receipt["view_url"] = cfg.run_view_url(str(getattr(result, "run_id", "") or ""))
 
     try:
         sink = ResultSink(cfg)
         report = sink.flush(
             result,  # type: ignore[arg-type]
-            run_workspace=run_workspace,
+            run_workspace=_run_workspace_of(result),
             package_dir=package_dir,
         )
         if report.error:
-            rprint(f"[yellow]⚠ 推送异常（已入离线队列，后续自动重放）: {report.error}[/yellow]")
-            if view_url:
-                rprint(f"[yellow]平台报告（重放成功后可访问）: {view_url}[/yellow]")
+            receipt["error"] = str(report.error)
         else:
-            rprint(
-                f"[green]✓ 已推送[/green] 事件 {report.sent}、入队 {report.queued}、"
-                f"制品 {report.artifacts_uploaded}/{report.artifacts_uploaded + report.artifacts_failed}、"
-                f"重放 {report.replayed}"
+            receipt.update(
+                sent=report.sent,
+                queued=report.queued,
+                artifacts_uploaded=report.artifacts_uploaded,
+                artifacts_failed=report.artifacts_failed,
+                replayed=report.replayed,
             )
-            if view_url:
-                rprint(f"[green]平台报告: {view_url}[/green]")
     except Exception as exc:  # noqa: BLE001 — 推送失败不影响评估结论
-        rprint(f"[yellow]⚠ 可观测平台推送初始化失败（结果仍在本地 workspace）: {exc}[/yellow]")
+        receipt["init_error"] = str(exc)
+    return receipt
+
+
+def _render_upload_receipt(receipt: dict) -> None:
+    """按回执渲染上报结果（不含「推送结果中…」横幅——横幅由调用方先行打印）。
+
+    文案与拆分前逐字一致：推送异常 / 已推送明细 / 平台报告 / 初始化失败四分支。
+    """
+    if not receipt.get("enabled"):
+        return
+    view_url = receipt.get("view_url", "")
+    if receipt.get("init_error"):
+        rprint(
+            f"[yellow]⚠ 可观测平台推送初始化失败（结果仍在本地 workspace）: "
+            f"{receipt['init_error']}[/yellow]"
+        )
+    elif receipt.get("error"):
+        rprint(f"[yellow]⚠ 推送异常（已入离线队列，后续自动重放）: {receipt['error']}[/yellow]")
+        if view_url:
+            rprint(f"[yellow]平台报告（重放成功后可访问）: {view_url}[/yellow]")
+    else:
+        up, failed = receipt["artifacts_uploaded"], receipt["artifacts_failed"]
+        rprint(
+            f"[green]✓ 已推送[/green] 事件 {receipt['sent']}、入队 {receipt['queued']}、"
+            f"制品 {up}/{up + failed}、重放 {receipt['replayed']}"
+        )
+        if view_url:
+            rprint(f"[green]平台报告: {view_url}[/green]")
+
+
+def _flush_observability(
+    result: object, *, upload_override: bool | None, package_dir: str | None = None
+) -> None:
+    """评估完成后把结果推送到可观测平台（组合壳；签名与行为不变，eval/suite 路径零改动）。
+
+    未配置凭据（enabled=False）→ 静默跳过。失败不阻断 eval 命令（已落本地 workspace + 入离线队列）。
+    """
+    if observability_enabled(result, upload_override=upload_override):
+        rprint("[blue]可观测平台:[/blue] 推送结果中…")
+    _render_upload_receipt(
+        observability_flush(result, upload_override=upload_override, package_dir=package_dir)
+    )

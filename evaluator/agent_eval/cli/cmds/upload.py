@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json as _json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import typer
 
 from agent_eval.cli._common import rprint
+from agent_eval.core.exceptions import AgentEvalError
 
 
 def upload(
@@ -25,15 +28,32 @@ def upload(
     upload_run(run=run, workspace=workspace, project=project)
 
 
-def upload_run(
+class UploadError(AgentEvalError):
+    """回填失败（kind: missing_run / missing_summary / no_credentials）。"""
+
+    def __init__(self, message: str, *, kind: str) -> None:
+        super().__init__(message)
+        self.kind = kind
+
+
+def upload_run_core(
     run: str,
     workspace: str = "./workspace",
     project: str | None = None,
-) -> None:
-    """回填动作（纯函数；重建 run/sample/constraint/artifact 事件并推送）。"""
-    import json as _json
+    *,
+    note: Callable[[str], None] | None = None,
+) -> dict[str, Any]:
+    """回填核心（重建 run/sample/constraint/artifact 事件并推送；无终态渲染）。
 
-    from agent_eval.evaluation.models import SampleResult
+    progress 行（跳过解析警告 / 「回填: …」）经 ``note`` 回调即时输出——CLI 动作
+    传 rprint 保持字节一致，Agent 域传 None 静默（回执已含计数）。
+    回执：``{"run", "run_id", "sample_count", "event_count", "artifact_count",
+    "sent", "queued", "run_dir", "run_url", "project"}``。
+    前置缺失抛 :class:`UploadError`（kind 见类 docstring）。
+    """
+    import os
+
+    from agent_eval.evaluation.models import MetricsReport, SampleResult
     from agent_eval.observability import ResultSink, load_config
     from agent_eval.observability.events import (
         build_artifact_event,
@@ -43,26 +63,29 @@ def upload_run(
     )
     from agent_eval.observability.sink import SinkReport
 
+    def _say(message: str) -> None:
+        if note is not None:
+            note(message)
+
     run_dir = Path(workspace).resolve() / "runs" / run
     if not run_dir.exists():
-        rprint(f"[red]运行目录不存在: {run_dir}[/red]")
-        raise typer.Exit(code=1)
+        raise UploadError(f"运行目录不存在: {run_dir}", kind="missing_run")
 
     summary_path = run_dir / "reports" / "summary.json"
     if not summary_path.exists():
-        rprint(f"[red]缺少 summary.json: {summary_path}[/red]")
-        raise typer.Exit(code=1)
+        raise UploadError(f"缺少 summary.json: {summary_path}", kind="missing_summary")
     summary = _json.loads(summary_path.read_text(encoding="utf-8"))
 
     # 回填沿用真实运行模式：run 清单 mode=run → agent；mode=pipeline → pipeline
     manifest_path = run_dir / "run_manifest.json"
     run_mode = "eval_only"
+    manifest: dict[str, Any] = {}
     if manifest_path.exists():
         try:
-            _m = _json.loads(manifest_path.read_text(encoding="utf-8")).get("mode")
-            if _m == "run":
+            manifest = _json.loads(manifest_path.read_text(encoding="utf-8"))
+            if manifest.get("mode") == "run":
                 run_mode = "agent"
-            elif _m == "pipeline":
+            elif manifest.get("mode") == "pipeline":
                 run_mode = "pipeline"
         except (OSError, ValueError):
             pass
@@ -71,17 +94,14 @@ def upload_run(
     if project:
         env_override["AGENT_EVAL_PROJECT"] = project
     # upload 子命令默认强制开启上传（env_override 需并入进程 env 一并传入，否则 --project 不生效）
-    import os
-
     cfg = load_config(upload_override=True, env={**os.environ, **env_override})
     if not cfg.has_credentials():
-        rprint("[red]未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY[/red]")
-        raise typer.Exit(code=1)
+        raise UploadError(
+            "未配置凭据：请设置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY", kind="no_credentials"
+        )
 
     metrics = summary.get("metrics", {})
     # 用 build_run_event 重建 run 事件（附带场景化指标键 + scenario_id + 运行配置快照）
-    from agent_eval.evaluation.models import MetricsReport
-
     # summary["metrics"] 已是场景化指标 dict（key=metric_id）；avg_time_ms 为顶层过程元数据
     report = MetricsReport(
         run_id=summary.get("run_id", run),
@@ -132,7 +152,7 @@ def upload_run(
                     _json.loads(report_path.read_text(encoding="utf-8"))
                 )
             except Exception as exc:  # noqa: BLE001
-                rprint(f"[yellow]跳过 {task_dir.name}: 解析失败 {exc}[/yellow]")
+                _say(f"[yellow]跳过 {task_dir.name}: 解析失败 {exc}[/yellow]")
                 continue
             events.append(build_sample_event(sample, external_run_id=summary.get("run_id", run)))
             for stage in sample.stage_results.values():
@@ -153,12 +173,7 @@ def upload_run(
     artifact_count = 0
 
     # 从 run_manifest 获取 package_dir（原始产出物所在）
-    manifest_path = run_dir / "run_manifest.json"
-    package_dir_str = ""
-    if manifest_path.exists():
-        package_dir_str = _json.loads(manifest_path.read_text(encoding="utf-8")).get(
-            "package_dir", ""
-        )
+    package_dir_str = manifest.get("package_dir", "")
 
     if results_dir.exists():
         for task_dir in sorted(p for p in results_dir.iterdir() if p.is_dir()):
@@ -246,9 +261,34 @@ def upload_run(
                 events.extend(src_events)
                 artifact_count += len(src_events)
 
-    rprint(
+    _say(
         f"[blue]回填:[/blue] 运行 {run}，样本 {sample_count}，"
         f"事件 {len(events)}（含 {artifact_count} 制品）"
     )
     sent, queued = sink.dispatch(events)
-    rprint(f"[green]✓ 回填完成[/green] 已发送 {sent}、入队 {queued}")
+    return {
+        "run": run,
+        "run_id": run_id_str,
+        "sample_count": sample_count,
+        "event_count": len(events),
+        "artifact_count": artifact_count,
+        "sent": sent,
+        "queued": queued,
+        "run_dir": str(run_dir),
+        "run_url": cfg.run_view_url(run_id_str),
+        "project": project or "",
+    }
+
+
+def upload_run(
+    run: str,
+    workspace: str = "./workspace",
+    project: str | None = None,
+) -> None:
+    """回填动作（core + 渲染组合；红字文案与退出码不变）。"""
+    try:
+        receipt = upload_run_core(run, workspace=workspace, project=project, note=rprint)
+    except UploadError as e:
+        rprint(f"[red]{e}[/red]")
+        raise typer.Exit(code=1) from e
+    rprint(f"[green]✓ 回填完成[/green] 已发送 {receipt['sent']}、入队 {receipt['queued']}")

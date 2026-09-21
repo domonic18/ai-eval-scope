@@ -12,6 +12,7 @@ executor/transcript.py（plan/07 G4 拆分）。
 
 from __future__ import annotations
 
+import threading
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -118,11 +119,18 @@ class ExecutionAgent:
     # ─── 对外入口 ───
 
     async def run_task_set(
-        self, task_set: TaskSet, *, run_id: str | None = None
+        self,
+        task_set: TaskSet,
+        *,
+        run_id: str | None = None,
+        cancel_event: threading.Event | None = None,
     ) -> tuple[str, list[ExecutionPackage]]:
         """批量执行任务集（共享 run_id），返回 (run_id, 执行包列表)。
 
         run_id 可由调用方（CLI）注入——用于运行清单登记与外部关联。
+        cancel_event（Sprint 14b 协作取消）：任务边界粒度——置位后当前任务
+        跑完（正常包/失败包均已物化）即停，返回已完成的部分列表；缺省 None
+        行为不变（CLI 形态不变式）。
 
         任务隔离（arch/16 Phase 1 收尾）：单任务异常终止不再烧掉整场——
         两次 staging 重放实测（run 20260911_050015 / 073626）首个任务熔断后
@@ -133,6 +141,11 @@ class ExecutionAgent:
         packages: list[ExecutionPackage] = []
         total = len(task_set.tasks)
         for idx, task in enumerate(task_set.tasks, start=1):
+            if cancel_event is not None and cancel_event.is_set():
+                structlog.get_logger("executor").warning(
+                    "任务集中断（协作取消）", completed=idx - 1, total=total
+                )
+                break
             # 逐任务进度上终端（stderr）：执行域只有一根转轮，单任务数十分钟时
             # 表现为「卡住不动」（SUT 反问循环实测 2026-09）——开始/结束都要可见
             structlog.get_logger("executor").info(

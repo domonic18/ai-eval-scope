@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_eval.agent.core.callbacks import BudgetGuard
+from agent_eval.agent.workbench.execution import ExecutionToolServer
 from agent_eval.agent.workbench.gates import sut_evidence_gate
 from agent_eval.agent.workbench.memory import (
     SessionStore,
@@ -84,6 +85,11 @@ _TODO_SYSTEM_PROMPT = (
     "重写更新状态；过程中发现的新子任务随时补录；简单任务（一两步）不必建清单。"
 )
 
+# 根迁移默认注记（归位语义；edit_package 切根经 relocate_root(note=...) 覆盖）
+_RELOCATE_NOTE = (
+    "（包已归位：沙盒根从 {} 迁移到 {}，包内容不变。此后的文件读写、校验、落盘以新位置为准）"
+)
+
 
 class WorkbenchAgent:
     """工作台会话 Agent（一个实例 = 一次 REPL 会话，跨轮共享历史与暂存）。
@@ -101,6 +107,7 @@ class WorkbenchAgent:
         llm_role: str = "agent",
         log_dir: Path | None = None,
         ask_fn: Any = None,  # async (question, *, options, secret) -> str | None
+        render_bridge: Any = None,  # ExecutionRenderBridge（宿主注入；WorkbenchAgentConfig 零改动，§6.7）
     ) -> None:
         self.config = config or WorkbenchAgentConfig()
         self.domain = domain  # 域档位：选择提示词段与门禁策略
@@ -119,6 +126,9 @@ class WorkbenchAgent:
         # 机械物化通道：write_sut_config 从探测账本原样注入 auth（两 server 构造
         # 互需对方能力，probe 先带 fact_sink 装配，账本在此回绑包沙盒）
         self.server.ledger = self.probe
+        # 会话目标切换：edit_package 的切根执行体（构造后注入，与 ledger 同风格
+        # 解环——server 构造在先，relocate_root 是宿主方法）
+        self.server.relocate_fn = self.relocate_root
         self.llm_role = llm_role
         self._messages: list[Any] = []
         # 预算护栏会话级累计（跨段/跨轮不清零）；内存检查点仅作事故现场保存器
@@ -157,6 +167,15 @@ class WorkbenchAgent:
             / f"workbench_agent_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
         )
         self.probe.log_path = self._log_path  # 探测证据与会话日志同文件（时间线完整）
+        # 评测执行域（Sprint 14b，arch/15 v4.12）：会话内「执行 → 看 → 传」闭环。
+        # workspace 同源 default_workspace（runs/ 与 CLI 同址）；渲染桥宿主每轮
+        # 重绑（_run_one 构造新 emitter → bind_render_bridge），构造期值仅占位
+        self.execution = ExecutionToolServer(
+            ask_fn=ask_fn,
+            render_bridge=render_bridge,
+            workspace_root=paths.default_workspace,
+            log_path=self._log_path,
+        )
 
     # ─── 会话记忆（跨进程续作） ────────────────────────────────────
 
@@ -183,15 +202,17 @@ class WorkbenchAgent:
             user_text, reply, str(self.server.root), snapshot=self._progress_snapshot()
         )
 
-    def relocate_root(self, final_root: Path) -> None:
-        """包归位后重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
+    def relocate_root(self, final_root: Path, *, note: str | None = None) -> None:
+        """重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
 
-        首次确认落盘即归位（v4.9）后由宿主调用——同一会话的后续轮次直接自然语言
-        修改已归位的包。图在下一次 ``_invoke`` 时重建（系统提示的 ``{pkg_root}`` 在
-        建图时烘焙；对话消息由宿主持有，重建不丢上下文）。会话记录文件迁移到新
-        session_key——归位后跨进程续作（``--output`` 指回）命中同一记录，上下文不
-        因归位断裂。文件迁移失败仅丢跨进程续作（key 仍切换，后续记录落新位），
-        会话内不受影响。
+        两个调用方：①包归位（v4.9，首次确认落盘后宿主调用，默认注记）；②既有
+        包原位编辑（v4.12.2，edit_package 切根，经 ``note`` 传「会话目标已切换」
+        注记——同一机制，语义注记区分归位/切换）。图在下一次 ``_invoke`` 时重建
+        （系统提示的 ``{pkg_root}`` 在建图时烘焙；对话消息由宿主持有，重建不丢
+        上下文）。会话记录文件迁移到新 session_key——切换/归位后跨进程续作命中
+        同一记录，上下文不因迁移断裂。目标已有记录时保育合并而非覆盖（v4.12.3，
+        :meth:`_conserve_target_record`）；迁移失败仅丢跨进程续作（key 仍切换，
+        后续记录落新位），会话内不受影响。
         """
         final = Path(final_root).resolve()
         previous = self.server.root
@@ -201,30 +222,82 @@ class WorkbenchAgent:
         self.server.rebind_root(final)
         self._graph = None  # 系统提示烘焙了 {pkg_root}——下次调用重建
         new_file = old_file.parent / session_key(final)
-        try:
-            if old_file.exists():
-                old_file.replace(new_file)
-            skeleton = old_file.with_suffix(".SKELETON.md")
-            if skeleton.exists():
-                skeleton.replace(new_file.with_suffix(".SKELETON.md"))
-        except OSError:
-            pass  # 迁移失败仅影响跨进程续作；key 仍切换，后续记录落新位
+        if new_file.exists():
+            # 切到编辑过的既有包：目标记录是此前会话的对话史+账本快照，
+            # replace 会静默清零——并入当前会话（v4.12.3）
+            self._conserve_target_record(new_file)
+        else:
+            try:
+                if old_file.exists():
+                    old_file.replace(new_file)
+                skeleton = old_file.with_suffix(".SKELETON.md")
+                if skeleton.exists():
+                    skeleton.replace(new_file.with_suffix(".SKELETON.md"))
+            except OSError:
+                pass  # 迁移失败仅影响跨进程续作；key 仍切换，后续记录落新位
         self._session_store.session_file = new_file
         self._log("relocate_root", previous=str(previous), final=str(final))
-        # 归位事实进对话（沙盒根变了，Agent 须知道以新位置为准）——同放弃回滚的
-        # 系统注记形态，防 Agent 仍引用旧草稿路径
-        self._messages.append(
-            (
-                "user",
-                f"（包已归位：沙盒根从 {previous} 迁移到 {final}，包内容不变。"
-                "此后的文件读写、校验、落盘以新位置为准）",
-            )
-        )
+        # 根变更事实进对话（沙盒根变了，Agent 须知道以新位置为准）——同放弃回滚
+        # 的系统注记形态，防 Agent 仍引用旧根路径
+        self._messages.append(("user", note or _RELOCATE_NOTE.format(previous, final)))
+
+    def _conserve_target_record(self, target_file: Path) -> None:
+        """目标已有会话记录：并入当前会话而非覆盖（edit_package 切根路径）。
+
+        归位/迁移路径目标 key 恒首次出现，走 move 分支；切到**编辑过的既有包**
+        时目标记录承载此前会话的对话史与证据账本快照——``Path.replace`` 会把它
+        静默清零（对话史丢失 + 「已落盘包续改免重探」承诺破裂）。保育语义：
+        ①目标对话并入当前会话记忆（目标史在前、本会话在后，裁剪上限防膨胀）；
+        ②目标账本快照合并恢复进探测账本（当前会话条目优先——同一 ref 以本会话
+        实测为准）；旧根侧记录文件保留原位。目标记录不可读时按无目标史处理。
+        """
+        try:
+            data = json.loads(target_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        target_dialogue = [
+            d
+            for d in data.get("dialogue", [])
+            if isinstance(d, dict) and d.get("role") and d.get("text")
+        ]
+        if target_dialogue:
+            self._session_store.dialogue[:0] = target_dialogue
+            self._session_store.dialogue = self._session_store.dialogue[
+                -self.config.max_dialogue_entries :
+            ]
+        snapshot = data.get("snapshot")
+        ledger = snapshot.get("ledger") if isinstance(snapshot, dict) else None
+        if isinstance(ledger, dict):
+            current = self.probe.ledger_snapshot()
+            merged = {
+                "verified_logins": {
+                    **ledger.get("verified_logins", {}),
+                    **current.get("verified_logins", {}),
+                },
+                "verified_protocols": {
+                    **ledger.get("verified_protocols", {}),
+                    **current.get("verified_protocols", {}),
+                },
+            }
+            restored = self.probe.restore_ledgers(merged)
+            self._log("relocate_ledger_merged", restored_logins=restored)
 
     # ─── 组装 ─────────────────────────────────────────────────────
 
+    def bind_render_bridge(self, bridge: Any) -> None:
+        """每轮重绑执行域渲染桥（宿主 _run_one 构造新流式 emitter 后调用）。"""
+        self.execution.ctx.bridge = bridge
+
+    def interrupt_active_execution(self) -> bool:
+        """协作中断活跃评测（宿主 SIGINT 首按落点，§6.7 生命周期挂钩）。"""
+        return self.execution.interrupt_active_execution()
+
     def _describe_tools(self) -> str:
-        specs = [*PackageToolServer.TOOL_SPECS, *SUTProbeToolServer.TOOL_SPECS]
+        specs = [
+            *PackageToolServer.TOOL_SPECS,
+            *SUTProbeToolServer.TOOL_SPECS,
+            *ExecutionToolServer.TOOL_SPECS,
+        ]
         return "\n".join(f"- {s.name}: {s.description}" for s in specs)
 
     def _build_system_prompt(self) -> str:
@@ -273,6 +346,7 @@ class WorkbenchAgent:
         tools = [
             *self.server.to_langchain_tools(),
             *self.probe.to_langchain_tools(),
+            *self.execution.to_langchain_tools(),
             *todo_mw.tools,
         ]
         return create_deep_agent(
@@ -308,6 +382,7 @@ class WorkbenchAgent:
         """
         self._log("turn_start", instruction=user_text)
         self.probe.new_turn()  # 重置 SUT 探测轮内预算（轮内总量约束）
+        self.execution.new_turn()  # 执行域轮次标记（active_event 生命周期归 run_evaluation）
         if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
             self._messages.extend(_resume_messages(self._dialogue, self.config))
             # 进度恢复注记（v4.10）：暂存与证据账本已在 __init__ 恢复——Agent 须
@@ -350,8 +425,8 @@ class WorkbenchAgent:
                         )
                     continue
                 reply = _last_ai_text(self._messages)
-                if isinstance(exc, asyncio.CancelledError):
-                    reason = "interrupted"
+                if isinstance(exc, (KeyboardInterrupt, asyncio.CancelledError)):
+                    reason = "interrupted"  # 交互桥 ^C 以 KI 形态到达（v4.12.4）
                 elif _is_recursion_limit(exc):
                     reason = "segment_limit"
                 elif isinstance(exc, BudgetExceededError):

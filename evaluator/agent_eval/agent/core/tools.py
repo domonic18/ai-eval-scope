@@ -105,7 +105,8 @@ class ToolExporterMixin:
                         "status": "failed",
                         "error": {
                             "type": type(e).__name__,
-                            "message": truncate(str(e), 2000),
+                            # str 为空的异常（如 click Abort 无参构造）至少可解释
+                            "message": truncate(str(e) or type(e).__name__, 2000),
                         },
                     },
                     ensure_ascii=False,

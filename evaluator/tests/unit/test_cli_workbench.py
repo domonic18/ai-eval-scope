@@ -139,6 +139,18 @@ class TestRuns:
         assert payload["run_id"] == "20260831_093012"
         assert payload["summary"]["metrics"]["chat:reward"] == 0.78
 
+    def test_run_detail_pure_data(self, tmp_path: Path) -> None:
+        """run_detail（Sprint 14b 提纯，Agent 执行域复用）：纯数据 + 缺目录 None。"""
+        assert runs.run_detail("nope", tmp_path) is None
+
+        _make_run(tmp_path, "20260831_093012")
+        detail = runs.run_detail("20260831_093012", tmp_path)
+        assert detail is not None
+        assert detail["run_id"] == "20260831_093012"
+        assert detail["summary"]["metrics"]["chat:reward"] == 0.78
+        assert detail["manifest"]["mode"] == "pipeline"
+        assert str(tmp_path) in detail["run_dir"]
+
 
 # ── 账号域：平台账号 (auth) 入口 ────────────────────────────────────────
 
@@ -411,11 +423,22 @@ class _WizardStubs:
         import agent_eval.cli._stages as stages
         import agent_eval.storage.package as storage_pkg
 
+        # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会渗入 pipeline 直调测试
+        # （core 内联上报段真发平台，禁联网）——显式钉死为关
+        monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
         monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
         monkeypatch.setattr(
             stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/rules/chat-quality.yaml"
         )
         monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())
+        # pipeline_core 成功路径触达 result.report/samples/gate（终态 payload+回填）
+        from types import SimpleNamespace
+
+        fake_result = SimpleNamespace(
+            samples=[],
+            report=SimpleNamespace(metrics={}, total_samples=0),
+            gate={"mode": "off", "enabled": False, "passed": True},
+        )
         monkeypatch.setattr(
             stages,
             "execute_stage",
@@ -424,7 +447,7 @@ class _WizardStubs:
         monkeypatch.setattr(
             stages,
             "evaluate_stage",
-            lambda *a, **k: (self.calls.setdefault("evaluate", dict(k)), object())[1],
+            lambda *a, **k: (self.calls.setdefault("evaluate", dict(k)), fake_result)[1],
         )
         monkeypatch.setattr(
             stages,
@@ -452,7 +475,8 @@ class TestExecuteActionDirectCall:
         assert isinstance(stubs.calls["execute"]["workspace_root"], Path)
         stubs.no_options_info(stubs.calls["execute"])
         stubs.no_options_info(stubs.calls["evaluate"])
-        stubs.no_options_info(stubs.calls["finalize"])
+        # pipeline 已不经 finalize_eval（core 事件序自编排，arch/15 v4.12）——
+        # 上报等价面 observability_flush 的回归在 test_cli_pipeline 门禁用例
 
     def test_execute_run_minimal_kwargs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -635,3 +659,59 @@ class TestExecDomain:
         assert called["sut_name"] == "api"  # stem 从「api（agent_protocol）」正确解析回取
         assert called["package"] == "t/api"
         assert session.ctx.active_sut == "api"
+
+
+# ── Agent 会话宿主：SIGINT 协作中断分流（Sprint 14b）───────────────────
+
+
+class TestGracefulExecInterrupt:
+    """`_graceful_exec_interrupt` handler 直调函数体测试（真实 os.kill 放 e2e，默认 skip）。"""
+
+    @staticmethod
+    def _agent(active: bool = True) -> object:
+        class _FakeAgent:
+            def __init__(self) -> None:
+                self.interrupts = 0
+
+            def interrupt_active_execution(self) -> bool:
+                self.interrupts += 1
+                return active
+
+        return _FakeAgent()
+
+    def test_first_press_cooperative_second_press_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import signal
+
+        from agent_eval.cli.cmds import workbench_agent as wb
+
+        monkeypatch.setattr(wb, "rprint", lambda *a, **k: None)  # 静音黄字提示
+        previous = signal.getsignal(signal.SIGINT)
+        agent = self._agent(active=True)
+        with wb._graceful_exec_interrupt(agent):
+            handler = signal.getsignal(signal.SIGINT)
+            assert handler is not previous
+            handler(signal.SIGINT, None)  # 首按：协作取消，不抛 KI
+            assert agent.interrupts == 1
+            with pytest.raises(KeyboardInterrupt):
+                handler(signal.SIGINT, None)  # 二按：屏蔽后续信号，走现行暂停语义
+            assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN  # teardown 期屏蔽按键风暴
+            assert agent.interrupts == 1  # 二按不再置位
+        assert signal.getsignal(signal.SIGINT) is previous  # 退出复原（屏蔽解除）
+
+    def test_first_press_without_active_execution_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import signal
+
+        from agent_eval.cli.cmds import workbench_agent as wb
+
+        monkeypatch.setattr(wb, "rprint", lambda *a, **k: None)
+        agent = self._agent(active=False)  # 无活跃执行
+        with wb._graceful_exec_interrupt(agent):
+            handler = signal.getsignal(signal.SIGINT)
+            with pytest.raises(KeyboardInterrupt):
+                handler(signal.SIGINT, None)  # 首按即走现行暂停语义（同样先屏蔽）
+            assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN
+        assert agent.interrupts == 1

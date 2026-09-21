@@ -75,8 +75,16 @@ def select(
     *,
     default: int | str | None = None,
     env_key: str | None = None,
+    no_default: bool = False,
 ) -> str:
-    """单选：编号列表 + 回车确认；--no-input 下走 env/default 旁路。"""
+    """单选：编号列表 + 回车确认；--no-input 下走 env/default 旁路。
+
+    ``no_default=True``（放行类选择专用，v4.12.4）：空回车不再隐式选第一项，
+    提示改「输入编号」、空输入按无效选择重问。隐式默认曾是安全纵伤——host
+    授权/凭证外发/执行确认/落盘确认的选择器空回车一律落放行项（「允许」
+    「确认执行」「全部应用」），而编号列表从未展示默认态，「回车确认」的
+    承诺无凭。
+    """
     if not options:
         rprint(f"[red]❌ 无可选项: {label}[/red]")
         raise typer.Exit(code=2)
@@ -90,6 +98,8 @@ def select(
         return matched
 
     if _no_input():
+        if no_default:
+            default = None  # 放行类无默认：--no-input 必须显式提供（ask_fn 场景不可达）
         if default is None:
             _fail_missing_input(
                 label, hint=f"可设环境变量 {env_key or 'AGENT_EVAL_SELECT'} 提供选择"
@@ -100,11 +110,16 @@ def select(
         return matched
 
     default_idx = _default_index(default, options)
-    rprint(f"[bold]? {label}[/bold] [dim][输入编号，回车确认][/dim]")
+    hint = "输入编号" if no_default else "输入编号，回车确认"
+    rprint(f"[bold]? {label}[/bold] [dim][{hint}][/dim]")
     for i, opt in enumerate(options, 1):
         rprint(f"  [cyan]{i}.[/cyan] {opt}")
     while True:
-        raw = str(typer.prompt("选择", default=str(default_idx), show_default=False))
+        if no_default:
+            # 空回车落 "" → 无效选择重问（click 对 default="" 直通空串，不内部重问）
+            raw = str(typer.prompt("选择", default="", show_default=False))
+        else:
+            raw = str(typer.prompt("选择", default=str(default_idx), show_default=False))
         matched = _match_option(raw, options)
         if matched is not None:
             return matched

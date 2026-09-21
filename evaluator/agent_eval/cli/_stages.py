@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -219,8 +220,13 @@ def execute_stage(
     mode: str = "run",
     llm_role: str | None = None,
     max_turns: int | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> list[Any]:
-    """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。"""
+    """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。
+
+    cancel_event（Sprint 14b）：透传 run_task_set 的协作取消令牌（任务边界
+    粒度）；缺省 None 行为不变——CLI run/eval 形态既有调用方零改动。
+    """
     from agent_eval.agent.executor.agent import ExecutionAgent
     from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
     from agent_eval.agent.executor.sut_tools import SUTToolServer
@@ -277,7 +283,9 @@ def execute_stage(
         # 通道关闭必须与 run 同一 event loop（httpx client 绑定创建时的 loop，
         # 另起 asyncio.run 关旧 loop 上的 client 会 RuntimeError: Event loop is closed）
         try:
-            return await agent.run_task_set(run_inputs.task_set_model, run_id=run_id)
+            return await agent.run_task_set(
+                run_inputs.task_set_model, run_id=run_id, cancel_event=cancel_event
+            )
         finally:
             await channel.aclose()
 
@@ -361,6 +369,15 @@ def evaluate_stage(
             judge_ctx.renderer.close()
 
 
+def _backfill_sut_identity(result: Any) -> None:
+    """W6：回填 SUT 身份（包 metadata.sut_name@sut_version → run event）。"""
+    if result.samples:
+        sample_meta = getattr(result.samples[0], "metadata", None) or {}
+        result.sut_version = str(
+            sample_meta.get("sut_version") or sample_meta.get("sut_name") or ""
+        )
+
+
 def finalize_eval(result: Any, *, upload_override: bool | None, package_dir: str) -> None:
     """评估收尾：trace 刷新 + 摘要 + SUT 身份回填 + 平台上报（原 eval 6-8 段）。"""
     from agent_eval.cli._common import _flush_observability, _print_summary
@@ -369,12 +386,5 @@ def finalize_eval(result: Any, *, upload_override: bool | None, package_dir: str
     flush_traces()
     _print_summary(result.report)
     rprint("[green]✅ 评估完成[/green] — 结果已保存至 workspace")
-
-    # W6：回填 SUT 身份（包 metadata.sut_name@sut_version → run event）
-    if result.samples:
-        sample_meta = getattr(result.samples[0], "metadata", None) or {}
-        result.sut_version = str(
-            sample_meta.get("sut_version") or sample_meta.get("sut_name") or ""
-        )
-
+    _backfill_sut_identity(result)
     _flush_observability(result, upload_override=upload_override, package_dir=package_dir)

@@ -1,0 +1,8 @@
+exit_code=1
+----
+任务集: <TMP>/task_set.yaml（1 个任务）
+被测系统: cw-agent（channel=agent_protocol, base_url=https://ap.example.com）
+规则集: <TMP>/rs.yaml
+运行 ID: <RUN_ID>（一体化流水线，mode=pipeline）
+
+执行失败: SUT 不可达
