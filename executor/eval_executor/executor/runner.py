@@ -151,6 +151,10 @@ async def refresh_input_url(job: EvalJob) -> str | None:
     try:
         token = await _resolve_submit_token(job)
         if not token:
+            # 无提交者身份（Key 不存在/已吊销/解密失败）→ 无法以提交者身份重签，回退
+            # claim 时 URL。留告警便于追溯——20260921：InvalidTag 后静默回退 external
+            # URL，容器内不可达，input load ConnectError 的排查链过长。
+            LOG.warning("input.url_refresh_no_token", job_id=job.job_id)
             return None
         cfg = load_config()
         if not cfg.host:

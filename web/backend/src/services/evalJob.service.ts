@@ -329,8 +329,10 @@ export function createEvalJobService(tenant: Tenant) {
       scope = mat.scope
     }
 
-    // 签发短期 presigned GET（executor 下载用，不持凭据）
-    const presigned = await storage.presignGet({ key: objectKey })
+    // 签发短期 presigned GET（executor 下载用，不持凭据）。消费者恒为 executor——与 web
+    // 同网络（本地栈=docker 网 minio:9000；生产 SCF=同一 COS 公网域），故按 internal 端点
+    // 签发：external 在本地栈是宿主回环地址，executor 容器内不可达（签名 Host 不可改写）。
+    const presigned = await storage.presignGet({ key: objectKey, audience: "internal" })
 
     // 写 eval_jobs（queued）
     await repo.create({

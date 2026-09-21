@@ -67,7 +67,12 @@ describe("createEvalJobService.submit", () => {
     expect(r.project_id).toBe("p-1")
     expect(r.job_id).toBeTruthy()
     expect(mocks.put).toHaveBeenCalledOnce()
+    // claim 时输入 URL 的唯一消费者是 executor（与 web 同网络）→ 恒按 internal 端点签发
     expect(mocks.presignGet).toHaveBeenCalledOnce()
+    expect(mocks.presignGet).toHaveBeenCalledWith({
+      key: expect.stringContaining("projects/p-1/eval/jobs/"),
+      audience: "internal",
+    })
     expect(mocks.create).toHaveBeenCalledOnce()
     expect(mocks.invokeScf).not.toHaveBeenCalled()
 

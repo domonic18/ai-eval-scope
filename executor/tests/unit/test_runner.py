@@ -331,12 +331,17 @@ async def test_refresh_input_url_none_on_network_error(
 async def test_refresh_input_url_none_without_token(
     sample_job: EvalJob, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """提交者 Key 不可用（token=None）→ None，且不发起 HTTP 请求。"""
+    """提交者 Key 不可用（token=None）→ None，且不发起 HTTP 请求；告警可追溯。"""
     _patch_refresh_env(monkeypatch, token=None)
     client, _ = _patch_http(monkeypatch, _FakeResp(200, {"url": "http://x"}))
+    # mock LOG 而非 capture_logs：conftest setup_logging(ERROR) 的过滤型 logger 会丢 warning 事件
+    mock_log = MagicMock()
+    monkeypatch.setattr(runner_mod, "LOG", mock_log)
 
     assert await runner_mod.refresh_input_url(sample_job) is None
     client.get.assert_not_awaited()
+    mock_log.warning.assert_called_once()
+    assert mock_log.warning.call_args.args[0] == "input.url_refresh_no_token"
 
 
 async def test_resolve_submit_token_logs_exc_type_on_decrypt_failure(
