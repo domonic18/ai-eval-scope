@@ -933,27 +933,42 @@ review 检查项。
   ——工具执行不产生会话机 LLM 事件，评测 judge 走独立 client 不经会话回调）；以回归测试断言
   长执行不烧会话预算（F-C-AGENT-04）；执行自身成本由评测配置的 judge 预算管（既有 budget_usd）。
 
-### 6.11 数据集域（DatasetToolServer，v4.11）
+### 6.11 数据集域（DatasetToolServer，v4.11 设计 → v4.13 实施）
 
 > 需求 req/04 §4.12（F-C-DATA-01~04）：CLI 既有 `dataset list/download`（DatasetManager：
 > HF/ModelScope 双源 + `assets/datasets/dataset_index.yaml` 索引）接入 Agent 工具面。
 > 数据集驱动考卷生成（F-C-DATA-05）为 P2 独立立项，本域只做发现与下载。
+>
+> **v4.13 已实施**（Sprint 14c）：装配照 §6.10 范式——`WorkbenchAgent` 构造期挂载
+> `DatasetToolServer`（workspace 同源 `default_workspace`，事件账本随 agent_logs 同文件），
+> `_build_graph` 白名单与 `_describe_tools` 四 server 展平；`WorkbenchAgentConfig` 零改动
+> （§6.7 扩展机制第三次验证）。与设计稿的一处收紧：`download_dataset` **不接受 token 参数**
+> （设计稿的「token 经 env/secrets 传入」落地为工具签名完全不暴露 token——HF/MS SDK 直读
+> 环境变量，红线由签名结构性保证而非运行时校验）。
 
 **模块形态**：`agent/workbench/datasets/`，同组合模式；工具仅两只：
 
 | 工具 | 说明 |
 |------|------|
-| `list_datasets` | 索引清单（id/名称/类别/双源 repo）+ 本地已下载状态（扫描 `workspace/datasets/` 下 `_dataset_manifest.json`：版本/规模/路径） |
-| `download_dataset` | 复用 `DatasetManager.download` 全参数（source/revision/token/force）；**下载前 ask_fn 确认**（来源 repo + 目标目录 + 预计规模）；完成回执 manifest 路径与数据规模 |
+| `list_datasets` | 索引清单（id/名称/类别/双源 repo）+ 本地已下载状态（扫描 `workspace/datasets/` 下 `_dataset_manifest.json` 配对；索引外的本地下载如实列出）。只读，不出网 |
+| `download_dataset` | 参数仅 name/source/revision/force；**下载前 ask_fn 确认**（等价 CLI 命令 + 来源 repo + 目标目录 + 已存在跳过/force 语义，二选一）；完成回执 manifest 路径与数据规模（目录字节量） |
+
+**确认门槛（照 §6.10 run_eval 三段式，不可旁路）**：①`ask_fn is None` 即 `refused`
+（`--trust-agent` 不旁路——非交互没有确认通道，直接拒绝而非静默执行）→ ③二选一确认，
+拒绝则 `DatasetManager` 从未被调用。下载编排与 CLI 同源（`DatasetManager.download`），
+经 `asyncio.to_thread` 防阻塞事件循环；失败字段化回执（缺 extras 给安装提示），不打穿会话图。
+无 `TOOL_BUDGETS`——确认即预算（同执行域）。
 
 **沙盒与网络边界**（§6.7 红线泛化「host 确认 + 磁盘限额」的实例化，D-CLI-10）：
 
 - **受控出网**：与 SUTProbeToolServer 并列的**第二个网络面**——出网仅经 DatasetManager 单出口
   （HF / ModelScope 域名），域名白名单随 `source` 参数收窄；工具面其余部分维持无网络红线不动；
 - **写路径白名单**：仅 `workspace/datasets/{name}/`——独立于包沙盒根的第二写域（包 confined
-  会话根语义不变，两域写面互不可达）；
-- **token 安全**：数据集访问 token 经 env / `secrets` 传入 DatasetManager，禁止入对话消息、
-  会话日志与工具回执（§6.4 凭证硬拒清单不新增项——token 根本不进工具层）。
+  会话根语义不变，两域写面互不可达）；工具不暴露 output 参数，落盘收敛由
+  `DatasetManager._resolve_target` + `_SAFE_NAME` 结构性保证；
+- **token 安全**：数据集访问 token 经 env 传入 DatasetManager（v4.13 起工具签名不暴露
+  token 参数），禁止入对话消息、会话日志与工具回执（§6.4 凭证硬拒清单不新增项——token
+  根本不进工具层）。
 
 ---
 
@@ -1053,3 +1068,4 @@ review 检查项。
 | v4.12.2 | 2026-09-20 | **既有包轻量编辑路由修复（用户验收反馈：加 1 条用例触发全建包流程）**：①新增 `edit_package` 会话目标切换工具（§6.2 新行）——非交互/builtin/staging 非空多级守卫 + ask_fn 确认 + 骨架归档/授权账本清账 + `relocate_root(note=…)` 切根（会话记录随迁，注记进对话）；②`relocate_root` 参数化注记（归位/切根同一机制、语义注记区分），`relocate_fn` 构造后注入（与 ledger 同风格解环）；③prompts「改造已有项目包」三档分流重写——**轻量修改默认档 = 会话内 edit_package 原位编辑**（不落骨架/不起五阶段/不 fork/不重测 SUT），fork 仅限明确要新版本/新包，删除「首选指引退出本会话」（`scenario edit` 降级为等价通道提及）；五阶段适用边界置顶（从零建新包 / 新接入在线 SUT）；④`list_packages` notes 同步改路由。`WorkbenchAgentConfig` 零改动（§6.7） |
 | v4.12.3 | 2026-09-20 | **既有包编辑证据门禁豁免（用户验收反馈：只删一条用例仍触发凭证重验）**：①**对账门禁收窄至暂存增量**（§6.5 ③，回归文档原意）——`sut_evidence_gate` 遍历源 view() → staging，磁盘既有未动的 sut_config 不再重复对账；与磁盘基线逐字段全等的 auth（base_url+auth）/ 协议结论（通道+接口域+flavor 三元组）豁免，结构性错误与未排期通道无条件打回、磁盘无基线保守全量对账（新建包行为不变，安全属性不降）；②**切根保育**（§6.2）——`relocate_root` 目标记录已存在时不覆盖：目标对话并入 + 账本快照合并恢复（曾静默清零对话史+账本）；③横幅文案按草稿前缀区分「归位/原位落盘」（edit_package 原位场景曾误称归位）；④prompts 豁免规约——不因对账提示重探登录、不发起「允许/不允许」类确认（该询问无代码消费，属无效解锁动作）；⑤edit_package 尾部不可达残段清理（v4.12.2 编辑事故善后） |
 | v4.12.4 | 2026-09-20 | **Ctrl+C 五态语义统一（用户验收反馈：凭证外发确认上 ^C 无法中断，空回车落默认「允许」放行真外发）**：①**交互桥 Abort→KI**（§6.6 新增五态状态机表）——ask_fn/_cli_confirm 桥把 click `Abort`（Exception 子类，曾被工具层 `except Exception` 吞成 `{"type":"Abort","message":""}` 回流 LLM 诱发重试、SIG_IGN 滞留整轮后 ^C 全面失效）转回 `KeyboardInterrupt` 穿透工具层直达 turn() 统一暂停语义；②turn() KI 归 reason=interrupted（曾落 error）；③`_json_tool` 空 message 回退类名；④空闲提示符 ^C 二按退出（首按 armed 提示不清场、输入即重置，曾一次 ^C 即退会话——对齐 Claude Code）；⑤授权/确认类选择器空回车不再默认放行（`select(no_default=True)`：提示改「输入编号」、空输入重问——隐式默认曾是安全纵伤）；⑥中断措辞去魔法词（「直接说下一步即可接着干」）。普通 CLI 命令 Abort→exit 130 语义零变化 |
+| v4.13 | 2026-09-21 | **数据集域实施（Sprint 14c，§6.11 v4.11 设计稿落地，req/04 §4.12 F-C-DATA-01~04）**：`agent/workbench/datasets/` 第三域包（DatasetToolServer：list_datasets/download_dataset）——workbench 会话内「查 → 下」评测数据集（「下载 gsm8k 数据集」即用）；**第二受控出网域**兑现（D-CLI-10）：出网仅经 DatasetManager 单出口、写路径白名单 `workspace/datasets/{name}/`、下载确认照 run_eval 三段式不可旁路（ask_fn None 即 refused）；**较设计稿收紧**：工具签名不暴露 output/token 参数（写白名单与 token 红线由签名结构性保证，HF/MS SDK 直读环境变量）；equiv 单点新增 `dataset_argv`（子命令+位置参数形态）；prompts 增「## 数据集」段 + intro 示例；`WorkbenchAgentConfig` 零改动（§6.7 扩展机制第三次验证）。F-C-DATA-05（数据集驱动考卷生成）维持 P2 独立立项不承诺 |
