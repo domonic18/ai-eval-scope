@@ -23,6 +23,26 @@ def _config() -> ProviderConfig:
     )
 
 
+class TestTimeout:
+    """timeout 显式透传（本地 docker 栈回归事故：SDK 默认 read 600s × 重试链 = 几十分钟挂起）。"""
+
+    @staticmethod
+    def _effective_timeout(client: AnthropicCompatClient) -> float:
+        # anthropic SDK 会把 float 包装成 httpx.Timeout（read/write 均为该值）
+        timeout = client._client.timeout
+        return float(getattr(timeout, "read", timeout))
+
+    def test_default_180s_not_sdk_600s(self) -> None:
+        client = AnthropicCompatClient("text", _config())
+        assert self._effective_timeout(client) == 180.0
+
+    def test_config_override(self) -> None:
+        cfg = _config()
+        cfg.timeout_sec = 30.0
+        client = AnthropicCompatClient("text", cfg)
+        assert self._effective_timeout(client) == 30.0
+
+
 def _client_with_fake(
     monkeypatch: pytest.MonkeyPatch, calls: list[dict[str, Any]]
 ) -> AnthropicCompatClient:

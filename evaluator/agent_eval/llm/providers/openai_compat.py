@@ -87,6 +87,7 @@ class OpenAICompatClient(LLMClient):
         self._client = openai.OpenAI(
             api_key=config.api_key,
             base_url=base_url,
+            timeout=config.timeout_sec,
         )
 
     @property

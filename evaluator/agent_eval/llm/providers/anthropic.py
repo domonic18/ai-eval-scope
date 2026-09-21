@@ -126,9 +126,11 @@ class AnthropicCompatClient(LLMClient):
     def __init__(self, name: str, config: ProviderConfig) -> None:
         self._name = name
         self._config = config
+        # timeout 必须显式：SDK 默认 read 600s，长尾网络下与重试链叠加成几十分钟挂起
         self._client = anthropic.Anthropic(
             api_key=config.api_key,
             base_url=config.base_url,
+            timeout=config.timeout_sec,
         )
 
     @property

@@ -41,6 +41,15 @@ class ProviderConfig(BaseModel):
         le=2.0,
         description="默认温度；0 表示确定性输出，越大随机性越强",
     )
+    timeout_sec: float = Field(
+        default=180.0,
+        gt=0.0,
+        description=(
+            "单次 LLM 请求超时秒数（read/write，连接另由 SDK 管理）。"
+            "不设则吞 SDK 默认 600s——长尾网络下单约束挂 10 分钟×重试链"
+            "（本地 docker 栈回归事故：job 卡 54 分钟无日志）"
+        ),
+    )
     seed: int = Field(
         default=42,
         description="默认随机种子；配合 temperature=0 提高结果可复现性",
