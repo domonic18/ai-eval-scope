@@ -134,12 +134,17 @@ export class S3Storage {
     this.bucketEnsured = true
   }
 
-  /** 签发上传 URL（§5.3 两段式上传 step-1）。 */
+  /** 签发上传 URL（§5.3 两段式上传 step-1）。
+   *
+   * audience 决定用哪个端点签名（同 presignGet）：上传方在平台外（宿主 CLI / 浏览器）
+   * 用默认 external；executor 容器内上传制品时与 web 同内网，须按 internal 签发——
+   * 本地栈 external 是宿主回环地址，容器内不可达（回归 2 事故：全部制品上传拒连）。 */
   async presignPut(p: {
     key: string
     contentType: string
     md5?: string
     ttlSec?: number
+    audience?: "external" | "internal"
   }): Promise<PresignPutResult> {
     await this.ensureBucket()
     const ttl = Math.min(p.ttlSec || this.defaultTtlSec, 900)
@@ -154,12 +159,11 @@ export class S3Storage {
       input.ContentMD5 = md5B64
       headers["Content-MD5"] = md5B64
     }
-    // 上传用对外 client（external endpoint）：上传方（评估器 CLI / 浏览器 / executor）
-    // 需用可达端点签名（MinIO 严格校验签名 Host）——external 对所有上传方可达：
-    // 本地 CLI/浏览器 → localhost:9100；生产 → 公网 COS 域名。
-    const url = await getSignedUrl(this.presignClient, new PutObjectCommand(input), {
-      expiresIn: ttl,
-    })
+    const url = await getSignedUrl(
+      p.audience === "internal" ? this.client : this.presignClient,
+      new PutObjectCommand(input),
+      { expiresIn: ttl },
+    )
     return { url, method: "PUT", headers, expiresAt: epochNow() + ttl }
   }
 

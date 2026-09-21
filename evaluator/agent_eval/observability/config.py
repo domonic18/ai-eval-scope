@@ -33,6 +33,9 @@ class ObservabilityConfig:
     ingest_url: str
     artifacts_url: str
     health_url: str
+    # 制品上传 presigned PUT 的端点侧："external"（默认，宿主 CLI/浏览器可达）
+    # 或 "internal"（与 web 同内网，本地栈 executor 容器内唯一可达端点）
+    presign_audience: str
     timeout_sec: float
     max_retries: int
     backoff_base_sec: float
@@ -96,6 +99,14 @@ def load_config(
     else:
         queue_dir = Path(".ingest_queue")
 
+    # 制品上传方网络位置：executor 容器经 AGENT_EVAL_PRESIGN_AUDIENCE=internal 声明；
+    # 非 internal 值（含空）一律容错归一为 external（既有宿主行为）
+    presign_audience = (
+        "internal"
+        if e.get("AGENT_EVAL_PRESIGN_AUDIENCE", "").strip().lower() == "internal"
+        else "external"
+    )
+
     enabled = upload and bool(api_key)
 
     return ObservabilityConfig(
@@ -108,6 +119,7 @@ def load_config(
         ingest_url=host + d.ingest_path,
         artifacts_url=host + d.artifacts_path,
         health_url=host + d.health_path,
+        presign_audience=presign_audience,
         timeout_sec=d.timeout_sec,
         max_retries=d.max_retries,
         backoff_base_sec=d.backoff_base_sec,

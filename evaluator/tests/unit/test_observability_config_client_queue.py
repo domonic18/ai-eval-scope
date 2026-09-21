@@ -66,6 +66,63 @@ def test_config_web_base_override_and_empty_run_id(tmp_path: Path):
     assert cfg.run_view_url("") == ""
 
 
+def test_config_presign_audience_default_external(tmp_path: Path):
+    # 宿主 CLI：未声明 → external（既有行为）；非法值容错归一 external
+    base = {"AGENT_EVAL_HOST": "https://platform.example.com", "AGENT_EVAL_API_KEY": "eval-abc"}
+    assert load_config(workspace=tmp_path, env=dict(base)).presign_audience == "external"
+    assert (
+        load_config(
+            workspace=tmp_path, env={**base, "AGENT_EVAL_PRESIGN_AUDIENCE": "garbage"}
+        ).presign_audience
+        == "external"
+    )
+
+
+def test_config_presign_audience_internal(tmp_path: Path):
+    # executor 容器内：声明 internal（大小写/空白容错）
+    cfg = load_config(
+        workspace=tmp_path,
+        env={
+            "AGENT_EVAL_HOST": "https://platform.example.com",
+            "AGENT_EVAL_API_KEY": "eval-abc",
+            "AGENT_EVAL_PRESIGN_AUDIENCE": " Internal ",
+        },
+    )
+    assert cfg.presign_audience == "internal"
+
+
+def test_client_presign_put_declares_audience(tmp_path: Path):
+    # presign_put 请求体必须携带 presign_audience——平台据此选端点签名，
+    # 签名 Host 不可事后改写（回归 2 事故：容器内全部制品上传拒连）
+    from agent_eval.observability.client import IngestionClient
+
+    cfg = load_config(
+        workspace=tmp_path,
+        env={
+            "AGENT_EVAL_HOST": "https://platform.example.com",
+            "AGENT_EVAL_API_KEY": "eval-abc",
+            "AGENT_EVAL_PRESIGN_AUDIENCE": "internal",
+        },
+    )
+    client = IngestionClient(cfg)
+    captured: dict = {}
+
+    def fake_bearer_post(url: str, body: bytes, *, parse_ingest: bool):
+        import json
+
+        captured["url"] = url
+        captured["body"] = json.loads(body)
+        return {"object_key": "k", "upload_url": "https://signed", "headers": {}}
+
+    client._bearer_post = fake_bearer_post  # type: ignore[method-assign]
+    out = client.presign_put(
+        {"external_run_id": "r", "kind": "output", "name": "x.html", "content_type": "text/html"}
+    )
+
+    assert captured["body"]["audience"] == "internal"
+    assert out["upload_url"] == "https://signed"
+
+
 # ── 离线队列 ──
 def test_queue_enqueue_and_size(tmp_path: Path):
     q = IngestQueue(tmp_path / "q")
