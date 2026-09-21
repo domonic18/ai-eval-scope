@@ -31,6 +31,7 @@ def mock_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> MagicMock:
     settings.workspace_dir = tmp_path / "workspace"
     settings.poll_interval_sec = 0.1
     settings.http_timeout_sec = 10.0
+    settings.input_presign_audience = ""  # 默认 external：不带 audience query
 
     for mod in (
         "eval_executor.config.settings",

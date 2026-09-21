@@ -263,7 +263,7 @@ export default function AdminLlmModels() {
                 placeholder={editing ? "••••（留空不改）" : "明文，加密存储"}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label>temperature</Label>
                 <Input
@@ -279,6 +279,15 @@ export default function AdminLlmModels() {
                   type="number"
                   value={String((form.extra as Record<string, unknown>)?.max_tokens ?? 8192)}
                   onChange={(e) => setForm({ ...form, extra: { ...form.extra, max_tokens: parseInt(e.target.value) || 8192 } })}
+                />
+              </div>
+              <div>
+                <Label>timeout_sec</Label>
+                <Input
+                  type="number"
+                  title="单次请求超时秒数；默认 180，大 prompt 线路（课件全文评审）建议 600"
+                  value={String((form.extra as Record<string, unknown>)?.timeout_sec ?? 180)}
+                  onChange={(e) => setForm({ ...form, extra: { ...form.extra, timeout_sec: parseInt(e.target.value) || 180 } })}
                 />
               </div>
             </div>

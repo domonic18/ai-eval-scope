@@ -67,7 +67,12 @@ describe("createEvalJobService.submit", () => {
     expect(r.project_id).toBe("p-1")
     expect(r.job_id).toBeTruthy()
     expect(mocks.put).toHaveBeenCalledOnce()
+    // claim 时输入 URL 的唯一消费者是 executor（与 web 同网络）→ 恒按 internal 端点签发
     expect(mocks.presignGet).toHaveBeenCalledOnce()
+    expect(mocks.presignGet).toHaveBeenCalledWith({
+      key: expect.stringContaining("projects/p-1/eval/jobs/"),
+      audience: "internal",
+    })
     expect(mocks.create).toHaveBeenCalledOnce()
     expect(mocks.invokeScf).not.toHaveBeenCalled()
 
@@ -147,8 +152,21 @@ describe("createEvalJobService.refreshInputUrl", () => {
 
     expect(mocks.findById).toHaveBeenCalledWith("job-1")
     expect(mocks.presignGet).toHaveBeenCalledOnce()
-    expect(mocks.presignGet).toHaveBeenCalledWith({ key: "projects/p-1/eval/jobs/job-1/input.md" })
+    expect(mocks.presignGet).toHaveBeenCalledWith({ key: "projects/p-1/eval/jobs/job-1/input.md", audience: undefined })
     expect(r).toEqual({ url: "http://presigned-fresh", expires_at: 1800 })
+  })
+
+  it("passes audience through for consumers on the web's internal network", async () => {
+    // 容器内 executor 不可达 external 端点（本地栈 external = 宿主回环地址）→ 以内部端点签发
+    mocks.findById.mockResolvedValue({ id: "job-1", inputObjectKey: "projects/p-1/eval/jobs/job-1/input.md" })
+
+    const svc = createEvalJobService(tenant)
+    await svc.refreshInputUrl("job-1", "internal")
+
+    expect(mocks.presignGet).toHaveBeenCalledWith({
+      key: "projects/p-1/eval/jobs/job-1/input.md",
+      audience: "internal",
+    })
   })
 
   it("returns null without presigning when job is not in this tenant's project", async () => {

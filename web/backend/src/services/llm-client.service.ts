@@ -212,6 +212,9 @@ class LlmClientService {
         ...(typeof extra.max_tokens === "number" ? { max_tokens: extra.max_tokens } : {}),
         ...(typeof extra.temperature === "number" ? { temperature: extra.temperature } : {}),
         ...(typeof extra.seed === "number" ? { seed: extra.seed } : {}),
+        // 单次请求超时秒数：大 prompt 线路（课件全文评审）单调用实测可达 ~570s，
+        // 缺省 180s 会误杀慢调用并触发重试风暴（回归 2 事故）——按线路显式配置
+        ...(typeof extra.timeout_sec === "number" ? { timeout_sec: extra.timeout_sec } : {}),
       }
     }
     getLogger().info({ roles: Object.keys(roles), actor }, "[llm-config] executor pull")
