@@ -800,7 +800,10 @@ prompt 段 + 档位登记，**不改会话机**。
 - 文案落提示词资产独立 `intro` 小节，`intro_text()` 以 `{root}`/`{domains}` 字面 replace
   渲染；CLI 只渲染不写死——新域上线改资产即更新介绍，不改代码。
 - 渲染：rich Panel 定宽 ≤100 列（防 CJK 双宽截断），REPL 启动时、会话日志行之前；
-  `--json` 与非 TTY 静默跳过。
+  `--json` 与非 TTY 静默跳过。横幅经 **rich Markdown 渲染**（v4.13.1，曾用 `Text`
+  纯文本透出 `**` 加粗符）——`intro` 资产按 markdown 语义成稿：条目/段落各占一个
+  逻辑行，**句中不加硬换行**（rich 重排把软换行按空格拼接，句中断行会在拼接点
+  注入空格；元信息与规则/控制各成条目或独立段落，防并段）。
 - **横幅先于任何输入**：主菜单一级入口渲染横幅后直入 REPL（`show_intro=False` 抑制重复
   渲染）；LLM preflight 阻断仍在横幅之前（无模型 Agent 不可用）。
 
@@ -1069,3 +1072,4 @@ review 检查项。
 | v4.12.3 | 2026-09-20 | **既有包编辑证据门禁豁免（用户验收反馈：只删一条用例仍触发凭证重验）**：①**对账门禁收窄至暂存增量**（§6.5 ③，回归文档原意）——`sut_evidence_gate` 遍历源 view() → staging，磁盘既有未动的 sut_config 不再重复对账；与磁盘基线逐字段全等的 auth（base_url+auth）/ 协议结论（通道+接口域+flavor 三元组）豁免，结构性错误与未排期通道无条件打回、磁盘无基线保守全量对账（新建包行为不变，安全属性不降）；②**切根保育**（§6.2）——`relocate_root` 目标记录已存在时不覆盖：目标对话并入 + 账本快照合并恢复（曾静默清零对话史+账本）；③横幅文案按草稿前缀区分「归位/原位落盘」（edit_package 原位场景曾误称归位）；④prompts 豁免规约——不因对账提示重探登录、不发起「允许/不允许」类确认（该询问无代码消费，属无效解锁动作）；⑤edit_package 尾部不可达残段清理（v4.12.2 编辑事故善后） |
 | v4.12.4 | 2026-09-20 | **Ctrl+C 五态语义统一（用户验收反馈：凭证外发确认上 ^C 无法中断，空回车落默认「允许」放行真外发）**：①**交互桥 Abort→KI**（§6.6 新增五态状态机表）——ask_fn/_cli_confirm 桥把 click `Abort`（Exception 子类，曾被工具层 `except Exception` 吞成 `{"type":"Abort","message":""}` 回流 LLM 诱发重试、SIG_IGN 滞留整轮后 ^C 全面失效）转回 `KeyboardInterrupt` 穿透工具层直达 turn() 统一暂停语义；②turn() KI 归 reason=interrupted（曾落 error）；③`_json_tool` 空 message 回退类名；④空闲提示符 ^C 二按退出（首按 armed 提示不清场、输入即重置，曾一次 ^C 即退会话——对齐 Claude Code）；⑤授权/确认类选择器空回车不再默认放行（`select(no_default=True)`：提示改「输入编号」、空输入重问——隐式默认曾是安全纵伤）；⑥中断措辞去魔法词（「直接说下一步即可接着干」）。普通 CLI 命令 Abort→exit 130 语义零变化 |
 | v4.13 | 2026-09-21 | **数据集域实施（Sprint 14c，§6.11 v4.11 设计稿落地，req/04 §4.12 F-C-DATA-01~04）**：`agent/workbench/datasets/` 第三域包（DatasetToolServer：list_datasets/download_dataset）——workbench 会话内「查 → 下」评测数据集（「下载 gsm8k 数据集」即用）；**第二受控出网域**兑现（D-CLI-10）：出网仅经 DatasetManager 单出口、写路径白名单 `workspace/datasets/{name}/`、下载确认照 run_eval 三段式不可旁路（ask_fn None 即 refused）；**较设计稿收紧**：工具签名不暴露 output/token 参数（写白名单与 token 红线由签名结构性保证，HF/MS SDK 直读环境变量）；equiv 单点新增 `dataset_argv`（子命令+位置参数形态）；prompts 增「## 数据集」段 + intro 示例；`WorkbenchAgentConfig` 零改动（§6.7 扩展机制第三次验证）。F-C-DATA-05（数据集驱动考卷生成）维持 P2 独立立项不承诺 |
+| v4.13.1 | 2026-09-21 | **启动横幅 Markdown 渲染（用户验收反馈：横幅以纯文本透出 `**` 加粗符）**：`_render_intro` 渲染器 `Text` → `Markdown`（与非流式回复同源）——加粗/列表/链接生效；配套 `intro` 资产按 markdown 语义成稿（§6.8）：元信息与示例成列表条目、规则/控制独立段落，**句中不加硬换行**（rich 重排把软换行按空格拼接，句中断行会在拼接点注入空格；实测「当前任务对象/可用能力域」「规则/控制」并段）。回归测试守卫：标记不透出、列表成条目、两处不并段 |

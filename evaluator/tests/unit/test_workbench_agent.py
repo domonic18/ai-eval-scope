@@ -2377,6 +2377,40 @@ class TestCliEntries:
         sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
         assert capsys.readouterr().out == ""
 
+    def test_intro_renders_markdown_not_raw(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # v4.13.1 用户验收反馈：横幅曾用 rich Text 纯文本渲染，** 加粗符原样透出。
+        # Markdown 渲染后标记不透出、列表成条目、元信息两行不并段（软换行拼接守卫）
+        import sys as _sys
+
+        from agent_eval.cli.cmds import workbench_agent as sa
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+
+        class _Tty:  # capsys 的 stdout 非 TTY——横幅设计为 TTY 专属，垫一层
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(sa.sys, "stdout", _Tty(_sys.stdout))
+        sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
+        out = capsys.readouterr().out
+        # 宽度随环境浮动（capsys 假 stdout 按 rich 默认宽折行）——断言折行容忍
+        assert "你好，我是" in out and "工作台 Agent" in out
+        assert "**" not in out  # markdown 标记经渲染不透出（曾以 Text 纯文本透出）
+        assert "•" in out  # 列表渲染成条目（Text 纯文本路径无此形态）
+        meta = [ln for ln in out.splitlines() if "当前任务对象" in ln]
+        assert meta and all("可用能力域" not in ln for ln in meta)  # 元信息两行不并段
+        rule = [ln for ln in out.splitlines() if "规则：" in ln]
+        assert rule and all("控制：" not in ln for ln in rule)  # 规则/控制不并段
+
     def test_agent_entry_direct_conversation_no_menu(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
