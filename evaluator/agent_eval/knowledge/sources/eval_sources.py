@@ -35,8 +35,17 @@ class ArcSource(DataSource):
     def read(self, limit: int | None = None, **kwargs: Any) -> list[Question]:
         import pyarrow.parquet as pq
 
+        from agent_eval.knowledge.exceptions import SourceDataMissingError
+
+        split_dirs = sorted(self.data_dir.glob("ARC-*/"))
+        if not split_dirs:
+            # 空读假成功防护：目录缺失/无 parquet 时静默返回空列表会让 extract
+            # 「成功」产出 0 条（装了 pyarrow 的环境不再走 ImportError 分支）
+            raise SourceDataMissingError(
+                "arc", self.data_dir, "需 ARC-Challenge/ARC-Easy 子目录，含 *train*.parquet"
+            )
         questions: list[Question] = []
-        for split_dir in sorted(self.data_dir.glob("ARC-*/")):
+        for split_dir in split_dirs:
             for pq_file in sorted(split_dir.glob("*train*.parquet")):
                 table = pq.read_table(pq_file).to_pydict()
                 for i in range(len(table["id"])):
@@ -86,10 +95,17 @@ class CmmluSource(DataSource):
         self.subjects = subjects
 
     def read(self, limit: int | None = None, **kwargs: Any) -> list[Question]:
+        from agent_eval.knowledge.exceptions import SourceDataMissingError
+
         test_dir = self.data_dir / "extracted" / "test"
         csv_files = sorted(test_dir.glob("*.csv"))
         if self.subjects:
             csv_files = [f for f in csv_files if any(s in f.name for s in self.subjects)]
+        if not csv_files:
+            # 与 arc 同款空读假成功防护
+            raise SourceDataMissingError(
+                "cmmlu", test_dir, "需 extracted/test/<subject>.csv"
+            )
 
         questions: list[Question] = []
         for csv_file in csv_files:
