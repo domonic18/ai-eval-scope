@@ -162,7 +162,7 @@ def test_metrics_all_run_error_returns_empty_definitions() -> None:
 
 
 def test_run_error_result_carries_diag_summary_and_duration(tmp_path: Path) -> None:
-    """合同五（arch/16 §4.6）：run_error 样本带 trace 诊断（error_summary + 真实
+    """合同五：run_error 样本带 trace 诊断（error_summary + 真实
     执行时长）——Web 端「无结果」可解释，不再 duration=0 无说明（run
     20260916_074046 media_001：真实 151s 丢失）。"""
     pkg = _package(PackageStatus.FAILED, tmp_path)

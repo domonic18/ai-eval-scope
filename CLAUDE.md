@@ -37,6 +37,7 @@ agent-eval-system/
 - **测试先行**：新功能配单元测试；网络/IO 必须 mock（禁止联网测试）；用 `tmp_path` 隔离文件系统。
 - **提交纪律**：提交前 `make check`；commit 遵循 Conventional Commits（见 [`CONTRIBUTING.md`](CONTRIBUTING.md)）。
 - **安全红线**：密钥 / 凭证 / `.env` 严禁入库（已被 `.gitignore` 拦截，勿 `git add -f`）。
+- **开源红线**：`agent_eval/` 与 `tests/` 的代码注释、提示词与资产文案不得引用内部文档路径与章节号（`docs/`、`arch/NN`、`§N.N`、`plan/NN`、`req/NN`、内部规格号等）——说明文字必须自包含。
 - **文档同步**：行为变更须同步对应 `CLAUDE.md` 或 `docs/`。
 
 ## 子项目专项规则

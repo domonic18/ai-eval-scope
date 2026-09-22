@@ -1,4 +1,4 @@
-"""pipeline_core 单测（Sprint 14b，arch/15 v4.12「编排单一真相源」）。
+"""pipeline_core 单测。
 
 覆盖 CLI 壳测不到的纯函数面：异常→outcome 映射逐行、progress 事件序、
 钩子时点（credential_filler 先于 RESOLVE_INFO）、协作取消（130）、
@@ -125,7 +125,7 @@ def test_event_sequence_and_outcome(tmp_path, monkeypatch) -> None:
     assert outcome.run_dir.endswith(f"runs/{RUN_ID}")
     assert outcome.metrics == {"m:reward": 0.9}
     assert outcome.total_samples == 2
-    # FR-4：payload 指标真相在 result.report
+    # payload 指标真相在 result.report
     assert outcome.payload["metrics"] == {"m:reward": 0.9}
     assert outcome.payload["total_samples"] == 2
     assert outcome.upload_receipt == {"enabled": False}

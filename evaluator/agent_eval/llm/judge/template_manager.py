@@ -18,7 +18,7 @@ logger = structlog.get_logger("template_manager")
 
 @dataclass
 class PromptVariable:
-    """Prompt 入参声明（arch/13 §8.1 variables[]）。"""
+    """Prompt 入参声明。"""
 
     name: str
     type: str = "string"
@@ -44,7 +44,7 @@ class JudgeTemplate:
 
     template_id: str
     name: str
-    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §8）
+    # 场景包标识
     scenario_id: str | None = None
     package_id: str | None = None
     namespace: str | None = None
@@ -55,7 +55,7 @@ class JudgeTemplate:
     temperature: float = JUDGE_DEFAULTS.temperature
     seed: int = JUDGE_DEFAULTS.seed
     num_samples: int = JUDGE_DEFAULTS.num_samples
-    # Phase 1 补字段（对齐 arch/13 §8.1，PromptStore 抽象用）
+    # Phase 1 补字段（PromptStore 抽象用）
     variables: list[PromptVariable] = field(default_factory=list)
     version: str | None = None
     labels: list[str] = field(default_factory=list)

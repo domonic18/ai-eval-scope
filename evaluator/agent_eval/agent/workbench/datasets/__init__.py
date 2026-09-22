@@ -1,4 +1,4 @@
-"""数据集域（Sprint 14c，arch/15 v4.13 §6.11）——受控出网第二域。
+"""数据集域——受控出网第二域。
 
 出网仅经 DatasetManager 单出口（HF/ModelScope），写路径白名单仅
 ``workspace/datasets/{name}/``；下载必经用户确认（ask_fn）。

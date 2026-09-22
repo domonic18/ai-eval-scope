@@ -196,7 +196,7 @@ def collect_text_content_with_markers(output_dir: Path) -> str:
     """合并文档文本，每文件前注入 ``=== FILE: 相对路径 ===`` 边界标记。
 
     供 C 档 LLM 评估器（soft/pref）使用：判官读到带标记的文本后，可在 issue 的
-    ``involved_files`` 里引用具体文件名，实现「扣分→定位文件」（docs/arch/15 §5.1）。
+    ``involved_files`` 里引用具体文件名，实现「扣分→定位文件」。
     无文档时返回空串。
     """
     parts: list[str] = [
@@ -206,7 +206,7 @@ def collect_text_content_with_markers(output_dir: Path) -> str:
 
 
 # ---- 目录模式（大单元）支持：按模块收集 / 模块内采样 / 媒体特征原文统计 ----
-# 详见 docs/arch/04 §5.5。module_files 形态来自 DirectoryManifestModule.children
+# module_files 形态来自 DirectoryManifestModule.children
 # （model_dump 后 [{"name","path","depth","size"}, ...]，path 为相对 output_dir 的路径）。
 
 

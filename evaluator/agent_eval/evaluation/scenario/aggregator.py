@@ -1,6 +1,6 @@
 """ScenarioScoreAggregator — 按 AggregationPolicy 数据驱动地聚合 Reward。
 
-对齐 04 评估引擎设计 §7'.3。与旧 ScoreAggregator 的关键差异（均为保证 courseware
+与旧 ScoreAggregator 的关键差异（均为保证 courseware
 等价复刻）：
 1. 阶段由 policy.stage_weights 声明，不再写死 format/commonsense/quality；
 2. 分母仅计入实际参与计算的阶段（stage 缺失/SKIP 时不计入），而非旧公式固定分母；

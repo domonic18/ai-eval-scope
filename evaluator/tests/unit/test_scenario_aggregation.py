@@ -1,8 +1,8 @@
 """场景化聚合与指标测试。
 
 验证 ScenarioScoreAggregator / ScenarioMetricsCalculator + 安全表达式引擎的输出与边界行为。
-对齐 04 评估引擎设计 §七之二。
-（旧 ScoreAggregator / MetricsCalculator 等价对照已随 Phase 5 删除；新聚合器经端到端验证。）
+
+（新聚合器经端到端验证。）
 """
 
 from __future__ import annotations
@@ -225,7 +225,7 @@ def test_safe_eval_unknown_variable() -> None:
 
 
 def test_process_metrics_expressions_eval() -> None:
-    """过程指标表达式（Sprint 9 v6.0）：_SCALAR_FIELDS 暴露 agent_* 数组，mean 可求值。"""
+    """过程指标表达式：_SCALAR_FIELDS 暴露 agent_* 数组，mean 可求值。"""
     from agent_eval.evaluation.scenario.metrics import ScenarioMetricsCalculator
     from agent_eval.evaluation.scenario.models import MetricDefinition
 

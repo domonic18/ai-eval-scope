@@ -1,7 +1,6 @@
 """agent-eval run / pipeline — 在线执行与一体化流水线（编排复用 _stages 五阶段）。
 
-``pipeline`` 命令自 Sprint 14b 起为 ``pipeline_core``（编排单一真相源，
-arch/15 v4.12）的薄壳：用法解析（BadParameter）+ 渲染器装配 + 失败/门禁
+``pipeline`` 命令为 ``pipeline_core``（编排单一真相源）的薄壳：用法解析（BadParameter）+ 渲染器装配 + 失败/门禁
 红字 + 退出码——编排零复制，CLI 外部行为零变化（黄金快照锁定）。
 """
 
@@ -24,7 +23,7 @@ def run(
     package: str | None = typer.Option(
         None,
         "--package",
-        help="场景包引用（如 chat / chat:1.0.0）——考卷与 SUT 从包内解析（arch/13 §4.1）",
+        help="场景包引用（如 chat / chat:1.0.0）——考卷与 SUT 从包内解析",
     ),
     task_set: str | None = typer.Option(
         None, "--task-set", help="任务集：文件路径，或包内名（与 --package 配合，如 default）"
@@ -239,7 +238,7 @@ def pipeline(
         "verbose=过程事件（SUT/judge/重试） | debug=全量原文",
     ),
 ) -> None:
-    """一体化流水线：执行被测 Agent → 评估 → 报告/上传（单 run_id 贯通，Sprint 9）。"""
+    """一体化流水线：执行被测 Agent → 评估 → 报告/上传（单 run_id 贯通）。"""
     execute_pipeline(
         package=package,
         task_set=task_set,
@@ -316,9 +315,9 @@ def execute_pipeline(
     report_formats: list[str] | None = None,
     log_level: str = "normal",
 ) -> None:
-    """流水线动作（pipeline_core 薄壳，向导/工作台复用；组织约定见 arch/15 §2.2）。
+    """流水线动作（pipeline_core 薄壳，向导/工作台复用）。
 
-    退出码契约（requirement/06 FR-3，CI 按此映射构建状态）：
+    退出码契约（CI 按此映射构建状态）：
     0=成功（含门禁通过）| 1=配置/执行失败 | 3=质量门禁未达标。
     """
     from agent_eval.cli.console.output import emit_json, is_json

@@ -1,6 +1,6 @@
 """agent-eval scenario — 场景包子命令（new / show / validate / list / pull）。
 
-对齐 13 配置管理设计 §四/§五。Sprint 10 重命名：原 ``package`` 组更名 ``scenario``
+原 ``package`` 组更名 ``scenario``
 （消除与顶层 ``pack``「打包执行包」的名词冲突），``init`` 并入 ``new --mode skeleton``。
 """
 
@@ -379,7 +379,7 @@ def scenario_validate(
     # 资源目录按包形态判定（运行时真相）：清单声明 default_task_set = 在线 SUT
     # 形态，考卷来自 task_sets/、datasets 不参与（内置 chat 包即无 datasets/）；
     # 未声明 = 离线文件形态，datasets/ 必需。在线形态 task_sets/ 同样必需——
-    # 缺失此前一路绿灯到运行时才炸（指南 §1：task_sets/ 在线必需）
+    # 缺失此前一路绿灯到运行时才炸（task_sets/ 在线必需）
     required_dirs = ["rules", "prompts"]
     if manifest.default_task_set is None:
         required_dirs.append("datasets")

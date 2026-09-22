@@ -1,7 +1,7 @@
 """chat 场景专属评估器（对话型 SUT：精确匹配 + 语义一致性 + 回答质量）。
 
 - ``chat.answer_exact``: 两阶段精确匹配——LLM 提取 SUT 最终答案 → 规则式比对
-  （Phase 1 理解、Phase 2 确定；无 hardcode 模式，任意语言/领域通用）
+  （无 hardcode 模式，任意语言/领域通用）
 - ``chat.answer_consistency``: 对照 expected.reference 的语义一致性 LLM Judge
   （主张级核对：遗漏部分扣分、矛盾重扣；评"说得是否一致"而非"说得好不好"）
 - ``chat.answer_quality``: 回答质量 LLM Judge（对照任务指令与 must_mention 要点）

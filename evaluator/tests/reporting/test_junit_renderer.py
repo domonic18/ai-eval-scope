@@ -1,4 +1,4 @@
-"""JUnit XML 渲染器测试（requirement/06 FR-1）。"""
+"""JUnit XML 渲染器测试。"""
 
 from __future__ import annotations
 

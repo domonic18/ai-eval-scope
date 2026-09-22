@@ -108,7 +108,7 @@ class WorkbenchAgent:
         llm_role: str = "agent",
         log_dir: Path | None = None,
         ask_fn: Any = None,  # async (question, *, options, secret) -> str | None
-        render_bridge: Any = None,  # ExecutionRenderBridge（宿主注入；WorkbenchAgentConfig 零改动，§6.7）
+        render_bridge: Any = None,  # ExecutionRenderBridge（宿主注入；WorkbenchAgentConfig 零改动）
     ) -> None:
         self.config = config or WorkbenchAgentConfig()
         self.domain = domain  # 域档位：选择提示词段与门禁策略
@@ -116,8 +116,8 @@ class WorkbenchAgent:
             Path(pkg_root), ask_fn=ask_fn, workspace_root=paths.default_workspace
         )
         # SUT 接入调试工具面：与文件沙盒并列；凭证域隔离到密钥区。
-        # fact_sink：探测验证成功的事实由服务端机械回填进创建骨架（五阶段流程，
-        # arch/15）——事实不经 LLM 转述，「验证过了又来一遍」从源头消失
+        # fact_sink：探测验证成功的事实由服务端机械回填进创建骨架——
+        # 事实不经 LLM 转述，「验证过了又来一遍」从源头消失
         self.probe = SUTProbeToolServer(
             ask_fn=ask_fn,
             credential_store=CredentialStore(),
@@ -145,7 +145,7 @@ class WorkbenchAgent:
             paths.default_workspace / "agent_sessions" / session_key(Path(pkg_root)),
             max_entries=self.config.max_dialogue_entries,
         )
-        # 进度恢复（跨进程续作，v4.10）：上次会话的暂存 + 骨架留档 + 证据账本
+        # 进度恢复（跨进程续作）：上次会话的暂存 + 骨架留档 + 证据账本
         # 随会话记录持久化，重启即恢复——五阶段流程的中间进度不再「跨进程蒸发」
         # （实测事故：代理超时后建议用户重启续作，暂存与账本实际全丢）。账本
         # 独立于暂存恢复：已落盘包的续改会话同样免重探
@@ -170,7 +170,7 @@ class WorkbenchAgent:
             / f"workbench_agent_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
         )
         self.probe.log_path = self._log_path  # 探测证据与会话日志同文件（时间线完整）
-        # 评测执行域（Sprint 14b，arch/15 v4.12）：会话内「执行 → 看 → 传」闭环。
+        # 评测执行域：会话内「执行 → 看 → 传」闭环。
         # workspace 同源 default_workspace（runs/ 与 CLI 同址）；渲染桥宿主每轮
         # 重绑（_run_one 构造新 emitter → bind_render_bridge），构造期值仅占位
         self.execution = ExecutionToolServer(
@@ -179,7 +179,7 @@ class WorkbenchAgent:
             workspace_root=paths.default_workspace,
             log_path=self._log_path,
         )
-        # 数据集域（Sprint 14c，arch/15 v4.13 §6.11）：会话内「查 → 下」数据集。
+        # 数据集域：会话内「查 → 下」数据集。
         # 与 SUT 探测并列的第二个受控出网域——出网仅经 DatasetManager 单出口，
         # 写路径白名单 workspace/datasets/，下载必经用户确认（tools ①③）
         self.datasets = DatasetToolServer(
@@ -216,7 +216,7 @@ class WorkbenchAgent:
     def relocate_root(self, final_root: Path, *, note: str | None = None) -> None:
         """重绑沙盒根：server 重定向 + 提示词重建 + 会话记录迁移。
 
-        两个调用方：①包归位（v4.9，首次确认落盘后宿主调用，默认注记）；②既有
+        两个调用方：①包归位（首次确认落盘后宿主调用，默认注记）；②既有
         包原位编辑（v4.12.2，edit_package 切根，经 ``note`` 传「会话目标已切换」
         注记——同一机制，语义注记区分归位/切换）。图在下一次 ``_invoke`` 时重建
         （系统提示的 ``{pkg_root}`` 在建图时烘焙；对话消息由宿主持有，重建不丢
@@ -235,7 +235,7 @@ class WorkbenchAgent:
         new_file = old_file.parent / session_key(final)
         if new_file.exists():
             # 切到编辑过的既有包：目标记录是此前会话的对话史+账本快照，
-            # replace 会静默清零——并入当前会话（v4.12.3）
+            # replace 会静默清零——并入当前会话
             self._conserve_target_record(new_file)
         else:
             try:
@@ -300,7 +300,7 @@ class WorkbenchAgent:
         self.execution.ctx.bridge = bridge
 
     def interrupt_active_execution(self) -> bool:
-        """协作中断活跃评测（宿主 SIGINT 首按落点，§6.7 生命周期挂钩）。"""
+        """协作中断活跃评测（宿主 SIGINT 首按落点）。"""
         return self.execution.interrupt_active_execution()
 
     def _describe_tools(self) -> str:
@@ -369,7 +369,7 @@ class WorkbenchAgent:
             checkpointer=self._checkpointer,
             # 复位模型可见工具面 = 宿主装配清单：deepagents 内置 ls/glob 跑
             # StateBackend 虚拟 FS（与磁盘无关），曾致「没有场景包」误判
-            # （arch/15 v4.4；为何不用全局 harness profile 见 tool_filter 模块注释）
+            # （为何不用全局 harness profile 见 tool_filter 模块注释）
             middleware=[build_toolset_filter(tools), todo_mw],
         )
 
@@ -398,7 +398,7 @@ class WorkbenchAgent:
         self.execution.new_turn()  # 执行域轮次标记（active_event 生命周期归 run_evaluation）
         if not self._messages and self._dialogue:  # 跨进程续作：注入此前对话要点
             self._messages.extend(_resume_messages(self._dialogue, self.config))
-            # 进度恢复注记（v4.10）：暂存与证据账本已在 __init__ 恢复——Agent 须
+            # 进度恢复注记：暂存与证据账本已在 __init__ 恢复——Agent 须
             # 知道进度在手上，勿从头重探/重写（实测事故：重启续作把全部进度重做）
             prog = self.restored_progress
             if prog["staged"] or prog["logins"] or prog["protocols"]:
@@ -439,7 +439,7 @@ class WorkbenchAgent:
                     continue
                 reply = _last_ai_text(self._messages)
                 if isinstance(exc, (KeyboardInterrupt, asyncio.CancelledError)):
-                    reason = "interrupted"  # 交互桥 ^C 以 KI 形态到达（v4.12.4）
+                    reason = "interrupted"  # 交互桥 ^C 以 KI 形态到达
                 elif _is_recursion_limit(exc):
                     reason = "segment_limit"
                 elif isinstance(exc, BudgetExceededError):
@@ -598,7 +598,7 @@ class WorkbenchAgent:
     # ─── 自我介绍横幅（文案资产化，CLI 只渲染不写死） ────────────────
 
     def banner_data(self) -> dict[str, Any]:
-        """横幅结构化文案（§6.8）：CLI 富渲染的文案真相源（logo/配色是表现层）。"""
+        """横幅结构化文案：CLI 富渲染的文案真相源（logo/配色是表现层）。"""
         return banner_parts(_load_prompts(), self.domain, str(self.server.root))
 
     # ─── 首轮模板 ─────────────────────────────────────────────────

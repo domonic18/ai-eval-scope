@@ -766,7 +766,7 @@ class TestInfoAccuracyLLM:
         """解耦：info_accuracy LLM 调用的 variables 不含规则可疑条目。
 
         规则 findings（含误报）由 fact_verdict 过滤后经 rule_errors 计分，
-        不再注入 LLM 整体评分输入（避免污染，见 docs/arch/12 §3.4）。
+        不再注入 LLM 整体评分输入（避免污染）。
         """
         out = _prepare_output(tmp_path)
         # 触发规则误报（金的密度式跨匹配：金 + 信息密度 + 数字）

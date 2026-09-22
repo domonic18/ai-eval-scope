@@ -52,7 +52,7 @@ class KnowledgeMerger:
         Args:
             patch: 要合并的知识补丁。
             subject: 目标学科（如 chemistry）。
-            strategy: 去重策略——"skip"（重名跳过）/ "replace"（覆盖）。
+            strategy: 去重策略——"skip"（重名跳过）/ "replace"。
             dry_run: 只报告不写盘。
 
         Returns:

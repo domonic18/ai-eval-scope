@@ -2,7 +2,7 @@
 
 # 导入格式评估器（4 项）
 # 导入常识评估器（3 项）
-from agent_eval.evaluation.evaluators.commonsense_evaluators import (  # noqa: F401
+from agent_eval.evaluation.evaluators.commonsense import (  # noqa: F401
     ChronologicalOrderEvaluator,
     InfoAccuracyEvaluator,
     LogicalConsistencyEvaluator,

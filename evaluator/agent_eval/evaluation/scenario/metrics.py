@@ -1,6 +1,6 @@
 """ScenarioMetricsCalculator — 按 MetricDefinition 声明式计算运行级指标。
 
-对齐 04 评估引擎设计 §7'.4。指标表达式经安全引擎（expr.safe_eval）求值，
+指标表达式经安全引擎（expr.safe_eval）求值，
 上下文变量见 ``expr`` 模块文档。courseware 默认指标集与旧 MetricsCalculator 的
 DR/CPR/Reward/Soft/Pref/CondR 逐一等价。
 """
@@ -21,7 +21,7 @@ _SCALAR_FIELDS = (
     "total_duration_ms",
     "llm_calls",
     "token_usage",
-    # 执行链路过程指标（Sprint 9 v6.0）：orchestrator 从包 trace/metrics 注入，
+    # 执行链路过程指标：orchestrator 从包 trace/metrics 注入，
     # 场景包 metric_definitions 可用 mean(agent_turns) 等表达式声明过程指标
     "agent_turns",
     "agent_tool_calls",

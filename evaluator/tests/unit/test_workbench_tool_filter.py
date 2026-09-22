@@ -1,4 +1,4 @@
-"""WorkbenchToolsetFilter 单测 — 模型可见工具面复位（arch/15 v4.4）。
+"""WorkbenchToolsetFilter 单测 — 模型可见工具面复位。
 
 纯函数部分全离线直测；中间件部分 pytest.importorskip（langchain 属 [agent]
 extra，未装环境自动跳过——模块顶层不依赖 langchain，收集期不炸）。

@@ -1,6 +1,6 @@
-"""ExecutionAgent 提示词构建（arch/03 §3.3/§3.4）——模板加载与变量注入。
+"""ExecutionAgent 提示词构建——模板加载与变量注入。
 
-从 agent.py 拆出（plan/07 G4）：prompt 资产加载（YAML，损坏 fail-fast）、
+从 agent.py 拆出：prompt 资产加载（YAML，损坏 fail-fast）、
 system prompt（职责/工具/通用规则/通道纪律/输出规范）与 task prompt 拼装。
 ExecutionAgent 仅做一行委托。
 """
@@ -46,7 +46,7 @@ def describe_all_tools(tool_servers: list[Any]) -> str:
 
 
 def describe_channel_rules(tool_servers: list[Any]) -> str:
-    """按注册表 discipline_key 拼装通道专属纪律——工具面与规则面同源（plan/07 G3）。
+    """按注册表 discipline_key 拼装通道专属纪律——工具面与规则面同源。
 
     语义工具注册表声明自己的纪律段（如 agent_protocol 的反问应答/线程续用/
     产物获取三步纪律），不声明或无对应段则不注入——generic_http 任务不背
@@ -65,7 +65,7 @@ def describe_channel_rules(tool_servers: list[Any]) -> str:
 def build_system_prompt(*, tool_servers: list[Any]) -> str:
     """System Prompt：职责 + 简报/仲裁标准 + 可用工具 + 通用规则 + 通道纪律。
 
-    提示词瘦身（arch/16 §5.3）：量化纪律不再注入——预算面由闸门拒绝载荷
+    提示词瘦身：量化纪律不再注入——预算面由闸门拒绝载荷
     实时告知，现状由决策简报每轮刷新，模板里写数字必然过时。
     """
     template: str = load_prompts()["system_prompt"]

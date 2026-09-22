@@ -1,4 +1,4 @@
-"""InteractionPolicy 预算模型与解析单测（arch/16 §4.1 P1 声明式预算）。"""
+"""InteractionPolicy 预算模型与解析单测。"""
 
 from __future__ import annotations
 

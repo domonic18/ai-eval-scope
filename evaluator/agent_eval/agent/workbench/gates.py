@@ -39,7 +39,7 @@ def base_url_host(base_url: str) -> str:
 def sut_evidence_gate(server: PackageToolServer, probe: SUTProbeToolServer) -> list[str]:
     """落盘对账门禁：本轮暂存的 sut_configs 结论字段必须逐字段对上实测证据。
 
-    对账范围是**暂存增量**（v4.12.3）：磁盘既有且本轮未动的 sut_config 是此前
+    对账范围是**暂存增量**：磁盘既有且本轮未动的 sut_config 是此前
     已落盘放行的结论，不再重复对账（既有包轻量编辑不触发凭证重验——实测事故：
     只删一条用例也被要求本会话重做登录实测）；本轮重写但与磁盘基线逐字段相同
     的 auth/协议结论同样豁免（无转述变形）。任何相对基线的变更都回到账本对账
@@ -114,7 +114,7 @@ def _reconcile_protocol(
     baseline: dict[str, Any] | None = None,
 ) -> list[str]:
     """通道排期 + 协议声明 vs 协议账本：未排期通道打回；agent_protocol 须 host
-    实测过，且矩阵核心端点为 ✅。结论三元组与磁盘基线全等时豁免（v4.12.3）。"""
+    实测过，且矩阵核心端点为 ✅。结论三元组与磁盘基线全等时豁免。"""
     channel = str(sut.get("channel", "")).lower()
     if not channel:
         return []  # 缺 channel 由 validate_package 的 schema 校验上报，门禁不重复
@@ -176,7 +176,7 @@ def _reconcile_login(
 ) -> list[str]:
     """登录配置 vs 登记账本：解析出的最终 URL/字段组合须与实测事实一致。
 
-    base_url + auth 与磁盘基线逐字段全等时豁免（v4.12.3）——既有包轻量编辑
+    base_url + auth 与磁盘基线逐字段全等时豁免——既有包轻量编辑
     不重验已放行的登录结论；结构性错误（缺 login.path）与任何变形不豁免。
     """
     auth = sut.get("auth")

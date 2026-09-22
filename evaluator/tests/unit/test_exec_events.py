@@ -1,4 +1,4 @@
-"""core/exec_events 事件消息格式的单元测试（arch/15 §4.4，Sprint 14a）。
+"""core/exec_events 事件消息格式的单元测试。
 
 渲染行为（handler 挂载/静默）归 test_logging.py；此处只验三类事件的
 消息形态——verbose 档 stderr 直出行的人类可读契约。

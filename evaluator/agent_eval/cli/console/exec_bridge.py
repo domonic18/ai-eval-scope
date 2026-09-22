@@ -1,4 +1,4 @@
-"""ExecutionRenderBridge — 会话内执行评测的终端与日志状态桥（Sprint 14b）。
+"""ExecutionRenderBridge — 会话内执行评测的终端与日志状态桥。
 
 WorkbenchAgent 会话（流式 emitter 单写者）与 pipeline_core worker 线程
 （PipelineRenderer 直出）共享同一终端——桥解决两件事：

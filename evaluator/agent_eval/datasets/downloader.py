@@ -87,7 +87,9 @@ class ModelScopeDownloader(DatasetDownloader):
         token: str | None = None,
     ) -> Path:
         try:
-            from modelscope.hub.snapshot_download import dataset_snapshot_download
+            from modelscope.hub.snapshot_download import (  # type: ignore[import-untyped]
+                dataset_snapshot_download,
+            )
         except ImportError as e:  # pragma: no cover - 依赖缺失分支
             raise DatasetDownloadError(f"modelscope 未安装。{_INSTALL_HINT}") from e
 

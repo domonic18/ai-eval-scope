@@ -1,4 +1,4 @@
-"""cli/console/banner 富渲染横幅单测（v4.13.2，arch/15 §6.8）。"""
+"""cli/console/banner 富渲染横幅单测。"""
 
 from __future__ import annotations
 

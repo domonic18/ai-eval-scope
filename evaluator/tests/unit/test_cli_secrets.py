@@ -1,4 +1,4 @@
-"""ensure_sut_credentials 单测 — 执行前缺失自动补录（req/04 §3.5；06 §4.7 通用 KV）。
+"""ensure_sut_credentials 单测 — 执行前缺失自动补录。
 
 动作落 ``cli/_common.py``（跨组共享：execute/suite 复用）；补录交互经
 monkeypatch 替换 prompts 原语（隐藏输入 TTY 路径无法管道验证，同

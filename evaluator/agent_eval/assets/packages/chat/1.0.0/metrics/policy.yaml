@@ -67,7 +67,7 @@ metric_definitions:
         - dt: 标准
           dd: "达标线 ≥ 0.70；对话能力合格。"
           tone: success
-  # ── 过程效率指标（Sprint 9 v6.0：执行链路 Steps/Turns、Tool Calls、Latency 落库）──
+  # ── 过程效率指标（执行链路 Steps/Turns、Tool Calls、Latency 落库）──
   # 无 threshold：过程量非质量达标项，中性展示（不进达标对比与趋势门控）
   - id: chat:avg_turns
     name: 平均交互轮次

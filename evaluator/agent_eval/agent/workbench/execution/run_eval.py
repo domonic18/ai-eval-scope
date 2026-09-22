@@ -1,6 +1,6 @@
 """RunEvalTool — 评测执行（run_evaluation，执行域主工具）。
 
-编排零复制：``pipeline_core``（Sprint 14b C4 单一真相源）经 ``_spawn_pipeline_worker``
+编排零复制：``pipeline_core``经 ``_spawn_pipeline_worker``
 在独立 daemon 线程运行；本工具只做「门槛 → 装配 → 终态摘要」：
 
 ① ask_fn 为空 → refused（**执行确认永不被 --trust-agent 旁路的唯一实现点**：
@@ -10,7 +10,7 @@
    拒绝 → declined，pipeline_core 从未被调用
 ④ 渲染桥挂起 + 取消令牌置位（busy 哨兵同源）
 ⑤ daemon worker(pipeline_core, progress=桥包装的共用渲染器, cancel_event,
-   credential_filler=ask_fn 补录循环)；等待侧零 join（arch/15 §6.10 中断终局）
+   credential_filler=ask_fn 补录循环)；等待侧零 join
 ⑥ finally 复位 + 桥恢复（core 的 setup_logging 是进程全局突变，桥负责快照恢复）；
    KI/取消硬中断保留令牌作僵尸 worker 取消通道（下一轮入口 reap）
 ⑦ 紧凑摘要（指标不全文罗列，明细引 show_run）
@@ -87,7 +87,7 @@ def _spawn_pipeline_worker(
 ) -> tuple[concurrent.futures.Future, threading.Thread]:
     """单飞 daemon worker：pipeline_core 跑独立守护线程，等待侧零 join。
 
-    为何不用 ``asyncio.to_thread``（arch/15 §6.10 硬中断终局语义）：to_thread 落
+    为何不用 ``asyncio.to_thread``：to_thread 落
     loop 默认线程池，KI 硬中断后 ``Runner.close`` 会 shutdown+join 该池（上限
     300s）——当前任务分钟级时终端冻结，用户连按 Ctrl+C 会击穿 asyncio.run 收尾
     的信号窗口，running-loop 线程态泄漏、会话报废。daemon worker 让 teardown

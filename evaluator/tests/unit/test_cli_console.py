@@ -1,4 +1,4 @@
-"""console 表现层基础设施单测 — prompts / output / equiv（arch/15 §三）。"""
+"""console 表现层基础设施单测 — prompts / output / equiv。"""
 
 from __future__ import annotations
 
@@ -94,7 +94,7 @@ class TestSelect:
         assert "picked=a" in result.output
 
     def test_no_default_empty_enter_reprompts(self) -> None:
-        # 放行类选择（v4.12.4）：空回车不再隐式选第一项——按无效选择重问，
+        # 放行类选择：空回车不再隐式选第一项——按无效选择重问，
         # 曾是安全纵伤（授权/确认选择器空回车一律落「允许」「确认执行」）
         import typer
 
@@ -170,7 +170,7 @@ class _FakeStdin:
 
 
 class TestMaskedAsk:
-    """ask(hide=True) 掩码回显（v4.13.3）：TTY 逐键 ``*`` 上屏，非 TTY 回退隐藏回显。"""
+    """ask(hide=True) 掩码回显：TTY 逐键 ``*`` 上屏，非 TTY 回退隐藏回显。"""
 
     @staticmethod
     def _fake_termios(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, object]]:
@@ -237,7 +237,7 @@ class TestMaskedAsk:
     def test_masked_input_keyboard_interrupt_restores(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        # ^C（ISIG 保留）→ KI 穿透（v4.12.4 语义），终端态仍复原
+        # ^C（ISIG 保留）→ KI 穿透，终端态仍复原
         calls = self._fake_termios(monkeypatch)
 
         class _KiStdin(_FakeStdin):

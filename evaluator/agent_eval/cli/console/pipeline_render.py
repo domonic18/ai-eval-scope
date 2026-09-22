@@ -1,4 +1,4 @@
-"""管线进度渲染器（Sprint 14b，arch/15 v4.12「输出直通」）。
+"""管线进度渲染器。
 
 ``PipelineRenderer`` 消费 ``pipeline_core`` 的 progress 事件，维护阶段进度视图
 （``stage_progress``）生命周期与信息行/任务表/摘要/上报回执渲染——CLI 壳与

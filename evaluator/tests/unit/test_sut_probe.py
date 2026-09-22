@@ -1,6 +1,6 @@
 """SUTProbeToolServer 单测——全 mock（httpx MockTransport，禁止联网红线）。
 
-覆盖 arch/15 §6.5 P0 红线（v4 探测面，docs/plan/03）：host 边界与授权、凭证外发
+覆盖 v4 探测面红线：host 边界与授权、凭证外发
 授权（(host, ref) 组合级首次确认/每次留痕/非交互不发送）、探测内容注入防护
 （data 包裹）、凭证请求防锁（4xx/5xx 一次即停）、值回流条件化（2xx 提取前只回
 键路径树）、declare_token 事后声明式提取（三态 token_source + 证据账本）、轮内
@@ -300,7 +300,7 @@ class TestDiscoverLogin:
         assert "https://sut.example.com/openapi.json" in result["cached"]  # 原文可检索
 
     def test_openapi_probed_even_with_form_candidates(self) -> None:
-        """OpenAPI 阶梯无前置门（v4.3）：页面有 form 不再跳过 schema 探测——form 与
+        """OpenAPI 阶梯无前置门：页面有 form 不再跳过 schema 探测——form 与
         schema 证据并列交 Agent 判读（曾有「仅 candidates 为空才探」的兜底门）。"""
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -1179,7 +1179,7 @@ class TestDeclareToken:
         assert "response_key_paths" not in result
 
     def test_credential_in_headers_rejected_before_ledger(self) -> None:
-        """执行器宽度守卫（§6）：凭证走请求头的形态探测可探索、暂不可声明落盘——
+        """执行器宽度守卫：凭证走请求头的形态探测可探索、暂不可声明落盘——
         不产生假验证。"""
         server, _ = self._did_login(lambda r: httpx.Response(200, json={"token": "T0KPEN"}))
         # 重放一个 header 携带凭证的请求覆盖事实
@@ -1189,7 +1189,7 @@ class TestDeclareToken:
         assert server.verified_login("SUT") is None
 
     def test_chain_variable_request_rejected(self) -> None:
-        """执行器宽度守卫（§6）：链式认证链的落盘形态（auth_chain）未落地前
+        """执行器宽度守卫：链式认证链的落盘形态（auth_chain）未落地前
         显式拒绝声明。"""
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -1395,7 +1395,7 @@ class TestProbeProtocol:
         assert cleanup["ok"] is False and "残留" in cleanup["note"]
 
     def test_create_thread_404_continues_with_client_uuid(self) -> None:
-        """建线程端点失败 ≠ 协议不支持（v3.9 同构）：执行器契约由客户端生成线程
+        """建线程端点失败 ≠ 协议不支持：执行器契约由客户端生成线程
         UUID、首个 run.start 隐式建线程（POST /threads 不在执行路径上）——旧实现
         因 POST /threads 404 直接跳过后续端点，把兼容执行器契约的服务误判为
         「不能声明 agent_protocol」（bj33 探测失败的根因）。"""
@@ -1425,7 +1425,7 @@ class TestProbeProtocol:
         assert fact["steps"]["send_command"] is False  # 404 服务下的真实结论
 
     def test_probe_speaks_executor_dialect(self) -> None:
-        """信封/消息形态/请求头与执行器单源同构（v3.9）：run.start 信封 +
+        """信封/消息形态/请求头与执行器单源同构：run.start 信封 +
         LangChain `type: human` 消息（role: user 会被 AG-UI 网关静默丢弃）+
         会话路由头。"""
         seen: list[httpx.Request] = []
@@ -1521,7 +1521,7 @@ class TestProbeProtocol:
         assert "必须指定模型" in cmd["note"]  # 失败条目携带响应体摘录（不再只给状态码）
 
     def test_configurable_replay_passes_gate(self) -> None:
-        """带 configurable 重探（v3.13，修复落盘门禁死锁）：网关要求业务参数
+        """带 configurable 重探（修复落盘门禁死锁）：网关要求业务参数
         （实测 bj33 必须指定 modelId）时，裸探测 send_command 永 400 → 账本永远
         记不到核心端点 ✅ → 配置完全正确也会被对账门禁打回。probe_protocol 接受
         configurable 后，「写配置 → 带参探测一次通过」成为可能——信封参数走
@@ -1636,7 +1636,7 @@ class TestRequestPrimitives:
 
     def test_unauthenticated_401_distinguished_with_auth_attached(self) -> None:
         """B2：401/403 回显 auth_attached——未挂鉴权的被拒不构成接口无效结论
-        （v3.11 教训在裸请求原语的同源补齐，两种失败 next_step 相反）。"""
+        （两种失败 next_step 相反）。"""
 
         def unauthorized(request: httpx.Request) -> httpx.Response:
             return httpx.Response(401, json={"detail": "auth"}, request=request)

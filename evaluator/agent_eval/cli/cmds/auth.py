@@ -1,11 +1,11 @@
-"""agent-eval auth — 平台账号（requirement/04 F-C-AUTH；arch/15 §5.1）。
+"""agent-eval auth — 平台账号。
 
 auth 管平台身份（谁在上报、以哪个团队/项目）；secrets 管被测系统凭证——两域不混用。
 身份落密钥区 ``~/.agent_eval/platform.json``（0600，与 llm.json / sut_credentials.json 三域
 三文件），启动注入 env 仅补缺（env 直供优先——CI/云函数/executor 不受影响）。
 登录双通道：打开平台页面创建 Key 后粘贴（浏览器，无浏览器环境自动降级打印 URL）/
 直接粘贴已有 Key；`--token/--host` 为 CI 非交互形态（F-C-AUTH-07）。
-`/cli-auth` 授权页（通道 B 配对码）为 P2（平台侧落地后接入，arch/15 §5.1）。
+`/cli-auth` 授权页（通道 B 配对码）为 P2（平台侧落地后接入）。
 """
 
 from __future__ import annotations
@@ -17,6 +17,8 @@ from dataclasses import dataclass
 import httpx
 import typer
 from rich import print as rprint
+
+from agent_eval.core.exceptions import AgentEvalError
 
 auth_app = typer.Typer(help="平台账号（login / status / logout / register）")
 
@@ -37,7 +39,7 @@ class PlatformIdentity:
     key_name: str
 
 
-class ProbeError(Exception):
+class ProbeError(AgentEvalError):
     """Key 探测失败：invalid=Key 无效/未提供；unreachable=平台不可达；server=平台异常响应。"""
 
     def __init__(self, kind: str, message: str) -> None:

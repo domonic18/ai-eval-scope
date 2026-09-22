@@ -1,4 +1,4 @@
-"""数据集域工具声明 — 纯数据单一真相源（Sprint 14c，arch/15 v4.13 §6.11）。
+"""数据集域工具声明 — 纯数据单一真相源。
 
 description 即行为面（随 prompt 发给 LLM）。数据集域与执行域同款：无轮内
 预算（TOOL_BUDGETS）——download_dataset 必经用户确认门槛，确认即预算。

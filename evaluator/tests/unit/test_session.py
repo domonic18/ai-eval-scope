@@ -1,4 +1,4 @@
-"""session 单元测试（AgentSession / WorkspaceCheckpointer，arch/03 §3.5）。"""
+"""session 单元测试（AgentSession / WorkspaceCheckpointer）。"""
 
 from __future__ import annotations
 

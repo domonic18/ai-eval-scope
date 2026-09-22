@@ -1,4 +1,4 @@
-"""CLI 工作台命令单测 — runs / doctor / scenario show / session（Sprint 10）。"""
+"""CLI 工作台命令单测 — runs / doctor / scenario show / session。"""
 
 from __future__ import annotations
 
@@ -140,7 +140,7 @@ class TestRuns:
         assert payload["summary"]["metrics"]["chat:reward"] == 0.78
 
     def test_run_detail_pure_data(self, tmp_path: Path) -> None:
-        """run_detail（Sprint 14b 提纯，Agent 执行域复用）：纯数据 + 缺目录 None。"""
+        """run_detail（Agent 执行域复用）：纯数据 + 缺目录 None。"""
         assert runs.run_detail("nope", tmp_path) is None
 
         _make_run(tmp_path, "20260831_093012")
@@ -183,10 +183,10 @@ class TestAccountDomain:
         monkeypatch.setattr(account_mod, "main", lambda s: hit.append("auth"))
         result = runner.invoke(app, ["start", "--domain", "auth"])
         assert result.exit_code == 0
-        assert hit == ["auth"]  # --domain auth 别名直达账号域（arch/15 §13）
+        assert hit == ["auth"]  # --domain auth 别名直达账号域
 
     def test_start_domain_agent_entry(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # §3.5：--domain agent 直达工作台 Agent 一级入口；主菜单首项为推荐入口
+        # --domain agent 直达工作台 Agent 一级入口；主菜单首项为推荐入口
         from agent_eval.cli.cmds import workbench_agent as wb
         from agent_eval.cli.main import app
         from agent_eval.cli.workbench.session import _DOMAINS
@@ -213,7 +213,7 @@ class TestAccountDomain:
         assert result.exit_code == 1
 
     def test_scn_menu_labels_are_profile_shortcuts(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # §3.5：域内两项标签 = 档位快捷方式（「用 Agent …」）
+        # 域内两项标签 = 档位快捷方式（「用 Agent …」）
         import agent_eval.cli.workbench.domains.scn as scn_mod
 
         picked: list[list[str]] = []
@@ -395,7 +395,7 @@ class TestSession:
 
 
 class TestOnboarding:
-    """start 首启引导（v4.15）：模型未配置 → 引导卡 + 一步直达 models set。"""
+    """start 首启引导：模型未配置 → 引导卡 + 一步直达 models set。"""
 
     @staticmethod
     def _session(monkeypatch: pytest.MonkeyPatch, *, configured: bool):
@@ -512,12 +512,18 @@ class _WizardStubs:
             assert not type(value).__name__.endswith("OptionInfo"), f"参数 {key} 泄漏 OptionInfo"
 
     def patch(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from types import SimpleNamespace
+
         import agent_eval.cli._stages as stages
         import agent_eval.storage.package as storage_pkg
 
         # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会渗入 pipeline 直调测试
         # （core 内联上报段真发平台，禁联网）——显式钉死为关
         monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
+        # 模型配置态自足：无 ~/.agent_eval/llm.json 的环境（CI/新机）start 首启
+        # 引导卡会弹出并吃掉喂给向导的输入序列——钉死为已配置
+        cfg = SimpleNamespace(roles={"text": SimpleNamespace(model="kimi-k2")})
+        monkeypatch.setattr("agent_eval.config.llm_file.load_llm_file", lambda: cfg)
         monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
         monkeypatch.setattr(
             stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/rules/chat-quality.yaml"
@@ -567,7 +573,7 @@ class TestExecuteActionDirectCall:
         assert isinstance(stubs.calls["execute"]["workspace_root"], Path)
         stubs.no_options_info(stubs.calls["execute"])
         stubs.no_options_info(stubs.calls["evaluate"])
-        # pipeline 已不经 finalize_eval（core 事件序自编排，arch/15 v4.12）——
+        # pipeline 已不经 finalize_eval（core 事件序自编排）——
         # 上报等价面 observability_flush 的回归在 test_cli_pipeline 门禁用例
 
     def test_execute_run_minimal_kwargs(
@@ -595,7 +601,7 @@ class TestExecuteActionDirectCall:
 
         # 3 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline
         # → 1 normal 日志档位 → y 确认 → 6 退出
-        # （主菜单首位是工作台 Agent 一级入口，arch/15 §3.5）
+        # （主菜单首位是工作台 Agent 一级入口）
         result = runner.invoke(app, ["start"], input="3\n1\n1\n1\n1\n1\n1\ny\n6\n")
         assert result.exit_code == 0, result.output
         assert "等价命令" in result.output
@@ -753,7 +759,7 @@ class TestExecDomain:
         assert session.ctx.active_sut == "api"
 
 
-# ── Agent 会话宿主：SIGINT 协作中断分流（Sprint 14b）───────────────────
+# ── Agent 会话宿主：SIGINT 协作中断分流───────────────────
 
 
 class TestGracefulExecInterrupt:

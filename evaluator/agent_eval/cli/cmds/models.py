@@ -1,8 +1,8 @@
-"""agent-eval models — LLM 配置管理（交互式向导，arch/06 §4.6 CLI 形态）。
+"""agent-eval models — LLM 配置管理（交互式向导）。
 
 向导式选择**提供商 × 协议**、隐藏输入 api-key，保存到 ``~/.agent_eval/llm.json``
-（0600）。密钥不打印、不入日志。Sprint 10 命令重命名：``login/logout`` →
-``set/clear``（「login」语义保留给平台账号 auth，requirement/04 §3.3）。
+（0600）。密钥不打印、不入日志。命令名历史：``login/logout`` →
+``set/clear``（「login」语义保留给平台账号 auth）。
 
 向导两层选择（厂商与协议正交）：预置厂商（deepseek/kimi/zhipu/minimax）均提供
 anthropic 与 openai 兼容双协议、端点由 ``(厂商, 协议)`` 预置矩阵给出（免输

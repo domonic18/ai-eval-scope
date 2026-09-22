@@ -1,4 +1,4 @@
-"""agent-eval secrets — SUT 凭证管理（arch/06 §4.7 本机密钥区）。
+"""agent-eval secrets — SUT 凭证管理。
 
 通用 KV 录入（<ref>.<field>，字段名自由、隐藏输入），保存到
 `~/.agent_eval/sut_credentials.json`（0600）。值不打印、不入日志。
@@ -17,7 +17,7 @@ def _parse_key(key: str) -> tuple[str, str]:
     """解析 `<ref>.<field>`；非法时退出并提示。"""
     ref, _, field = key.partition(".")
     if not ref or not field:
-        rprint(f"[red]键格式应为 <ref>.<field>（如 sasan.username），得到: {key!r}[/red]")
+        rprint(f"[red]键格式应为 <ref>.<field>（如 demo.username），得到: {key!r}[/red]")
         raise typer.Exit(code=1)
     return ref, field
 
@@ -101,7 +101,7 @@ def _discover_credential_refs() -> list[str]:
 def secrets_wizard() -> None:
     """工作台「SUT 凭证」交互子向导：查看 / 录入 / 删除（纯函数动作，workbench 复用）。
 
-    凭证是**通用 KV**（06 §4.7，``<ref>.<field>`` 字段名自由、不绑定凭证形态）：
+    凭证是**通用 KV**（``<ref>.<field>`` 字段名自由、不绑定凭证形态）：
     录入时字段名自由输入（sut_config 的 body_template 引用什么就录什么），
     ref 沿已录键与场景包 sut_configs 的 credential_ref 数据发现供选，不枚举固定集。
     """
@@ -130,10 +130,10 @@ def secrets_wizard() -> None:
             ref = (
                 select("选择 ref（credential_ref）", options).split("（")[0].strip()
                 if len(options) > 1
-                else ask("ref（sut_config 的 credential_ref，如 SASAN）")
+                else ask("ref（sut_config 的 credential_ref，如 DEMO）")
             )
             if ref.startswith("➕"):
-                ref = ask("新 ref（自由命名，如 SASAN / AGENT_SERVER）")
+                ref = ask("新 ref（自由命名，如 DEMO / AGENT_SERVER）")
             if not ref:
                 rprint("[yellow]未输入 ref，已取消。[/yellow]")
                 continue

@@ -1,4 +1,4 @@
-"""Agent Protocol 消息摘要（thread_commands 拆出，plan/07 G4）——纯函数无 IO。
+"""Agent Protocol 消息摘要（thread_commands 拆出）——纯函数无 IO。
 
 Agent 协议线程的 messages 形态整形：取最终回答文本、压缩整表摘要。
 执行器（protocol_tools）与通道轮询（thread_commands）共用。

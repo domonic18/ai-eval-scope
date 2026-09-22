@@ -16,11 +16,12 @@ from typing import Any
 
 import httpx
 
+from agent_eval.core.exceptions import AgentEvalError
 from agent_eval.core.logging import get_logger
 from agent_eval.observability.config import ObservabilityConfig
 
 
-class IngestionError(Exception):
+class IngestionError(AgentEvalError):
     """不可重试的摄取错误（如 4xx 鉴权/校验/禁止）。"""
 
     def __init__(self, message: str, *, status: int | None = None, body: Any = None) -> None:

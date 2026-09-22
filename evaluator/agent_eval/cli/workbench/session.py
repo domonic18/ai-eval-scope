@@ -1,8 +1,8 @@
-"""WorkbenchSession — 向导会话：上下文 + 域导航 + 首启引导（arch/15 §3.1）。
+"""WorkbenchSession — 向导会话：上下文 + 域导航 + 首启引导。
 
 Ctrl-C / 取消优雅回落主菜单，不破坏 workspace 已落盘产物（NF-C-03）。
 
-首启引导（v4.15）：模型未配置时给结构化引导卡 + 一步直达 models set 向导，
+首启引导：模型未配置时给结构化引导卡 + 一步直达 models set 向导，
 菜单动态标注受影响域。曾只打印一行「可在账号与配置域执行 models set」——
 首次用户不知道 models set 是什么、要走几步、不配会失去什么（gh/Claude Code
 式 onboarding：当场给出去向与成本，把配置动作拉到面前，而非让用户自己找）。
@@ -22,7 +22,7 @@ from agent_eval.cli.console.prompts import select
 
 # (key, label, needs_model)：needs_model = LLM 未配置时该域受限/降级（菜单标注）
 _DOMAINS: list[tuple[str, str, bool]] = [
-    ("agent", "工作台 Agent（对话式·推荐）", True),  # 一级入口（§3.5）：首选工作方式
+    ("agent", "工作台 Agent（对话式·推荐）", True),  # 一级入口：首选工作方式
     ("scn", "场景包管理", False),
     ("exec", "执行评测", True),
     ("runs", "查看结果", False),
@@ -138,7 +138,7 @@ class WorkbenchSession:
             "account": account.main,
         }
         if domain:
-            # arch/15 §13：--domain auth 为账号域别名（域键 account）
+            # --domain auth 为账号域别名（域键 account）
             resolved = "account" if domain == "auth" else domain
             if resolved not in handlers:
                 rprint(f"[red]未知 --domain: {domain}（{'/'.join(handlers)}/auth）[/red]")

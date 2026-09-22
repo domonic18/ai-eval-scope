@@ -2,7 +2,7 @@
 
 验证 RuleSet/Rule/RuleTemplate、TaskSet/Task、JudgeTemplate 新增的
 scenario_id/package_id（提示词额外含 namespace）字段，以及内置 courseware
-资产标记与 dataset_schema.json（对齐 13 配置管理设计、06 §2.2.5）。
+资产标记与 dataset_schema.json。
 """
 
 from __future__ import annotations
@@ -192,7 +192,7 @@ def test_dataset_schema_rejects_invalid_role() -> None:
         jsonschema_validate(instance={"id": "x", "role": "invalid"}, schema=_dataset_schema())
 
 
-# ── 内置 courseware 包资产标记（Phase 2 重组后位于 packages/courseware/<ver>/）──
+# ── 内置 courseware 包资产标记──
 
 
 @pytest.mark.parametrize(

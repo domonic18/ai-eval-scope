@@ -1,4 +1,4 @@
-"""run / eval / pipeline / suite 共享编排段（Sprint 9 一体化）。
+"""run / eval / pipeline / suite 共享编排段。
 
 从 cli/main.py 的 run 与 eval 命令收敛而来，保持行为等价：
 - resolve_run_inputs：场景包 + 考卷 + SUT 一次解析（run 437-472 ≈ suite 86-100）
@@ -73,7 +73,7 @@ def resolve_run_inputs(
     sut_config: str | None = None,
     sut_name: str | None = None,
 ) -> RunInputs:
-    """解析执行输入：显式路径优先，缺省从场景包内取（arch/13 §4.1）。"""
+    """解析执行输入：显式路径优先，缺省从场景包内取。"""
     from agent_eval.config.loader import ConfigLoader
     from agent_eval.execution.registry import SUTRegistry
     from agent_eval.packages.assets import (
@@ -224,7 +224,7 @@ def execute_stage(
 ) -> list[Any]:
     """执行被测 Agent 并写运行清单（原 run 命令执行段，行为等价）。
 
-    cancel_event（Sprint 14b）：透传 run_task_set 的协作取消令牌（任务边界
+    cancel_event：透传 run_task_set 的协作取消令牌（任务边界
     粒度）；缺省 None 行为不变——CLI run/eval 形态既有调用方零改动。
     """
     from agent_eval.agent.executor.agent import ExecutionAgent
@@ -237,8 +237,8 @@ def execute_stage(
     from agent_eval.execution.models import AgentConfig, SUTToolsConfig
 
     sut = run_inputs.sut
-    # 凭证缺失 fail fast（不进 Agent 循环烧轮次）。本层零交互（arch/15 组织
-    # 约定 5）：交互补录在命令层进度视图启动前完成（_common.ensure_sut_credentials）——
+    # 凭证缺失 fail fast（不进 Agent 循环烧轮次）。本层零交互：
+    # 交互补录在命令层进度视图启动前完成（_common.ensure_sut_credentials）——
     # 放这里会被 stage_progress 转轮刷掉输入提示行（实测反馈）
     preflight_sut_credentials(sut)
     channel = create_channel(sut)
@@ -291,7 +291,7 @@ def execute_stage(
 
     _, packages = asyncio.run(_run_and_close())
 
-    # 运行清单（W7 + 绑定显式化，arch/13 §二十一）
+    # 运行清单（W7 + 绑定显式化）
     write_run_manifest(
         workspace_root / "runs" / run_id,
         {
@@ -330,7 +330,7 @@ def evaluate_stage(
     - run=(ws_root, run_id)：复用既有 RunWorkspace（pipeline 单 run_id 贯通），
       并补建 reports/results（执行阶段不创建）。
     - manifest_extra：pipeline 传执行阶段绑定字段，eval_only 写清单时合并（单次原子写）。
-    - gate / report_formats / package_id：CI 集成（requirement/06），透传 eval_only。
+    - gate / report_formats / package_id：CI 集成，透传 eval_only。
     """
     from agent_eval.orchestrator.orchestrator import Orchestrator
     from agent_eval.storage.workspace import Workspace

@@ -1,4 +1,4 @@
-"""ExecutionToolServer — 评测执行域组装壳（Sprint 14b，arch/15 v4.12 §6.10）。
+"""ExecutionToolServer — 评测执行域组装壳。
 
 与 SUTProbeToolServer 同形态的组合薄壳：ExecContext（共享状态）+ 每域一个
 工具类，本壳只做装配与委托（签名逐字复制供 StructuredTool schema 推导）。

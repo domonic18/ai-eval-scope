@@ -24,7 +24,7 @@ class SUTToolsDefaults:
 
 @dataclass(frozen=True)
 class AgentDefaults:
-    """ExecutionAgent 默认参数（arch/03 §六 v4.6：模型无关）。"""
+    """ExecutionAgent 默认参数（模型无关）。"""
 
     # 单任务最大交互轮次（已废弃：executor 域不再读——轮次预算由 interaction_policy
     # 声明，保险丝由 derive_recursion_limit 推导；字段仅为构造兼容保留）
@@ -43,7 +43,7 @@ class AgentDefaults:
 
 @dataclass(frozen=True)
 class InteractionPolicyDefaults:
-    """交互预算（InteractionPolicy）默认参数（arch/16 §4.1 P1 声明式预算）。
+    """交互预算（InteractionPolicy）默认参数。
 
     语义预算归 policy 声明，recursion_limit 由 derive_recursion_limit 自动推导为保险丝——
     不再以 max_turns 作为一等预算面。

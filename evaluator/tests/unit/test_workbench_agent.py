@@ -1,4 +1,4 @@
-"""WorkbenchAgent / PackageToolServer 单测 — 沙盒红线、门禁回改、落盘原子性（arch/15 §六）。
+"""WorkbenchAgent / PackageToolServer 单测 — 沙盒红线、门禁回改、落盘原子性。
 
 LLM 链路以回放状态机 mock（monkeypatch ``WorkbenchAgent._invoke``），
 不依赖 deepagents / LLM / 网络；工具面直调异步方法。
@@ -275,7 +275,7 @@ class TestSandbox:
         asyncio.run(run())
 
     def test_validate_online_requires_task_sets(self, tmp_path: Path) -> None:
-        # 在线形态缺考卷在落盘前打回——此前一路绿灯到运行时才炸（指南 §1 task_sets/ 必需）
+        # 在线形态缺考卷在落盘前打回——此前一路绿灯到运行时才炸
         server = PackageToolServer(tmp_path)
 
         async def run() -> None:
@@ -393,7 +393,7 @@ class TestSandbox:
         asyncio.run(stage())
         assert server.staged_manifest_id() == "demo-pkg"
 
-    # ── list_packages / read_reference 三源发现（arch/15 v4.4） ──
+    # ── list_packages / read_reference 三源发现 ──
 
     def _isolate_package_roots(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """三源发现根全部钉到 tmp：local 缺省 ~/.agent_eval（开发者真机有包）也要隔离。"""
@@ -480,7 +480,7 @@ class TestSandbox:
         assert len(PackageToolServer.TOOL_SPECS) == 14
 
 
-# ── edit_package：会话内切换到既有包原位编辑（arch/15 v4.12.2 路由修复） ──
+# ── edit_package：会话内切换到既有包原位编辑 ──
 
 
 class TestEditPackage:
@@ -615,7 +615,7 @@ class TestEditPackage:
         assert "error" in result and "relocate_fn" in result["error"]
 
 
-# ── 证据对账门禁的磁盘基线豁免（v4.12.3：既有包轻量编辑不触发凭证重验） ──
+# ── 证据对账门禁的磁盘基线豁免（既有包轻量编辑不触发凭证重验） ──
 
 SUT_DISK = (
     "sut:\n"
@@ -807,7 +807,7 @@ SKELETON_CLOSED = (
 
 
 class TestSkeletonWorkflow:
-    """五阶段创建流程的骨架机制（arch/15）：配置只在事实齐备后生成。"""
+    """五阶段创建流程的骨架机制：配置只在事实齐备后生成。"""
 
     def test_validate_blocks_open_slots(self, tmp_path: Path) -> None:
         server = PackageToolServer(tmp_path)
@@ -1007,7 +1007,7 @@ class TestWriteSutConfig:
         assert not server.staging  # 未入暂存
 
     def test_injects_auth_verbatim_and_passes_gates(self, tmp_path: Path) -> None:
-        """核心验收（plan §八-②）：注入的 auth 与账本 snippet 逐字节一致，且
+        """核心验收：注入的 auth 与账本 snippet 逐字节一致，且
         sut_evidence_gate 必过——「不再重探」的机制基础。"""
         import yaml
 
@@ -1097,7 +1097,7 @@ class TestWriteSutConfig:
     def test_fix_round_does_not_reprobe(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """badcase 回放（plan §八-③）：修复环查账本，不触发重复实测——jxb 会话
+        """badcase 回放：修复环查账本，不触发重复实测——jxb 会话
         「验证过了又来一遍」的事故链在新流程下被改写：登录实测只发生（用户）一次。"""
         from agent_eval.agent.workbench.sut_probe.tokens import _render_auth_snippet
 
@@ -1176,7 +1176,7 @@ class TestWriteSutConfig:
 
 
 class TestCrossProcessResume:
-    """跨进程续跑（v4.10）：暂存 + 骨架留档 + 证据账本随会话记录持久化，重启
+    """跨进程续跑：暂存 + 骨架留档 + 证据账本随会话记录持久化，重启
     恢复——五阶段中间进度不再「跨进程蒸发」（实测事故：代理超时后建议重启续作，
     暂存与账本实际全丢，只能从头再来）。"""
 
@@ -1235,7 +1235,7 @@ class TestCrossProcessResume:
     def test_resumed_agent_writes_sut_config_without_reprobe(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """核心验收（v4.7 承诺跨进程成立）：新进程 write_sut_config 直接过账本
+        """核心验收：新进程 write_sut_config 直接过账本
         注入——恢复的会话不重做已完成的登录实测。"""
         monkeypatch.chdir(tmp_path)
         draft = tmp_path / "draft"
@@ -1496,7 +1496,7 @@ class TestAgentTurn:
     def test_generic_http_channel_passes_without_protocol_ledger(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """generic_http 已排期（v4.7 落地）且无协议端点语义：不需 probe_protocol
+        """generic_http 已排期且无协议端点语义：不需 probe_protocol
         账本即可落盘（登录对账仍由 _reconcile_login 覆盖）。"""
 
         async def write_http_sut(server: PackageToolServer) -> str:
@@ -1778,7 +1778,7 @@ class TestAgentTurn:
     def test_turn_interrupt_pauses_with_scene_kept(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # Ctrl+C 中断（协内表现为 CancelledError）= 暂停保现场（§6.7 D-WB-4）：
+        # Ctrl+C 中断（协内表现为 CancelledError）= 暂停保现场：
         # 暂存保留 + 历史保留（需求不丢），唯一回滚触发器是用户显式「放弃」。
         # 不用 KeyboardInterrupt 直抛——Runner 的 SIGINT 机制会接管并重试循环
         async def boom(
@@ -1805,7 +1805,7 @@ class TestAgentTurn:
     def test_turn_keyboard_interrupt_salvages_and_reraises(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # 交互桥 ^C 以 KI 形态穿透工具层（v4.12.4）：turn 捕 BaseException →
+        # 交互桥 ^C 以 KI 形态穿透工具层：turn 捕 BaseException →
         # salvage 保现场 → re-raise 交宿主呈现中断；KI 与 CancelledError 同归
         # reason="interrupted"（日志/事件语义，行为同为 raise）
         async def boom(
@@ -2244,7 +2244,7 @@ class TestCliEntries:
     def test_repl_pause_then_abandon_rolls_back(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
-        # Ctrl+C 暂停（进度保留）→ 用户输入「放弃」→ 暂存回滚、会话继续（D-WB-4）
+        # Ctrl+C 暂停（进度保留）→ 用户输入「放弃」→ 暂存回滚、会话继续
         from agent_eval.cli.cmds import workbench_agent as sa
 
         _seed_valid_package(tmp_path)
@@ -2274,7 +2274,7 @@ class TestCliEntries:
     def test_repl_idle_ctrlc_armed_double_press_exits(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
-        # 空闲态 ^C 二按退出（v4.12.4 对齐 Claude Code）：首按只武装提示不退会话，
+        # 空闲态 ^C 二按退出：首按只武装提示不退会话，
         # 二按才退出——误触不再有清场代价
         from agent_eval.cli.cmds import workbench_agent as sa
 
@@ -2328,7 +2328,7 @@ class TestCliEntries:
         assert "已自动续跑（第 2 / 3 段" in capsys.readouterr().out
 
     def test_banner_data_from_asset(self, tmp_path: Path) -> None:
-        # §6.8 横幅资产化（v4.13.2 结构化 banner 段）：{root}/{domains} 展开，CLI 只渲染
+        # 横幅资产化：{root}/{domains} 展开，CLI 只渲染
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         parts = agent.banner_data()
         assert "工作台 Agent" in parts["identity"]
@@ -2373,7 +2373,7 @@ class TestCliEntries:
         assert "工作台 Agent" in out and "可以这样用我" in out  # 横幅在会话日志行之前
 
     def test_intro_silent_for_non_tty(self, tmp_path: Path, capsys) -> None:
-        # CI / 管道形态横幅静默（§6.10）
+        # CI / 管道形态横幅静默
         from agent_eval.cli.cmds import workbench_agent as sa
 
         sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
@@ -2416,7 +2416,7 @@ class TestCliEntries:
     def test_agent_entry_direct_conversation_no_menu(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # §3.5 实测反馈：入口无前置菜单——横幅先于会话直入 REPL（Claude Code 式），
+        # 实测反馈：入口无前置菜单——横幅先于会话直入 REPL（Claude Code 式），
         # 新建/改已有包都是会话里的一句话；默认任务对象 = 新包草稿
         from agent_eval.cli.cmds import workbench_agent as sa
 
@@ -2495,7 +2495,7 @@ class TestCliEntries:
         assert calls == [True]
 
 
-# ── 交互等待期 Ctrl+C（v4.12.4 五态统一）：选择器 ^C = 中断本轮 ──────────────
+# ── 交互等待期 Ctrl+C：选择器 ^C = 中断本轮 ──────────────
 
 
 class TestInterruptBridge:
@@ -2567,7 +2567,7 @@ class TestInterruptBridge:
         assert payload["error"]["message"] == "_SilentError"
 
 
-# ── 落盘即归位（v4.9）：首次确认落盘即归位 + 沙盒重定向 + 会话记录迁移 ────
+# ── 落盘即归位：首次确认落盘即归位 + 沙盒重定向 + 会话记录迁移 ────
 
 
 class TestRelocateOnCommit:
@@ -2976,7 +2976,7 @@ class TestStreamRender:
         assert "任务清单 2/2" in out  # 完成进度计数
 
 
-# ── 泛化文件工具（Claude Code 式分级授权，arch/15 §6.11.1） ─────────────
+# ── 泛化文件工具（Claude Code 式分级授权） ─────────────
 
 
 class TestGeneralizedFileTools:
@@ -3107,7 +3107,7 @@ class TestGeneralizedFileTools:
     def test_system_prompt_references_guide_without_hardcoded_structure(
         self, tmp_path: Path
     ) -> None:
-        # 结构知识外置（§6.11.1）：提示词只指路规范文档，字段表不再 hardcode
+        # 结构知识外置：提示词只指路规范文档，字段表不再 hardcode
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         prompt = agent._build_system_prompt()
         assert "scenario-package-format.md" in prompt
@@ -3115,7 +3115,7 @@ class TestGeneralizedFileTools:
         assert "内容规范" not in prompt
 
     def test_system_prompt_workbench_identity_with_domain_segment(self, tmp_path: Path) -> None:
-        # 定位升维（D-WB-2）：会话机段=工作台身份，场景包只是装配域段
+        # 定位升维：会话机段=工作台身份，场景包只是装配域段
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         prompt = agent._build_system_prompt()
         assert "工作台的对话式 Agent（WorkbenchAgent）" in prompt
@@ -3135,7 +3135,7 @@ class TestGeneralizedFileTools:
 
 
 class TestStructuredFileRead:
-    """格式感知读取 + workspace 自动授权域（v4.14，系统性通用读原语）。"""
+    """格式感知读取 + workspace 自动授权域（系统性通用读原语）。"""
 
     @staticmethod
     def _server(root: Path, ws: Path | None, ask_fn: Any = None) -> PackageToolServer:
@@ -3317,7 +3317,7 @@ class TestStructuredFileRead:
 
 
 class TestAgentConfig:
-    """WorkbenchAgentConfig——tunables 单点载体（§6.11.2，§6.7 P2 CLI 旗标同注入路径）。"""
+    """WorkbenchAgentConfig——tunables 单点载体。"""
 
     def test_defaults_and_frozen(self) -> None:
         cfg = WorkbenchAgentConfig()
@@ -3346,7 +3346,7 @@ class TestAgentConfig:
         assert "第一轮很长" not in joined  # 条数取最后 1 条
 
     def test_config_defaults_and_frozen(self) -> None:
-        # tunables 单点（§6.11.2）：默认值冻结，改动须经显式 config 注入
+        # tunables 单点：默认值冻结，改动须经显式 config 注入
         cfg = WorkbenchAgentConfig()
         assert cfg.max_turns == 40 and cfg.max_fix_rounds == 3
         with pytest.raises(Exception):  # noqa: B017, PT011 — frozen dataclass 不允许改字段
@@ -3388,7 +3388,7 @@ class TestPromptAssets:
 
 
 class TestSessionMachine:
-    """§6.7 会话机：salvage 保现场 / 自动分段续跑 / 预算缰绳（D-WB-3/4/5）。"""
+    """会话机：salvage 保现场 / 自动分段续跑 / 预算缰绳。"""
 
     @staticmethod
     def _recursion_exc() -> type[BaseException]:
@@ -3531,7 +3531,7 @@ class TestSessionMachine:
 
 
 class TestExecutionDomainAssembly:
-    """执行域装配回归（Sprint 14b C7，arch/15 v4.12 §6.10）。"""
+    """执行域装配回归。"""
 
     @staticmethod
     def _exec_outcome():
@@ -3571,7 +3571,7 @@ class TestExecutionDomainAssembly:
         assert "upload_run" in described
 
     def test_config_field_set_unchanged(self) -> None:
-        # §6.7 回归：WorkbenchAgentConfig 零改动——执行域装配走构造 kwarg
+        # 回归：WorkbenchAgentConfig 零改动——执行域装配走构造 kwarg
         # （render_bridge）而非扩配置；字段集漂移 = 扩展机制失效信号
         import dataclasses
 
@@ -3654,7 +3654,7 @@ class TestExecutionDomainAssembly:
 
 
 class TestDatasetDomainAssembly:
-    """数据集域装配回归（Sprint 14c，arch/15 v4.13 §6.11）。"""
+    """数据集域装配回归。"""
 
     def test_dataset_server_assembles_two_tools(self, tmp_path: Path) -> None:
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")

@@ -3,6 +3,8 @@
 定义系统全局使用的枚举类型和类型别名，供各模块共享引用。
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -88,7 +90,7 @@ class PackageStatus(str, Enum):
 
 
 class TerminalKind(str, Enum):
-    """SUT 终态分类（arch/16 §4.6 合同二）——执行会话命运无关，只看交付证据。"""
+    """SUT 终态分类——执行会话命运无关，只看交付证据。"""
 
     DELIVERED = "delivered"  # SUT 已交付（text / 结构化 output）
     INTERRUPT_PENDING = "interrupt_pending"  # 反问挂起（SUT 显式收尾信号，一等终态）

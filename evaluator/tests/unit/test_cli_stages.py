@@ -1,4 +1,4 @@
-"""cli/_stages 共享编排段测试（Sprint 9：run/eval/suite/pipeline 收敛）。"""
+"""cli/_stages 共享编排段测试（run/eval/suite/pipeline 收敛）。"""
 
 from __future__ import annotations
 
@@ -120,7 +120,7 @@ class TestExecuteStage:
     )
 
     def test_missing_credentials_fails_fast_no_interaction(self, tmp_path) -> None:
-        # execute_stage 层零交互（arch/15 组织约定 5）：即使交互环境也直接 fail fast；
+        # execute_stage 层零交互：即使交互环境也直接 fail fast；
         # 补录发生在命令层进度启动前（_common.ensure_sut_credentials，见 test_cli_run）
         task_set = tmp_path / "task_set.yaml"
         sut_cfg = tmp_path / "sut.yaml"

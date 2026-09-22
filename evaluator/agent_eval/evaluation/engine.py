@@ -29,7 +29,7 @@ from agent_eval.rules.models import RuleMethod
 
 
 def _failed_package_diag(sample: Any) -> tuple[str | None, float]:
-    """失败包诊断摘要（合同五，arch/16 §4.6）：trace.error 截断 + 真实执行时长。
+    """失败包诊断摘要（合同五）：trace.error 截断 + 真实执行时长。
 
     run 20260916_074046：run_error 样本 DB duration=0（真实 151s 丢失）、
     「无结果」无解释——run_error 也带证据落库，Web 端可解释。
@@ -225,7 +225,7 @@ class PipelineEngine:
         # manifest.status=failed 表示包未执行完成（半张卷子）——残留产物打出的分数
         # 只会误导，不进 stage 评估、reward 0.0，由 metrics 侧从分母剔除。
         # partial（部分产物）仍有评估价值，照常评估。
-        # 合同四（arch/16 §4.6）：SUT 已交付的 abort 包已被 guard_evaluable_abort
+        # 合同四：SUT 已交付的 abort 包已被 guard_evaluable_abort
         # 翻回 success，短路仅兜「真无交付证据」样本；诊断回填（error_summary +
         # 真实执行时长）保证 run_error 样本在 Web 端可解释。
         pkg_status = getattr(getattr(sample, "manifest", None), "status", None)
@@ -355,7 +355,7 @@ class PipelineEngine:
             context["sample_id"] = task_data.get("id", context["sample_id"])
             context["constraints"] = task_data.get("constraints", {})
             context["task_input"] = task_data.get("input", {})
-            # 预期结果（expected.answer/must_mention）——评估器对照判定用（v4.6.4）
+            # 预期结果（expected.answer/must_mention）——评估器对照判定用
             context["task_expected"] = task_data.get("expected") or {}
         # 内容指纹（溯源/版本标记，来自 pack manifest）
         _manifest = getattr(package, "manifest", None)

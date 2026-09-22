@@ -128,7 +128,7 @@ class ProbeContext:
     def emit_fact(self, fact_line: str) -> None:
         """验证成功的事实机械回填创建骨架（fact_sink 注入；失败不阻断探测结论）。
 
-        五阶段创建流程（arch/15）的「进度即回填骨架」：事实行由探测工具服务端
+        五阶段创建流程的「进度即回填骨架」：事实行由探测工具服务端
         写就，落 SKELETON.md「机械实测事实」节，Agent 据此闭合对应开槽。
         """
         if self.fact_sink is None:

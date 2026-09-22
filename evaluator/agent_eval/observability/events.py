@@ -1,4 +1,4 @@
-"""评估器模型 → 摄取事件映射（docs/arch/09 §8.2）。
+"""评估器模型 → 摄取事件映射。
 
 统一以**事件 schema** 字段名为准输出（与 agent_eval/observability/schemas/ingest.event.v1.json 一致），
 兼容 dataclass 与序列化 JSON 两种来源，确保后端只认 schema。
@@ -86,7 +86,7 @@ def build_sample_event(
 ) -> dict[str, Any]:
     """SampleResult → sample 事件。dimensions 暂不映射（scores.json 维度，预留）。
 
-    合同五（arch/16 §4.6）：metrics 字段对齐后端契约（metrics JSONB 为权威）——
+    合同五：metrics 字段对齐后端契约（metrics JSONB 为权威）——
     此前误发 stage_metrics 双端漂移，samples.metrics 恒 NULL；过程数值并入
     metrics 一并落库。stage_metrics 键保留兼容旧后端滚动升级窗口。
     """
@@ -112,7 +112,7 @@ def build_sample_event(
         "total_duration_ms": sample.total_duration_ms,
         "llm_calls": sample.llm_calls,
         "token_usage": sample.token_usage,
-        # 执行链路过程指标（Sprint 9 v6.0；eval_only 外部包为 0）
+        # 执行链路过程指标（eval_only 外部包为 0）
         "agent_turns": sample.agent_turns,
         "agent_tool_calls": sample.agent_tool_calls,
         "agent_exec_ms": sample.agent_exec_ms,
@@ -135,7 +135,7 @@ def build_constraint_event(
 ) -> dict[str, Any]:
     """ConstraintResult → constraint 事件。
 
-    字段对齐（§8.2 注）：
+    字段对齐：
       - status("pass"/"fail"/...) → passed(布尔)；status 同时直传（schema 约束枚举）。
       - judge_record_path（本地路径）→ judge_record_object_key（上传后替换，未上传为 None）。
     """

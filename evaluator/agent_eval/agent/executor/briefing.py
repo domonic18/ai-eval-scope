@@ -1,18 +1,17 @@
-"""决策简报聚合器（arch/16 §5.1 P5）——把机械壳已掌握的现实喂给决策体。
+"""决策简报聚合器——把机械壳已掌握的现实喂给决策体。
 
 简报素材全部来自机械壳（账本 ``remaining``/``budget_digest`` + 证据台账 +
 SUT 状态观察 + ``last_run`` 摘要），决策体不自行拼凑现实——喂什么看什么，
-是仲裁质量的上界（arch/16 §5.1）。三件套：
+是仲裁质量的上界。三件套：
 
 - :class:`SutStateTracker`：观察时间线——每次 SUT 状态采证记一笔快照，
   摘要不变即「空闲」计时增长。观察语义纯机械：我们看到的 SUT 状态
-  **何时停止变化**，不猜 SUT 内部（谓词裁决权在决策体，见 §5.2）。
+  **何时停止变化**，不猜 SUT 内部（谓词裁决权在决策体）。
 - :func:`extract_artifact_candidates`：从 SUT 文本中提取产物路径/链接候选。
 - :func:`build_briefing`：聚合为每轮注入的简报 dict（尺寸有硬上限——
   简报是每轮上下文税，不设防会吃掉工具结果的窗口）。
 
-不做 turns_left（保险丝对用户不可见，arch/16 §九.2）与 baseline
-（SUT 画像是 Phase 3）。
+不做 turns_left（保险丝对用户不可见）与 baseline
 """
 
 from __future__ import annotations
@@ -37,7 +36,7 @@ _CANDIDATES_LIMIT = 5
 # 简报引用的台账事件条数（活动时间线）
 _ACTIVITY_EVENTS = 3
 
-# 完成仲裁受控枚举（arch/16 §5.2 P2）——「SUT 完成了吗」由决策体按简报仲裁，
+# 完成仲裁受控枚举——「SUT 完成了吗」由决策体按简报仲裁，
 # unknown 是合法出口：证据冲突时保守等待，机械超时兜底（误判完成产空包 vs
 # 误判未完成多等一个周期，代价不对称）
 ARBITRATION_VERDICTS = ("complete", "progressing", "stalled", "unknown")
@@ -45,7 +44,7 @@ ARBITRATION_VERDICTS = ("complete", "progressing", "stalled", "unknown")
 # 产物路径/URL 候选：含路径分隔符且内嵌文档扩展名的非空白 token，整段截取
 # （查询串 ?q=1 一并保留——截掉会让下载候选不可用）。双前置 lookahead 定资格，
 # token 本体贪婪到空白/标点边界；字符类排除空白与中英文常用标点
-_ARTIFACT_TOKEN = r"[^\s\"'<>，。；、！？：（）()【】\[\]]"
+_ARTIFACT_TOKEN = r"[^\s\"'<>，。；、！？：()【】\[\]]"
 _ARTIFACT_RE = re.compile(
     rf"(?={_ARTIFACT_TOKEN}*[/])"
     rf"(?={_ARTIFACT_TOKEN}*\.(?:pdf|docx?|pptx?|xlsx?|md|zip|png|jpe?g|html?|csv))"

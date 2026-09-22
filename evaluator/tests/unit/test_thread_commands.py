@@ -158,7 +158,7 @@ def test_channel_run_dispatches_commands_flavor_with_conversation_header() -> No
     assert captured["body"]["method"] == "run.start"
     assert captured["body"]["params"]["config"]["configurable"] == {"modelId": "19"}
     assert captured["body"]["params"]["metadata"] == {"task_id": "t1"}
-    # 消息置于 params.input.messages 且为 LangGraph type 格式（v4.6.4 契约）
+    # 消息置于 params.input.messages 且为 LangGraph type 格式
     sent = captured["body"]["params"]["input"]["messages"]
     assert sent == [{"type": "human", "id": sent[0]["id"], "content": "只回复两个字"}]
     assert result["status"] == "success"
@@ -284,7 +284,7 @@ def test_poll_state_timeout_reports_thread_idle(monkeypatch: pytest.MonkeyPatch)
     channel = _channel(_sut(timeout=0.1), handler)
     with pytest.raises(AgentProtocolError, match="run 超时") as exc_info:
         asyncio.run(channel.run("hi"))
-    # 机械守卫按类型拦截（isinstance），不做错误文案字符串匹配（v4.17）
+    # 机械守卫按类型拦截（isinstance），不做错误文案字符串匹配
     assert isinstance(exc_info.value, AgentProtocolTimeoutError)
     assert exc_info.value.details.get("thread_idle") is True
 
@@ -326,7 +326,7 @@ def test_poll_state_timeout_when_terminal_never_stabilizes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """空窗反复出现终态条件永不连满稳定窗 → 按超时收口；最后一次采样空闲
-    但稳定未满，thread_idle=true 诊断语义不降级（arch/16 §4.5 settle）。"""
+    但稳定未满，thread_idle=true 诊断语义不降级。"""
     monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.5)  # > timeout
     gets = {"n": 0}
     blank = {
@@ -398,7 +398,7 @@ def test_commands_stream_deadline_breaks_endless_keepalive(
     2026-09 卡死事故回归）。跳出后终态与文本由 state 轮询收口。
     """
     monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
-    # SSE_DEADLINE_EXTRA_S 由 commands_stream 模块消费，patch 其定义处（plan/07 拆分）
+    # SSE_DEADLINE_EXTRA_S 由 commands_stream 模块消费，patch 其定义处
     monkeypatch.setattr(commands_stream, "SSE_DEADLINE_EXTRA_S", 0.0)
 
     async def endless_keepalive():
@@ -466,7 +466,7 @@ def test_registry_defaults_flavor_runs_and_configurable_dict() -> None:
     assert sut.configurable == {}
 
 
-# ─── askQuestion 中断与恢复（v4.11：反问不再空转超时，input.respond 续跑） ───
+# ─── askQuestion 中断与恢复（反问不再空转超时，input.respond 续跑） ───
 
 INTERRUPT_ID = "8dfca77c1c85056d7243d0067a6d8ba3"
 ASK_TOOL_CALL_ID = "ask_question_0_f0a8bb6e"
@@ -581,7 +581,7 @@ def test_unrecognized_interrupt_types_lists_unknown_sorted() -> None:
 def test_poll_state_timeout_reports_unrecognized_interrupts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """「run 超时」的真因可见：错误 details 透出未识别中断类型（plan/07 G2）。"""
+    """「run 超时」的真因可见：错误 details 透出未识别中断类型。"""
     monkeypatch.setattr(thread_commands, "COMMANDS_POLL_INTERVAL_S", 0.01)
     stuck_state = {
         "next": ["tools"],

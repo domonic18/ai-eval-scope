@@ -1,4 +1,4 @@
-"""执行评测域 — 五步选择 + 摘要确认 + 等价命令（F-C-EXEC，arch/15 §3.4）。
+"""执行评测域 — 五步选择 + 摘要确认 + 等价命令（F-C-EXEC）。
 
 向导最终以与命令行相同的参数对象调用 ``main.pipeline/run``（双前端同构，
 组织约定 3）；等价命令由 ``console/equiv`` 从同一参数组装，天然不漂移。
@@ -76,7 +76,7 @@ def main(session: Any) -> None:
     if channels[sut] not in SCHEDULED_CHANNELS:
         rprint(
             f"[red]通道 {channels[sut]!r} 预留未排期（本期排期通道 "
-            f"{'、'.join(SCHEDULED_CHANNELS)}，arch/03 §4.0.6/§4.2）——"
+            f"{'、'.join(SCHEDULED_CHANNELS)}）——"
             "请先把 sut_configs 的 channel 修正为排期通道（可在工作台会话中"
             "让 Agent 重新探测修正）。[/red]"
         )

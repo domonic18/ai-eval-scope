@@ -1,4 +1,4 @@
-"""FilePromptStore — 从场景包 prompts/ 目录加载（Phase 1，等价替代 TemplateManager 读路径）。
+"""FilePromptStore — 从场景包 prompts/ 目录加载（等价替代 TemplateManager 读路径）。
 
 复用 TemplateManager 的 _load_template（YAML 解析），按 template_id 索引；
 scenario_id 可选过滤（兼容旧式无场景 YAML）。version/label 对文件无意义（文件未版本化），忽略。

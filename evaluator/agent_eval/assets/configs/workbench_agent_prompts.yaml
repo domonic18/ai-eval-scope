@@ -1,11 +1,11 @@
-# WorkbenchAgent 提示词（arch/15 §六 D-WB-2：会话机段 + 域段分段装配）
+# WorkbenchAgent 提示词（会话机段 + 域段分段装配）
 # prompt 管理在此 YAML 中，不 hardcode 在代码里（对齐 execution_agent_prompts.yaml 惯例）。
 #
 # 结构（域 = 提示词段 + 工具面 + 门禁策略，新域 = 新段 + 新 server，会话机不动）：
 #   system_prompt_base   会话机段——身份 / 沙盒与红线 / 工具（零域语义，全域共享）
 #   domain_segments.*    域段——工作流程与域方法论，按会话档位装配一段
 #   domain_labels.*      域展示名（注入 {domain}，与启动横幅能力域口径一致）
-#   intro                启动横幅文案（CLI 渲染，§6.10 五要素；不进 system prompt）
+#   intro                启动横幅文案（CLI 渲染；不进 system prompt）
 #   templates            首轮 / 校验回改 / 新建包模板（宿主装配）
 #
 # 排版约定（改文案前先读——层次与标记全文件统一）：
@@ -48,7 +48,7 @@ system_prompt_base: |
 domain_labels:
   scenario_package: 场景包工程 · SUT 接入调试 · 评测执行 · 数据集下载（其余域随版本增装）
 
-# 启动欢迎首屏（§6.8 五要素：身份与 slogan/任务对象与能力域/使用示例/红线与确认/控制方式）。
+# 启动欢迎首屏（身份与 slogan/任务对象与能力域/使用示例/红线与确认/控制方式）。
 # 结构化文案资产，CLI 只渲染不写死——渐变 logo 与配色是表现层（cli/console/banner.py），
 # 新域上线改本资产即更新介绍；示例必须与档位真实能力一致
 banner:
@@ -130,7 +130,7 @@ domain_segments:
     - 写 rules 前先调用 **list_evaluators** 拿当前可用评估器 ID 清单：evaluator
       字段**原样复制**清单中的 ID（它是评估器注册 ID，不是 method 枚举值如
       llm_judge），不要凭记忆或参照示例臆造。
-    - 判官提示词的 `user_prompt_template` 变量同理**照抄**规范文档 §4 变量契约表
+    - 判官提示词的 `user_prompt_template` 变量同理**照抄**所引评估器声明的变量契约
       （变量按所引 evaluator 而定，被测产出是 `{{ content }}`，勿臆造
       `response`/`output`/`answer`）——写错运行时必报「模板渲染失败，变量缺失」，
       该规则直接 0 分。
@@ -355,7 +355,7 @@ domain_segments:
       被门禁打回时又把同样的问题抛回给用户）：登录实测成功的域、检索到的 baseURL 域、
       已确认存在的端点所在域，都是协议探测/接口发现的候选——先逐一 probe_protocol /
       request 实测候选，全部落空才问用户；问题要附上已知证据与已排除项（如
-      「登录接口在 sasan-server 域且 /users/profile 需 Bearer token，agent 对话接口
+      「登录接口在 demo-server 域且 /users/profile 需 Bearer token，agent 对话接口
       是否也在该域？」），不要给臆造的示例地址。
     - **用户回答「不知道」（接口地址/字段名）时**：不要追问更多技术细节，改由你自己
       拟定并实测验证——

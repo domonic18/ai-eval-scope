@@ -1,6 +1,6 @@
 """BrowseTool — 运行浏览（list_runs / show_run）。
 
-薄包 ``cli.cmds.runs`` 提纯函数（Sprint 14b C2）：scan_runs / run_detail
+薄包 ``cli.cmds.runs`` 提纯函数：scan_runs / run_detail
 均为纯数据（无 rprint/typer），Agent 域直接消费——「会话内看结果」的只读面。
 """
 

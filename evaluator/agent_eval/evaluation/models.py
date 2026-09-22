@@ -110,13 +110,13 @@ class SampleResult:
     total_duration_ms: float = 0.0
     llm_calls: int = 0
     token_usage: int = 0
-    # 执行链路过程指标（Sprint 9 v6.0：Steps/Turns、Tool Calls、Latency 落库）。
+    # 执行链路过程指标（Steps/Turns、Tool Calls、Latency 落库）。
     # 由 orchestrator 从 ExecutionPackage 的 trace/metrics 注入（缓存命中路径同样生效）；
     # eval_only 的外部包无执行链路时保持 0。
     agent_turns: int = 0
     agent_tool_calls: int = 0
     agent_exec_ms: float = 0.0
-    # run_error 样本的诊断摘要（arch/16 §4.6 合同五）：trace.error 截断 +
+    # run_error 样本的诊断摘要：trace.error 截断 +
     # 终态分类，上行落 samples.extra——Web 端「无结果」变为可解释
     error_summary: str | None = None
 

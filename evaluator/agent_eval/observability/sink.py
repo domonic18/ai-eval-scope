@@ -1,4 +1,4 @@
-"""ResultSink：编排 拼装事件 → 上传制品 → 发送事件 → 失败入队（docs/arch/09 §8）。
+"""ResultSink：编排 拼装事件 → 上传制品 → 发送事件 → 失败入队。
 
 调用时机：cli.py 的 eval 命令，在 flush_traces() 之后调 ResultSink.flush(eval_result)。
 未配置凭据（enabled=False）→ flush 直接跳过，零开销。
@@ -280,7 +280,7 @@ class ResultSink:
         ]
         _upload(tech_files, kind="trace")
 
-        # ③ 执行对话记录：包根 transcript.md（前端「对话过程」栏，arch/09 v1.8）。
+        # ③ 执行对话记录：包根 transcript.md（前端「对话过程」栏）。
         # 手动 pack 包无此文件，is_file() 天然跳过——eval_only 场景不受影响
         transcript = package_dir / "transcript.md"
         if transcript.is_file():

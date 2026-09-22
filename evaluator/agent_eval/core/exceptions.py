@@ -3,6 +3,7 @@
 系统各模块使用的异常类体系，按模块分层组织。
 """
 
+from __future__ import annotations
 
 # ─── 基础异常 ───
 
@@ -83,7 +84,7 @@ class TaskBuildError(ExecutionError):
 
 
 class SUTAuthError(ExecutionError):
-    """SUT 鉴权失败（凭证缺失、登录失败、自动重登超频等，arch/03 §4.0）。"""
+    """SUT 鉴权失败（凭证缺失、登录失败、自动重登超频等）。"""
 
 
 class SUTChannelError(ExecutionError):
@@ -91,7 +92,7 @@ class SUTChannelError(ExecutionError):
 
 
 class AgentProtocolError(SUTChannelError):
-    """Agent Protocol 通道错误（runs/threads/agents 接口调用失败，arch/03 §4.0.6）。"""
+    """Agent Protocol 通道错误（runs/threads/agents 接口调用失败）。"""
 
 
 class AgentProtocolTimeoutError(AgentProtocolError):
@@ -227,7 +228,7 @@ class OrchestratorError(AgentEvalError):
     """编排调度异常。"""
 
 
-# ─── 质量门禁相关（CI 集成 --gate，requirement/06）───
+# ─── 质量门禁相关（CI 集成 --gate）───
 
 
 class GateError(AgentEvalError):

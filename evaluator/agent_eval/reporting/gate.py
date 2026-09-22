@@ -1,6 +1,6 @@
-"""质量门禁判定（requirement/06 FR-3）。
+"""质量门禁判定。
 
-三态语义（照搬消费方已验证实现，SasanAgent evals/scripts/run-eval.sh §5）：
+三态语义：
 
 - ``off``（默认）：不判定，仅出报告；
 - ``strict``：逐项卡点——MetricsReport.thresholds 中声明了 threshold 的每个指标，
@@ -19,7 +19,7 @@ from typing import Any
 from agent_eval.core.exceptions import GateConfigError
 from agent_eval.evaluation.models import MetricsReport
 
-# 门禁关闭（"0" 兼容消费方历史传参习惯，requirement/06 验收 #7）
+# 门禁关闭（"0" 兼容消费方历史传参习惯）
 _OFF_SPECS = ("", "off", "0")
 
 

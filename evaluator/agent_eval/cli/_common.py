@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 
-# ── 执行前凭证保障（req/04 §3.5：按所选 SUT 的 credential_ref 引导补齐缺失字段）──
+# ── 执行前凭证保障（按所选 SUT 的 credential_ref 引导补齐缺失字段）──
 
 
 def ensure_sut_credentials(sut: Any) -> None:
@@ -34,8 +34,8 @@ def ensure_sut_credentials(sut: Any) -> None:
     缺失时交互补录，复检仍缺则 fail fast。交互终端：列出缺失字段 → 确认后
     逐项隐藏输入 → **一次落盘**（不留半截状态）→ 复检通过；取消 / 空输入退回
     预检原样抛 SUTAuthError（带 ``secrets set`` 引导）。``--no-input``（CI /
-    管道）不交互，行为与纯预检完全一致。字段集由 sut_config 数据推导
-    （06 §4.7 通用 KV）。**不得移进 stage_progress 内调用**——进度转轮单行
+    管道）不交互，行为与纯预检完全一致。字段集由 sut_config 数据推导。
+    **不得移进 stage_progress 内调用**——进度转轮单行
     重绘会把输入提示行刷掉（实测：提示被「执行 N 个任务」掩盖，用户不知所措）。
     """
     import os
@@ -217,7 +217,7 @@ def observability_enabled(result: object, *, upload_override: bool | None) -> bo
 def observability_flush(
     result: object, *, upload_override: bool | None, package_dir: str | None = None
 ) -> dict:
-    """把结果推送到可观测平台（无渲染核心，workbench/管线共用；Sprint 7e→14b 拆分）。
+    """把结果推送到可观测平台（无渲染核心，workbench/管线共用）。
 
     回执（异常全吞——推送失败不阻断评估结论，已落本地 workspace + 入离线队列）::
 

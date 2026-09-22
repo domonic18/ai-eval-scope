@@ -1,11 +1,11 @@
-"""rich 渲染 — 阶段进度视图与任务状态表（F-C-EXEC-03，arch/15 §3.2 render）。
+"""rich 渲染 — 阶段进度视图与任务状态表（F-C-EXEC-03）。
 
 进度视图为**阶段级**（解析 → 执行 → 评估 → 收尾）：execute_stage 内部是一次性
-``agent.run_task_set()``，逐任务实时态需 ExecutionAgent 回调改造（Sprint 11+ 经
+``agent.run_task_set()``，逐任务实时态需 ExecutionAgent 回调改造（经
 SessionLogCallback 接入），当前以「执行中 spinner + 完成态逐任务表」落地。
 ``--output-format json`` 下进度视图禁用（进度即人读输出）。
 
-进度呈现三态（``--log-level`` 四档映射，arch/15 §4.4）：``spinner``（normal，
+进度呈现三态（``--log-level`` 四档映射）：``spinner``（normal，
 rich 转轮）/ ``lines``（verbose，stderr 阶段行——为事件行直出让路，转轮单行重绘
 会与事件行互相糊写）/ ``off``（quiet/debug/json——quiet 只要结果行，debug 由
 DEBUG 原文日志流本身充当过程输出）。

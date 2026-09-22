@@ -1,4 +1,4 @@
-"""agent-eval doctor — 顶层一键自检（requirement/04 F-C-CONFIG-02）。
+"""agent-eval doctor — 顶层一键自检。
 
 逐项检查：平台身份 / 模型三角色 / SUT 凭证 / 场景包 / workspace / 可选依赖，
 输出 ✅/⚠️/❌ 与修复建议；``--json`` 输出机器可读结果。
@@ -30,7 +30,7 @@ def _check_platform() -> dict[str, str]:
         "name": "平台",
         "status": "warn",
         "detail": "未配置（上报不可用，本地评估不受影响）",
-        "fix": "Sprint 11: agent-eval auth login",
+        "fix": "运行 agent-eval auth login 登录",
     }
 
 

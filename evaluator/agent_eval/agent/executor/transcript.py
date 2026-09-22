@@ -1,6 +1,6 @@
 """执行对话记录（transcript.md）渲染——纯函数，无实例状态。
 
-从 agent.py 拆出（plan/07 G4）：transcript 是人类可读的过程证据，渲染逻辑
+从 agent.py 拆出：transcript 是人类可读的过程证据，渲染逻辑
 与执行循环/包物化无耦合。单条超长截断（完整原文见 agent_logs 会话日志）。
 """
 

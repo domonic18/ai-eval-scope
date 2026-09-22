@@ -1,4 +1,4 @@
-"""Agent Protocol commands 形态 SSE 流式 run（thread_commands 拆出，plan/07 G4）。
+"""Agent Protocol commands 形态 SSE 流式 run（thread_commands 拆出）。
 
 run.start + SSE /stream(/events) 订阅，终态一律以 state 轮询收口（流只是
 提前收口的优化）。与 run/poll 编排（thread_commands）分离：两形态各自的

@@ -1,4 +1,4 @@
-"""数据集域工具实现（Sprint 14c，arch/15 v4.13 §6.11）。
+"""数据集域工具实现。
 
 受控出网第二域：出网仅经 DatasetManager 单出口（HF/ModelScope SDK，域名
 白名单随 source 结构性收窄）；写路径白名单仅 ``workspace/datasets/{name}/``
