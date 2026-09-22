@@ -76,7 +76,7 @@ def _test_configured_roles() -> bool:
 @models_app.command("set")
 def models_set() -> None:
     """交互式配置模型（提供商/协议/模型/api-key），保存到 ~/.agent_eval/llm.json（0600）。"""
-    from agent_eval.cli.console.prompts import select
+    from agent_eval.cli.console.prompts import ask, select
     from agent_eval.config.llm_file import (
         PROTOCOLS,
         PROVIDER_DEFAULT_BASE_URLS,
@@ -120,7 +120,7 @@ def models_set() -> None:
             f"[blue]· 使用预置端点[/blue]（{PROVIDER_LABELS[vendor]} × {_PROTOCOL_LABELS[protocol]}）: {base_url}"
         )
 
-    api_key = typer.prompt("API Key（隐藏输入）", hide_input=True, default="").strip()
+    api_key = ask("API Key", hide=True)
     if not api_key:
         rprint("[red]未输入 API Key，已取消。[/red]")
         raise typer.Exit(code=1)

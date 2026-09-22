@@ -167,7 +167,7 @@ class WorkbenchSession:
 |------|---------|------------|
 | `select(options)` | 编号列表 + 回车（可选升级 ↑↓ 键盘导航） | `--no-input` 下 env/default 旁路，缺失 → exit 2；管道输入正常提示 |
 | `confirm(q)` | y/n | 读 `--yes`/env，缺省即错 |
-| `input(hide=)` | 文本（可隐藏回显） | 读参数/env，缺省即错 |
+| `input(hide=)` | 文本；hide 掩码回显——逐键 `*` 上屏 / 退格抹除（v4.13.3，^C 语义不变） | 读参数/env，缺省即错；hide 回退 click 隐藏回显 |
 | `stage_progress` | 阶段级 spinner（stderr 绑定，transient）| 单行阶段提示到 stderr；--json 下禁用 |
 | `print_task_table` | 完成态逐任务状态表（进度视图回落摘要） | 正常输出（rprint） |
 
@@ -1065,3 +1065,4 @@ review 检查项。
 | v4.13 | 2026-09-21 | **数据集域实施（Sprint 14c，§6.11 v4.11 设计稿落地，req/04 §4.12 F-C-DATA-01~04）**：`agent/workbench/datasets/` 第三域包（DatasetToolServer：list_datasets/download_dataset）——workbench 会话内「查 → 下」评测数据集（「下载 gsm8k 数据集」即用）；**第二受控出网域**兑现（D-CLI-10）：出网仅经 DatasetManager 单出口、写路径白名单 `workspace/datasets/{name}/`、下载确认照 run_eval 三段式不可旁路（ask_fn None 即 refused）；**较设计稿收紧**：工具签名不暴露 output/token 参数（写白名单与 token 红线由签名结构性保证，HF/MS SDK 直读环境变量）；equiv 单点新增 `dataset_argv`（子命令+位置参数形态）；prompts 增「## 数据集」段 + intro 示例；`WorkbenchAgentConfig` 零改动（§6.7 扩展机制第三次验证）。F-C-DATA-05（数据集驱动考卷生成）维持 P2 独立立项不承诺 |
 | v4.13.1 | 2026-09-21 | **启动横幅 Markdown 渲染（用户验收反馈：横幅以纯文本透出 `**` 加粗符）**：`_render_intro` 渲染器 `Text` → `Markdown`（与非流式回复同源）——加粗/列表/链接生效；配套 `intro` 资产按 markdown 语义成稿（§6.8）：元信息与示例成列表条目、规则/控制独立段落，**句中不加硬换行**（rich 重排把软换行按空格拼接，句中断行会在拼接点注入空格；实测「当前任务对象/可用能力域」「规则/控制」并段）。回归测试守卫：标记不透出、列表成条目、两处不并段 |
 | v4.13.2 | 2026-09-21 | **欢迎首屏富渲染（用户验收反馈：要开源 CLI 风格的炫酷首屏——排版之外要有 slogan 与配色）**：新表现层模块 `cli/console/banner.py`——ANSI Shadow 字形表拼装「AGENT EVAL」wordmark（零依赖，对齐由构造保证），竖直渐变色带（青→蓝→紫→洋红）着色，窄终端降级单行逐字渐变；分区配色（✦ 身份+slogan 斜体洋红 / ◆ 元信息与规则控制标签着色内容压暗 / ▸ 示例子弹轮换配色+解释压暗）；脚注右对齐版本 + GitHub 主页（终端超链接）。**文案资产同步结构化**：`intro:` 整块 markdown → `banner:` 段（identity/slogan/homepage/examples_label/examples/rules/control），`banner_parts()` 注入 `{root}`/`{domains}`——文案与表现彻底分离；`render_intro`/`intro_text` 删除（DRY，纯文本形态无消费方）。§6.8 成稿小节改资产键说明 + 演进注记 |
+| v4.13.3 | 2026-09-22 | **敏感输入掩码回显（用户验收反馈：hide 输入全静默不上屏，无法感知正在输入）**：`prompts.ask(hide=True)` 交互 TTY 下走 `_masked_input`——POSIX termios cbreak 逐键读取，每字符上屏 `*`、退格 `\b \b` 抹除（空栈退格不误抹）、回车提交；**ISIG 保留**故 ^C 仍以 KI 中断（v4.12.4 语义不变），^D/流尽 = EOF 抛 Abort（与 click.prompt 同语义，ask_fn 桥已有 Abort→KI 转换），终端态 `finally` 复原（中断路径不残留 cbreak 原始回显）。管道 / CliRunner / 非 POSIX 回退 click 隐藏回显（脚本化行为与既有测试零变化）。**散落直调收口**：`models.py`/`secrets.py` 两处裸 `typer.prompt(hide_input=True)` 迁入 `ask(hide=True)`（组织约定 5 全量兑现，且 --no-input 下获得 exit 2 旁路语义而非挂起）。单测 6 例：分流两向 + 掩码/退格/空栈退格/EOF/KI 终端态复原 |

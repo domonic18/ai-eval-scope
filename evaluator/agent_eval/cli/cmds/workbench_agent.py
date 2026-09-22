@@ -370,7 +370,7 @@ def _make_ask_fn() -> Any:
         try:
             if secret:
                 _show(question)
-                return ask("└─ 输入（隐藏回显）", hide=True)
+                return ask("└─ 输入（* 回显）", hide=True)
             if options:
                 _show(question)
                 return select("└─ 选择", options, no_default=True)

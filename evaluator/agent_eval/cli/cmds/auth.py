@@ -140,7 +140,7 @@ def login_flow(token: str | None = None, host: str | None = None) -> PlatformIde
                 "[dim]引导：登录平台 → 打开项目 →「设置 & API Key」→ 创建 API Key"
                 "（scope 含 ingest）→ 回到这里粘贴。[/dim]"
             )
-        token = ask("粘贴 API Key（eval- 开头，隐藏输入，直接回车取消）", hide=True)
+        token = ask("粘贴 API Key（eval- 开头，以 * 回显，直接回车取消）", hide=True)
         if not token:
             rprint("[yellow]未输入 Key，已取消。[/yellow]")
             return None
