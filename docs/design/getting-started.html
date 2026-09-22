@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>接入指南 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .nav { height: 64px; border-bottom: 1px solid var(--border); position: relative; z-index: 10; background: rgba(10,12,16,0.7); backdrop-filter: blur(12px); }
+  .nav-in { max-width: 1120px; margin: 0 auto; padding: 0 32px; height: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: color .12s; }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-links a.on { color: var(--accent); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+  .gs-hero { padding: 72px 0 40px; text-align: center; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 14px; border-radius: 100px; background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: 12px; font-weight: 550; color: var(--accent); margin-bottom: 24px; }
+  .gs-hero h1 { font-size: 40px; font-weight: 750; letter-spacing: -0.025em; margin-bottom: 14px; }
+  .gs-hero p { font-size: 16px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.7; }
+  .section { padding: 48px 0 0; }
+  .sec-head { text-align: center; margin-bottom: 36px; }
+  .sec-head h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .sec-head p { font-size: 15px; color: var(--text-secondary); max-width: 540px; margin: 0 auto; }
+  /* 四通道卡 */
+  .ch-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+  .ch { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; transition: all .15s var(--ease); }
+  .ch:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+  .ch-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .ch-head h3 { font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 10px; }
+  .ch-ic { width: 34px; height: 34px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ch p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 12px; }
+  .ch-call { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ch-fit { margin-top: 12px; font-size: 12px; color: var(--text-tertiary); }
+  /* quickstart：左步骤右终端 */
+  .qs-grid { display: grid; grid-template-columns: 5fr 7fr; gap: 24px; align-items: start; }
+  .qs-step { display: flex; gap: 14px; padding: 16px 18px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 12px; }
+  .qs-n { font-family: var(--mono); font-size: 12px; font-weight: 650; color: var(--accent); flex-shrink: 0; padding-top: 2px; }
+  .qs-step h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .qs-step p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
+  /* 终端块（恒深设计：不随主题切换，对标浅色文档页内深色代码块惯例） */
+  .term { background: #0d1017; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+  .term-bar { height: 38px; display: flex; align-items: center; gap: 6px; padding: 0 14px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .term-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .term-copy { margin-left: auto; font-family: var(--mono); font-size: 11px; color: #6b7280; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: var(--r-xs); padding: 2px 9px; cursor: pointer; }
+  .term-copy:hover { color: #d1d5db; }
+  .term-body { padding: 16px 18px; font-family: var(--mono); font-size: 12.5px; line-height: 1.9; color: #9ca3af; overflow-x: auto; }
+  .term-body .ps { color: #3d6dff; user-select: none; }
+  .term-body .cmd { color: #2fe6c8; }
+  .term-body .cmt { color: #565c6a; }
+  .term-body .out { color: #9ca3af; }
+  .term-body .ok { color: #3fb950; }
+  /* 认证与安全 */
+  .trust-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .trust { padding: 18px; }
+  .trust h4 { font-size: 13.5px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .trust p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+  /* 下一步 */
+  .next-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .next-card { padding: 20px; display: block; }
+  .next-card h4 { font-size: 14.5px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .next-card p { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
+  .gs-foot { border-top: 1px solid var(--border); padding: 22px 32px; display: flex; justify-content: space-between; align-items: center; color: var(--text-tertiary); font-size: 12.5px; margin-top: 72px; }
+  .gs-foot a { color: var(--text-secondary); display: inline-flex; align-items: center; gap: 6px; }
+  .gs-foot a:hover { color: var(--text-primary); }
+  @media (max-width: 768px) { .gs-hero h1 { font-size: 30px; } .ch-grid, .qs-grid, .trust-grid, .next-grid { grid-template-columns: 1fr; } .nav-links { display: none; } }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="grid-overlay"></div>
+<div class="scanlines"></div>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a href="index.html" class="logo">
+      <span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span>
+      <span class="logo-text">Eval<b>Scope</b></span>
+    </a>
+    <div class="row" style="gap:24px;">
+      <div class="nav-links">
+        <a href="index.html#features">产品简介</a>
+        <a href="getting-started.html" class="on">接入指南</a>
+        <a href="docs.html">开发文档</a>
+        <a href="index.html#preview">产品预览</a>
+      </div>
+      <a href="login.html" class="btn btn-primary">登录</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap reveal">
+  <section class="gs-hero">
+    <div class="pill r-1"><span class="dot pulse" style="width:6px;height:6px;border-radius:50%;background:var(--signal)"></span> 接入指南</div>
+    <h1 class="r-2">四种通道，把评估接进流水线</h1>
+    <p class="r-3">同一把 API Key、同一套评测引擎与租户隔离。服务端系统走 HTTP，智能体客户端走 MCP，本地与定时任务走 CLI——评估完成后可再配 Webhook 回调，结果回流同一可观测平台。</p>
+  </section>
+
+  <section class="section" id="channels">
+    <div class="sec-head"><h2>接入方式总览</h2><p>按调用形态选通道，可按场景混合使用</p></div>
+    <div class="ch-grid r-2">
+      <div class="ch">
+        <div class="ch-head"><h3><span class="ch-ic" style="background:var(--accent-soft)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>HTTP API</h3><span class="badge badge-accent">服务端 / CI</span></div>
+        <p>REST 提交评测任务，轮询结果与速览。第三方对接的主力方式：服务端系统、编排引擎、CI/CD 均适用。</p>
+        <div class="ch-call"><span class="code-inline">POST /api/v1/jobs</span><span class="code-inline">GET /api/v1/jobs/{id}</span><span class="code-inline">GET …/overview</span></div>
+        <div class="ch-fit">适合：课件平台后端 · 自动化脚本 · 流水线卡点</div>
+      </div>
+      <div class="ch">
+        <div class="ch-head"><h3><span class="ch-ic" style="background:var(--signal-soft)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></span>Webhook 结果回调</h3><span class="badge badge-success">事件驱动</span></div>
+        <p>评估完成后平台主动 POST 你的服务，免去轮询。项目级配置，投递带签名可校验，失败可回退轮询兜底。</p>
+        <div class="ch-call"><span class="code-inline">webhookUrl</span><span class="code-inline">X-Webhook-Signature</span><span class="code-inline">job.completed / job.failed</span></div>
+        <div class="ch-fit">适合：回填业务系统 · 消息通知 · 审核流触发</div>
+      </div>
+      <div class="ch">
+        <div class="ch-head"><h3><span class="ch-ic" style="background:var(--info-soft)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>MCP 接入</h3><span class="badge badge-info">智能体客户端</span></div>
+        <p>把评测挂成 MCP 工具，让 AI 智能体在对话中直接提交与查询评测，无需手写 HTTP。</p>
+        <div class="ch-call"><span class="code-inline">list_packages</span><span class="code-inline">submit_eval_job</span></div>
+        <div class="ch-fit">适合：Claude Code / Cursor 等支持 MCP 的智能体</div>
+      </div>
+      <div class="ch">
+        <div class="ch-head"><h3><span class="ch-ic" style="background:var(--warning-soft)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span>CLI 直跑</h3><span class="badge badge-warning">本地 / 批跑</span></div>
+        <p>评估器命令行直跑，结果经摄取链路自动回传平台；网络失败入离线队列，联网后重放。</p>
+        <div class="ch-call"><span class="code-inline">uv tool install "ai-eval-scope[agent,llm]"</span><span class="code-inline">agent-eval eval</span></div>
+        <div class="ch-fit">适合：本地联调 · 定时脚本 · 离线场景</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="quickstart">
+    <div class="sec-head"><h2>五分钟跑通</h2><p>左侧三步，右侧照敲</p></div>
+    <div class="qs-grid r-3">
+      <div>
+        <div class="qs-step"><span class="qs-n">01</span><div><h4>安装评估器 CLI</h4><p>一行命令装好评估引擎与交互式工作台（需 Python 3.11+ 与 uv）。</p></div></div>
+        <div class="qs-step"><span class="qs-n">02</span><div><h4>配置评测模型</h4><p>交互式选厂商、贴 API Key，自动连通性测试后写入本地配置。</p></div></div>
+        <div class="qs-step"><span class="qs-n">03</span><div><h4>发起第一次评估</h4><p>交互工作台或脚本化批跑均可；带 --upload 时结果自动上报平台。</p></div></div>
+        <a href="docs-quickstart.html" class="btn" style="margin-top:4px">完整快速开始
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+      <div>
+        <div class="segment" style="margin-bottom:12px">
+          <button class="active" onclick="qsTab(this,'qs-cli')">CLI 评估器</button>
+          <button onclick="qsTab(this,'qs-web')">Web 平台自部署</button>
+        </div>
+        <div class="term" id="qs-cli">
+          <div class="term-bar"><span class="term-dot" style="background:#f85149"></span><span class="term-dot" style="background:#d29922"></span><span class="term-dot" style="background:#3fb950"></span><button class="term-copy" data-copy='uv tool install "ai-eval-scope[agent,llm]"&#10;agent-eval models set&#10;agent-eval start'>复制</button></div>
+          <div class="term-body"><span class="ps">$</span> <span class="cmd">uv tool install "ai-eval-scope[agent,llm]"</span><br><span class="ps">$</span> <span class="cmd">agent-eval models set</span><br><span class="out ok">✓ 连通性测试通过</span><br><span class="ps">$</span> <span class="cmd">agent-eval start</span><br><span class="cmt"># 交互式工作台：描述任务 → 生成评测计划 → 执行 → 报告</span></div>
+        </div>
+        <div class="term" id="qs-web" style="display:none">
+          <div class="term-bar"><span class="term-dot" style="background:#f85149"></span><span class="term-dot" style="background:#d29922"></span><span class="term-dot" style="background:#3fb950"></span><button class="term-copy" data-copy='cp .env.example .env&#10;make docker-up'>复制</button></div>
+          <div class="term-body"><span class="cmt"># 仓库根目录：postgres + minio + web 一键起</span><br><span class="ps">$</span> <span class="cmd">cp .env.example .env</span><br><span class="ps">$</span> <span class="cmd">make docker-up</span><br><span class="out ok">✓ web 就绪 · http://localhost:9000</span><br><span class="cmt"># 新建项目 → 签发 API Key → 回到 CLI 配置 .env 即可上报</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="security">
+    <div class="sec-head"><h2>认证与安全</h2><p>所有通道共用同一套鉴权语义</p></div>
+    <div class="trust-grid r-4">
+      <div class="card trust"><h4><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Bearer 统一鉴权</h4><p>一把项目级 API Key 走天下：提交、查状态、取速览。项目归属完全由 Key 决定，提交时无需传项目 ID。</p></div>
+      <div class="card trust"><h4><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>密钥仅明文一次</h4><p>API Key 仅创建时明文展示一次；Webhook 签名密钥加密存储、不回显，变更写入审计日志。</p></div>
+      <div class="card trust"><h4><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>HMAC 签名摄取</h4><p>评估器经公私钥对 HMAC 签名推送运行 / 样本 / 约束 / 制品，链路防篡改，密钥不落业务侧数据库。</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="next" style="padding-bottom:8px">
+    <div class="sec-head"><h2>下一步</h2></div>
+    <div class="next-grid r-5">
+      <a class="card-link next-card" href="docs.html"><h4><span class="badge badge-info">文档</span>开发文档</h4><p>目录索引与全文搜索：概念模型、指标口径、端点速查</p></a>
+      <a class="card-link next-card" href="dashboard.html"><h4><span class="badge badge-accent">控制台</span>进入看板</h4><p>项目 / 运行 / 样本五级钻取，约束结论与原始证据并置</p></a>
+    </div>
+  </section>
+</div>
+
+<footer class="gs-foot">
+  <a href="index.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    返回官网
+  </a>
+  <span>EvalScope · Agent 能力评估可观测平台 · <span class="mono">v1.0</span></span>
+</footer>
+
+<script>
+  /* quickstart 双 tab 切换（原型级：直接切 display） */
+  function qsTab(btn, id) {
+    btn.parentElement.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('qs-cli').style.display = id === 'qs-cli' ? '' : 'none';
+    document.getElementById('qs-web').style.display = id === 'qs-web' ? '' : 'none';
+  }
+</script>
+<script src="assets/ui.js"></script>
+<script src="assets/docs.js"></script>
+</body>
+</html>

@@ -40,6 +40,45 @@
   .step h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
   .step p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
   .step code { font-family: var(--mono); font-size: 12px; color: var(--signal); }
+  /* 徽章行（hero 下方，mono 小徽章，链真实仓库） */
+  .repo-badges { display: flex; gap: 8px; justify-content: center; margin-top: 26px; flex-wrap: wrap; }
+  .repo-badges a, .repo-badges span { font-family: var(--mono); font-size: 11px; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border); border-radius: 100px; padding: 3px 11px; transition: all .12s var(--ease); }
+  .repo-badges a:hover { border-color: var(--border-hover); color: var(--text-primary); }
+  /* 场景包生态墙（对标 logo 墙：默认灰，hover 转亮） */
+  .pkg-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; }
+  .pkg { text-align: center; padding: 20px 12px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg); transition: all .15s var(--ease); }
+  .pkg:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+  .pkg-name { font-family: var(--mono); font-size: 13px; font-weight: 650; color: var(--text-tertiary); transition: color .12s; }
+  .pkg:hover .pkg-name { color: var(--accent); }
+  .pkg-desc { font-size: 11.5px; color: var(--text-tertiary); margin-top: 5px; }
+  .pkg.dashed { border-style: dashed; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  /* 接入区：左步骤右终端 */
+  .acc-grid { display: grid; grid-template-columns: 5fr 7fr; gap: 24px; align-items: start; }
+  .acc-grid .step { padding: 18px 20px; margin-bottom: 12px; }
+  .acc-grid .step-n { margin-bottom: 8px; }
+  .link-arrow { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--text-secondary); margin-top: 6px; }
+  .link-arrow:hover { color: var(--accent); }
+  /* 终端块（恒深设计：不随主题切换，对标浅色文档页内深色代码块惯例） */
+  .term { background: #0d1017; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+  .term-bar { height: 38px; display: flex; align-items: center; gap: 6px; padding: 0 14px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .term-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .term-title { font-family: var(--mono); font-size: 11px; color: #6b7280; margin-left: 6px; }
+  .term-copy { margin-left: auto; font-family: var(--mono); font-size: 11px; color: #6b7280; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: var(--r-xs); padding: 2px 9px; cursor: pointer; }
+  .term-copy:hover { color: #d1d5db; }
+  .term-body { padding: 16px 18px; font-family: var(--mono); font-size: 12.5px; line-height: 1.9; color: #9ca3af; overflow-x: auto; }
+  .term-body .ps { color: #3d6dff; user-select: none; }
+  .term-body .cmd { color: #2fe6c8; }
+  .term-body .cmt { color: #565c6a; }
+  .term-body .out { color: #9ca3af; }
+  .term-body .ok { color: #3fb950; }
+  /* 四栏页脚（覆盖 .site-foot 默认单行 flex） */
+  .site-foot { display: block; }
+  .foot-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 24px; padding: 38px 0 26px; }
+  .foot-col h5 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); margin-bottom: 12px; }
+  .foot-col a { display: block; font-size: 13px; color: var(--text-secondary); padding: 4px 0; }
+  .foot-col a:hover { color: var(--text-primary); }
+  .foot-col .foot-txt { display: block; font-size: 13px; color: var(--text-tertiary); padding: 4px 0; }
+  .foot-base { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding: 16px 0 20px; font-size: 12px; color: var(--text-tertiary); }
   .preview-frame { margin-top: 48px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-lg); }
   .pf-bar { height: 38px; background: var(--bg-surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 0 14px; }
   .pf-dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -47,7 +86,7 @@
   .cta { padding: 96px 0 80px; text-align: center; }
   .cta h2 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; }
   .cta p { font-size: 15px; color: var(--text-secondary); margin-bottom: 28px; }
-  @media (max-width: 768px) { .hero h1 { font-size: 36px; } .feat-grid, .flow { grid-template-columns: 1fr; } .nav-links { display: none; } .metrics-strip { flex-wrap: wrap; } }
+  @media (max-width: 768px) { .hero h1 { font-size: 36px; } .feat-grid, .flow, .acc-grid, .pkg-grid, .foot-grid { grid-template-columns: 1fr; } .nav-links { display: none; } .metrics-strip { flex-wrap: wrap; } }
 </style>
 </head>
 <body>
@@ -63,8 +102,9 @@
     </a>
     <div class="row" style="gap:24px;">
       <div class="nav-links">
-        <a href="#features">能力特性</a>
-        <a href="#flow">工作流</a>
+        <a href="#features">产品简介</a>
+        <a href="getting-started.html">接入指南</a>
+        <a href="docs.html">开发文档</a>
         <a href="#preview">产品预览</a>
       </div>
       <a href="login.html" class="btn btn-primary">登录</a>
@@ -78,13 +118,22 @@
     <h1 class="r-2">量化每一次<br>Agent 评估的信号</h1>
     <p class="r-3">从评估器实时摄取运行数据，按 组织 / 项目 / 运行 / 样本 / 约束 五级钻取，把交付率、约束结论与原始证据一站式对照、可追溯。</p>
     <div class="hero-cta r-4">
-      <a href="dashboard.html" class="btn btn-primary btn-lg">进入控制台
+      <a href="getting-started.html" class="btn btn-primary btn-lg">快速开始
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
-      <a href="#preview" class="btn btn-lg">查看演示</a>
+      <a href="docs.html" class="btn btn-lg">开发文档</a>
+      <a href="dashboard.html" class="link-arrow">进入控制台
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+    <div class="repo-badges r-5">
+      <a href="https://github.com/domonic18/ai-eval-scope">MIT License</a>
+      <span>Python 3.11+</span>
+      <a href="https://pypi.org/project/ai-eval-scope/">PyPI · ai-eval-scope</a>
+      <a href="https://github.com/domonic18/ai-eval-scope">★ 1.2k</a>
     </div>
 
-    <div class="metrics-strip r-5">
+    <div class="metrics-strip r-6">
       <div class="ms-item"><div class="ms-val" style="color:var(--success)">0.962</div><div class="ms-lab">交付率 DR</div></div>
       <div class="ms-item"><div class="ms-val" style="color:var(--signal)">0.914</div><div class="ms-lab">常识通过率 CPR</div></div>
       <div class="ms-item"><div class="ms-val">0.781</div><div class="ms-lab">平均 Reward</div></div>
@@ -118,12 +167,14 @@
     </div>
   </section>
 
-  <section class="section" id="flow">
-    <div class="sec-head"><h2>三步接入</h2><p>从创建密钥到看见首个运行，几分钟完成</p></div>
-    <div class="flow">
-      <div class="step"><div class="step-n">01 / 接入</div><h3>新建项目并创建 Key</h3><p>在项目设置中新建 API Key，复制 <code>AGENT_EVAL_PUBLIC_KEY</code> / <code>SECRET_KEY</code> 到评估器环境。</p></div>
-      <div class="step"><div class="step-n">02 / 运行</div><h3>评估器推送结果</h3><p>ResultSink 经 HMAC 签名将运行 / 样本 / 约束 / 制品摄取入库，无需改动评估流程。</p></div>
-      <div class="step"><div class="step-n">03 / 洞察</div><h3>钻取定位问题</h3><p>看板 → 趋势 → 失败分布 → 样本原文，逐级下钻定位每一次回归的根因。</p></div>
+  <section class="section" id="packages">
+    <div class="sec-head"><h2>一类场景包，多种评测域</h2><p>场景包把被测对象、任务集与指标定义打成一份清单，开箱即评</p></div>
+    <div class="pkg-grid">
+      <div class="pkg"><div class="pkg-name">courseware</div><div class="pkg-desc">课件生成</div></div>
+      <div class="pkg"><div class="pkg-name">chat</div><div class="pkg-desc">对话质量</div></div>
+      <div class="pkg"><div class="pkg-name">rag-qa</div><div class="pkg-desc">知识问答</div></div>
+      <div class="pkg"><div class="pkg-name">codegen</div><div class="pkg-desc">代码生成</div></div>
+      <div class="pkg dashed"><div class="pkg-name" style="color:var(--text-tertiary)">+ 自定义</div><div class="pkg-desc">声明式 YAML</div></div>
     </div>
   </section>
 
@@ -147,17 +198,70 @@
     </div>
   </section>
 
+  <section class="section" id="quickstart">
+    <div class="sec-head"><h2>三步接入</h2><p>从安装到首份评估报告，五分钟</p></div>
+    <div class="acc-grid">
+      <div>
+        <div class="step"><div class="step-n">01 / 安装</div><h3>安装评估器 CLI</h3><p>一行命令装好评估引擎与交互式工作台：<code>uv tool install "ai-eval-scope[agent,llm]"</code></p></div>
+        <div class="step"><div class="step-n">02 / 配置</div><h3>配置评测模型</h3><p><code>agent-eval models set</code> 交互式选厂商、贴 Key，自动连通性测试。</p></div>
+        <div class="step"><div class="step-n">03 / 评估</div><h3>发起第一次评估</h3><p><code>agent-eval start</code> 描述任务即得评测计划；带 <code>--upload</code> 结果自动上报平台。</p></div>
+        <a href="getting-started.html" class="link-arrow">打开接入指南 · 四通道全览
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span class="term-dot" style="background:#f85149"></span><span class="term-dot" style="background:#d29922"></span><span class="term-dot" style="background:#3fb950"></span><span class="term-title">quickstart</span><button class="term-copy" data-copy='uv tool install "ai-eval-scope[agent,llm]"&#10;agent-eval models set&#10;agent-eval start'>复制</button></div>
+        <div class="term-body"><span class="ps">$</span> <span class="cmd">uv tool install "ai-eval-scope[agent,llm]"</span><br><span class="out">Installed 1 executable: agent-eval</span><br><span class="ps">$</span> <span class="cmd">agent-eval models set</span><br><span class="out ok">✓ 连通性测试通过 · 已写入 ~/.agent_eval/llm.json</span><br><span class="ps">$</span> <span class="cmd">agent-eval start</span><br><span class="cmt"># 交互式工作台：描述任务 → 生成评测计划 → 执行 → 报告</span></div>
+      </div>
+    </div>
+  </section>
+
   <section class="cta">
     <h2>开始观测你的 Agent 评估</h2>
     <p>连接评估器，把每一次运行变成可量化、可追溯的信号</p>
-    <a href="register.html" class="btn btn-primary btn-lg">免费创建组织</a>
+    <div class="hero-cta" style="margin-top:28px">
+      <a href="register.html" class="btn btn-primary btn-lg">免费创建组织</a>
+      <a href="docs.html" class="btn btn-lg">阅读文档</a>
+    </div>
   </section>
 
   <footer class="site-foot" style="border-top:1px solid var(--border)">
-    <span>EvalScope · Agent 能力评估可观测平台</span>
-    <span class="mono">v1.0</span>
+    <div class="foot-grid">
+      <div class="foot-col">
+        <h5>产品</h5>
+        <a href="#features">产品简介</a>
+        <a href="#preview">产品预览</a>
+        <a href="dashboard.html">项目看板</a>
+        <a href="run-detail.html">运行详情</a>
+      </div>
+      <div class="foot-col">
+        <h5>开发者</h5>
+        <a href="getting-started.html">快速开始</a>
+        <a href="getting-started.html#channels">接入方式</a>
+        <a href="docs.html">开发文档</a>
+        <a href="docs-quickstart.html">五分钟上手</a>
+      </div>
+      <div class="foot-col">
+        <h5>资源</h5>
+        <a href="https://github.com/domonic18/ai-eval-scope">GitHub ↗</a>
+        <a href="https://pypi.org/project/ai-eval-scope/">PyPI ↗</a>
+        <a href="docs-quickstart.html#requirements">环境要求</a>
+        <a href="docs.html#api">API 摘要</a>
+      </div>
+      <div class="foot-col">
+        <h5>关于</h5>
+        <a href="https://github.com/domonic18/ai-eval-scope">开源仓库</a>
+        <span class="foot-txt">许可证 MIT</span>
+        <span class="foot-txt">右下角切换深浅主题</span>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 EvalScope · Agent 能力评估可观测平台</span>
+      <span class="mono">v1.0</span>
+    </div>
   </footer>
 </div>
 <script src="assets/ui.js"></script>
+<script src="assets/docs.js"></script>
 </body>
 </html>
