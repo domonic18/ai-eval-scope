@@ -15,7 +15,7 @@
     { num: '02', title: '快速开始', group: '开始使用', href: 'docs-quickstart.html', summary: '安装、配置评测模型 Key、完成第一次评估', kw: ['quickstart', '入门', '上手', 'setup', '安装', 'install', '模型', 'key'] },
     { num: '03', title: '安装与升级', group: '开始使用', href: '', summary: 'uv tool install 与版本升级', kw: ['install', 'uv', 'upgrade', '升级', 'extras', '依赖'] },
     { num: '04', title: '四通道总览', group: '接入指南', href: 'getting-started.html', summary: 'HTTP API / Webhook / MCP / CLI 选型对比', kw: ['integration', '接入', '通道', 'channel', 'http', 'webhook', 'mcp', 'cli', '选型', '对接'] },
-    { num: '05', title: 'HTTP API', group: '接入指南', href: '', summary: 'POST /api/v1/jobs 提交评测，轮询结果与速览', kw: ['http', 'api', 'rest', 'jobs', '提交', '轮询', 'polling', '接口'] },
+    { num: '05', title: '接入指南', group: '接入指南', href: 'docs-integration.html', summary: '四通道接入步骤与示例：Key 签发、HTTP 调用、Webhook、MCP、CLI', kw: ['integration', '接入', '指南', 'guide', 'http', 'api', 'webhook', 'mcp', 'cli', 'key', '签发'] },
     { num: '06', title: 'Webhook 结果回调', group: '接入指南', href: '', summary: '评估完成后平台主动 POST 你的服务，免轮询', kw: ['webhook', '回调', 'callback', '通知', 'notify', '签名', 'signature'] },
     { num: '07', title: 'MCP 接入', group: '接入指南', href: '', summary: '让 AI 智能体直接提交与查询评测', kw: ['mcp', 'agent', '智能体', 'claude', 'cursor', '工具', 'tool'] },
     { num: '08', title: 'CLI 上报', group: '接入指南', href: '', summary: '评估器本地直跑，结果自动上报平台', kw: ['cli', '命令行', '上报', 'upload', '离线', '批跑'] },

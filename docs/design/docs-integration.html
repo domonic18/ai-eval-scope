@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>接入指南 — EvalScope 文档</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* 与 docs-quickstart.html 同款文档站骨架 */
+  .nav { height: 60px; }
+  .doc-mid { flex: 1; max-width: 460px; margin: 0 28px; }
+  .doc-mid .doc-search { position: relative; }
+  .doc-mid .kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .docs-shell { display: flex; max-width: 1160px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+  .docs-side { width: 236px; flex-shrink: 0; border-right: 1px solid var(--border); padding: 22px 12px 32px; position: sticky; top: 0; height: calc(100vh - 60px); overflow-y: auto; }
+  .docs-side .nav-item { font-size: 13px; padding: 6px 10px; }
+  .docs-body { flex: 1; min-width: 0; display: flex; gap: 48px; padding: 40px 0 72px 40px; }
+  .doc-article { flex: 1; min-width: 0; max-width: 720px; }
+  .doc-eyebrow { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+  .doc-article h1 { font-size: 30px; font-weight: 750; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .doc-meta { font-family: var(--mono); font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 32px; }
+  .doc-article h2 { font-size: 20px; font-weight: 650; letter-spacing: -0.01em; margin: 36px 0 12px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .doc-article h3 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; }
+  .doc-article p { font-size: 14px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 12px; }
+  .doc-article ul { font-size: 14px; color: var(--text-secondary); line-height: 1.9; padding-left: 20px; margin-bottom: 12px; }
+  .doc-article ol { font-size: 14px; color: var(--text-secondary); line-height: 1.9; padding-left: 20px; margin-bottom: 12px; }
+  .doc-article .callout { margin: 14px 0 18px; }
+  .doc-toc { width: 200px; flex-shrink: 0; position: sticky; top: 40px; align-self: flex-start; }
+  .doc-toc-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-quaternary); margin-bottom: 10px; }
+  /* 终端 / 代码块（恒深设计：不随主题切换，对标浅色文档页内深色代码块惯例） */
+  .term { background: #0d1017; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; margin: 14px 0 18px; }
+  .term-bar { height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .term-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .term-title { font-family: var(--mono); font-size: 11px; color: #6b7280; margin-left: 6px; }
+  .term-copy { margin-left: auto; font-family: var(--mono); font-size: 11px; color: #6b7280; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: var(--r-xs); padding: 2px 9px; cursor: pointer; }
+  .term-copy:hover { color: #d1d5db; }
+  .term-body { padding: 13px 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; color: #9ca3af; overflow-x: auto; }
+  .term-body .ps { color: #3d6dff; user-select: none; }
+  .term-body .cmd { color: #2fe6c8; }
+  .term-body .cmt { color: #565c6a; }
+  .term-body .out { color: #9ca3af; }
+  .term-body .ok { color: #3fb950; }
+  .term-body .str { color: #7ee090; }
+  .next-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0 18px; }
+  .next-card { padding: 18px; }
+  .next-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .next-card p { font-size: 12.5px; margin: 0; }
+  .doc-pager { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); margin-top: 44px; padding-top: 20px; font-size: 13.5px; }
+  .doc-pager a { color: var(--text-secondary); display: inline-flex; align-items: center; gap: 7px; }
+  .doc-pager a:hover { color: var(--accent); }
+  @media (max-width: 920px) { .docs-side, .doc-toc, .doc-mid { display: none; } .docs-body { padding-left: 0; } }
+</style>
+</head>
+<body data-doc-page="05">
+<div class="ambient"></div>
+<div class="scanlines"></div>
+
+<nav class="nav">
+  <div class="nav-in">
+    <div class="row" style="gap:10px;">
+      <a href="index.html" class="logo">
+        <span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span>
+        <span class="logo-text">Eval<b>Scope</b></span>
+      </a>
+      <span class="logo-badge">DOCS</span>
+    </div>
+    <div class="doc-mid">
+      <div class="doc-search input-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="input" id="doc-search" type="text" placeholder="搜索文档…" autocomplete="off">
+        <span class="kbd">⌘K</span>
+        <div class="doc-search-pop" id="doc-search-pop"></div>
+      </div>
+    </div>
+    <div class="row" style="gap:16px;">
+      <a href="https://github.com/domonic18/ai-eval-scope" style="font-size:13px;font-weight:500;color:var(--text-secondary)">GitHub ↗</a>
+      <a href="dashboard.html" class="btn btn-primary btn-sm">进入控制台</a>
+      <div class="topbar-right"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-shell">
+  <aside class="docs-side"><div id="doc-tree"></div></aside>
+
+  <div class="docs-body">
+    <article class="doc-article reveal" id="doc-article">
+      <div class="doc-eyebrow r-1">接入指南 · 05</div>
+      <h1 class="r-1">接入指南</h1>
+      <div class="doc-meta r-1">更新于 2026-09-22 · 适用于 v0.4+</div>
+
+      <h2 id="prepare" class="r-2">准备工作</h2>
+      <p class="r-2">所有接入通道共用以下准备步骤：</p>
+      <ol class="r-2">
+        <li><b>创建项目</b> — 登录控制台 → 项目看板 → 新建项目（名称 + slug）。</li>
+        <li><b>签发 API Key</b> — 进入项目 →「设置 &amp; API Key」→ 新建。Key 形如 <span class="code-inline">eval-…</span>，<b>仅创建时明文展示一次</b>。</li>
+        <li><b>确认平台地址</b> — 本地 docker-compose 默认 <span class="code-inline">http://localhost:9000</span>。</li>
+      </ol>
+      <div class="callout callout-info r-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span><b>统一鉴权</b>：所有通道均使用 <span class="code-inline">Authorization: Bearer &lt;api_key&gt;</span>；项目归属完全由 Key 决定，提交时无需（也不接受）project_id。</span>
+      </div>
+
+      <h2 id="http" class="r-3">通道一 · HTTP API</h2>
+      <p class="r-3">服务端系统对接的主力方式：REST 提交评测任务，轮询结果或取速览。</p>
+      <div class="term r-3">
+        <div class="term-bar"><span class="term-dot" style="background:#f85149"></span><span class="term-dot" style="background:#d29922"></span><span class="term-dot" style="background:#3fb950"></span><span class="term-title">http — 提交与轮询</span><button class="term-copy" data-copy='curl -X POST https://eval.example.com/api/v1/jobs -H "Authorization: Bearer eval-…" -F "file=@courseware.zip"'>复制</button></div>
+        <div class="term-body"><span class="cmt"># 1) 提交评测任务 → 202 Accepted</span><br><span class="ps">$</span> <span class="cmd">curl -X POST https://eval.example.com/api/v1/jobs \</span><br><span class="cmd">    -H "Authorization: Bearer eval-…" \</span><br><span class="cmd">    -F "file=@courseware.zip"</span><br><span class="out">{</span><span class="str">"job_id"</span><span class="out">: </span><span class="str">"0bc0b717-…"</span><span class="out">, </span><span class="str">"status"</span><span class="out">: </span><span class="str">"pending"</span><span class="out">}</span><br><br><span class="cmt"># 2) 轮询结果（任务完成后返回指标与结论）</span><br><span class="ps">$</span> <span class="cmd">curl https://eval.example.com/api/v1/jobs/0bc0b717-… \</span><br><span class="cmd">    -H "Authorization: Bearer eval-…"</span><br><span class="out ok">{ "status": "completed", "metrics": { "DR": 0.962, … } }</span></div>
+      </div>
+      <p class="r-3">提交支持三种内容形态：<b>JSON 内联</b>（<span class="code-inline">application/json</span>）、<b>原始字节上传</b>（<span class="code-inline">application/octet-stream</span>）、<b>大文件直传</b>（&gt;50MB 走 presigned PUT）。不想轮询可在任务提交后直接取速览：</p>
+      <p class="r-3"><span class="code-inline">GET /api/v1/jobs/{id}/overview</span> 返回指标与结论摘要，适合在业务页面直接渲染评估结果。</p>
+
+      <h2 id="webhook" class="r-3">通道二 · Webhook 结果回调</h2>
+      <p class="r-3">评估完成（<span class="code-inline">completed</span> / <span class="code-inline">failed</span>）后平台主动 POST 你的服务，免去轮询。</p>
+      <ul class="r-3">
+        <li><b>项目级配置</b> — 项目设置中填 <span class="code-inline">webhookUrl</span>（生产强制 HTTPS），对该项目下所有 job 生效。</li>
+        <li><b>签名校验</b> — 请求携带 <span class="code-inline">X-Webhook-Signature</span> 头；签名密钥 AES 加密存储、不回显。</li>
+        <li><b>可靠性</b> — 投递失败自动重试；即便不配 Webhook 也随时可回退轮询兜底。</li>
+      </ul>
+
+      <h2 id="mcp" class="r-4">通道三 · MCP 接入（智能体）</h2>
+      <p class="r-4">把评测挂成 MCP 工具，让 Claude Code / Cursor 等智能体在对话中直接提交与查询评测。客户端配置：</p>
+      <div class="term r-4">
+        <div class="term-bar"><span class="term-dot" style="background:#f85149"></span><span class="term-dot" style="background:#d29922"></span><span class="term-dot" style="background:#3fb950"></span><span class="term-title">mcp.json</span><button class="term-copy" data-copy='{"mcpServers": {"evalscope": {"url": "https://eval.example.com/api/v1/mcp"}}}'>复制</button></div>
+        <div class="term-body">{<br>&nbsp;&nbsp;<span class="str">"mcpServers"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"evalscope"</span>: { <span class="str">"url"</span>: <span class="str">"https://eval.example.com/api/v1/mcp"</span> }<br>&nbsp;&nbsp;}<br>}</div>
+      </div>
+      <p class="r-4">挂载后可用两个工具：<span class="code-inline">list_packages</span> 发现可用的场景包，<span class="code-inline">submit_eval_job</span> 提交评测任务（<span class="code-inline">package_ref</span> 必填）。</p>
+
+      <h2 id="cli" class="r-5">通道四 · CLI 直跑</h2>
+      <p class="r-5">评估器命令行直跑，结果经摄取链路自动回传平台；网络失败入离线队列，联网后重放。评估器侧 <span class="code-inline">.env</span> 配置：</p>
+      <div class="card api-card r-5">
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>变量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">AGENT_EVAL_HOST</td><td>平台地址，默认 <span class="mono">http://localhost:9000</span></td></tr>
+              <tr><td class="mono">AGENT_EVAL_API_KEY</td><td>项目 API Key（<span class="mono">eval-…</span>）</td></tr>
+              <tr><td class="mono">AGENT_EVAL_UPLOAD</td><td>设为 <span class="mono">true</span> 开启摄取（需显式开启）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="term r-5">
+        <div class="term-bar"><span class="term-dot" style="background:#f85149"></span><span class="term-dot" style="background:#d29922"></span><span class="term-dot" style="background:#3fb950"></span><span class="term-title">terminal</span><button class="term-copy" data-copy='agent-eval pipeline --package courseware --task "safety_*" --upload'>复制</button></div>
+        <div class="term-body"><span class="ps">$</span> <span class="cmd">agent-eval pipeline --package courseware --task "safety_*" --upload</span><br><span class="out ok">✓ 评估完成，结果已上报可观测平台</span></div>
+      </div>
+
+      <h2 id="next" class="r-6">下一步</h2>
+      <div class="next-grid r-6">
+        <a class="card-link next-card" href="docs-quickstart.html"><h4><span class="badge badge-accent">入门</span>五分钟快速开始</h4><p>安装评估器、配置模型 Key、完成第一次评估</p></a>
+        <a class="card-link next-card" href="getting-started.html"><h4><span class="badge badge-info">选型</span>四通道总览</h4><p>按调用形态对比四通道，决定从哪条接入</p></a>
+      </div>
+
+      <div class="doc-pager r-6">
+        <a href="docs-quickstart.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          快速开始
+        </a>
+        <a href="docs.html">文档目录
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </article>
+
+    <aside class="doc-toc r-2">
+      <div class="doc-toc-title">本页目录</div>
+      <nav id="doc-outline"></nav>
+    </aside>
+  </div>
+</div>
+
+<script src="assets/ui.js"></script>
+<script src="assets/docs.js"></script>
+</body>
+</html>
