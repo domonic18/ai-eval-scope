@@ -189,14 +189,14 @@ class TestAccountDomain:
         # §3.5：--domain agent 直达工作台 Agent 一级入口；主菜单首项为推荐入口
         from agent_eval.cli.cmds import workbench_agent as wb
         from agent_eval.cli.main import app
-        from agent_eval.cli.workbench.session import _DOMAIN_LABELS
+        from agent_eval.cli.workbench.session import _DOMAINS
 
         hit: list[str] = []
         monkeypatch.setattr(wb, "agent_workbench_entry", lambda s=None: hit.append("agent"))
         result = runner.invoke(app, ["start", "--domain", "agent"])
         assert result.exit_code == 0
         assert hit == ["agent"]
-        assert list(_DOMAIN_LABELS)[0] == "agent"  # 一级入口居首（首选工作方式）
+        assert _DOMAINS[0][0] == "agent"  # 一级入口居首（首选工作方式）
 
     def test_agent_entry_blocks_without_llm(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Agent 入口 preflight 阻断：LLM 未配置 → 指引 models set（区别于查看类只提示）
@@ -392,6 +392,98 @@ class TestSession:
         # start 命令入口可被 invoke（域直达失败路径）
         result = runner.invoke(app, ["start", "--domain", "nope"])
         assert result.exit_code == 2
+
+
+class TestOnboarding:
+    """start 首启引导（v4.15）：模型未配置 → 引导卡 + 一步直达 models set。"""
+
+    @staticmethod
+    def _session(monkeypatch: pytest.MonkeyPatch, *, configured: bool):
+        from types import SimpleNamespace
+
+        from agent_eval.cli.workbench.session import WorkbenchSession
+
+        monkeypatch.delenv("AGENT_EVAL_HOST", raising=False)
+        monkeypatch.delenv("AGENT_EVAL_API_KEY", raising=False)
+        cfg = (
+            SimpleNamespace(roles={"text": SimpleNamespace(model="kimi-k2")})
+            if configured
+            else None
+        )
+        monkeypatch.setattr("agent_eval.config.llm_file.load_llm_file", lambda: cfg)
+        return WorkbenchSession()
+
+    def test_guide_card_and_defer(self, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+        """未配置 → 引导卡（影响面 + 所需准备）+ 稍后不拉起向导。"""
+        s = self._session(monkeypatch, configured=False)
+        monkeypatch.setattr(
+            "agent_eval.cli.workbench.session.select",
+            lambda *a, **k: "稍后——菜单「账号与配置」随时可配",
+        )
+        calls: list[str] = []
+        monkeypatch.setattr("agent_eval.cli.cmds.models.models_set", lambda: calls.append("set"))
+        s.onboard()
+        out = capsys.readouterr().out
+        assert "模型尚未配置" in out and "欢迎使用 agent-eval" in out
+        assert "API Key" in out and "场景包管理" in out  # 影响面与准备项可见
+        assert calls == []  # 稍后不拉向导
+
+    def test_setup_now_invokes_wizard_and_reports_ready(
+        self, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """立即配置 → 直达 models set；配置后正反馈（无需去账号域找）。"""
+        from types import SimpleNamespace
+
+        s = self._session(monkeypatch, configured=False)
+        box = {"configured": False}
+
+        def llm_file():
+            # 模拟「配置成功落盘」：fake_set 置位后 _refresh 读到已配置
+            if box["configured"]:
+                return SimpleNamespace(roles={"text": SimpleNamespace(model="kimi-k2")})
+            return None
+
+        monkeypatch.setattr("agent_eval.config.llm_file.load_llm_file", llm_file)
+        monkeypatch.setattr(
+            "agent_eval.cli.workbench.session.select",
+            lambda *a, **k: "立即配置（推荐）",
+        )
+        calls: list[str] = []
+
+        def fake_set() -> None:
+            calls.append("set")
+            box["configured"] = True
+
+        monkeypatch.setattr("agent_eval.cli.cmds.models.models_set", fake_set)
+        s.onboard()
+        assert calls == ["set"]
+        assert "模型已就绪" in capsys.readouterr().out
+
+    def test_setup_cancel_falls_back_not_crash(
+        self, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """向导中途取消（typer.Exit/Abort）→ 回落主菜单语义，不整场退出。"""
+
+        def cancel() -> None:
+            raise typer.Exit(code=1)
+
+        s = self._session(monkeypatch, configured=False)
+        monkeypatch.setattr(
+            "agent_eval.cli.workbench.session.select",
+            lambda *a, **k: "立即配置（推荐）",
+        )
+        monkeypatch.setattr("agent_eval.cli.cmds.models.models_set", cancel)
+        s.onboard()  # 不抛
+        assert "配置未完成" in capsys.readouterr().out
+
+    def test_menu_labels_marked_when_model_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        entries = self._session(monkeypatch, configured=False)._menu_entries()
+        labels = dict(entries)
+        assert "需先配置模型" in labels["agent"]
+        assert "需先配置模型" in labels["exec"]
+        assert "需先配置模型" not in labels["scn"]  # 本地功能不受影响，不吓唬用户
+        configured = self._session(monkeypatch, configured=True)._menu_entries()
+        assert all("需先配置模型" not in label for _, label in configured)
 
 
 # ── 回归：向导直调动作不得泄漏 typer.OptionInfo（workbench 执行域崩溃修复） ──
