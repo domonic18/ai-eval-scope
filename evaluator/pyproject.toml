@@ -3,11 +3,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-# distribution 名 ai-eval-scope（agent-eval 在 PyPI 已被占用，arch/17 D-PKG-1）；
+# distribution 名 ai-eval-scope（agent-eval 在 PyPI 已被占用）；
 # import 名 agent_eval 与 CLI 命令名 agent-eval 不变
 name = "ai-eval-scope"
 version = "0.4.1"
-description = "Agent 能力评估系统 — 基于 Agent-Driven 架构的评测框架"
+description = "Agent evaluation framework: agent-driven execution with rule + LLM-judge scoring"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -24,8 +24,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Testing",
 ]
-homepage = "https://github.com/domonic18/ai-eval-scope"
-repository = "https://github.com/domonic18/ai-eval-scope"
 dependencies = [
     "typer>=0.12.0",
     "pydantic>=2.0",
@@ -42,7 +40,13 @@ dependencies = [
     "python-dotenv>=1.2.2",
 ]
 
-# extras 只含用户可安装的功能组合（arch/17 D-PKG-5）——开发工具链在
+[project.urls]
+homepage = "https://github.com/domonic18/ai-eval-scope"
+repository = "https://github.com/domonic18/ai-eval-scope"
+documentation = "https://github.com/domonic18/ai-eval-scope/tree/main/docs/guide"
+changelog = "https://github.com/domonic18/ai-eval-scope/blob/main/evaluator/CHANGELOG.md"
+
+# extras 只含用户可安装的功能组合——开发工具链在
 # [dependency-groups].dev（PEP 735），uv sync --group dev 安装、不入发布元数据
 [project.optional-dependencies]
 llm = [
@@ -50,7 +54,7 @@ llm = [
     "anthropic>=0.30",
     "langfuse>=2.0",
 ]
-# DeepAgents 底座（arch/03 执行引擎 v4.6）：ExecutionAgent Agent-Driven 路径，
+# DeepAgents 底座：ExecutionAgent Agent-Driven 路径，
 # 惰性导入（仿 playwright 惯例），未安装时 CLI/ExecutionAgent 给出友好提示
 agent = [
     "deepagents>=0.2",
@@ -114,7 +118,7 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 
 # commitizen：Conventional Commits 校验（commit-msg hook）+ cz bump 版本/CHANGELOG 自动化。
-# 版本单源（arch/17 D-PKG-3）：pep621 provider 维护 pyproject [project].version，
+# 版本单源：pep621 provider 维护 pyproject [project].version，
 # version_files 同步 __init__（scm provider 只读不落盘，且本仓历史无 tag 基线，弃用）
 [tool.commitizen]
 name = "cz_conventional_commits"

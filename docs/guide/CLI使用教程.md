@@ -27,7 +27,7 @@
 **环境要求**：Python 3.11+、[uv](https://docs.astral.sh/uv/)。
 
 ```bash
-git clone https://github.com/domonic18/ai-eval-scope.git && cd agent-eval-system/evaluator
+git clone https://github.com/domonic18/ai-eval-scope.git && cd ai-eval-scope/evaluator
 uv sync                      # 基础安装（pack/eval 即可用）
 ```
 
