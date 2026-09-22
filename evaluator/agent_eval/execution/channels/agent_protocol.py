@@ -219,7 +219,7 @@ class AgentProtocolChannel(SUTChannel):
     ) -> dict[str, Any]:
         """应答线程上挂起的中断（askQuestion 反问）并续跑至终态（仅 commands 形态）。
 
-        恢复契约（2026-09 对 sasan 实测闭环）：POST /threads/{id}/commands
+        恢复契约（对参考 SUT 实测闭环）：POST /threads/{id}/commands
         method=input.respond → 200 {type: success, result: {run_id}}，图恢复推进；
         直接下发新消息会被 PENDING_QUESTION 拒绝。应答后继续轮询到终态（跳过
         刚应答的 interrupt——受理与推进间存在竞态窗口，旧中断短暂仍在 state 上）。

@@ -17,7 +17,7 @@ def _parse_key(key: str) -> tuple[str, str]:
     """解析 `<ref>.<field>`；非法时退出并提示。"""
     ref, _, field = key.partition(".")
     if not ref or not field:
-        rprint(f"[red]键格式应为 <ref>.<field>（如 sasan.username），得到: {key!r}[/red]")
+        rprint(f"[red]键格式应为 <ref>.<field>（如 demo.username），得到: {key!r}[/red]")
         raise typer.Exit(code=1)
     return ref, field
 
@@ -130,10 +130,10 @@ def secrets_wizard() -> None:
             ref = (
                 select("选择 ref（credential_ref）", options).split("（")[0].strip()
                 if len(options) > 1
-                else ask("ref（sut_config 的 credential_ref，如 SASAN）")
+                else ask("ref（sut_config 的 credential_ref，如 DEMO）")
             )
             if ref.startswith("➕"):
-                ref = ask("新 ref（自由命名，如 SASAN / AGENT_SERVER）")
+                ref = ask("新 ref（自由命名，如 DEMO / AGENT_SERVER）")
             if not ref:
                 rprint("[yellow]未输入 ref，已取消。[/yellow]")
                 continue

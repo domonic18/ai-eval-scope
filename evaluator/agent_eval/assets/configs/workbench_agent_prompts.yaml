@@ -355,7 +355,7 @@ domain_segments:
       被门禁打回时又把同样的问题抛回给用户）：登录实测成功的域、检索到的 baseURL 域、
       已确认存在的端点所在域，都是协议探测/接口发现的候选——先逐一 probe_protocol /
       request 实测候选，全部落空才问用户；问题要附上已知证据与已排除项（如
-      「登录接口在 sasan-server 域且 /users/profile 需 Bearer token，agent 对话接口
+      「登录接口在 demo-server 域且 /users/profile 需 Bearer token，agent 对话接口
       是否也在该域？」），不要给臆造的示例地址。
     - **用户回答「不知道」（接口地址/字段名）时**：不要追问更多技术细节，改由你自己
       拟定并实测验证——

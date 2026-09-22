@@ -46,9 +46,9 @@ AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
 # Agent Protocol 两种部署形态（plan/07 G5 显式化）：
 # - runs：协议标准的 POST /runs/wait 族（通用默认）
 # - commands：POST /threads/{id}/commands + GET state 轮询（AG-UI 网关族官方
-#   Streaming 端点形态）。注意 commands 的信封/中断/终态语义目前以 sasan
+#   Streaming 端点形态）。注意 commands 的信封/中断/终态语义目前以参考 SUT
 #   实测为基准（ask_question 反问中断、input.respond 应答、lifecycle 事件均
-#   为该实现的前端契约）——接入其他 AG-UI 网关前先核对其方言差异
+#   为参考实现的前端契约）——接入其他 AG-UI 网关前先核对其方言差异
 PROTOCOL_FLAVORS = ("runs", "commands")
 
 # ${VAR} / ${VAR:-默认值}（不支持嵌套占位；默认值内不含 '}'）
@@ -281,7 +281,7 @@ class SUTSystemConfig(BaseModel):
     protocol_flavor: str = Field(
         default="runs",
         description="runs（POST /runs/wait 族，协议标准）| commands（POST /threads/{id}/commands"
-        " + GET state 轮询；信封与中断语义以 sasan 实测方言为基准，见 PROTOCOL_FLAVORS 注）",
+        " + GET state 轮询；信封与中断语义以参考 SUT 实测方言为基准，见 PROTOCOL_FLAVORS 注）",
     )
     configurable: dict[str, Any] = Field(
         default_factory=dict,

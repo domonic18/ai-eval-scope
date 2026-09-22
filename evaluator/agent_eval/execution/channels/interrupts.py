@@ -29,14 +29,14 @@ def pending_ask_questions(
 ) -> list[dict[str, Any]]:
     """提取 state 中挂起的反问中断（LangGraph interrupt 结构）。
 
-    结构（2026-09 对 sasan/DeepAgents 实测）：state.next 非空（如 ['tools']），
+    结构（对 DeepAgents 系 SUT 实测）：state.next 非空（如 ['tools']），
     state.tasks[].interrupts[] 携带 {"id", "value": {"type": "ask_question",
     "questions": [{"question", "options": [{"value", "description"}], "multiple"?}]}}；
     顶层 state.interrupts 作兼容提取。此前提取缺失——反问被当普通未终态轮询到
     「run 超时」（300s），反问永远到不了评估 Agent。
 
     interrupt_types：识别为反问挂起的 value.type 集合（sut.interrupt_types 可配）。
-    "ask_question" 是 sasan 前端契约而非协议标准——接入新 SUT 按其中断形态扩展
+    "ask_question" 是参考 SUT 的前端契约而非协议标准——接入新 SUT 按其中断形态扩展
     配置；集合外的中断类型不当作反问（避免把不可应答的人机中断误配成应答载荷），
     由轮询超时诊断透出（unrecognized_interrupt_types）。
     """

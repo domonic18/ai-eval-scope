@@ -1,6 +1,6 @@
-"""质量门禁判定（requirement/06 FR-3）。
+"""质量门禁判定。
 
-三态语义（照搬消费方已验证实现，SasanAgent evals/scripts/run-eval.sh §5）：
+三态语义：
 
 - ``off``（默认）：不判定，仅出报告；
 - ``strict``：逐项卡点——MetricsReport.thresholds 中声明了 threshold 的每个指标，

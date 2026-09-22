@@ -103,9 +103,7 @@ class CmmluSource(DataSource):
             csv_files = [f for f in csv_files if any(s in f.name for s in self.subjects)]
         if not csv_files:
             # 与 arc 同款空读假成功防护
-            raise SourceDataMissingError(
-                "cmmlu", test_dir, "需 extracted/test/<subject>.csv"
-            )
+            raise SourceDataMissingError("cmmlu", test_dir, "需 extracted/test/<subject>.csv")
 
         questions: list[Question] = []
         for csv_file in csv_files:

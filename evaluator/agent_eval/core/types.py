@@ -3,6 +3,8 @@
 定义系统全局使用的枚举类型和类型别名，供各模块共享引用。
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 

@@ -10,8 +10,10 @@ import time
 from collections.abc import AsyncIterator
 from typing import Any
 
+from agent_eval.core.exceptions import AgentEvalError
 
-class SSEDeadlineError(Exception):
+
+class SSEDeadlineError(AgentEvalError):
     """SSE 行级 deadline 超限：keepalive 心跳喂住连接，read timeout 永不触发。
 
     SUT 等待用户输入（反问暂停）时服务端可持续发注释帧——行级 deadline 是唯一

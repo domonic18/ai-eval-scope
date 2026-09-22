@@ -3,6 +3,7 @@
 系统各模块使用的异常类体系，按模块分层组织。
 """
 
+from __future__ import annotations
 
 # ─── 基础异常 ───
 

@@ -1,4 +1,4 @@
-.PHONY: install dev test test-cov lint format clean golden web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init db-migrate-prod hooks check executor-install executor-dev executor-test executor-lint executor-format executor-check
+.PHONY: install dev test test-cov lint format clean web-install web-test web-typecheck docker-build docker-up docker-down docker-logs db-init db-migrate-prod hooks check executor-install executor-dev executor-test executor-lint executor-format executor-check
 
 # 使用 uv 进行包管理（推荐）
 # 需要先安装 uv: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -30,9 +30,6 @@ clean:
 	rm -rf dist/ build/ *.egg-info/
 	# 清理可观测平台后端依赖产物
 	rm -rf web/backend/node_modules
-
-golden:
-	uv run pytest tests/golden/ -v
 
 # ─── 可观测平台后端（web/backend，纯 JSON API）───
 

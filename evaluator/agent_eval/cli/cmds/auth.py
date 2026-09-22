@@ -18,6 +18,8 @@ import httpx
 import typer
 from rich import print as rprint
 
+from agent_eval.core.exceptions import AgentEvalError
+
 auth_app = typer.Typer(help="平台账号（login / status / logout / register）")
 
 # 与 observability 缺省一致（本地 docker compose 起栈的 web 端口）
@@ -37,7 +39,7 @@ class PlatformIdentity:
     key_name: str
 
 
-class ProbeError(Exception):
+class ProbeError(AgentEvalError):
     """Key 探测失败：invalid=Key 无效/未提供；unreachable=平台不可达；server=平台异常响应。"""
 
     def __init__(self, kind: str, message: str) -> None:
