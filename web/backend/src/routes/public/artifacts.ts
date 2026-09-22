@@ -32,6 +32,7 @@ router.post(
       name?: string
       content_type?: string
       md5?: string
+      audience?: string
     }
 
     if (!b.external_run_id || !b.kind || !b.name || !b.content_type) {
@@ -40,6 +41,10 @@ router.post(
         code: "SCHEMA_INVALID",
       })
     }
+
+    // 上传方网络位置：executor 容器内消费者声明 internal（AGENT_EVAL_PRESIGN_AUDIENCE），
+    // 其余（宿主 CLI / 浏览器）缺省 external；非 internal 一律按 external 容错归一
+    const audience = b.audience === "internal" ? ("internal" as const) : ("external" as const)
 
     // key 用 external_run_id 作路径段（制品在 ingest 之前上传，平台 run UUID 尚未生成）
     const key = buildObjectKey({
@@ -55,6 +60,7 @@ router.post(
       contentType: b.content_type,
       md5: b.md5,
       ttlSec: cfg.presignTtlSec,
+      audience,
     })
 
     res.status(200).json({

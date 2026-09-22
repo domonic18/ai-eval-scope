@@ -11,10 +11,12 @@
 set -euo pipefail
 
 NPM_MIRROR="${NPM_MIRROR:-https://mirrors.cloud.tencent.com/npm/}"
-# 22.15.0：backend vitest 4 依赖 std-env 4（ESM-only），而 backend 为 CommonJS，
-# require(ESM) 需 Node 22.12+；Node 20.x 会 ERR_REQUIRE_ESM 崩溃。配合下方的 npm
-# 健康检查 + 清理重装，可干净安装到此版本（不会像裸 tar 覆盖那样损坏 npm）。
-NODE_VERSION="${NODE_VERSION:-22.15.0}"
+# 22.15.1：backend vitest 4 依赖 std-env 4（ESM-only），而 backend 为 CommonJS，
+# require(ESM) 需 Node 22.12+；Node 20.x 会 ERR_REQUIRE_ESM 崩溃。版本与
+# docker/web/Dockerfile 基础镜像（sasan/node:22.15.1-bookworm）保持一致，
+# CI 构建机与容器内 Node 同版本。配合下方的 npm 健康检查 + 清理重装，
+# 可干净安装到此版本（不会像裸 tar 覆盖那样损坏 npm）。
+NODE_VERSION="${NODE_VERSION:-22.15.1}"
 NODE_DIST_URL="${NODE_DIST_URL:-https://mirrors.cloud.tencent.com/nodejs-release}"
 
 # ============================

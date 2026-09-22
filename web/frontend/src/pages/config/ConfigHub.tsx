@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useCrumbs } from "../../context/navigation"
 import { Page, PageHead } from "../../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/shadcn/card"
 import { Badge } from "../../components/shadcn/badge"
 import { Button } from "../../components/shadcn/button"
 import { api, type Scenario } from "../../api/client"
-import { canEditConfig } from "../../store/auth"
-import { Boxes, ChevronRight, Plus } from "lucide-react"
+import { Boxes, ChevronRight } from "lucide-react"
 
-/** 配置中心入口：默认列出官方场景包（official），点选进入场景详情（规则集/提示词/数据集 catalog）。 */
+/** 配置中心入口（只读目录，docs/plan/08 纯可视化）：默认列出官方场景包（official），点选进入场景详情。 */
 const errMsg = (e: unknown, fb: string) =>
   (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? fb
 
@@ -27,7 +26,6 @@ function assetCounts(s: Scenario): string {
 }
 
 export default function ConfigHub() {
-  const nav = useNavigate()
   const { setCrumbs } = useCrumbs()
   const [items, setItems] = useState<Scenario[]>([])
   const [loading, setLoading] = useState(true)
@@ -59,9 +57,6 @@ export default function ConfigHub() {
               <Button variant="ghost" onClick={() => setShowAuto((v) => !v)}>
                 {showAuto ? "隐藏自动注册" : `显示自动注册 (${auto.length})`}
               </Button>
-            )}
-            {canEditConfig() && (
-              <Button onClick={() => nav("/config/create")}><Plus className="mr-1 size-4" />创建场景包</Button>
             )}
           </div>
         }

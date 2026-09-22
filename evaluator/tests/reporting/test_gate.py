@@ -1,4 +1,4 @@
-"""质量门禁三态判定测试（requirement/06 FR-3）。"""
+"""质量门禁三态判定测试。"""
 
 from __future__ import annotations
 

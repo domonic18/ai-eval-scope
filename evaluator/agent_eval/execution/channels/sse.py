@@ -1,4 +1,4 @@
-"""SSE 行级解析（thread_commands 拆出，plan/07 G4）——runs 与 commands 两形态共用。
+"""SSE 行级解析（thread_commands 拆出）——runs 与 commands 两形态共用。
 
 只负责「字节流 → (event, data) 块」的解析与 deadline 判定；事件语义、终态
 收口归各传输模块（thread_commands / agent_protocol）。
@@ -10,8 +10,10 @@ import time
 from collections.abc import AsyncIterator
 from typing import Any
 
+from agent_eval.core.exceptions import AgentEvalError
 
-class SSEDeadlineError(Exception):
+
+class SSEDeadlineError(AgentEvalError):
     """SSE 行级 deadline 超限：keepalive 心跳喂住连接，read timeout 永不触发。
 
     SUT 等待用户输入（反问暂停）时服务端可持续发注释帧——行级 deadline 是唯一

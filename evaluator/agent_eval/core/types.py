@@ -3,6 +3,8 @@
 定义系统全局使用的枚举类型和类型别名，供各模块共享引用。
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -85,6 +87,15 @@ class PackageStatus(str, Enum):
     SUCCESS = "success"  # 执行成功
     PARTIAL = "partial"  # 部分成功（部分文档缺失等）
     FAILED = "failed"  # 执行失败
+
+
+class TerminalKind(str, Enum):
+    """SUT 终态分类——执行会话命运无关，只看交付证据。"""
+
+    DELIVERED = "delivered"  # SUT 已交付（text / 结构化 output）
+    INTERRUPT_PENDING = "interrupt_pending"  # 反问挂起（SUT 显式收尾信号，一等终态）
+    SUT_FAILED = "sut_failed"  # SUT 运行失败（status=failed/error/timeout 且无交付）
+    NO_EVIDENCE = "no_evidence"  # 无任何终态证据（settle 唯一的等待对象）
 
 
 class DatasetSource(str, Enum):

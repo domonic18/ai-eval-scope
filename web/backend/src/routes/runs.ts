@@ -1,6 +1,7 @@
 /**
  * 运行详情路由（/api/v1/runs）。
  *  - GET    /:id               运行详情（含样本摘要）
+ *  - GET    /:id/export        运行导出（自描述 bundle 流式 zip，§9.8）
  *  - GET    /:id/samples/:sid  样本详情（约束 + 制品引用）
  *  - DELETE /:id               删除运行（owner；级联样本/约束/制品 + 清理对象存储文件）
  *
@@ -11,7 +12,9 @@ import { Router } from "express"
 import { requireAuth, optionalAuth } from "../middleware/auth"
 import { runGuard } from "../middleware/tenantGuard"
 import { wrap } from "../middleware/wrap"
+import { getLogger } from "../infra/logger"
 import { createQueryService } from "../services/query.service"
+import { createRunExportService } from "../services/runExport.service"
 import { buildJobOverview, type OverviewResult } from "../services/evalJob.service"
 
 const router = Router()
@@ -46,6 +49,27 @@ router.get(
   wrap(async (req, res) => {
     const svc = createQueryService(req.tenant!)
     res.json({ snapshot: await svc.runSnapshot(req.tenant!.projectId!, req.params.id) })
+  }),
+)
+
+// 运行导出（docs/arch/09 §9.8 导出契约）：自描述 bundle 流式 zip。
+// 404/413 在写头前抛出（wrap→errorHandler 正常 JSON 错误）；流中错误头已发，destroy 连接。
+router.get(
+  "/:id/export",
+  optionalAuth,
+  runGuard(),
+  wrap(async (req, res) => {
+    const svc = createRunExportService(req.tenant!)
+    const bundle = await svc.buildExport(req.params.id)
+    res.status(200)
+    res.setHeader("Content-Type", "application/zip")
+    res.setHeader("Content-Disposition", `attachment; filename="${bundle.filename}"`)
+    res.setHeader("Cache-Control", "no-store")
+    bundle.stream.pipe(res)
+    bundle.stream.on("error", (err: Error) => {
+      getLogger().warn({ runId: req.params.id, error: err.message }, "run_export_stream_failed")
+      res.destroy()
+    })
   }),
 )
 

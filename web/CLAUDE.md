@@ -71,7 +71,7 @@ npm start                  # node dist/server.js（生产）
 
 ## 代码风格（强制）
 
-- Node 18+，npm 管理依赖。
+- Node 22（CI 与 docker/web 镜像统一 22.15.1；`engines` 下限 >=22.12——backend vitest 4 需 Node 22.12+），npm 管理依赖。
 - **ESLint + Prettier**：规则见各端 `eslint.config.js` / `.prettierrc`。
 - **Prettier 统一风格**：无分号、双引号、行宽 100、缩进 2 空格。
 - **TypeScript 严格模式**：禁用 `any`（必要时显式 `unknown` + 类型守卫）；函数参数与返回值标注。
@@ -109,14 +109,18 @@ make web-typecheck      # = cd web/backend && npm run typecheck
 
 - `GET /health`、`GET /api/health` — 健康检查（db + object_storage + schema_version）
 - `POST /api/v1/auth/{register,login,refresh}`、`GET /api/v1/auth/me` — 账号与 JWT
-- `GET|POST /api/v1/orgs/:org/members`、`DELETE /api/v1/orgs/:org/members/:userId` — 组织成员（owner）
+- `GET /api/v1/orgs/:org/members` — 成员列表（成员可读，含 lastActive 最近登录）
+- `POST /api/v1/orgs/:org/members` — 邀请成员（owner）：已注册邮箱直接加入；未注册建待接受邀请，对方注册后自动加入
+- `PATCH /api/v1/orgs/:org/members/:userId` — 角色变更 / 所有权转移（owner；`{ role, demoteSelf? }`，净值防呆保证至少 1 名 owner）
+- `GET /api/v1/orgs/:org/invitations`、`POST /api/v1/orgs/:org/invitations/:id/{resend,revoke}` — 待接受邀请管理（owner）
+- `DELETE /api/v1/orgs/:org/members/:userId` — 移除成员（owner）
 - `GET|POST /api/v1/orgs/:org/projects` — 组织下项目
 - `GET|PATCH /api/v1/projects/:id`、`POST /api/v1/projects/:id/{archive,unarchive}` — 项目管理
 - `GET|POST /api/v1/projects/:id/keys`、`POST /api/v1/projects/:id/keys/:keyId/revoke` — API Key 管理
 - `POST /api/public/ingest`（Bearer API Key 鉴权）— 评估结果摄取
 - `GET|POST|PATCH|DELETE /api/v1/admin/llm-models`（platformAdmin）— LLM 模型配置 CRUD
 - `POST /api/v1/admin/llm-models/:id/{set-default,test}`、`POST /api/v1/admin/llm-models/export-yaml` — 设默认/连通性测试/导出
-- `POST /api/v1/ai/{optimize-prompt,recommend-rules,generate-metrics,generate-policy}`（requireAuth + 限流）— 配置资产 AI 生成
+- `GET /api/v1/scenarios*`（catalog / defaults / 资产内容 / 包内容）— **只读**：Web 为纯可视化平台（docs/plan/08），场景包在 Web 上仅查看；写入只走 `importAssetsToDb` 登记脚本与 auto-ingest，无配置写端点
 
 > Query API（运行 / 样本 / 趋势 / 制品）见架构文档 §九。
 

@@ -40,7 +40,9 @@ PROBE_TOOL_SPECS: list[ToolSpec] = [
             "（值全程服务端流动）。body 只收单层 JSON 对象（dict 形态或对象形态"
             " 的 JSON 文本；勿双重编码——外层多一层引号 SUT 收到的是字符串而非"
             " 对象；渲染后非对象/非法 JSON 会在发送前被拦下）。form/multipart "
-            "不支持：body 非空自动按 application/json 发送。"
+            "不支持：body 非空按 application/json 发送——显式给了非 JSON "
+            " Content-Type 而 body 是 JSON 对象时标签会被机械归一化（返回含 "
+            " content_type_normalized）"
             " Authorization/Cookie 头禁传：已声明的会话凭证"
             " 自动挂载；新 host 首访会经用户确认；带凭证请求被 4xx/5xx 拒绝后"
             " 同组合不自动重发（防锁）。带凭证 2xx 响应在 declare_token 声明前"
@@ -92,7 +94,10 @@ PROBE_TOOL_SPECS: list[ToolSpec] = [
             " 挂载）/ header:X（挂到自定义头 X）/ cookie:名字（会话 cookie——"
             " 响应 Set-Cookie 已按名提取，也可 token_path 从响应体取）。成功返回"
             " 可直接照抄的 sut_config_auth_snippet（原样写入包的 auth: 段，勿改写）；"
-            " 路径提取失败会给出实际可用的键路径清单"
+            " 路径提取失败会给出实际可用的键路径清单。"
+            " 用户直接提供 token（如浏览器已登录态）而无登录实测时，改用 "
+            " static_field=密钥区字段名：按 token_source 挂载该静态值解锁探测"
+            "（不入证据账本、不生成 auth: 段——落盘认证仍须实测路径）"
         ),
         method="declare_token",
     ),

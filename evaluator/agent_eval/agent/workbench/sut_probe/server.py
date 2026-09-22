@@ -44,6 +44,7 @@ class SUTProbeToolServer(ToolExporterMixin):
         http_client_factory: Any = None,
         budgets: dict[str, int] | None = None,  # 轮内预算按工具分池（缺省 TOOL_BUDGETS）
         timeout_s: float = PROBE_TIMEOUT_S,
+        fact_sink: Any = None,  # (fact_line: str) -> None——验证事实机械回填骨架
     ) -> None:
         self._ctx = ProbeContext(
             allowed_hosts=allowed_hosts,
@@ -53,6 +54,7 @@ class SUTProbeToolServer(ToolExporterMixin):
             http_client_factory=http_client_factory,
             budgets=budgets,
             timeout_s=timeout_s,
+            fact_sink=fact_sink,
         )
         self._request = RequestTool(self._ctx)
         self._search = SearchTool(self._ctx)
@@ -99,13 +101,15 @@ class SUTProbeToolServer(ToolExporterMixin):
         token_path: str = "",
         token_source: str = "Bearer",
         expires_in_path: str = "",
+        static_field: str = "",
     ) -> dict[str, Any]:
-        """事后声明式会话凭证提取：在该 ref 最近一次带凭证 2xx 响应上提取。"""
+        """事后声明式会话凭证提取；static_field 走用户静态 token 注入分支。"""
         return await self._tokens.declare_token(
             ref,
             token_path=token_path,
             token_source=token_source,
             expires_in_path=expires_in_path,
+            static_field=static_field,
         )
 
     async def ask_user(
@@ -139,6 +143,18 @@ class SUTProbeToolServer(ToolExporterMixin):
     def verified_protocol(self, host: str) -> dict[str, Any] | None:
         """查协议矩阵事实（落盘对账门禁用）。"""
         return self._ctx.verified_protocol(host)
+
+    def ledger_snapshot(self) -> dict[str, Any]:
+        """导出证据账本（跨进程续作快照源；事实数据，无凭证值）。"""
+        return self._ctx.ledger_snapshot()
+
+    def restore_ledgers(self, payload: Any) -> int:
+        """恢复证据账本（SessionStore 快照恢复侧），返回恢复的登录事实条数。"""
+        if not isinstance(payload, dict):
+            return 0
+        return self._ctx.restore_ledgers(
+            payload.get("verified_logins"), payload.get("verified_protocols")
+        )
 
     # ── 兼容别名（测试/门禁专用，勿在新代码使用） ────────────────
 
@@ -207,3 +223,8 @@ class SUTProbeToolServer(ToolExporterMixin):
     @ask_fn.setter
     def ask_fn(self, value: Any) -> None:
         self._ctx.ask_fn = value
+
+    @property
+    def fact_sink(self) -> Any:
+        """验证事实机械回填骨架的出口（创建流程五阶段注入，见 ProbeContext.emit_fact）。"""
+        return self._ctx.fact_sink

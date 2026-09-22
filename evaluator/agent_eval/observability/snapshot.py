@@ -1,4 +1,4 @@
-"""运行配置快照（RunConfigSnapshot）构建 — 对齐 13 配置管理设计 §12.1。
+"""运行配置快照（RunConfigSnapshot）构建 —
 
 每次评估运行生成不可变快照，记录实际使用的规则集/聚合策略/指标定义等，
 保证运行可复现、可追溯。快照经 ResultSink 摄取后落入 Web 的 run_config_snapshots 表。

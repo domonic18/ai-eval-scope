@@ -1,4 +1,4 @@
-"""agent-eval pack — 将手动产出物打包为标准 ExecutionPackage（arch/15 组织约定 2）。"""
+"""agent-eval pack — 将手动产出物打包为标准 ExecutionPackage。"""
 
 from __future__ import annotations
 
@@ -42,7 +42,11 @@ def pack(
     task_subject: str | None = typer.Option(None, "--task-subject", help="任务学科"),
     output_dir: str = typer.Option("./workspace/packages", "--output-dir", help="输出目录"),
     validate: bool = typer.Option(False, "--validate", help="打包后验证完整性"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
+    log_level: str = typer.Option(
+        "normal",
+        "--log-level",
+        help="日志档位：quiet | normal | verbose | debug（debug=全量原文）",
+    ),
 ) -> None:
     """将产出物打包为标准 ExecutionPackage。"""
     execute_pack(
@@ -53,7 +57,7 @@ def pack(
         task_subject=task_subject,
         output_dir=output_dir,
         validate=validate,
-        verbose=verbose,
+        log_level=log_level,
     )
 
 
@@ -65,12 +69,12 @@ def execute_pack(
     task_subject: str | None = None,
     output_dir: str = "./workspace/packages",
     validate: bool = False,
-    verbose: bool = False,
+    log_level: str = "normal",
 ) -> None:
     """打包动作（纯函数；typer.Option 默认值仅经 CLI 分发注入真实值，勿直调绑定）。"""
-    from agent_eval.core.logging import setup_logging
+    from agent_eval.core.logging import resolve_logging_level, setup_logging
 
-    setup_logging(level="DEBUG" if verbose else "INFO")
+    setup_logging(level=resolve_logging_level(log_level))
 
     # 参数校验：--files 和 --source-dir 二选一
     if not files and not source_dir:

@@ -17,6 +17,7 @@ import {
   LogOut,
   ArrowLeft,
   Cpu,
+  LayoutList,
 } from "lucide-react"
 
 const NAV = [
@@ -27,6 +28,7 @@ const NAV = [
   { to: "/admin/runs", label: "评估任务", icon: Activity },
   { to: "/admin/artifacts", label: "产出物", icon: Download },
   { to: "/admin/llm-models", label: "LLM 配置", icon: Cpu },
+  { to: "/admin/sample-views", label: "样本视图", icon: LayoutList },
   { to: "/admin/audit", label: "审计日志", icon: Eye },
 ]
 

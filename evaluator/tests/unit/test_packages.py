@@ -1,6 +1,6 @@
 """Phase 2 场景包（Scenario Package）测试 — manifest / store / manager / CLI。
 
-对齐 13 配置管理设计 §四/§五。本地缓存用 ``AGENT_EVAL_PACKAGE_DIR`` + ``tmp_path`` 隔离，
+本地缓存用 ``AGENT_EVAL_PACKAGE_DIR`` + ``tmp_path`` 隔离，
 pull 远端用 FakeRemotePackageClient 注入，禁止联网。
 """
 
@@ -168,7 +168,7 @@ def test_cli_init_creates_scaffold(tmp_path: Path) -> None:
     assert (root / "agent_eval.yaml").exists()
     for sub in ("rules", "prompts", "datasets"):
         assert (root / sub).is_dir()
-    # 聚合策略起始文件必含（guide §8「脚手架已含」）——TODO 注释须点出
+    # 聚合策略起始文件必含——TODO 注释须点出
     # skip_tiers_in_reward（judge 0 分静默事故的关键防线字段）
     policy = (root / "metrics" / "policy.yaml").read_text(encoding="utf-8")
     assert "aggregation_policy" in policy and "skip_tiers_in_reward" in policy

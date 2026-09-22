@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Dataset Schema",
-  "description": "统一 Dataset 配置的 JSON Schema（对齐 13 配置管理设计 §9/§16、06 数据管理与配置规范 §2.2.5）。通过 role 区分测试数据(test)与参考知识(reference)；通过 backend.type 声明数据源后端。本 schema 校验 dataset 对象本身（YAML 文件中以 `dataset:` 键承载）。",
+  "description": "统一 Dataset 配置的 JSON Schema。通过 role 区分测试数据(test)与参考知识(reference)；通过 backend.type 声明数据源后端。本 schema 校验 dataset 对象本身（YAML 文件中以 `dataset:` 键承载）。",
   "type": "object",
   "required": ["id", "role"],
   "properties": {

@@ -189,7 +189,7 @@ class TestCLIEval:
         assert (Path(output_dir) / "index" / "runs_index.json").exists()
 
     def test_eval_with_verbose(self, golden_package: Path, tmp_path: Path) -> None:
-        """CLI eval --verbose 模式。"""
+        """CLI eval --log-level verbose 模式（judge 过程事件直出）。"""
         from typer.testing import CliRunner
 
         from agent_eval.cli import app
@@ -211,7 +211,8 @@ class TestCLIEval:
                 str(rule_set_path),
                 "--output-dir",
                 str(output_dir),
-                "--verbose",
+                "--log-level",
+                "verbose",
             ],
         )
 

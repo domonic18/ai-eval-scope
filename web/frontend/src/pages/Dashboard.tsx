@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { api } from "../api/client"
 import type { DashboardProject, TrendPoint } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
-import { useScenarioDefaultsMap } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -35,14 +34,10 @@ export default function Dashboard() {
   const [slug, setSlug] = useState("")
   const [creating, setCreating] = useState(false)
 
-  // 多场景：按各项目 latestRun 场景批量取 defs；每张卡用各自场景的 health/score 指标（零 courseware 硬编码）
-  const scenarioIds = useMemo(
-    () => [...new Set((projects ?? []).map((p) => p.latestRun?.scenarioId).filter((v): v is string => !!v))],
-    [projects],
-  )
-  const defsByScn = useScenarioDefaultsMap(scenarioIds)
+  // 行级 defs 配对（docs/plan/08 批次 C）：后端已按各项目 latest-run 自带快照解析下发，
+  // 前端不再按场景借「当前 defaults」——跨包代际（edu:* × kb:*）错配从根上不成立
   const primaryMetricsOf = (p: DashboardProject) =>
-    (defsByScn[p.latestRun?.scenarioId ?? ""] ?? []).filter((d) => d.threshold != null)
+    (p.latestRun?.metricDefinitions ?? []).filter((d) => d.threshold != null)
   const healthMetricOf = (p: DashboardProject) => primaryMetricsOf(p)[0]
   const scoreMetricOf = (p: DashboardProject) => {
     const pm = primaryMetricsOf(p)

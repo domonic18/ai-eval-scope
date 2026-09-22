@@ -39,7 +39,7 @@ class TestAgentDefaults:
         assert AGENT_DEFAULTS.max_retries == 3
 
     def test_default_model(self) -> None:
-        """默认不锁定模型（None=用 provider 默认，v4.6 模型无关）。"""
+        """默认不锁定模型（None=用 provider 默认）。"""
         assert AGENT_DEFAULTS.model is None
 
     def test_llm_role(self) -> None:
@@ -51,7 +51,7 @@ class TestAgentDefaults:
         assert AGENT_DEFAULTS.workspace_dir == Path("./workspace")
 
     # v4.6 模型无关化移除 permission_mode / allowed_tools（工具与权限归
-    # DeepAgents 底座管理，arch/03 §六）——对应测试同步清理
+    # DeepAgents 底座管理）——对应测试同步清理
 
 
 class TestTaskDefaults:

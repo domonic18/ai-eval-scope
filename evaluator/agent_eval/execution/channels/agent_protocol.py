@@ -1,4 +1,4 @@
-"""AgentProtocolChannel — Agent Protocol v0.1.6 通道（arch/03 §4.0.6，本期唯一排期通道）。
+"""AgentProtocolChannel — Agent Protocol v0.1.6 通道（本期唯一排期通道）。
 
 封装协议语义调用：runs/wait、runs/background、runs/stream（SSE 容错聚合）、
 threads 多轮、cancel、agents 能力发现；RunStatus → 执行引擎状态机映射固定表；
@@ -34,7 +34,7 @@ from agent_eval.execution.channels.thread_commands import (
 from agent_eval.execution.registry import SUTSystemConfig
 from agent_eval.execution.utils import extract_by_path
 
-# RunStatus → 执行引擎状态（固定表，§4.0.6-d；协议无 running，pending 直达终态）
+# RunStatus → 执行引擎状态（固定表；协议无 running，pending 直达终态）
 STATUS_MAP: dict[str, str] = {
     "success": "success",
     "error": "failed",
@@ -58,7 +58,7 @@ class AgentProtocolChannel(SUTChannel):
     ) -> None:
         super().__init__(sut, http_client_factory=http_client_factory)
 
-    # ─── 执行（§4.0.6-a exec_mode） ───
+    # ─── 执行 ───
 
     async def run(
         self,
@@ -166,7 +166,7 @@ class AgentProtocolChannel(SUTChannel):
             "events": events,
         }
 
-    # ─── Threads 多轮（§4.0.6-e：每 thread 单活跃 run，多轮任务才显式建线程） ───
+    # ─── Threads 多轮（每 thread 单活跃 run，多轮任务才显式建线程） ───
 
     async def create_thread(self, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
         if self.sut.protocol_flavor == "commands":
@@ -219,7 +219,7 @@ class AgentProtocolChannel(SUTChannel):
     ) -> dict[str, Any]:
         """应答线程上挂起的中断（askQuestion 反问）并续跑至终态（仅 commands 形态）。
 
-        恢复契约（2026-09 对 sasan 实测闭环）：POST /threads/{id}/commands
+        恢复契约（对参考 SUT 实测闭环）：POST /threads/{id}/commands
         method=input.respond → 200 {type: success, result: {run_id}}，图恢复推进；
         直接下发新消息会被 PENDING_QUESTION 拒绝。应答后继续轮询到终态（跳过
         刚应答的 interrupt——受理与推进间存在竞态窗口，旧中断短暂仍在 state 上）。
@@ -269,7 +269,7 @@ class AgentProtocolChannel(SUTChannel):
             payload = {"raw": response.text[:200]}
         return {"run_id": run_id, "action": action, "response": payload}
 
-    # ─── 能力发现与接入自检（§4.0.6-f） ───
+    # ─── 能力发现与接入自检 ───
 
     async def get_agent_info(self, agent_id: str | None = None) -> dict[str, Any]:
         """/agents/search + /agents/{id}/schemas 能力与 schema 发现。"""

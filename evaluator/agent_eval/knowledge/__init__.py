@@ -11,6 +11,7 @@ from agent_eval.knowledge.exceptions import (
     ExtractorNotFoundError,
     KnowledgeMergeError,
     KnowledgePipelineError,
+    SourceDataMissingError,
 )
 from agent_eval.knowledge.manager import KnowledgeBaseManager
 from agent_eval.knowledge.merger import KnowledgeMerger
@@ -56,6 +57,7 @@ __all__ = [
     # 异常
     "KnowledgePipelineError",
     "DataSourceNotFoundError",
+    "SourceDataMissingError",
     "ExtractorNotFoundError",
     "ConverterNotFoundError",
     "KnowledgeMergeError",

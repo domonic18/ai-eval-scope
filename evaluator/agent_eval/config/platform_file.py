@@ -1,4 +1,4 @@
-"""平台身份文件（`~/.agent_eval/platform.json`）— auth 域本地存储（arch/06 §4.7）。
+"""平台身份文件（`~/.agent_eval/platform.json`）— auth 域本地存储。
 
 `agent-eval auth login` 交互写入 host/api_key/project；**0600 密钥区**，与
 llm.json / sut_credentials.json 同目录同权限惯例（三域三文件：models/secrets/auth）。

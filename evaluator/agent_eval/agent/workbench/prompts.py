@@ -42,13 +42,19 @@ def load_prompts() -> dict[str, Any]:
     return data
 
 
-def render_intro(prompts: dict[str, Any], domain: str, root: str) -> str:
-    """渲染启动横幅文案（{root}/{domains} 字面 replace；资产无 intro 段返回空）。"""
-    intro = prompts.get("intro")
-    if not intro:
-        return ""
-    label = str(prompts.get("domain_labels", {}).get(domain, domain))
-    return str(intro).replace("{root}", root).replace("{domains}", label)
+def banner_parts(prompts: dict[str, Any], domain: str, root: str) -> dict[str, Any]:
+    """横幅结构化文案：``banner:`` 资产 + {root}/{domains} 字面 replace。
+
+    返回 dict 供 ``cli/console/banner.py`` 富渲染（渐变 logo 与配色是表现层，不入
+    资产）；资产缺 ``banner`` 段返回空 dict（渲染端据此静默跳过）。
+    """
+    banner = prompts.get("banner")
+    if not isinstance(banner, dict) or not banner:
+        return {}
+    parts = dict(banner)
+    parts["domains"] = str(prompts.get("domain_labels", {}).get(domain, domain))
+    parts["root"] = root
+    return parts
 
 
 def render_first_turn(

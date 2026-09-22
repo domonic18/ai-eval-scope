@@ -1,21 +1,20 @@
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/shadcn/chart"
 import { api } from "../api/client"
 import type {
   ApiKeySafe,
   IssuedApiKey,
+  LatestRunSnapshot,
   MetricDef,
   ProjectSample,
   RunSummary,
   SampleTrendPoint,
-  TrendPoint,
 } from "../types"
 import { fmt3, num, timeAgo } from "../lib/format"
 import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
 import { metricLabelOf, metricThresholdOf } from "../lib/metricGrid"
-import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -41,7 +40,7 @@ import { useCrumbs } from "../context/navigation"
 import { useToast } from "../hooks/useToast"
 import { DataTable, Page, PageHead, SemPill, StatusBadge, type Column } from "../components/shared"
 import { CodeBlock } from "@/components/CodeBlock"
-import { Download, Plus, Search, Trash2 } from "lucide-react"
+import { ChevronRight, Download, Plus, Search, Trash2 } from "lucide-react"
 
 interface Project {
   id: string
@@ -109,7 +108,8 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null)
   const [runs, setRuns] = useState<RunSummary[]>([])
   const [runsTotal, setRunsTotal] = useState(0)
-  const [trends, setTrends] = useState<TrendPoint[]>([])
+  // 快照语义（arch/09 §9.6）：run 与指标定义服务端已配对，客户端不再交叉拼
+  const [snapshot, setSnapshot] = useState<LatestRunSnapshot | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -127,32 +127,10 @@ export default function ProjectDetail() {
         setRunsTotal(r.total ?? 0)
       })
       .catch(() => {})
-    api.projectTrends(id).then(setTrends).catch(() => setTrends([]))
+    api.projectLatestRun(id).then(setSnapshot).catch(() => setSnapshot(null))
   }, [id, setCrumbs])
 
-  const trendsAsc = useMemo(
-    () => [...trends].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-    [trends],
-  )
-  const latest = trendsAsc[trendsAsc.length - 1]
-  const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
-
-  // 动态趋势序列：从 defaultDefs（后端 fetch）取有阈值的指标，色板循环（非场景专用）
-  // 注意：series key 不能含冒号（CSS var(--color-<key>) 会解析失败）→ 用 _ 替换
-  const CHART_PALETTE = ["var(--chart-5)", "var(--chart-2)", "var(--chart-1)", "var(--chart-3)", "var(--chart-4)"]
-  const trendDefs = defaultDefs.filter((d) => d.threshold != null)
-  const trendSeries = trendDefs.map((d, i) => ({
-    key: d.id.replace(/:/g, "_"), // 安全 CSS 变量名（如 courseware_document_rate）
-    metricId: d.id, // 原始 metric ID（从 metrics JSONB 取值用）
-    name: d.name ?? d.id,
-    color: CHART_PALETTE[i % CHART_PALETTE.length],
-  }))
-  const trendPoints = trendsAsc.map((t) => ({
-    label: new Date(t.created_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }),
-    values: Object.fromEntries(
-      trendSeries.map((s) => [s.key, t.metrics?.[s.metricId]]),
-    ) as Record<string, number>,
-  }))
+  const latestRun = snapshot?.run ?? null
 
   return (
     <Page>
@@ -194,23 +172,37 @@ export default function ProjectDetail() {
         <Separator className="mb-4" />
 
         <TabsContent value="overview" className="space-y-4">
-          {/* Phase 5：场景化动态指标（COURSEWARE 默认定义 + 最新运行 metrics）*/}
-          <DynamicMetricGrid defs={defaultDefs} metrics={latest?.metrics ?? undefined} />
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">指标趋势</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {trendsAsc.length > 0 ? (
-                <MetricTrendChart points={trendPoints} series={trendSeries} thresholds={[{ label: "综合评分达标 0.8", value: 0.8, color: "var(--chart-1)" }]} />
-              ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  完成首次评估运行后，将在此展示 DR / CPR / Reward 趋势。
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {latestRun ? (
+            <>
+              {/* 溯源标注为一等 UI（arch/09 §9.6）：卡片指标 = 最近一次上报，来源可跳转核查 */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-primary/25 bg-primary/5 px-4 py-2.5 text-xs">
+                <span className="font-medium text-foreground">指标来自最近一次上报</span>
+                <span className="text-muted-foreground">
+                  run <code className="rounded bg-muted px-1 py-0.5 font-mono">#{latestRun.externalRunId}</code>
+                  {latestRun.scenarioId ? (
+                    <>
+                      {" · "}场景 <code className="rounded bg-muted px-1 py-0.5 font-mono">{latestRun.scenarioId}</code>
+                    </>
+                  ) : null}
+                  {" · "}
+                  {new Date(latestRun.createdAt).toLocaleString("zh-CN")}
+                </span>
+                <Link
+                  to={`/run/${latestRun.id}`}
+                  className="ml-auto inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  查看运行 <ChevronRight className="size-3.5" />
+                </Link>
+              </div>
+              <DynamicMetricGrid defs={snapshot?.metricDefinitions ?? []} metrics={latestRun.metrics} />
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                尚无评估上报。完成首次评估运行后，此处将展示该次上报的指标（含来源溯源）。
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -220,7 +212,12 @@ export default function ProjectDetail() {
               </button>
             </CardHeader>
             <CardContent>
-              <DataTable columns={runColumns(defaultDefs)} rows={runs.slice(0, 6)} rowKey={(r) => r.id} onRowClick={(r) => nav(`/run/${r.id}`)} />
+              <DataTable
+                columns={runColumns(unionThresholdDefs(runs.slice(0, 6)))}
+                rows={runs.slice(0, 6)}
+                rowKey={(r) => r.id}
+                onRowClick={(r) => nav(`/run/${r.id}`)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -229,7 +226,7 @@ export default function ProjectDetail() {
           <RunsTab runs={runs} total={runsTotal} onOpen={(r) => nav(`/run/${r.id}`)} />
         </TabsContent>
 
-        <TabsContent value="samples">{id && <SamplesTab projectId={id} scenarioId={runs[0]?.scenarioId ?? "courseware"} />}</TabsContent>
+        <TabsContent value="samples">{id && <SamplesTab projectId={id} defs={runs[0]?.metricDefinitions ?? []} />}</TabsContent>
 
         <TabsContent value="settings">
           {project && (
@@ -251,6 +248,18 @@ export default function ProjectDetail() {
   )
 }
 
+/**
+ * 列并集：各 run 行级 defs（docs/plan/08 批次 C，锚定各自快照）的 threshold 指标按 id 去重。
+ * 跨代混排时列集为并集，异代行对应列留空属预期——禁止按首行场景借「当前 defaults」建列。
+ */
+function unionThresholdDefs(rows: RunSummary[]): MetricDef[] {
+  const seen = new Map<string, MetricDef>()
+  for (const r of rows)
+    for (const d of r.metricDefinitions ?? [])
+      if (d.threshold != null && !seen.has(d.id)) seen.set(d.id, d)
+  return [...seen.values()]
+}
+
 function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
   const metricCols: Column<RunSummary>[] = defs
     .filter((d) => d.threshold != null)
@@ -262,7 +271,6 @@ function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
     }))
   return [
     { key: "externalRunId", title: "运行", render: (r) => <span className="font-mono text-xs">#{r.externalRunId}</span> },
-    { key: "mode", title: "模式", render: (r) => <span className="text-xs text-muted-foreground">{r.mode}</span> },
     { key: "status", title: "状态", render: (r) => <StatusBadge status={r.status} /> },
     {
       key: "samples",
@@ -284,13 +292,12 @@ function runColumns(defs: MetricDef[]): Column<RunSummary>[] {
 }
 
 function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; onOpen: (r: RunSummary) => void }) {
-  const defaultDefs = useScenarioDefaults(runs[0]?.scenarioId ?? "courseware")
+  // 列 = 全量 run 行级 defs 并集（memo：过滤不重建列）
+  const columns = useMemo(() => runColumns(unionThresholdDefs(runs)), [runs])
   const [q, setQ] = useState("")
-  const [mode, setMode] = useState("all")
   const [status, setStatus] = useState("all")
   const filtered = runs.filter((r) => {
     if (q && !r.externalRunId.toLowerCase().includes(q.toLowerCase())) return false
-    if (mode !== "all" && r.mode !== mode) return false
     if (status !== "all" && r.status !== status) return false
     return true
   })
@@ -302,18 +309,6 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="搜索运行 ID" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
-          <Select value={mode} onValueChange={setMode}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部模式</SelectItem>
-              <SelectItem value="eval_only">eval_only</SelectItem>
-              <SelectItem value="agent">agent</SelectItem>
-              <SelectItem value="pipeline">pipeline</SelectItem>
-              <SelectItem value="run">run</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -331,18 +326,18 @@ function RunsTab({ runs, total, onOpen }: { runs: RunSummary[]; total: number; o
       </Card>
       <Card>
         <CardContent className="pt-6">
-          <DataTable columns={runColumns(defaultDefs)} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
+          <DataTable columns={columns} rows={filtered} rowKey={(r) => r.id} onRowClick={onOpen} empty="无匹配运行" />
         </CardContent>
       </Card>
     </div>
   )
 }
 
-function SamplesTab({ projectId, scenarioId }: { projectId: string; scenarioId: string }) {
+function SamplesTab({ projectId, defs }: { projectId: string; defs: MetricDef[] }) {
   const [samples, setSamples] = useState<ProjectSample[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [trend, setTrend] = useState<SampleTrendPoint[]>([])
-  const defs = useScenarioDefaults(scenarioId)
+  // defs 取自最新 run 行级下发（runs 按时间倒序，runs[0] 即最新代），不再按场景借当前 defaults
   const rewardLabel = metricLabelOf(defs, "reward", "Reward")
   const rewardThr = metricThresholdOf(defs, "reward")
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
+from typing import Any
 
 from agent_eval.agent.workbench.types import WorkbenchAgentConfig
 
@@ -30,29 +31,44 @@ class SessionStore:
     def __init__(self, session_file: Path, *, max_entries: int) -> None:
         self.session_file = session_file
         self.max_entries = max_entries
+        self.last_snapshot: dict[str, Any] | None = None
         self.dialogue = self._load()
 
     def _load(self) -> list[dict[str, str]]:
+        self.last_snapshot = None
         try:
             data = json.loads(self.session_file.read_text(encoding="utf-8"))
             dialogue = data.get("dialogue", [])
+            snapshot = data.get("snapshot")
+            if isinstance(snapshot, dict):
+                self.last_snapshot = snapshot
         except (OSError, ValueError):
             return []
         return [d for d in dialogue if isinstance(d, dict) and d.get("role") and d.get("text")]
 
-    def record(self, user_text: str, reply: str, root: str) -> None:
-        """追加本轮对话要点并落盘（超出上限从头部丢弃）。"""
+    def record(
+        self, user_text: str, reply: str, root: str, *, snapshot: dict[str, Any] | None = None
+    ) -> None:
+        """追加本轮对话要点并落盘（超出上限从头部丢弃）。
+
+        ``snapshot`` 为当前进度快照（暂存 + 骨架留档 + 证据账本，调用方组装），
+        每轮整体覆写——快照即「当前进度态」而非历史，重启据此续作不丢进度。
+        """
         self.dialogue.append({"role": "user", "text": user_text})
         if reply:
             self.dialogue.append({"role": "assistant", "text": reply})
         self.dialogue = self.dialogue[-self.max_entries :]
+        if snapshot is not None:
+            self.last_snapshot = snapshot
         try:
             self.session_file.parent.mkdir(parents=True, exist_ok=True)
-            payload = {
+            payload: dict[str, Any] = {
                 "root": root,
                 "updated": time.strftime("%Y-%m-%dT%H:%M:%S"),
                 "dialogue": self.dialogue,
             }
+            if self.last_snapshot is not None:
+                payload["snapshot"] = self.last_snapshot
             self.session_file.write_text(
                 json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8"
             )

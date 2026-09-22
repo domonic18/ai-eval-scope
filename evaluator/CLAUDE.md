@@ -46,6 +46,10 @@ uv run ruff format --check agent_eval tests
 uv run pytest tests/unit -q
 ```
 
+## 场景包配置校验（强制）
+
+- **手改 `sut_configs/**` 后必跑** `uv run agent-eval scenario validate <包路径>`：sut_config 以执行器 Pydantic 模型为白名单（`extra="allow"` 会**静默丢弃**未知字段），未知键校验递归覆盖 `request_template.steps[i]` 与 `steps[i].poll`；手写幻觉字段（如 GitHub Actions 风格的 `kind`/`depends_on`/`until`）不经校验会在运行时无声消失，任务集体 run_error。`SUTRegistry.load` 装载时同源复检兜底（违例 raise `SUTChannelError`）。
+
 > 上述为快门禁（仅 `tests/unit`）。功能分支**合入前 / 发布前**跑全量 `make test`（`pytest tests/`，与 Jenkins 质量门禁同口径，含 e2e/golden 慢测试）。
 
 ## 版本发布（PyPI，distribution 名 ai-eval-scope）

@@ -32,6 +32,8 @@ model User {
   ssoNameId      String?         @unique @map("sso_name_id") // SAML NameID（部分唯一）
   ssoAttributes  Json?           @map("sso_attributes") @db.JsonB
   lastSsoLoginAt DateTime?       @map("last_sso_login_at")
+  // 最近登录（成员页「最近活跃」列；注册即写初值，密码/SSO 登录均刷新）
+  lastLoginAt    DateTime?       @map("last_login_at")
   // —— 平台级角色/状态（Sprint：超级管理员后台）——
   // role：user | admin（admin = 超级管理员，跨租户管理）；首个注册用户自动 admin。
   // status：active | disabled（disabled 即时拒绝登录/鉴权）。
@@ -40,6 +42,7 @@ model User {
   createdAt      DateTime        @default(now()) @map("created_at")
   memberships    OrgMembership[]
   joinRequests   JoinRequest[]
+  invitedOrgInvitations OrgInvitation[] @relation("OrgInvitationInviter")
 
   @@map("users")
 }
@@ -54,8 +57,28 @@ model Organization {
   projects     Project[]
   joinRequests JoinRequest[]
   secrets      Secret[]
+  invitations  OrgInvitation[]
 
   @@map("organizations")
+}
+
+// 组织邀请（owner 邀请未注册邮箱 → 对方注册后自动加入；撤回/重发）
+model OrgInvitation {
+  id        String    @id @default(uuid())
+  orgId     String    @map("org_id")
+  email     String
+  role      String    @default("member")
+  invitedBy String    @map("invited_by")
+  // pending | accepted | revoked
+  status    String    @default("pending")
+  createdAt DateTime  @default(now()) @map("created_at")
+  resentAt  DateTime? @map("resent_at")
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  inviter   User         @relation("OrgInvitationInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@index([email, status])
+  @@map("org_invitations")
 }
 
 // 团队加入申请（用户主动申请 → owner 审批 → 通过成 member）
@@ -329,6 +352,9 @@ model Scenario {
   // 来源：official = 管理员创建 / 脚本导入（配置中心可见）；
   // auto_ingest = run 事件补缺注册（arch/09 §7.5 方向1，仅可观测，不进配置中心默认视图）
   source                   String   @default("official")
+  // 呈现配置链（arch/09 §9.7）：样本视图 tab 集/顺序/命名，管理端可编辑；
+  // null = 前端按制品证据机械兜底推导（配置优先于推导）
+  sampleView               Json?    @map("sample_view")
   createdAt                DateTime @default(now()) @map("created_at")
 
   packages    ScenarioPackage[]

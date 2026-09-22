@@ -1,6 +1,6 @@
 """场景包清单（manifest）与解析结果模型。
 
-对齐 13 配置管理设计 §四。一个 ScenarioPackage 由 ``agent_eval.yaml`` 清单描述，
+一个 ScenarioPackage 由 ``agent_eval.yaml`` 清单描述，
 清单所在目录即包根，其下按约定存放 rules/ prompts/ datasets/ 等资源目录。
 """
 
@@ -40,7 +40,7 @@ class PackageManifest(BaseModel):
     )
     default_task_set: str | None = Field(
         default=None,
-        description="默认任务集名（task_sets/ 下的文件 stem，如 default；arch/13 §4.1）",
+        description="默认任务集名（task_sets/ 下的文件 stem，如 default）",
     )
     default_sut: str | None = Field(
         default=None,
@@ -85,12 +85,12 @@ class ResolvedPackage:
 
     @property
     def task_sets_dir(self) -> Path:
-        """包内任务集目录（考卷，arch/13 §4.1）。"""
+        """包内任务集目录（考卷）。"""
         return self.root / "task_sets"
 
     @property
     def sut_configs_dir(self) -> Path:
-        """包内 SUT 接入配置目录（不含凭证，arch/13 §4.1；eval_only 型场景无此目录）。"""
+        """包内 SUT 接入配置目录（不含凭证；eval_only 型场景无此目录）。"""
         return self.root / "sut_configs"
 
     @property

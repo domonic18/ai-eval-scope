@@ -1,4 +1,4 @@
-"""GenericHttpChannel 测试（arch/03 §4.2）——httpx.MockTransport 全离线。"""
+"""GenericHttpChannel 测试——httpx.MockTransport 全离线。"""
 
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ def test_run_renders_template_and_extracts_mapping() -> None:
 
 
 def test_run_text_path_miss_maps_failed_with_excerpt() -> None:
-    """text 已配置但路径未命中 → failed（不再静默兜底整包——假成功红线，v4.8）。"""
+    """text 已配置但路径未命中 → failed（不再静默兜底整包——假成功红线）。"""
     sut = _sut(response_mapping={"text": "data.answer"})
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -231,6 +231,7 @@ def test_sut_request_returns_result_and_records_last_run() -> None:
         "run_id": None,
         "text": "课件正文",
         "input": "帮我生成课件",
+        "output": {"files": ["a.md"], "text": "课件正文"},  # 合同一：结构化交付入账
     }
 
 
@@ -265,7 +266,7 @@ def test_sut_request_channel_error_guarded_as_failed_result() -> None:
     assert "渲染失败" in result["error"]["message"]
 
 
-# ── steps 链式请求（v4.8）：jxb 类「建会话 → 发消息 → 查历史」多步 API ────────
+# ── steps 链式请求：jxb 类「建会话 → 发消息 → 查历史」多步 API ────────
 
 
 def _chain_sut(**kwargs) -> SUTSystemConfig:
@@ -430,7 +431,7 @@ def test_sut_request_budget_gate_blocks_when_total_exhausted() -> None:
     """sut_call 动作（额度=sut_calls_total）：无 dispatch 单发限制，总额尽即拒。
 
     generic_http 一次任务常需多请求（链式 steps），不受 dispatch=1 约束；
-    闸门在触网之前拒绝并给收尾指引（arch/16 §4.3）。
+    闸门在触网之前拒绝并给收尾指引。
     """
     from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
     from agent_eval.execution.models import InteractionPolicy
@@ -455,7 +456,7 @@ def test_sut_request_budget_gate_blocks_when_total_exhausted() -> None:
     assert any(e["kind"] == "sut_call" for e in evidence.events)
 
 
-# ── once 会话续接（plan/06 M1）：sut_request 跨调用共享会话 ──────────────────
+# ── once 会话续接：sut_request 跨调用共享会话 ──────────────────
 
 
 def _once_channel(handler) -> GenericHttpChannel:
@@ -560,3 +561,21 @@ def test_channel_aclose_clears_session_cache() -> None:
     asyncio.run(channel.aclose())
     assert len(channel._session) == 0  # noqa: SLF001
     seen.clear()  # aclose 后会话不存活：再次 run 需重建（仅验证缓存清空）
+
+
+def test_sut_request_logs_sut_observation_event() -> None:
+    """合同一：generic_http 面同样落 sut_observation 观测事件。"""
+    from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
+    from agent_eval.execution.models import InteractionPolicy
+
+    evidence = EvidenceLedger()
+    server = GenericHttpToolServer(
+        _channel(_sut(), lambda request: httpx.Response(200, json=RESPONSE)),
+        default_metadata={"task_id": "t0"},
+    )
+    server.ledger = ResourceLedger(InteractionPolicy(sut_calls_total=8), evidence=evidence)
+    asyncio.run(server.sut_request("帮我生成课件"))
+    observations = [e for e in evidence.events if e["kind"] == "sut_observation"]
+    assert observations and observations[0]["source"] == "sut_request"
+    assert observations[0]["terminal_kind"] == "delivered"
+    assert "课件正文" in observations[0]["text"]

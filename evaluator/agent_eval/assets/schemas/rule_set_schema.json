@@ -17,7 +17,7 @@
         "string",
         "null"
       ],
-      "description": "所属场景 ID（命名空间），如 courseware（对齐 13 配置管理设计）"
+      "description": "所属场景 ID（命名空间），如 courseware"
     },
     "package_id": {
       "type": [
@@ -31,7 +31,7 @@
         "string",
         "null"
       ],
-      "description": "聚合策略 ID（对齐 13 配置管理设计 §10.4），如 courseware-default；缺省时套用场景默认策略"
+      "description": "聚合策略 ID，如 courseware-default；缺省时套用场景默认策略"
     },
     "description": {
       "type": "string",

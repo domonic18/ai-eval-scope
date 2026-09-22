@@ -1,4 +1,4 @@
-"""向导原语 — select / confirm / ask 统一收口（arch/15 §3.2）。
+"""向导原语 — select / confirm / ask 统一收口。
 
 编号选择（gcloud 同款交互）。``--no-input``（``AGENT_EVAL_NO_INPUT``）下走旁路：
 ``env_key`` 或 ``default`` 提供则直接采用，否则报错退出（exit 2），**绝不挂起等待**
@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import NoReturn
 
 import typer
@@ -75,8 +76,16 @@ def select(
     *,
     default: int | str | None = None,
     env_key: str | None = None,
+    no_default: bool = False,
 ) -> str:
-    """单选：编号列表 + 回车确认；--no-input 下走 env/default 旁路。"""
+    """单选：编号列表 + 回车确认；--no-input 下走 env/default 旁路。
+
+    ``no_default=True``（放行类选择专用）：空回车不再隐式选第一项，
+    提示改「输入编号」、空输入按无效选择重问。隐式默认曾是安全纵伤——host
+    授权/凭证外发/执行确认/落盘确认的选择器空回车一律落放行项（「允许」
+    「确认执行」「全部应用」），而编号列表从未展示默认态，「回车确认」的
+    承诺无凭。
+    """
     if not options:
         rprint(f"[red]❌ 无可选项: {label}[/red]")
         raise typer.Exit(code=2)
@@ -90,6 +99,8 @@ def select(
         return matched
 
     if _no_input():
+        if no_default:
+            default = None  # 放行类无默认：--no-input 必须显式提供（ask_fn 场景不可达）
         if default is None:
             _fail_missing_input(
                 label, hint=f"可设环境变量 {env_key or 'AGENT_EVAL_SELECT'} 提供选择"
@@ -100,11 +111,16 @@ def select(
         return matched
 
     default_idx = _default_index(default, options)
-    rprint(f"[bold]? {label}[/bold] [dim][输入编号，回车确认][/dim]")
+    hint = "输入编号" if no_default else "输入编号，回车确认"
+    rprint(f"[bold]? {label}[/bold] [dim][{hint}][/dim]")
     for i, opt in enumerate(options, 1):
         rprint(f"  [cyan]{i}.[/cyan] {opt}")
     while True:
-        raw = str(typer.prompt("选择", default=str(default_idx), show_default=False))
+        if no_default:
+            # 空回车落 "" → 无效选择重问（click 对 default="" 直通空串，不内部重问）
+            raw = str(typer.prompt("选择", default="", show_default=False))
+        else:
+            raw = str(typer.prompt("选择", default=str(default_idx), show_default=False))
         matched = _match_option(raw, options)
         if matched is not None:
             return matched
@@ -122,6 +138,55 @@ def confirm(label: str, *, default: bool = False, env_key: str | None = None) ->
     return bool(typer.confirm(f"? {label}", default=default))
 
 
+def _maskable() -> bool:
+    """掩码回显前提：交互 TTY 且 termios 可用；缺一则回退 click 隐藏回显。
+
+    管道 / CliRunner / 非 POSIX（Windows，无 termios）下不启用——脚本化输入
+    行为与既有测试完全不变。
+    """
+    try:
+        import termios  # noqa: F401 — 仅探测可用性（Windows 无此模块）
+    except ImportError:
+        return False
+    return sys.stdin is not None and sys.stdin.isatty()
+
+
+def _masked_input(prompt: str) -> str:
+    """掩码回显输入（POSIX termios cbreak）：逐键 ``*`` 上屏、退格抹除。
+
+    click 的 hide_input 全静默，用户无法感知输入是否生效。
+    cbreak 保留 ISIG——^C 仍以 KeyboardInterrupt 中断；
+    ^D / 读尽视为 EOF 抛 Abort（与 click.prompt 同语义，ask_fn 桥已有
+    Abort→KI 转换）。终端态 finally 复原，中断路径不残留原始回显。
+    """
+    import termios
+    import tty
+
+    typer.echo(prompt, nl=False)
+    fd = sys.stdin.fileno()
+    saved = termios.tcgetattr(fd)
+    chars: list[str] = []
+    try:
+        tty.setcbreak(fd)
+        while True:
+            ch = sys.stdin.read(1)
+            if ch in ("\r", "\n"):
+                typer.echo()
+                return "".join(chars)
+            if ch in ("\x7f", "\b"):
+                if chars:
+                    chars.pop()
+                    typer.echo("\b \b", nl=False)
+                continue
+            if ch in ("", "\x04"):  # ^D / 流尽 = EOF，与 click.prompt 的 Abort 同语义
+                typer.echo()
+                raise typer.Abort()
+            chars.append(ch)
+            typer.echo("*", nl=False)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, saved)
+
+
 def ask(
     label: str,
     *,
@@ -129,7 +194,11 @@ def ask(
     env_key: str | None = None,
     hide: bool = False,
 ) -> str:
-    """文本输入（可隐藏回显）；--no-input 下走 env/default 旁路。"""
+    """文本输入；``hide=True`` 敏感输入掩码回显（逐键 ``*`` 上屏可感知）。
+
+    --no-input 下走 env/default 旁路。掩码仅在交互 TTY + POSIX（termios
+    可用）启用；管道 / CliRunner / 非 POSIX 退回 click 隐藏回显（行为不变）。
+    """
     if env_key:
         value = os.environ.get(env_key)
         if value is not None and value.strip():
@@ -140,12 +209,16 @@ def ask(
                 label, hint=f"可设环境变量 {env_key or 'AGENT_EVAL_INPUT'} 提供取值"
             )
         return default
-    value = str(
-        typer.prompt(
-            f"? {label}",
-            default=default if default is not None else "",
-            hide_input=hide,
-            show_default=bool(default),
+    if hide and _maskable():
+        value = _masked_input(f"? {label}: ")
+    else:
+        value = str(
+            typer.prompt(
+                f"? {label}",
+                default=default if default is not None else "",
+                hide_input=hide,
+                show_default=bool(default),
+            )
         )
-    ).strip()
+    value = value.strip()
     return value or (default or "")

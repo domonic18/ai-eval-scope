@@ -1,4 +1,4 @@
-"""AgentProtocolToolServer 测试（arch/03 §4.0.6-b 语义工具面）。"""
+"""AgentProtocolToolServer 测试。"""
 
 from __future__ import annotations
 
@@ -12,7 +12,8 @@ from typing import Any
 import httpx
 import pytest
 
-from agent_eval.agent.executor import protocol_tools
+from agent_eval.agent.executor import protocol_state as protocol_state_mod
+from agent_eval.agent.executor import protocol_tools_sut
 from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
 from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
@@ -30,7 +31,7 @@ WAIT_PAYLOAD = {
 def _downloads_enabled_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
     """生产默认停用下载（SUT_FILE_DOWNLOAD_ENABLED=False，临时措施）——本模块
     单测恢复开启以验证下载行为；停用行为单独测（见 test_download_disabled_*）。"""
-    monkeypatch.setattr(protocol_tools, "SUT_FILE_DOWNLOAD_ENABLED", True)
+    monkeypatch.setattr(protocol_tools_sut, "SUT_FILE_DOWNLOAD_ENABLED", True)
 
 
 def _permissive_ledger(**policy_kwargs: Any) -> ResourceLedger:
@@ -110,7 +111,7 @@ def test_metadata_merged_into_run_body() -> None:
     )
     server.ledger = _permissive_ledger()
     asyncio.run(server.agent_run("input", metadata={"task_id": "t-9"}))
-    # §4.0.6-e：metadata 携带 eval_run_id/task_id/sut_name 供被测系统侧审计
+    # metadata 携带 eval_run_id/task_id/sut_name 供被测系统侧审计
     assert captured["metadata"] == {"eval_run_id": "run_x", "sut_name": "cw", "task_id": "t-9"}
 
 
@@ -186,10 +187,11 @@ def test_agent_run_records_last_run_summary() -> None:
         "text": "回答" * 3000,  # 截断前原文
         "input": "问题",  # 机械回显守卫的判定信号源
         "pending": None,  # success 无待应答反问
+        "output": {"text": "回答" * 3000},  # 合同一：结构化交付不再丢弃
     }
 
 
-# ─── answer_sut_questions（askQuestion 反问应答闭环；arch/03 §4.0.6-b v4.11） ───
+# ─── answer_sut_questions（askQuestion 反问应答闭环） ───
 
 INTERRUPT_STATE = {
     "next": ["tools"],
@@ -427,7 +429,7 @@ _REFRESH_FINAL = {
 def test_refresh_final_state_reconciles_latest_answer(monkeypatch: pytest.MonkeyPatch) -> None:
     """snapshot/reconcile：run 过早返回中间播报后，收尾刷新把最新 ai 回答回写
     last_run.text——只改 text，input 原值保留（guard_echo_answer 语义不漂移）。"""
-    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.01)
     # 次序：busy → 空窗(中间播报) → busy → 空窗×2（稳定窗误判收口，旧病复现）
     # → 真终态（刷新取到）
     server = _commands_server(
@@ -453,7 +455,7 @@ def test_refresh_final_state_busy_thread_times_out_silently(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """线程持续忙碌 → settle 超时静默保留现值——收尾取证失败不 fail 任务。"""
-    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.01)
     server = _commands_server([_REFRESH_BUSY])  # 末态复用：恒 busy
     server.last_run = {
         "status": "success",
@@ -512,7 +514,7 @@ def test_refresh_final_state_records_evidence_without_budget(
 ) -> None:
     """收尾取证不耗 LLM 轮询额度（state_polls 耗尽后闸门必拒，本方法照常完成），
     但落 state_poll 证据留痕（evidence ledger 可复盘）。"""
-    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.01)
     server = _commands_server([_REFRESH_FINAL])
     evidence = EvidenceLedger()
     server.ledger = ResourceLedger(InteractionPolicy(state_polls=1), evidence=evidence)
@@ -534,7 +536,7 @@ def test_refresh_final_state_records_evidence_without_budget(
     asyncio.run(server.refresh_final_state())  # 不经 _budget：额度耗尽仍放行
     assert server.last_run["text"] == "课件已生成完毕"
     assert server.ledger is not None and server.ledger.counters["state_poll"] == 1  # 计数未增
-    polls = [e for e in evidence.events if e["action"] == "state_poll"]
+    polls = [e for e in evidence.events if e.get("action") == "state_poll"]
     assert polls and "final_refresh" in polls[-1]["summary"]
 
 
@@ -598,7 +600,7 @@ def test_bounded_result_short_messages_kept_intact() -> None:
 
 
 def test_bounded_result_values_payload_keeps_tail_symmetrically() -> None:
-    """values 复合载荷（外壳 + messages）保尾弃头与消息列表同病同治（plan/07 P3）。
+    """values 复合载荷（外壳 + messages）保尾弃头与消息列表同病同治。
 
     整表 dumps 头部截断会把 values.messages 里最新回复挤出窗口——长历史 +
     短最新回复时最易触发。
@@ -618,7 +620,7 @@ def test_bounded_result_values_payload_keeps_tail_symmetrically() -> None:
     assert "total_messages" in dumped  # 外壳字段保留
 
 
-# ─── download_sut_file（产物下载落包；arch/03 §4.0.6-b v4.10） ───
+# ─── download_sut_file（产物下载落包） ───
 
 
 def _download_server(handler, tmp_path: Path, **sut_kwargs) -> AgentProtocolToolServer:
@@ -783,7 +785,7 @@ def test_download_http_error_returns_failed_result(tmp_path: Path) -> None:
 
 def test_download_size_cap_aborts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """流式累计超 DOWNLOAD_MAX_BYTES 中止：failed 结果 + 半截文件清除。"""
-    monkeypatch.setattr(protocol_tools, "DOWNLOAD_MAX_BYTES", 8)
+    monkeypatch.setattr(protocol_tools_sut, "DOWNLOAD_MAX_BYTES", 8)
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, content=b"x" * 64)
@@ -820,7 +822,7 @@ def test_download_disabled_returns_guidance_without_budget_or_network(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """停用期间入口即拒：不触网、不耗下载预算，指引写包收尾；证据流记 disabled。"""
-    monkeypatch.setattr(protocol_tools, "SUT_FILE_DOWNLOAD_ENABLED", False)  # 盖过 autouse
+    monkeypatch.setattr(protocol_tools_sut, "SUT_FILE_DOWNLOAD_ENABLED", False)  # 盖过 autouse
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -843,7 +845,7 @@ def test_download_disabled_returns_guidance_without_budget_or_network(
     assert evidence.events[-1]["outcome"] == "disabled"  # 证据流留痕
 
 
-# ─── 超时重试机械守卫（TimeoutBudgetExhausted，v4.17） ───
+# ─── 超时重试机械守卫（TimeoutBudgetExhausted） ───
 
 
 def _timeout_commands_server(monkeypatch: pytest.MonkeyPatch) -> AgentProtocolToolServer:
@@ -902,7 +904,7 @@ def test_read_thread_state_not_blocked_by_timeout_budget(
     assert result["pending_questions"] == []
 
 
-# ─── 交互预算闸门（BudgetExhausted，arch/16 §4.3 Phase 1 机械壳） ───
+# ─── 交互预算闸门（BudgetExhausted） ───
 
 
 def test_dispatch_exhausted_blocks_agent_run_without_network() -> None:
@@ -1014,7 +1016,7 @@ def test_ungated_tools_do_not_consume_budget() -> None:
     assert ledger.counters["sut_call"] == 1  # 只有 dispatch 那一次
 
 
-# ─── 完成仲裁与决策简报（arch/16 §5 决策回路，Phase 2） ───
+# ─── 完成仲裁与决策简报 ───
 
 
 def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> None:
@@ -1028,7 +1030,7 @@ def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> N
     refused = asyncio.run(server.run_on_thread("th-1", "继续"))
     assert refused["status"] == "failed"
     assert refused["error"]["type"] == "NudgeRationaleRequired"
-    # 拒绝载荷附可抄模板（Phase 2.1：抽象要求→示例填法，修零依从）
+    # 拒绝载荷附可抄模板（抽象要求→示例填法，修零依从）
     assert 'rationale="' in refused["error"]["message"]
     assert ledger.counters["nudge"] == 0  # 资格闸门不耗额度
     assert captured.get("posts") is None  # 拒绝在触网之前
@@ -1038,7 +1040,7 @@ def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> N
 
 
 def test_run_on_thread_consecutive_rationale_refusals_escalate() -> None:
-    """连拒 3 次起载荷点名收尾路径（Phase 2.1：13 连拒空转的机械对应物）。"""
+    """连拒 3 次起载荷点名收尾路径（13 连拒空转的机械对应物）。"""
     server = _commands_server([RESUMED_STATE])
     evidence = EvidenceLedger()
     ledger = ResourceLedger(InteractionPolicy(), evidence=evidence)
@@ -1191,3 +1193,61 @@ def test_state_tracker_resets_across_tasks_and_feeds_idle() -> None:
 
     server.reset_task_state()
     assert server._tracker.last_busy is None  # 新任务无观察，不串上一任务状态
+
+
+# ─── 合同一/二：观测入账 + interrupt 一等终态 ───
+
+
+def test_agent_run_logs_sut_observation_event() -> None:
+    """合同一：run 返回即向 EvidenceLedger 记 sut_observation（载荷截断全量在 trace）。"""
+    payload = {
+        "run": {"run_id": "r-9", "thread_id": "th-9", "status": "success"},
+        "values": {"messages": []},
+        "output": {"files": ["a.md"], "text": "答案"},
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=payload)
+
+    channel = AgentProtocolChannel(
+        SUTSystemConfig(
+            name="cw",
+            channel="agent_protocol",
+            base_url="https://ap.example.com",
+            output_paths=OutputPathsConfig(text_field="output.text", files_field="output.files"),
+        ),
+        http_client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    server = AgentProtocolToolServer(channel)
+    evidence = EvidenceLedger()
+    server.ledger = ResourceLedger(
+        InteractionPolicy(sut_calls_total=8, dispatch=4, nudges=2), evidence=evidence
+    )
+    asyncio.run(server.agent_run("问题"))
+    observations = [e for e in evidence.events if e["kind"] == "sut_observation"]
+    assert observations and observations[0]["source"] == "run"
+    assert observations[0]["terminal_kind"] == "delivered"
+    assert observations[0]["status"] == "success"
+
+
+def test_refresh_final_state_interrupt_pending_is_terminal_no_spin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """neg_001 根因回归：反问挂起是一等终态——收尾刷新
+    单采样立即返回并对账 pending，不再空转 settle 满超时后带旧值早退。"""
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.05)
+    server = _commands_server([INTERRUPT_STATE])
+    server.last_run = {
+        "status": "interrupted",
+        "thread_id": "th-1",
+        "run_id": "r-1",
+        "text": "我先检索一下",
+        "input": "任务",
+        "pending": None,
+    }
+    asyncio.run(server.refresh_final_state(settle_timeout_s=0.3))
+    # 反问对账进 last_run（旧实现：next 永不清空 → 空转 0.3s 早退，pending 仍 None）
+    assert server.last_run["pending"] is not None
+    assert server.last_run["pending"]["interrupt_id"] == "int-1"
+    assert server.last_run["text"] == "请选择交付形式与用途"
+    assert server.last_run["delivery_via"] == "text"

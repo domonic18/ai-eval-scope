@@ -1,4 +1,4 @@
-"""包内资产解析测试 — task_sets/ 与 sut_configs/（arch/16 §2.1，W1）。"""
+"""包内资产解析测试 — task_sets/ 与 sut_configs/（W1）。"""
 
 from __future__ import annotations
 

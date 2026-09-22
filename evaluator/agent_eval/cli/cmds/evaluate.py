@@ -59,7 +59,12 @@ def eval(
     no_cache: bool = typer.Option(
         False, "--no-cache", help="跳过评估缓存，强制重新评估（含 LLM 调用）"
     ),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="详细输出"),
+    log_level: str = typer.Option(
+        "normal",
+        "--log-level",
+        help="执行日志档位：quiet=仅结果行 | normal=默认进度 | "
+        "verbose=过程事件（judge/重试） | debug=全量原文",
+    ),
 ) -> None:
     """对 ExecutionPackage 执行评估。"""
     execute_eval(
@@ -72,7 +77,7 @@ def eval(
         upload=upload,
         on_missing=on_missing,
         no_cache=no_cache,
-        verbose=verbose,
+        log_level=log_level,
     )
 
 
@@ -86,17 +91,22 @@ def execute_eval(
     upload: bool | None = None,
     on_missing: str = "skip",
     no_cache: bool = False,
-    verbose: bool = False,
+    log_level: str = "normal",
 ) -> None:
     """评估动作（纯函数，向导/工作台复用）。
 
     直接以 Python 调用命令函数时，typer.Option 默认值是 OptionInfo 元对象
     （仅经 CLI 分发才注入真实值），曾致 ``Path(OptionInfo)`` TypeError——
-    故命令体只留薄壳，业务下沉本动作（arch/15 §2.2 组织约定 2）。
+    故命令体只留薄壳，业务下沉本动作。
     """
-    from agent_eval.core.logging import setup_logging
+    from agent_eval.core.logging import (
+        install_exec_event_handler,
+        resolve_logging_level,
+        setup_logging,
+    )
 
-    setup_logging(level="DEBUG" if verbose else "INFO")
+    setup_logging(level=resolve_logging_level(log_level))
+    install_exec_event_handler(enabled=log_level in ("verbose", "debug"))
 
     if eval_mode == "agent":
         rprint("[yellow]Agent 评估模式尚未实现，将在后续迭代中支持。[/yellow]")
@@ -154,7 +164,7 @@ def execute_eval(
                     "package_dir": package_dir,
                     "run_id": result.run_id,
                     "mode": run_mode,
-                    # EvalResult 指标真相在 .report（同 execute.py FR-4 修复）
+                    # EvalResult 指标真相在 .report（与 execute.py 同款修复）
                     "total_samples": result.report.total_samples,
                     "metrics": dict(result.report.metrics),
                     "failure_breakdown": dict(result.report.failure_breakdown),

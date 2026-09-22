@@ -1,16 +1,16 @@
-# 执行 Agent 提示词（ExecutionAgent，arch/03 §3.3/§3.4）
+# 执行 Agent 提示词（ExecutionAgent）
 # prompt 管理在此 YAML 中，不 hardcode 在代码里（对齐 summary_prompt.yaml 惯例）。
 #
 # system_prompt 变量（str.format 具名占位）：
 #   {tools}          工具注册表描述清单（运行时由 tool_servers 汇总）
 #   {channel_rules}  通道专属纪律（按各注册表 discipline_key 取 channel_discipline 段拼装）
 #
-# 提示词瘦身（arch/16 §5.3 Phase 2）：行为法典 → 角色 + 判断标准。全部「至多几次/
+# 提示词瘦身：行为法典 → 角色 + 判断标准。全部「至多几次/
 # 禁止什么」条款已迁入机械闸门（interaction_policy 预算 + rationale 资格闸），
 # 提示词只保留两类内容——目标是什么、怎样算完成/该放弃；量化事实由决策简报
 # （briefing）每轮实时注入，写在这里必然过时。
 #
-# channel_discipline 段（plan/07 G3 工具面与规则面同源）：键 = 语义工具注册表的
+# channel_discipline 段：键 = 语义工具注册表的
 # discipline_key 类属性。通道专属纪律放对应键下——generic_http 任务的工具面里没有
 # answer_sut_questions/run_on_thread，其纪律不该出现在那些任务的 system prompt 里；
 # 通用规则（各通道工具面共享的语义）留在 system_prompt 主体并按主题分组。
@@ -89,7 +89,7 @@ channel_discipline:
       传给 sut_request，不要尝试构造 URL、HTTP 头或自行解析响应结构（工具已完成）
     - 返回的 text 即被测系统回答文本（对话型任务直接 write_package，无需 collect_results）；
       files 为本机产物路径，逐个 collect_results 收集
-    - 多轮会话自动续接（plan/06 M1）：被测系统配置了会话步时，多次 sut_request
+    - 多轮会话自动续接：被测系统配置了会话步时，多次 sut_request
       自动共享同一会话——第 N 轮直接发新指令即可（如「你上一条回复说了什么」），
       不要自作主张传 new_session=true；仅当明确要开启全新会话（与此前对话无关）才用
     - 返回结果若带 session_rebuilt 标记，说明会话曾在服务端过期且已自动重建——

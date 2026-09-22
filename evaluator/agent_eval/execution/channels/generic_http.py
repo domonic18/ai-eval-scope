@@ -1,4 +1,4 @@
-"""GenericHttpChannel —— generic_http 通道（arch/03 §4.2，v4.7 排期落地）。
+"""GenericHttpChannel —— generic_http 通道。
 
 面向未实现 Agent Protocol 的 HTTP 服务：sut_config 的 ``request_template``
 （Jinja2 模板，变量空间 input/metadata；多步 API 用 steps 链，后续步以
@@ -6,7 +6,7 @@
 （点分路径）从**末步**响应 JSON 提取回答文本/产物文件/成功标志。请求经基座
 ``request()`` 发出——鉴权挂载、401/403 自动重登、共享 client 全部复用。
 
-多轮会话与异步轮询（plan/06）：steps 链执行下沉 ``http_steps``——once 步
+多轮会话与异步轮询：steps 链执行下沉 ``http_steps``——once 步
 响应按 session_key 跨调用缓存（会话续接），poll 步 do-while 至终态；单步
 路径不涉会话语义，行为不变。
 """
@@ -74,7 +74,7 @@ class GenericHttpChannel(SUTChannel):
                 f"SUT {sut.name} channel=generic_http 但未配置 request_template"
                 "（单步 method/path 或 steps 链，可选 headers/body）"
             )
-        # once 步会话缓存（plan/06 M1）——独立于 client 生命周期：基座 aclose
+        # once 步会话缓存——独立于 client 生命周期：基座 aclose
         # 后 client 重建会丢 cookie jar，会话缓存不随之丢（aclose 时全清）
         self._session = StepSession()
 
@@ -264,7 +264,7 @@ class GenericHttpChannel(SUTChannel):
         """text 提取：未配置 → 整个响应体（纯文本 API 的合法兜底）；
         已配置但路径未命中/取 null → failed（不再静默兜底整包——假成功红线）。
 
-        实测事故（jxb，v4.8）：路径 ``data.messages[-1].content`` 方括号形式
+        实测事故（jxb）：路径 ``data.messages[-1].content`` 方括号形式
         不被解析、未命中被兜底成「创建成功」整包 JSON，status=success 假成功。
         """
         if "text" not in mapping:

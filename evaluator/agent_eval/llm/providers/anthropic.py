@@ -19,6 +19,7 @@ from functools import lru_cache
 from typing import Any
 
 import anthropic
+import structlog
 
 from agent_eval.config import ProviderConfig
 from agent_eval.core.exceptions import (
@@ -35,6 +36,8 @@ from agent_eval.llm.models import LLMResponse, Message, TokenUsage
 # 瞬时错误重试参数（与 openai_compat 一致）
 _MAX_RETRIES = 3
 _RETRY_BASE_DELAY = 1.0
+
+LOG = structlog.get_logger("llm.anthropic")
 
 
 @lru_cache(maxsize=1)
@@ -126,9 +129,14 @@ class AnthropicCompatClient(LLMClient):
     def __init__(self, name: str, config: ProviderConfig) -> None:
         self._name = name
         self._config = config
+        # timeout/max_retries 必须显式：SDK 默认 read 600s + 内层重试 2 次，与外层重试
+        # 链叠加成几十分钟无日志挂起（本地 docker 栈回归事故：job 卡 54 分钟）。
+        # 重试单源化到本模块外层循环（有日志、有退避、次数可控），SDK 内层一律禁用。
         self._client = anthropic.Anthropic(
             api_key=config.api_key,
             base_url=config.base_url,
+            timeout=config.timeout_sec,
+            max_retries=0,
         )
 
     @property
@@ -187,7 +195,18 @@ class AnthropicCompatClient(LLMClient):
                 break
             except anthropic.APIError as e:
                 if attempt < _MAX_RETRIES and _is_anthropic_retryable(e):
-                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
+                    delay = _RETRY_BASE_DELAY * (2**attempt)
+                    # 每次重试必须留痕：静默重试链曾把单约束拖成几十分钟无日志挂起
+                    LOG.warning(
+                        "llm.call.retry",
+                        provider=self._name,
+                        model=self._config.model,
+                        attempt=attempt + 1,
+                        max_retries=_MAX_RETRIES,
+                        error=type(e).__name__,
+                        delay_sec=delay,
+                    )
+                    time.sleep(delay)
                     continue
                 raise _map_anthropic_error(e, self._name, self._config.model) from e
 

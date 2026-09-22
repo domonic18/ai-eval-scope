@@ -1,4 +1,4 @@
-"""package_writer 单测（arch/03 §三 / arch/16 §4.5 统一收尾 CLOSE）——补齐链与幂等。"""
+"""package_writer 单测——补齐链与幂等。"""
 
 from __future__ import annotations
 
@@ -95,7 +95,10 @@ def test_finalize_materializes_degraded_package(tmp_path: Path) -> None:
         )
     )
 
-    assert package.manifest.status == "failed"
+    # 合同四：SUT 已交付（「课件已全部完成！」）→ abort 翻转
+    # 后 guard_evaluable_abort 按证据翻回 success 进评分分母；guard_abort 留痕
+    assert package.manifest.status == "success"
+    assert _read_json(package_dir / "metadata.json")["guard_evaluable_abort"] is True
     assert sut_tools.calls[0]["error"] == "Agent 执行保险丝触发"
     assert (package_dir / "task.json").exists()
     trace = _read_json(package_dir / "trace.json")

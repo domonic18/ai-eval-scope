@@ -8,7 +8,14 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { clearSession, getToken, saveSession } from "../store/auth"
-import type { DebugJobStatus, MetricDef, ProjectSample, SampleTrendPoint } from "../types"
+import type {
+  DebugJobStatus,
+  LatestRunSnapshot,
+  MetricDef,
+  ProjectSample,
+  SampleTrendPoint,
+  SampleViewConfig,
+} from "../types"
 
 export const http = axios.create({
   baseURL: "/api/v1",
@@ -137,6 +144,7 @@ export const api = {
       id: string
       status: string
       message: string | null
+      createdAt: string
       user: { id: string; email: string; name: string | null }
     }[]
   },
@@ -149,17 +157,41 @@ export const api = {
   async listMembers(orgId: string) {
     return (await http.get(`/orgs/${orgId}/members`)).data.members
   },
+  /** 已注册邮箱 → 直加入；未注册 → 建待接受邀请（对方注册后自动加入）。 */
   async inviteMember(orgId: string, email: string, role: string) {
-    return (await http.post(`/orgs/${orgId}/members`, { email, role })).data.member
+    return (await http.post(`/orgs/${orgId}/members`, { email, role })).data.member as
+      | { kind: "member"; userId: string; email: string; role: string }
+      | { kind: "invitation"; email: string; role: string }
+  },
+  async listInvitations(orgId: string) {
+    return (await http.get(`/orgs/${orgId}/invitations`)).data.invitations as import("../types").OrgInvitationRow[]
+  },
+  async resendInvitation(orgId: string, id: string) {
+    return (await http.post(`/orgs/${orgId}/invitations/${id}/resend`)).data as { resent: boolean }
+  },
+  async revokeInvitation(orgId: string, id: string) {
+    return (await http.post(`/orgs/${orgId}/invitations/${id}/revoke`)).data as { revoked: boolean }
   },
   async removeMember(orgId: string, userId: string) {
     return (await http.delete(`/orgs/${orgId}/members/${userId}`)).data
+  },
+  /** 角色变更 / 所有权转移（demoteSelf：提升他人同时降级自己，事务原子）。 */
+  async updateMemberRole(orgId: string, userId: string, role: string, demoteSelf = false) {
+    return (await http.patch(`/orgs/${orgId}/members/${userId}`, { role, demoteSelf })).data as {
+      userId: string
+      role: string
+      selfDemoted: boolean
+    }
   },
   async projectRuns(projectId: string, page = 1, size = 50) {
     return (await http.get(`/projects/${projectId}/runs`, { params: { page, size } })).data
   },
   async projectTrends(projectId: string, limit = 50) {
     return (await http.get(`/projects/${projectId}/trends`, { params: { limit } })).data
+  },
+  /** 快照语义「最近一次上报」（arch/09 §9.6）：run 与场景指标定义已服务端配对。 */
+  async projectLatestRun(projectId: string): Promise<LatestRunSnapshot> {
+    return (await http.get(`/projects/${projectId}/latest-run`)).data
   },
   async runDetail(runId: string) {
     return (await http.get(`/runs/${runId}`)).data.run
@@ -200,6 +232,25 @@ export const api = {
   },
   async deleteRun(runId: string) {
     return (await http.delete(`/runs/${runId}`)).data
+  },
+  /**
+   * 运行导出（arch/09 §9.8）：后端流式 zip 自描述 bundle。
+   * axios blob + 长 timeout（optionalAuth 只认 Bearer 头，裸 <a> 带不上凭证）。
+   */
+  async runDownload(runId: string): Promise<void> {
+    const res = await http.get(`/runs/${runId}/export`, {
+      responseType: "blob",
+      timeout: 300000,
+    })
+    const disposition = (res.headers["content-disposition"] as string | undefined) ?? ""
+    const m = /filename="?([\w.-]+)"?/.exec(disposition)
+    const name = m?.[1] ?? `run-${runId}.zip`
+    const url = URL.createObjectURL(res.data as Blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
   },
   async listKeys(projectId: string) {
     return (await http.get(`/projects/${projectId}/keys`)).data.keys
@@ -265,9 +316,6 @@ export const api = {
     const params = source ? { source } : undefined
     return (await http.get("/scenarios", { params })).data.scenarios as Scenario[]
   },
-  async createScenario(id: string, name: string, description?: string): Promise<Scenario> {
-    return (await http.post("/scenarios", { id, name, description })).data.scenario
-  },
   async scenarioCatalog(scenarioId: string): Promise<ScenarioCatalog> {
     return (await http.get(`/scenarios/${scenarioId}/catalog`)).data as ScenarioCatalog
   },
@@ -278,33 +326,10 @@ export const api = {
   async scenarioAggregationPolicy(scenarioId: string): Promise<Record<string, unknown> | null> {
     return (await http.get(`/scenarios/${scenarioId}/defaults`)).data.aggregation_policy ?? null
   },
-  /** 一次 GET 拿完整 defaults（metric_definitions + aggregation_policy），供编辑器 loadDoc 组装。 */
-  async scenarioDefaultsContent(
-    scenarioId: string,
-    version?: string,
-  ): Promise<{ metric_definitions: MetricDef[]; aggregation_policy: Record<string, unknown> | null }> {
-    const params = version ? `?version=${encodeURIComponent(version)}` : ""
-    return (await http.get(`/scenarios/${scenarioId}/defaults${params}`)).data
-  },
-  /** 发布场景默认配置新版本（指标定义 + 聚合策略版本化；POST /scenarios/:id/defaults）。 */
-  async publishDefaults(
-    scenarioId: string,
-    input: {
-      version: string
-      labels?: string[]
-      metric_definitions?: unknown
-      aggregation_policy?: unknown
-    },
-  ): Promise<{ asset: { assetId: string; version: string } }> {
-    return (await http.post(`/scenarios/${scenarioId}/defaults`, input)).data
-  },
   async listDefaultsVersions(
     scenarioId: string,
   ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
     return (await http.get(`/scenarios/${scenarioId}/defaults/versions`)).data.versions
-  },
-  async promoteDefaultsLabels(scenarioId: string, version: string, labels: string[]): Promise<void> {
-    await http.post(`/scenarios/${scenarioId}/defaults/versions/${version}/labels`, { labels })
   },
   /** 资产完整内容（评测规则浏览器/编辑器 diff 用）。 */
   async assetContent(
@@ -317,35 +342,6 @@ export const api = {
     return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/content${params}`)).data
       .content
   },
-  async publishPackage(
-    scenarioId: string,
-    input: {
-      asset_id: string
-      version: string
-      labels?: string[]
-      name?: string
-      description?: string
-      content?: Record<string, unknown>
-    },
-  ): Promise<{ package: { packageId: string; scenarioId: string } }> {
-    return (await http.post(`/scenarios/${scenarioId}/packages`, input)).data
-  },
-  async publishAsset(
-    scenarioId: string,
-    kind: AssetKind,
-    input: {
-      asset_id: string
-      version: string
-      labels?: string[]
-      content?: Record<string, unknown>
-      namespace?: string
-      role?: string
-      backend_type?: string
-      backend_config?: Record<string, unknown>
-    },
-  ): Promise<{ asset: { assetId: string; version: string } }> {
-    return (await http.post(`/scenarios/${scenarioId}/${kind}`, input)).data
-  },
   async listAssetVersions(
     scenarioId: string,
     kind: AssetKind,
@@ -353,16 +349,6 @@ export const api = {
   ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: string }>> {
     return (await http.get(`/scenarios/${scenarioId}/${kind}/${assetId}/versions`)).data.versions
   },
-  async promoteAssetLabels(
-    scenarioId: string,
-    kind: AssetKind,
-    assetId: string,
-    version: string,
-    labels: string[],
-  ): Promise<void> {
-    await http.post(`/scenarios/${scenarioId}/${kind}/${assetId}/versions/${version}/labels`, { labels })
-  },
-
   /* ── 超管后台 ─────────────────────────────────────── */
   async adminOverview() {
     return (await http.get("/admin/stats/overview")).data
@@ -379,6 +365,13 @@ export const api = {
       bucket: string
       count: number
     }>
+  },
+  /** 场景样本视图配置（arch/09 §9.7 呈现配置链；platformAdmin）。 */
+  async adminGetSampleView(scenarioId: string): Promise<{ scenarioId: string; sampleView: SampleViewConfig | null }> {
+    return (await http.get(`/admin/scenarios/${scenarioId}/sample-view`)).data
+  },
+  async adminSetSampleView(scenarioId: string, config: SampleViewConfig): Promise<{ scenarioId: string; sampleView: SampleViewConfig }> {
+    return (await http.put(`/admin/scenarios/${scenarioId}/sample-view`, config)).data
   },
   async adminListUsers(opts: { search?: string; status?: string; page?: number } = {}) {
     const qs = new URLSearchParams()
@@ -504,31 +497,6 @@ export const api = {
   async adminTestLlmModel(id: string): Promise<{ status: "success" | "failed"; detail: string; testedAt: string }> {
     return (await http.post(`/admin/llm-models/${id}/test`)).data
   },
-  async aiOptimizePrompt(input: {
-    instruction: string
-    scenario?: string
-    currentSystem?: string
-    currentUserPrompt?: string
-  }): Promise<{ system: string; userPrompt: string }> {
-    return (await http.post("/ai/optimize-prompt", input)).data
-  },
-  async aiRecommendRules(input: {
-    scenario?: string
-    cascade?: Array<{ stage: string; name?: string }>
-    existingRules?: Array<{ name?: string; method?: string; stage?: string }>
-  }): Promise<{ rules: Record<string, unknown>[] }> {
-    return (await http.post("/ai/recommend-rules", input)).data
-  },
-  async aiGenerateMetrics(input: { scenario?: string; description: string }): Promise<{ metricDefinitions: Record<string, unknown>[] }> {
-    return (await http.post("/ai/generate-metrics", input)).data
-  },
-  async aiGeneratePolicy(input: {
-    scenario?: string
-    cascade?: Array<{ stage: string; name?: string }>
-    metricDefinitions?: Array<{ id?: string; name?: string; threshold?: number | null; unit?: string | null }>
-  }): Promise<{ aggregationPolicy: Record<string, unknown> | null }> {
-    return (await http.post("/ai/generate-policy", input)).data
-  },
 }
 
 export type AssetKind = "rule-sets" | "prompts" | "datasets" | "task-sets" | "sut-configs"
@@ -627,6 +595,8 @@ export interface AdminRun {
   createdAt: string
   /** Phase 5 场景化指标（与 dr/cpr 并存，P5-8 清理遗留列后为唯一来源）*/
   metrics?: Record<string, number>
+  /** 行级 defs 配对（docs/plan/08 批次 C）：锚定该 run 自带快照，无快照老 run 走场景 defaults 兜底 */
+  metricDefinitions?: MetricDef[]
   project: { id: string; name: string; org: { id: string; name: string } }
 }
 export interface AdminArtifact {

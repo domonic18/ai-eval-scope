@@ -118,6 +118,11 @@
         "total_duration_ms": { "type": ["number", "null"] },
         "llm_calls": { "type": ["integer", "null"], "minimum": 0 },
         "token_usage": { "type": ["integer", "null"], "minimum": 0 },
+        "error_summary": {
+          "type": ["string", "null"],
+          "description": "run_error 样本诊断摘要（arch/16 §4.6 合同五）：trace.error 截断，落 samples.extra",
+          "maxLength": 512
+        },
         "dimensions": {
           "type": ["array", "null"],
           "items": {

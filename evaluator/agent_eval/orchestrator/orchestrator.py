@@ -64,14 +64,14 @@ class EvalResult:
     # 评估摘要报告（LLM 生成的人话总结，LLM 不可用时为 None）
     summary_report: dict[str, Any] | None = None
     # 运行模式（上报语义）：eval_only=仅评估；agent=执行器执行 + 评估（run 产物）；
-    # pipeline=一体化流水线（Sprint 9）。由 CLI 按包来源标注，透传至 sink → run event → 平台
+    # pipeline=一体化流水线。由 CLI 按包来源标注，透传至 sink → run event → 平台
     mode: str = "eval_only"
     # SUT 身份（W6）：完整 pipeline 路径由 cli/_stages 回填；eval-only / 调试台路径无人回填。
     # 必须是声明字段——sink 拼 run event 无条件读取，缺失会在 flush 时 AttributeError
     # （回归：'EvalResult' object has no attribute 'sut_version'）
     sut_name: str = ""
     sut_version: str = ""
-    # CI 质量门禁结果（requirement/06 FR-3）：evaluate_gate() 输出的 gate 对象，
+    # CI 质量门禁结果：evaluate_gate() 输出的 gate 对象，
     # 供 CLI 判定退出码 3；必须是声明字段——CLI 无条件读取，缺失会 AttributeError
     gate: dict[str, Any] | None = None
 
@@ -259,7 +259,7 @@ class Orchestrator:
 
             sample_result = self.pipeline_engine.evaluate_sample(pkg, context)
 
-            # 过程指标注入（Sprint 9 v6.0）：执行链路的轮次/工具调用/耗时来自包内
+            # 过程指标注入：执行链路的轮次/工具调用/耗时来自包内
             # trace 与 metrics（缓存命中路径同样经过此处；缺失时保持 0）。
             # trace 兼容两种形态：Agent 骨架（response.turns/tool_calls）与
             # LLM write_package 直写的 SUT-run 形态（顶层 turns_used）。
@@ -309,7 +309,7 @@ class Orchestrator:
             encoding="utf-8",
         )
 
-        # 10.1 CI 集成（requirement/06）：门禁判定 + 按需追加报告格式。
+        # 10.1 CI 集成：门禁判定 + 按需追加报告格式。
         # 门禁始终判定（退出码判定不依赖 report_formats）；junit/txt 为 opt-in
         # 追加格式，不传时 reports/ 维持 summary.md/json 两文件。
         import agent_eval
@@ -341,7 +341,7 @@ class Orchestrator:
             )
 
         # 注入运行溯源（供 upload 子命令从 summary.json 重建 run event）+
-        # CI 溯源键（FR-3 联动：gate/package_id/tool_version）——既有文件内增键，
+        # CI 溯源键（gate/package_id/tool_version）——既有文件内增键，
         # 平台上报走固定字段白名单（observability/events.py），不受影响。
         summary_json["rule_set_version"] = rule_set_version
         summary_json["gate"] = gate_result
@@ -688,7 +688,7 @@ def eval_packages(
         if (_cand / "metrics" / "policy.yaml").exists():
             scenario_package_dir = _cand
 
-    # 解析 LLM 配置（可选；本地 llm.json → 平台拉取，见 arch/06 §4.6）
+    # 解析 LLM 配置（可选；本地 llm.json → 平台拉取）
     llm_config = None
     try:
         from agent_eval.config.llm_resolution import resolve_llm_config

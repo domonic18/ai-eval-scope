@@ -1,12 +1,12 @@
-"""SUTRegistry 与 sut_config v2 模型（arch/03 §4.0.3）。
+"""SUTRegistry 与 sut_config v2 模型。
 
 一份 sut_config.yaml 描述一个被测系统（顶层键 `sut:`），多系统即多份文件；
-按 sut.name 索引聚合。注意与 arch/13 的 SUTConfig（benchmark 被测模型配置，
-§5.3 Inferencer 路径）是两个不同概念——本模块为被测**系统**配置。
+按 sut.name 索引聚合。注意与 benchmark 评估侧的 SUTConfig（被测**模型**配置、
+Inferencer 路径）是两个不同概念——本模块为被测**系统**配置。
 
-地址类字段支持 ``${VAR}`` / ``${VAR:-默认值}`` 环境变量展开（arch/17 开源
-红线：内置包不得硬编码内部域名，真实端点由用户 env 提供，缺省回退占位域名）。
-凭证值不走此通道——仍由 ``credential_ref`` 引用密钥区（06 §4.7）。
+地址类字段支持 ``${VAR}`` / ``${VAR:-默认值}`` 环境变量展开（内置包不得硬编码
+内部域名：真实端点由用户 env 提供，缺省回退占位域名）。
+凭证值不走此通道——仍由 ``credential_ref`` 引用密钥区。
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from agent_eval.core.exceptions import SUTChannelError
 # 支持的通道（schema 合法值，含预留项）
 CHANNEL_TYPES = ("agent_protocol", "generic_http", "browser")
 # 本期已排期可执行通道（执行工厂/落盘门禁/执行域预检三处共用；排期变更只改这里，
-# 与 CHANNEL_TYPES 互为补充）。v4.7 裁决：generic_http 落地（arch/03 §4.2），browser 仍预留
+# 与 CHANNEL_TYPES 互为补充）。v4.7 裁决：generic_http 落地，browser 仍预留
 SCHEDULED_CHANNELS = ("agent_protocol", "generic_http")
 # generic_http 请求模板允许的 HTTP 方法
 HTTP_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")
@@ -43,12 +43,12 @@ EXEC_MODES = ("wait", "background", "stream")
 STREAM_MODES = ("values", "messages", "updates", "custom")
 AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
 # Agent Protocol 两种部署形态：runs（/runs/wait 族）| commands（/threads/{id}/commands + state）
-# Agent Protocol 两种部署形态（plan/07 G5 显式化）：
+# Agent Protocol 两种部署形态：
 # - runs：协议标准的 POST /runs/wait 族（通用默认）
 # - commands：POST /threads/{id}/commands + GET state 轮询（AG-UI 网关族官方
-#   Streaming 端点形态）。注意 commands 的信封/中断/终态语义目前以 sasan
+#   Streaming 端点形态）。注意 commands 的信封/中断/终态语义目前以参考 SUT
 #   实测为基准（ask_question 反问中断、input.respond 应答、lifecycle 事件均
-#   为该实现的前端契约）——接入其他 AG-UI 网关前先核对其方言差异
+#   为参考实现的前端契约）——接入其他 AG-UI 网关前先核对其方言差异
 PROTOCOL_FLAVORS = ("runs", "commands")
 
 # ${VAR} / ${VAR:-默认值}（不支持嵌套占位；默认值内不含 '}'）
@@ -111,7 +111,7 @@ class AuthMountConfig(BaseModel):
 
 
 class AuthConfig(BaseModel):
-    """鉴权策略配置（arch/03 §4.0.2）。"""
+    """鉴权策略配置。"""
 
     type: str = Field(
         default="none", description="none | static_token | api_login | session_cookie"
@@ -151,7 +151,7 @@ def _normalize_http_method(v: str) -> str:
 
 
 class PollConfig(BaseModel):
-    """链式请求模板的轮询步配置（plan/06 M2，异步任务型 API）。
+    """链式请求模板的轮询步配置（异步任务型 API）。
 
     do-while 语义：先发请求再判终态——``until`` 渲染结果（strip+lower）为
     true/1/yes 即通过；轮询中 ≥400 不立即失败（受理后短暂不一致是常态），
@@ -169,7 +169,7 @@ class PollConfig(BaseModel):
 
 
 class RequestStepConfig(BaseModel):
-    """链式请求模板的单步定义（arch/03 §4.2）。
+    """链式请求模板的单步定义。
 
     每步响应（JSON）进入渲染上下文，后续步以 ``{{ 步骤名.路径 }}`` 引用其值
     （值全程服务端流动，不经 LLM 转述）——jxb 类「建会话 → 发消息 → 查历史」
@@ -186,12 +186,12 @@ class RequestStepConfig(BaseModel):
     )
     once: bool = Field(
         default=False,
-        description="会话步（plan/06 M1）：响应跨 sut_request 调用缓存，仅会话首轮执行"
+        description="会话步：响应跨 sut_request 调用缓存，仅会话首轮执行"
         "（建会话类步骤标 true，多轮续接由通道会话存储保证）",
     )
     poll: PollConfig | None = Field(
         default=None,
-        description="轮询步（plan/06 M2）：反复执行直到 until 渲染为真或超时（异步任务型 API）",
+        description="轮询步：反复执行直到 until 渲染为真或超时（异步任务型 API）",
     )
 
     @field_validator("name")
@@ -220,7 +220,7 @@ class RequestStepConfig(BaseModel):
 
 
 class RequestTemplateConfig(BaseModel):
-    """generic_http 通道的请求模板（arch/03 §4.2）。
+    """generic_http 通道的请求模板。
 
     body/headers 的字符串值支持 Jinja2 模板（变量空间 ``input``/``metadata``，
     由通道渲染）；凭证字段不得写在模板里——由 auth 会话自动挂载。
@@ -281,7 +281,7 @@ class SUTSystemConfig(BaseModel):
     protocol_flavor: str = Field(
         default="runs",
         description="runs（POST /runs/wait 族，协议标准）| commands（POST /threads/{id}/commands"
-        " + GET state 轮询；信封与中断语义以 sasan 实测方言为基准，见 PROTOCOL_FLAVORS 注）",
+        " + GET state 轮询；信封与中断语义以参考 SUT 实测方言为基准，见 PROTOCOL_FLAVORS 注）",
     )
     configurable: dict[str, Any] = Field(
         default_factory=dict,
@@ -368,6 +368,15 @@ def _unknown_key_errors(data: dict[str, Any], model: type[BaseModel], path: str)
     hint = ""
     if path == "sut.auth.login":
         hint = "（跨域登录接口把完整 http(s):// URL 写进 path——没有 base_url 字段）"
+    elif path.startswith("sut.request_template.steps"):
+        # 实测幻觉高发区（run 20260917_003025：kind/depends_on/until/步骤级
+        # response_mapping 全被 Pydantic 静默丢弃）——错误即教学，给出正确形态
+        hint = (
+            "（步骤字段只有 name/method/path/headers/body/once/poll——没有 "
+            "kind/depends_on/until/步骤级 response_mapping；会话步写 once: true，"
+            "轮询写 poll: {until: <Jinja2 表达式>, interval_s, timeout_s}，"
+            "末步提取走顶层 response_mapping）"
+        )
     known = set(model.model_fields)
     return [
         f"{path} 含未知字段 {k!r}，执行器会静默丢弃{hint}；合法字段: {sorted(known)}"
@@ -405,7 +414,7 @@ def _template_variables(shape: dict[str, Any]) -> set[str]:
 def _template_audit_errors(rt: dict[str, Any]) -> list[str]:
     """generic_http 模板变量审计：变量引用必须可解析，且必须消费 {{ input }}。
 
-    实测事故（jxb，v4.8）：request_template 连 {{ input }} 都没写——16 条
+    实测事故（jxb）：request_template 连 {{ input }} 都没写——16 条
     测试指令从未发给被测系统，每次调用只是「创建会话」，status=success 假成功
     烧穿执行轮次。凡可机械判定的配置变形在落盘前打回，不留给运行时让执行
     Agent 猜。
@@ -480,6 +489,22 @@ def validate_sut_config_document(data: Any) -> list[str]:
         ):
             if isinstance(auth.get(name), dict):
                 errors += _unknown_key_errors(auth[name], auth_model, f"sut.auth.{name}")
+    # steps 链逐项下钻：RequestStepConfig 默认 extra=ignore，步骤内发明的字段会被
+    # 静默丢弃（run 20260917_003025 教训）——与 auth 各段同一白名单语义
+    request_template = sut.get("request_template")
+    raw_steps = request_template.get("steps") if isinstance(request_template, dict) else None
+    if isinstance(raw_steps, list):
+        for i, step in enumerate(raw_steps):
+            if not isinstance(step, dict):
+                continue
+            errors += _unknown_key_errors(
+                step, RequestStepConfig, f"sut.request_template.steps[{i}]"
+            )
+            poll = step.get("poll")
+            if isinstance(poll, dict):
+                errors += _unknown_key_errors(
+                    poll, PollConfig, f"sut.request_template.steps[{i}].poll"
+                )
     if str(sut.get("channel", "")).lower() == "generic_http":
         # 通道必需段前置报缺（模型层 request_template 可空——agent_protocol 包不该被迫填它）
         if not isinstance(sut.get("request_template"), dict):
@@ -510,7 +535,7 @@ class SUTRegistry:
 
     文件名 stem 作为**取用容错键**（实测两次：向导/CLI 以文件名列出并选择 SUT，
     Agent 生成包的 ``sut.name`` 却与文件名漂移——get() 在注册名未命中时按 stem
-    兜底。机械容错而非门禁拦卡：一致性问题不拦 Agent（v3.12 评审裁决），执行侧
+    兜底。机械容错而非门禁拦卡：一致性问题不拦 Agent，执行侧
     让 stem 与 name 等价可解析）。
     """
 
@@ -524,12 +549,23 @@ class SUTRegistry:
 
     @classmethod
     def load(cls, path: Path | str) -> SUTRegistry:
-        """加载单份 sut_config.yaml（顶层键 sut:；字符串字段先做 ${VAR} 展开）。"""
+        """加载单份 sut_config.yaml（顶层键 sut:；字符串字段先做 ${VAR} 展开）。
+
+        落盘门禁同款校验前置（validate_sut_config_document）：模型层 extra=ignore
+        会静默丢弃发明的字段——加载期显式拒绝，堵住旁路写入者（手改包/外部工具
+        生成）绕过 workbench 门禁的缺口（run 20260917_003025 教训）。
+        """
         data = ConfigLoader.load_yaml(path)
         sut_data = data.get("sut")
         if not isinstance(sut_data, dict):
             raise SUTChannelError(
                 f"sut_config 缺少顶层 'sut:' 段: {path}", details={"path": str(path)}
+            )
+        errors = validate_sut_config_document(data)
+        if errors:
+            raise SUTChannelError(
+                f"sut_config 校验失败 {Path(path).name}: {'; '.join(errors)}",
+                details={"path": str(path), "errors": errors},
             )
         config = SUTSystemConfig.model_validate(expand_env_refs(sut_data))
         return cls({config.name: config}, {Path(path).stem: config.name})

@@ -4,6 +4,7 @@ runs list / dataset list / rule-set / suite / knowledge（全离线 mock）。""
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,6 +14,16 @@ from typer.testing import CliRunner
 from agent_eval.cli.main import app
 
 runner = CliRunner()
+
+# typer 在 GITHUB_ACTIONS / FORCE_COLOR / PY_COLORS 环境下强制彩色渲染，
+# rich 高亮器会把选项名按 span 切开（如 --log-level 被转义码打断），
+# 字面子串断言须在去 ANSI 后的纯文本上做。
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """剥离 ANSI 转义序列，返回纯文本。"""
+    return _ANSI_RE.sub("", text)
 
 
 # ── version ────────────────────────────────────────────────────────────
@@ -25,7 +36,7 @@ class TestVersion:
         assert "agent-eval v" in result.output
 
     def test_version_flag_exits_cleanly(self) -> None:
-        # --version 旗标（arch/17 发布流水线隔离冒烟口令，须先于其余参数生效）
+        # --version 旗标（须先于其余参数生效）
         result = runner.invoke(app, ["--version"])
         assert result.exit_code == 0, result.output
         assert "agent-eval v" in result.output
@@ -133,7 +144,12 @@ class TestUploadCommand:
 
         monkeypatch.setattr(obs, "ResultSink", _FakeSink)
         monkeypatch.setattr(
-            obs, "load_config", lambda **k: SimpleNamespace(has_credentials=lambda: True)
+            obs,
+            "load_config",
+            lambda **k: SimpleNamespace(
+                has_credentials=lambda: True,
+                run_view_url=lambda rid: f"https://eval.example.com/run/{rid}",
+            ),
         )
 
     def test_upload_dispatches(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -157,7 +173,10 @@ class TestUploadCommand:
 
         def _fake_load_config(**k):
             captured.update(k)
-            return SimpleNamespace(has_credentials=lambda: True)
+            return SimpleNamespace(
+                has_credentials=lambda: True,
+                run_view_url=lambda rid: f"https://eval.example.com/run/{rid}",
+            )
 
         monkeypatch.setattr(obs, "load_config", _fake_load_config)
         result = runner.invoke(
@@ -186,6 +205,132 @@ class TestUploadCommand:
         result = runner.invoke(app, ["upload", "--run", "r1", "--workspace", str(tmp_path)])
         assert result.exit_code == 1
         assert "summary.json" in result.output
+
+    # ── upload_run_core（回执 + UploadError kind）────────
+
+    def test_upload_core_receipt_structured(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """core 返回结构化回执（Agent 域消费）：计数 + run_url 真源 + 静默无渲染。"""
+        from agent_eval.cli.cmds.upload import upload_run_core
+
+        self._make_run(tmp_path, "20260101_000000")
+        self._patch_sink(monkeypatch, sent=3)
+        receipt = upload_run_core(
+            "20260101_000000", workspace=str(tmp_path), project="demo", note=None
+        )
+        assert receipt["run_id"] == "20260101_000000"
+        assert receipt["sent"] == 3 and receipt["queued"] == 0
+        assert receipt["sample_count"] == 0 and receipt["event_count"] == 1
+        assert receipt["run_url"] == "https://eval.example.com/run/20260101_000000"
+        assert receipt["project"] == "demo"
+
+    def test_upload_core_error_kinds(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds.upload import UploadError, upload_run_core
+
+        with pytest.raises(UploadError) as ei:
+            upload_run_core("nope", workspace=str(tmp_path))
+        assert ei.value.kind == "missing_run"
+
+        (tmp_path / "runs" / "r1").mkdir(parents=True)
+        with pytest.raises(UploadError) as ei:
+            upload_run_core("r1", workspace=str(tmp_path))
+        assert ei.value.kind == "missing_summary"
+
+        self._make_run(tmp_path, "20260101_000001")
+        import agent_eval.observability as obs
+
+        monkeypatch.setattr(
+            obs, "load_config", lambda **k: SimpleNamespace(has_credentials=lambda: False)
+        )
+        with pytest.raises(UploadError) as ei:
+            upload_run_core("20260101_000001", workspace=str(tmp_path))
+        assert ei.value.kind == "no_credentials"
+
+
+# ── observability 拆分（flush 无渲染核心 + 回执渲染）────────
+
+
+class TestObservabilitySplit:
+    def _fake_result(self) -> SimpleNamespace:
+        return SimpleNamespace(run_id="r_x", run_workspace=None)
+
+    def _patch(
+        self, monkeypatch: pytest.MonkeyPatch, *, enabled: bool = True, report=None, error=None
+    ) -> None:
+        import agent_eval.observability as obs
+
+        class _FakeSink:
+            def __init__(self, cfg: object) -> None:
+                if error is not None:
+                    raise error
+
+            def flush(self, result, **kw) -> SimpleNamespace:
+                return report or SimpleNamespace(
+                    error=None,
+                    sent=2,
+                    queued=1,
+                    artifacts_uploaded=1,
+                    artifacts_failed=0,
+                    replayed=0,
+                )
+
+        monkeypatch.setattr(obs, "ResultSink", _FakeSink)
+        monkeypatch.setattr(
+            obs,
+            "load_config",
+            lambda **k: SimpleNamespace(
+                enabled=enabled,
+                run_view_url=lambda rid: f"https://eval.example.com/run/{rid}",
+            ),
+        )
+
+    def test_disabled_returns_default_receipt(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli._common import observability_enabled, observability_flush
+
+        self._patch(monkeypatch, enabled=False)
+        receipt = observability_flush(self._fake_result(), upload_override=None)
+        assert receipt["enabled"] is False
+        assert observability_enabled(self._fake_result(), upload_override=None) is False
+        assert receipt["sent"] == 0 and receipt["view_url"] == ""
+
+    def test_success_receipt_and_render(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+    ) -> None:
+        from agent_eval.cli._common import _render_upload_receipt, observability_flush
+
+        self._patch(monkeypatch)
+        receipt = observability_flush(self._fake_result(), upload_override=True)
+        assert receipt["enabled"] is True
+        assert receipt["sent"] == 2 and receipt["queued"] == 1
+        assert receipt["view_url"] == "https://eval.example.com/run/r_x"
+        _render_upload_receipt(receipt)
+        out = capsys.readouterr().out
+        assert "✓ 已推送" in out and "事件 2" in out
+        assert "平台报告: https://eval.example.com/run/r_x" in out
+
+    def test_push_error_and_init_error_branches(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+    ) -> None:
+        from agent_eval.cli._common import _render_upload_receipt, observability_flush
+
+        self._patch(
+            monkeypatch,
+            report=SimpleNamespace(
+                error="boom", sent=0, queued=1, artifacts_uploaded=0, artifacts_failed=0, replayed=0
+            ),
+        )
+        receipt = observability_flush(self._fake_result(), upload_override=True)
+        _render_upload_receipt(receipt)
+        out = capsys.readouterr().out
+        assert "推送异常（已入离线队列，后续自动重放）: boom" in out
+
+        self._patch(monkeypatch, error=RuntimeError("网络不可达"))
+        receipt = observability_flush(self._fake_result(), upload_override=True)
+        assert receipt["init_error"] == "网络不可达"
+        _render_upload_receipt(receipt)
+        out = capsys.readouterr().out
+        assert "推送初始化失败（结果仍在本地 workspace）: 网络不可达" in out
 
 
 # ── open ───────────────────────────────────────────────────────────────
@@ -500,11 +645,12 @@ class _FlowStubs:
             metrics={"chat:reward": 0.8},
             failure_breakdown={"safety.compliance": 1},
         )
-        # evaluate_stage 返回 EvalResult 形态：指标真相在 .report（FR-4 修复后契约），
+        # evaluate_stage 返回 EvalResult 形态：指标真相在 .report（修复后契约），
         # gate 为门禁判定结果（off = 不判定）
         self.eval_result = SimpleNamespace(
             run_id="20260101_000000",
             report=self.report,
+            samples=[],  # pipeline_core 的 SUT 身份回填触达（空列表跳过）
             gate={"mode": "off", "enabled": False, "passed": True},
         )
 
@@ -512,6 +658,9 @@ class _FlowStubs:
         import agent_eval.cli._stages as stages
         import agent_eval.storage.package as storage_pkg
 
+        # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会渗入 pipeline json 测试
+        # （core 内联上报段真发平台，禁联网）——显式钉死为关
+        monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
         monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
         monkeypatch.setattr(stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/r.yaml")
         monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())
@@ -569,20 +718,83 @@ class TestJsonOutput:
 
 
 class TestProgressView:
-    def test_stage_progress_disabled_is_silent(self, capsys: object) -> None:
+    def test_stage_progress_off_is_silent(self, capsys: object) -> None:
         from agent_eval.cli.console.render import stage_progress
 
-        with stage_progress(enabled=False) as sp:
+        with stage_progress(mode="off") as sp:
             sp.advance("执行")
-        assert capsys.readouterr().out == ""
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert captured.err == ""
+
+    def test_stage_progress_lines_prints_stage_line(self, capsys: object) -> None:
+        """verbose 档（lines）：stderr ``[stage]`` 阶段行直出（事件行的承载底座）。"""
+        from agent_eval.cli.console.render import stage_progress
+
+        with stage_progress(mode="lines") as sp:
+            sp.advance("评估")
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "[stage] 评估" in captured.err
+        assert sp.last_label == "评估"
 
     def test_stage_progress_never_writes_stdout(self, capsys: object) -> None:
         """进度行固定走 stderr（含非 TTY fallback），stdout 保持纯净。"""
         from agent_eval.cli.console.render import stage_progress
 
-        with stage_progress(enabled=True) as sp:
+        with stage_progress(mode="spinner") as sp:
             sp.advance("评估")
         assert capsys.readouterr().out == ""
+
+    @pytest.mark.parametrize(
+        ("level", "expected"),
+        [("quiet", "off"), ("normal", "spinner"), ("verbose", "lines"), ("debug", "off")],
+    )
+    def test_progress_mode_maps_levels(self, level: str, expected: str) -> None:
+        from agent_eval.cli.console.render import progress_mode
+
+        assert progress_mode(level) == expected
+
+    def test_progress_mode_json_forces_off(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """json 形态一律 off（进度即人读输出，stdout 纯 JSON 契约优先）。"""
+        from agent_eval.cli.console import output as output_mod
+        from agent_eval.cli.console.render import progress_mode
+
+        monkeypatch.setattr(output_mod, "is_json", lambda: True)
+        assert progress_mode("normal") == "off"
+        assert progress_mode("verbose") == "off"
+
+
+class TestLogLevelContract:
+    """--log-level 四档契约（F-C-EXEC-07）。"""
+
+    def test_run_help_exposes_log_level_without_verbose(self) -> None:
+        result = runner.invoke(app, ["run", "--help"])
+        assert result.exit_code == 0
+        assert "--log-level" in _plain(result.output)
+        assert "--verbose" not in _plain(result.output)
+
+    def test_pipeline_help_exposes_log_level(self) -> None:
+        result = runner.invoke(app, ["pipeline", "--help"])
+        assert result.exit_code == 0
+        assert "--log-level" in _plain(result.output)
+
+    def test_verbose_flag_is_rejected(self) -> None:
+        """--verbose 一次性移除（D-CLI-6 无别名）：误用即 usage error。"""
+        result = runner.invoke(app, ["run", "--verbose"])
+        assert result.exit_code != 0
+
+    def test_no_verbose_flag_left_in_source(self) -> None:
+        """全仓 --verbose 清零 grep 门禁（教程/CI 片段已清理，源码为最后一道闸）。"""
+        import agent_eval
+
+        root = Path(agent_eval.__file__).parent
+        offenders = [
+            str(p.relative_to(root))
+            for p in sorted(root.rglob("*.py"))
+            if "--verbose" in p.read_text(encoding="utf-8")
+        ]
+        assert offenders == []
 
     def test_print_task_table_lists_tasks(self, tmp_path: Path) -> None:
         from agent_eval.cli.console.render import print_task_table

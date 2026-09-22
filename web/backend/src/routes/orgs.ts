@@ -1,6 +1,8 @@
 /**
  * 组织路由（/api/v1/orgs/:org）。
- *  - 成员管理（owner）：GET/POST /members，DELETE /members/:userId
+ *  - 成员管理：GET /members（成员可读）；POST /members、PATCH|DELETE /members/:userId（owner）
+ *  - 邀请（owner）：GET /invitations，POST /invitations/:id/{resend,revoke}
+ *    （POST /members 对未注册邮箱自动转为待接受邀请，注册后自动加入）
  *  - 组织下项目：GET/POST /projects
  *
  * requireAuth → req.user；orgGuard → 校验成员关系并注入 req.tenant。
@@ -33,10 +35,11 @@ router.post(
   }),
 )
 
+// 成员列表放宽为成员可读（成员页对全员开放；管理操作仍 owner-only）
 router.get(
   "/:org/members",
   requireAuth,
-  orgGuard({ role: "owner" }),
+  orgGuard(),
   wrap(async (req, res) => {
     const svc = createOrgService(req.tenant!)
     res.json({ members: await svc.listMembers() })
@@ -61,6 +64,48 @@ router.delete(
   wrap(async (req, res) => {
     const svc = createOrgService(req.tenant!)
     res.json(await svc.removeMember(req.params.userId))
+  }),
+)
+
+// 角色变更 / 所有权转移（demoteSelf：提升他人同时降级自己，事务原子）
+router.patch(
+  "/:org/members/:userId",
+  requireAuth,
+  orgGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const svc = createOrgService(req.tenant!)
+    res.json(await svc.updateMemberRole(req.params.userId, req.body || {}))
+  }),
+)
+
+// 待接受邀请（owner）：列表 / 重发 / 撤回
+router.get(
+  "/:org/invitations",
+  requireAuth,
+  orgGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const svc = createOrgService(req.tenant!)
+    res.json({ invitations: await svc.listInvitations() })
+  }),
+)
+
+router.post(
+  "/:org/invitations/:id/resend",
+  requireAuth,
+  orgGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const svc = createOrgService(req.tenant!)
+    res.json(await svc.resendInvitation(req.params.id))
+  }),
+)
+
+router.post(
+  "/:org/invitations/:id/revoke",
+  requireAuth,
+  orgGuard({ role: "owner" }),
+  wrap(async (req, res) => {
+    const svc = createOrgService(req.tenant!)
+    res.json(await svc.revokeInvitation(req.params.id))
   }),
 )
 

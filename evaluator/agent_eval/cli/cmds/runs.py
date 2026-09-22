@@ -1,4 +1,4 @@
-"""agent-eval runs — 本地运行结果浏览（list / show，arch/15 §7.2）。
+"""agent-eval runs — 本地运行结果浏览（list / show）。
 
 数据零新存储：``list`` 扫描 ``workspace/runs/``（manifest + summary 直接读取），
 ``show`` 直读 run 目录并按 ``metric_definitions`` 动态渲染指标（不硬编码）。
@@ -133,20 +133,40 @@ def runs_list() -> None:
     list_runs()
 
 
+def run_detail(run_id: str, ws: Path | None = None) -> dict[str, Any] | None:
+    """单次运行的结构化详情（纯数据，workbench 复用）。
+
+    返回 ``{"run_id", "manifest", "summary", "run_dir"}``；目录不存在返回 None。
+    ``manifest``/``summary`` 与 show_run 同源（缺文件时为空 dict）。
+    """
+    run_dir = (ws or _workspace_root()) / "runs" / run_id
+    if not run_dir.is_dir():
+        return None
+    return {
+        "run_id": run_id,
+        "manifest": _load_json(run_dir / "run_manifest.json"),
+        "summary": _load_json(run_dir / "reports" / "summary.json"),
+        "run_dir": str(run_dir),
+    }
+
+
 def show_run(run_id: str) -> None:
     """展示单次运行详情（纯函数动作，workbench 复用）。"""
     from agent_eval.cli.console.output import emit_json, is_json
 
-    run_dir = _workspace_root() / "runs" / run_id
-    if not run_dir.is_dir():
+    detail = run_detail(run_id)
+    if detail is None:
+        run_dir = _workspace_root() / "runs" / run_id
         rprint(f"[red]运行目录不存在: {run_dir}[/red]")
         raise typer.Exit(code=1)
 
-    manifest = _load_json(run_dir / "run_manifest.json")
-    summary = _load_json(run_dir / "reports" / "summary.json")
+    manifest = detail["manifest"]
+    summary = detail["summary"]
     if is_json():
         emit_json({"run_id": run_id, "manifest": manifest, "summary": summary})
         return
+
+    run_dir = Path(detail["run_dir"])
 
     rprint(f"[bold]═══ 运行 {run_id} ═══[/bold]")
     if manifest:

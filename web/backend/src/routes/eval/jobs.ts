@@ -142,12 +142,16 @@ router.get(
 )
 
 // executor 领取任务后重签输入下载 URL（提交时签发的 presigned URL ≤15min，排队积压会拖过期）
+// audience：下载方所在网络（默认 external 对外端点；"internal" = 与 web 同内网的容器内 executor，
+// 其对外部端点可能不可达——docker-compose 本地栈 external 是宿主回环地址）。
 router.get(
   "/:jobId/input-url",
   requireApiKey,
   wrap(async (req, res) => {
+    const q = req.query as Record<string, string | undefined>
+    const audience = q.audience === "internal" ? "internal" : "external"
     const svc = createEvalJobService(req.tenant!)
-    const r = await svc.refreshInputUrl(req.params.jobId)
+    const r = await svc.refreshInputUrl(req.params.jobId, audience)
     if (!r) {
       throw new PlatformError("job not found", { status: 404, code: "JOB_NOT_FOUND" })
     }

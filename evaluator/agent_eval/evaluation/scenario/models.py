@@ -1,6 +1,6 @@
 """场景化配置模型 — 数据驱动的聚合策略与指标定义。
 
-对齐 04 评估引擎设计 §七之二、13 配置管理设计 §十。用 AggregationPolicy 替代
+用 AggregationPolicy 替代
 ScoreAggregator 中写死的 format/commonsense/quality 阶段与权重；用 MetricDefinition
 替代 MetricsCalculator 中写死的 DR/CPR/Reward/CondR 指标。
 """

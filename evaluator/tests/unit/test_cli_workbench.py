@@ -1,4 +1,4 @@
-"""CLI 工作台命令单测 — runs / doctor / scenario show / session（Sprint 10）。"""
+"""CLI 工作台命令单测 — runs / doctor / scenario show / session。"""
 
 from __future__ import annotations
 
@@ -139,6 +139,18 @@ class TestRuns:
         assert payload["run_id"] == "20260831_093012"
         assert payload["summary"]["metrics"]["chat:reward"] == 0.78
 
+    def test_run_detail_pure_data(self, tmp_path: Path) -> None:
+        """run_detail（Agent 执行域复用）：纯数据 + 缺目录 None。"""
+        assert runs.run_detail("nope", tmp_path) is None
+
+        _make_run(tmp_path, "20260831_093012")
+        detail = runs.run_detail("20260831_093012", tmp_path)
+        assert detail is not None
+        assert detail["run_id"] == "20260831_093012"
+        assert detail["summary"]["metrics"]["chat:reward"] == 0.78
+        assert detail["manifest"]["mode"] == "pipeline"
+        assert str(tmp_path) in detail["run_dir"]
+
 
 # ── 账号域：平台账号 (auth) 入口 ────────────────────────────────────────
 
@@ -171,20 +183,20 @@ class TestAccountDomain:
         monkeypatch.setattr(account_mod, "main", lambda s: hit.append("auth"))
         result = runner.invoke(app, ["start", "--domain", "auth"])
         assert result.exit_code == 0
-        assert hit == ["auth"]  # --domain auth 别名直达账号域（arch/15 §13）
+        assert hit == ["auth"]  # --domain auth 别名直达账号域
 
     def test_start_domain_agent_entry(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # §3.5：--domain agent 直达工作台 Agent 一级入口；主菜单首项为推荐入口
+        # --domain agent 直达工作台 Agent 一级入口；主菜单首项为推荐入口
         from agent_eval.cli.cmds import workbench_agent as wb
         from agent_eval.cli.main import app
-        from agent_eval.cli.workbench.session import _DOMAIN_LABELS
+        from agent_eval.cli.workbench.session import _DOMAINS
 
         hit: list[str] = []
         monkeypatch.setattr(wb, "agent_workbench_entry", lambda s=None: hit.append("agent"))
         result = runner.invoke(app, ["start", "--domain", "agent"])
         assert result.exit_code == 0
         assert hit == ["agent"]
-        assert list(_DOMAIN_LABELS)[0] == "agent"  # 一级入口居首（首选工作方式）
+        assert _DOMAINS[0][0] == "agent"  # 一级入口居首（首选工作方式）
 
     def test_agent_entry_blocks_without_llm(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Agent 入口 preflight 阻断：LLM 未配置 → 指引 models set（区别于查看类只提示）
@@ -201,7 +213,7 @@ class TestAccountDomain:
         assert result.exit_code == 1
 
     def test_scn_menu_labels_are_profile_shortcuts(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # §3.5：域内两项标签 = 档位快捷方式（「用 Agent …」）
+        # 域内两项标签 = 档位快捷方式（「用 Agent …」）
         import agent_eval.cli.workbench.domains.scn as scn_mod
 
         picked: list[list[str]] = []
@@ -382,6 +394,98 @@ class TestSession:
         assert result.exit_code == 2
 
 
+class TestOnboarding:
+    """start 首启引导：模型未配置 → 引导卡 + 一步直达 models set。"""
+
+    @staticmethod
+    def _session(monkeypatch: pytest.MonkeyPatch, *, configured: bool):
+        from types import SimpleNamespace
+
+        from agent_eval.cli.workbench.session import WorkbenchSession
+
+        monkeypatch.delenv("AGENT_EVAL_HOST", raising=False)
+        monkeypatch.delenv("AGENT_EVAL_API_KEY", raising=False)
+        cfg = (
+            SimpleNamespace(roles={"text": SimpleNamespace(model="kimi-k2")})
+            if configured
+            else None
+        )
+        monkeypatch.setattr("agent_eval.config.llm_file.load_llm_file", lambda: cfg)
+        return WorkbenchSession()
+
+    def test_guide_card_and_defer(self, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+        """未配置 → 引导卡（影响面 + 所需准备）+ 稍后不拉起向导。"""
+        s = self._session(monkeypatch, configured=False)
+        monkeypatch.setattr(
+            "agent_eval.cli.workbench.session.select",
+            lambda *a, **k: "稍后——菜单「账号与配置」随时可配",
+        )
+        calls: list[str] = []
+        monkeypatch.setattr("agent_eval.cli.cmds.models.models_set", lambda: calls.append("set"))
+        s.onboard()
+        out = capsys.readouterr().out
+        assert "模型尚未配置" in out and "欢迎使用 agent-eval" in out
+        assert "API Key" in out and "场景包管理" in out  # 影响面与准备项可见
+        assert calls == []  # 稍后不拉向导
+
+    def test_setup_now_invokes_wizard_and_reports_ready(
+        self, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """立即配置 → 直达 models set；配置后正反馈（无需去账号域找）。"""
+        from types import SimpleNamespace
+
+        s = self._session(monkeypatch, configured=False)
+        box = {"configured": False}
+
+        def llm_file():
+            # 模拟「配置成功落盘」：fake_set 置位后 _refresh 读到已配置
+            if box["configured"]:
+                return SimpleNamespace(roles={"text": SimpleNamespace(model="kimi-k2")})
+            return None
+
+        monkeypatch.setattr("agent_eval.config.llm_file.load_llm_file", llm_file)
+        monkeypatch.setattr(
+            "agent_eval.cli.workbench.session.select",
+            lambda *a, **k: "立即配置（推荐）",
+        )
+        calls: list[str] = []
+
+        def fake_set() -> None:
+            calls.append("set")
+            box["configured"] = True
+
+        monkeypatch.setattr("agent_eval.cli.cmds.models.models_set", fake_set)
+        s.onboard()
+        assert calls == ["set"]
+        assert "模型已就绪" in capsys.readouterr().out
+
+    def test_setup_cancel_falls_back_not_crash(
+        self, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """向导中途取消（typer.Exit/Abort）→ 回落主菜单语义，不整场退出。"""
+
+        def cancel() -> None:
+            raise typer.Exit(code=1)
+
+        s = self._session(monkeypatch, configured=False)
+        monkeypatch.setattr(
+            "agent_eval.cli.workbench.session.select",
+            lambda *a, **k: "立即配置（推荐）",
+        )
+        monkeypatch.setattr("agent_eval.cli.cmds.models.models_set", cancel)
+        s.onboard()  # 不抛
+        assert "配置未完成" in capsys.readouterr().out
+
+    def test_menu_labels_marked_when_model_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        entries = self._session(monkeypatch, configured=False)._menu_entries()
+        labels = dict(entries)
+        assert "需先配置模型" in labels["agent"]
+        assert "需先配置模型" in labels["exec"]
+        assert "需先配置模型" not in labels["scn"]  # 本地功能不受影响，不吓唬用户
+        configured = self._session(monkeypatch, configured=True)._menu_entries()
+        assert all("需先配置模型" not in label for _, label in configured)
+
+
 # ── 回归：向导直调动作不得泄漏 typer.OptionInfo（workbench 执行域崩溃修复） ──
 
 
@@ -408,14 +512,31 @@ class _WizardStubs:
             assert not type(value).__name__.endswith("OptionInfo"), f"参数 {key} 泄漏 OptionInfo"
 
     def patch(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from types import SimpleNamespace
+
         import agent_eval.cli._stages as stages
         import agent_eval.storage.package as storage_pkg
 
+        # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会渗入 pipeline 直调测试
+        # （core 内联上报段真发平台，禁联网）——显式钉死为关
+        monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
+        # 模型配置态自足：无 ~/.agent_eval/llm.json 的环境（CI/新机）start 首启
+        # 引导卡会弹出并吃掉喂给向导的输入序列——钉死为已配置
+        cfg = SimpleNamespace(roles={"text": SimpleNamespace(model="kimi-k2")})
+        monkeypatch.setattr("agent_eval.config.llm_file.load_llm_file", lambda: cfg)
         monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
         monkeypatch.setattr(
             stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/rules/chat-quality.yaml"
         )
         monkeypatch.setattr(stages, "build_judge_context", lambda *a, **k: object())
+        # pipeline_core 成功路径触达 result.report/samples/gate（终态 payload+回填）
+        from types import SimpleNamespace
+
+        fake_result = SimpleNamespace(
+            samples=[],
+            report=SimpleNamespace(metrics={}, total_samples=0),
+            gate={"mode": "off", "enabled": False, "passed": True},
+        )
         monkeypatch.setattr(
             stages,
             "execute_stage",
@@ -424,7 +545,7 @@ class _WizardStubs:
         monkeypatch.setattr(
             stages,
             "evaluate_stage",
-            lambda *a, **k: (self.calls.setdefault("evaluate", dict(k)), object())[1],
+            lambda *a, **k: (self.calls.setdefault("evaluate", dict(k)), fake_result)[1],
         )
         monkeypatch.setattr(
             stages,
@@ -452,7 +573,8 @@ class TestExecuteActionDirectCall:
         assert isinstance(stubs.calls["execute"]["workspace_root"], Path)
         stubs.no_options_info(stubs.calls["execute"])
         stubs.no_options_info(stubs.calls["evaluate"])
-        stubs.no_options_info(stubs.calls["finalize"])
+        # pipeline 已不经 finalize_eval（core 事件序自编排）——
+        # 上报等价面 observability_flush 的回归在 test_cli_pipeline 门禁用例
 
     def test_execute_run_minimal_kwargs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -477,9 +599,10 @@ class TestExecuteActionDirectCall:
         stubs = _WizardStubs(tmp_path)
         stubs.patch(monkeypatch)
 
-        # 3 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline → y 确认 → 6 退出
-        # （主菜单首位是工作台 Agent 一级入口，arch/15 §3.5）
-        result = runner.invoke(app, ["start"], input="3\n1\n1\n1\n1\n1\ny\n6\n")
+        # 3 执行评测 → 1 chat 包 → 1 default 考卷 → 1 SUT → 1 规则集 → 1 pipeline
+        # → 1 normal 日志档位 → y 确认 → 6 退出
+        # （主菜单首位是工作台 Agent 一级入口）
+        result = runner.invoke(app, ["start"], input="3\n1\n1\n1\n1\n1\n1\ny\n6\n")
         assert result.exit_code == 0, result.output
         assert "等价命令" in result.output
         # 动作层被真实调用且未崩溃（此前在此处报 OptionInfo TypeError）
@@ -612,6 +735,7 @@ class TestExecDomain:
                 "api（agent_protocol）",
                 "quality",
                 "pipeline（执行 + 评估 + 报告）",
+                "normal（默认进度）",
             ]
         )
         seen_options: dict[str, list[str]] = {}
@@ -633,3 +757,59 @@ class TestExecDomain:
         assert called["sut_name"] == "api"  # stem 从「api（agent_protocol）」正确解析回取
         assert called["package"] == "t/api"
         assert session.ctx.active_sut == "api"
+
+
+# ── Agent 会话宿主：SIGINT 协作中断分流───────────────────
+
+
+class TestGracefulExecInterrupt:
+    """`_graceful_exec_interrupt` handler 直调函数体测试（真实 os.kill 放 e2e，默认 skip）。"""
+
+    @staticmethod
+    def _agent(active: bool = True) -> object:
+        class _FakeAgent:
+            def __init__(self) -> None:
+                self.interrupts = 0
+
+            def interrupt_active_execution(self) -> bool:
+                self.interrupts += 1
+                return active
+
+        return _FakeAgent()
+
+    def test_first_press_cooperative_second_press_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import signal
+
+        from agent_eval.cli.cmds import workbench_agent as wb
+
+        monkeypatch.setattr(wb, "rprint", lambda *a, **k: None)  # 静音黄字提示
+        previous = signal.getsignal(signal.SIGINT)
+        agent = self._agent(active=True)
+        with wb._graceful_exec_interrupt(agent):
+            handler = signal.getsignal(signal.SIGINT)
+            assert handler is not previous
+            handler(signal.SIGINT, None)  # 首按：协作取消，不抛 KI
+            assert agent.interrupts == 1
+            with pytest.raises(KeyboardInterrupt):
+                handler(signal.SIGINT, None)  # 二按：屏蔽后续信号，走现行暂停语义
+            assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN  # teardown 期屏蔽按键风暴
+            assert agent.interrupts == 1  # 二按不再置位
+        assert signal.getsignal(signal.SIGINT) is previous  # 退出复原（屏蔽解除）
+
+    def test_first_press_without_active_execution_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import signal
+
+        from agent_eval.cli.cmds import workbench_agent as wb
+
+        monkeypatch.setattr(wb, "rprint", lambda *a, **k: None)
+        agent = self._agent(active=False)  # 无活跃执行
+        with wb._graceful_exec_interrupt(agent):
+            handler = signal.getsignal(signal.SIGINT)
+            with pytest.raises(KeyboardInterrupt):
+                handler(signal.SIGINT, None)  # 首按即走现行暂停语义（同样先屏蔽）
+            assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN
+        assert agent.interrupts == 1

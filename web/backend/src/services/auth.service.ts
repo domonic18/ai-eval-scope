@@ -6,7 +6,7 @@
  * 邮箱应用层小写归一；PLATFORM_ALLOW_SIGNUP 控制是否开放注册。
  */
 
-import { UserRepository } from "../repositories/user.repository"
+import { OrgRepository, UserRepository } from "../repositories/user.repository"
 import {
   hashPassword,
   verifyPassword,
@@ -15,8 +15,10 @@ import {
 } from "../infra/crypto"
 import { getConfig } from "../config"
 import { PlatformError } from "../middleware/errorHandler"
+import { AuditService } from "./audit.service"
 
 const userRepo = new UserRepository()
+const orgRepo = new OrgRepository()
 
 function assertEmail(email?: string): asserts email is string {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -76,7 +78,20 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
     passwordHash,
     name: input.name || null,
     role,
+    lastLoginAt: new Date(),
   })
+
+  // 被邀请过（owner 邀请了未注册邮箱）→ 注册即自动加入对应组织
+  const acceptedCount = await orgRepo.acceptInvitationsForEmail(normalizedEmail, user.id)
+  if (acceptedCount > 0) {
+    await AuditService.log({
+      actorUserId: user.id,
+      action: "member.invite_accept",
+      targetType: "user",
+      targetId: user.id,
+      metadata: { email: normalizedEmail, joinedOrgs: acceptedCount },
+    })
+  }
 
   // 无团队：token 不带 orgId（鉴权不依赖它；前端 me() memberships 为空 → 引导创建/加入团队）
   const tokens = issueAccessTokenResult({
@@ -112,6 +127,7 @@ export async function login(input: { email?: string; password?: string }): Promi
   if (!ok) {
     throw new PlatformError("invalid credentials", { status: 401, code: "AUTH_INVALID" })
   }
+  await userRepo.touchLogin(user.id)
   const memberships = await userRepo.listMemberships(user.id)
   const primary = memberships[0]
   const tokens = issueAccessTokenResult({

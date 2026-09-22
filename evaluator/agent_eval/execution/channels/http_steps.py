@@ -1,6 +1,6 @@
-"""generic_http 链执行原语（plan/06：M1 会话续接 + M2 异步轮询）。
+"""generic_http 链执行原语（M1 会话续接 + M2 异步轮询）。
 
-从 GenericHttpChannel 下沉的两块机制（NF-5：通道文件回归 300 行内）：
+从 GenericHttpChannel 下沉的两块机制（保持通道文件精简）：
 
 StepSession —— once 步响应的跨调用缓存（会话续接）：键 session_key（执行
 框架按任务注入，跨任务不串），值「步骤名 → 响应 capture」（只存 once 步）；
@@ -30,7 +30,7 @@ from agent_eval.execution.registry import RequestStepConfig, RequestTemplateConf
 if TYPE_CHECKING:
     from agent_eval.execution.channels.generic_http import GenericHttpChannel
 
-# 测试注入点（NF-1）：monkeypatch 本符号即可推进轮询，不等真实 interval
+# 测试注入点：monkeypatch 本符号即可推进轮询，不等真实 interval
 _sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
 
 # until 渲染结果的真值集合（strip+lower 后比对——"True"/" YES " 亦判真）
@@ -39,7 +39,7 @@ _UNTIL_TRUTHY = {"true", "1", "yes"}
 # poll_timeout 错误里的响应体摘录长度（自我修正的最小证据）
 _EXCERPT_CHARS = 500
 
-# 会话缓存 LRU 上限（淘汰即丢，自愈整链重建兜底；plan/06 §3.1）
+# 会话缓存 LRU 上限（淘汰即丢，自愈整链重建兜底）
 _MAX_SESSIONS = 32
 
 # 会话键缺省（工具面未注入 current_session_key 时的兜底——单任务直连场景）
@@ -124,7 +124,7 @@ async def run_steps(
 
     自愈仅触发一次且仅当首轮会话缓存非空：非 once 步 404 = 服务端会话过期
     的典型形态，清缓存整链重建；重建成功结果标注 ``session_rebuilt: true``，
-    重建仍 404 判 failed 且错误带两轮证据（业务性 404 不无限重试，plan/06 风险 5）。
+    重建仍 404 判 failed 且错误带两轮证据（业务性 404 不无限重试）。
     """
     if new_session:
         session.discard(session_key)
@@ -185,7 +185,7 @@ async def _poll_step(
     """poll 步 do-while：先发请求再判终态，超时 failed 带最后响应证据。
 
     本步响应 capture 进 context（自引用可见）；轮询中 ≥400 不立即失败
-    （plan/06 决策 4：受理后短暂不一致是常态），续轮直至终态或超时；
+    （受理后短暂不一致是常态），续轮直至终态或超时；
     until 渲染错误经 StrictUndefined 抛 SUTChannelError——fail-loud。
     """
     poll = step.poll

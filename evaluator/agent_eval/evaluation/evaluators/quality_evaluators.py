@@ -73,7 +73,7 @@ def _aggregate_source_files(
     dimensions: list[dict[str, Any]] | None,
     context: dict[str, Any],
 ) -> list[dict[str, str]]:
-    """聚合维度 issues[].involved_files → details.source_files（docs/arch/15 §4.4 C 档）。
+    """聚合维度 issues[].involved_files → details.source_files。
 
     经 directory_manifest 校验，剔除判官幻觉的文件名；基名命中时归一为全路径。
     """
@@ -111,7 +111,7 @@ def _package_group(output_dir: Path | None) -> list[dict[str, Any]]:
 def _resolve_granularity_groups(
     manifest: Any, output_dir: Path | None, granularity: str, *, max_modules: int = 12
 ) -> list[dict[str, Any]]:
-    """按评估粒度把产出物文件分成若干评估组（docs/arch/04 §5.5）。
+    """按评估粒度把产出物文件分成若干评估组。
 
     每组: ``{"key", "label", "files", "text", "file_count"}``。
     - ``package`` / manifest 缺失 / output_dir 缺失 → 单组（全部文件）
@@ -178,7 +178,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
     template_id: str = ""  # 子类必须设置
     pass_threshold: float | None = None  # HARD_SCORE 二值阈值；None=连续分（SOFT/PREF）
     # 目录模式（大单元）评估粒度：module=按模块（模块内自洽类，默认）；package=整单元一次
-    # （跨模块类如 content_diversity/logical/chronological 覆盖为 package）。详见 docs/arch/04 §5.5。
+    # （跨模块类如 content_diversity/logical/chronological 覆盖为 package）。
     default_granularity: str = "module"
     # 判官模板变量契约（落盘对账用，与 _build_variables 保持一致）：包内模板引用了
     # 契约外变量时落盘门禁直接打回（否则运行时 StrictUndefined 报「模板渲染失败，
@@ -377,7 +377,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
                 }
                 for dim in template.dimensions
             ]
-            # 文件定位（docs/arch/15 C 档）：聚合 issues[].involved_files，经 manifest 校验
+            # 文件定位：聚合 issues[].involved_files，经 manifest 校验
             details["source_files"] = _aggregate_source_files(details["dimensions"], context)
 
         # 获取 judge record 路径
@@ -493,7 +493,7 @@ class BaseLLMJudgeEvaluator(BaseEvaluator):
         """module 粒度多组评估：逐组 judge + 按 file_count 加权聚合 + module_results 归因。
 
         每组独立调 _invoke_judge；顶层 status/score 由各组加权均分派；module_results 记每模块
-        子结果，端到端透传至 web SampleDetail（docs/arch/04 §5.5.3）。SOFT/PREF 连续分聚合；
+        子结果，端到端透传至 web SampleDetail。SOFT/PREF 连续分聚合；
         HARD（pass_threshold 设值）需各组全过才算过。
         """
         import time

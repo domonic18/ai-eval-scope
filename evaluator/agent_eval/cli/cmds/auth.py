@@ -1,11 +1,11 @@
-"""agent-eval auth — 平台账号（requirement/04 F-C-AUTH；arch/15 §5.1）。
+"""agent-eval auth — 平台账号。
 
 auth 管平台身份（谁在上报、以哪个团队/项目）；secrets 管被测系统凭证——两域不混用。
 身份落密钥区 ``~/.agent_eval/platform.json``（0600，与 llm.json / sut_credentials.json 三域
 三文件），启动注入 env 仅补缺（env 直供优先——CI/云函数/executor 不受影响）。
 登录双通道：打开平台页面创建 Key 后粘贴（浏览器，无浏览器环境自动降级打印 URL）/
 直接粘贴已有 Key；`--token/--host` 为 CI 非交互形态（F-C-AUTH-07）。
-`/cli-auth` 授权页（通道 B 配对码）为 P2（平台侧落地后接入，arch/15 §5.1）。
+`/cli-auth` 授权页（通道 B 配对码）为 P2（平台侧落地后接入）。
 """
 
 from __future__ import annotations
@@ -17,6 +17,8 @@ from dataclasses import dataclass
 import httpx
 import typer
 from rich import print as rprint
+
+from agent_eval.core.exceptions import AgentEvalError
 
 auth_app = typer.Typer(help="平台账号（login / status / logout / register）")
 
@@ -37,7 +39,7 @@ class PlatformIdentity:
     key_name: str
 
 
-class ProbeError(Exception):
+class ProbeError(AgentEvalError):
     """Key 探测失败：invalid=Key 无效/未提供；unreachable=平台不可达；server=平台异常响应。"""
 
     def __init__(self, kind: str, message: str) -> None:
@@ -69,7 +71,8 @@ def probe_identity(
 
     空 Key → ProbeError(invalid)；401 → invalid；404（旧平台无 whoami）→ 回退
     GET /api/public/secrets 仅验有效性、返回 None 身份；连接失败 → unreachable；
-    其余非 2xx → server。**不抛 httpx 异常**（调用方只处理 ProbeError）。
+    其余非 2xx / 非 JSON 响应体（如端口被其他服务占用、SPA 兜底页）→ server。
+    **不抛 httpx / json 异常**（调用方只处理 ProbeError）。
     """
     if not api_key or not api_key.strip():
         raise ProbeError("invalid", "Key 为空（未粘贴 / 未提供）")
@@ -84,7 +87,15 @@ def probe_identity(
         except httpx.HTTPError as e:  # 仅网络层（连接 / 超时）；ProbeError 穿透
             raise ProbeError("unreachable", f"平台不可达: {e}") from e
         _raise_for_probe(resp)
-        data = resp.json()
+        # JSONDecodeError ⊂ ValueError；200+HTML（SPA 兜底 / 端口被他服务占用）归 server
+        try:
+            data = resp.json()
+        except ValueError as e:
+            raise ProbeError(
+                "server",
+                f"平台返回了非 JSON 响应（content-type={resp.headers.get('content-type', '未知')}）"
+                "——平台地址可能指向了其他服务，请检查",
+            ) from e
     return PlatformIdentity(
         org_name=str(data["org"]["name"]),
         org_slug=str(data["org"]["slug"]),
@@ -131,7 +142,7 @@ def login_flow(token: str | None = None, host: str | None = None) -> PlatformIde
                 "[dim]引导：登录平台 → 打开项目 →「设置 & API Key」→ 创建 API Key"
                 "（scope 含 ingest）→ 回到这里粘贴。[/dim]"
             )
-        token = ask("粘贴 API Key（eval- 开头，隐藏输入，直接回车取消）", hide=True)
+        token = ask("粘贴 API Key（eval- 开头，以 * 回显，直接回车取消）", hide=True)
         if not token:
             rprint("[yellow]未输入 Key，已取消。[/yellow]")
             return None

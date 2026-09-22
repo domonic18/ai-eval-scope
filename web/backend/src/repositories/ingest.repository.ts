@@ -61,12 +61,19 @@ export class IngestRepository {
   }
 
   /**
-   * 方向1（arch/09 §7.5 / arch/13 §5.3）：run 事件顺带补缺注册场景资产——只建缺，不动已有。
+   * 方向1（arch/09 §7.5 / arch/13 §5.3）：run 事件顺带补缺注册场景资产——按 contentHash 登记。
    *
    * - scenarios 行：不存在才建（name=scenarioId）；文件导入后续可覆盖元数据
-   * - defaults（metric_definitions + aggregation_policy）：场景尚无任何 defaults 版本时，
-   *   以快照内容建 auto-ingest 版本；已有任一版本则跳过——文件导入为真相源，快照只补缺
+   * - defaults（metric_definitions + aggregation_policy）：快照构造 content 后按 contentHash
+   *   登记（docs/plan/08 批次 C）——任一已有版本 hash 命中则跳过（该代定义已登记）；
+   *   未命中则登记新版本 `${pkgVersion}+${hash8}`，labels ["auto-ingest","latest"]，
+   *   并把同场景**其它 auto-ingest 版本**的 "latest" 摘除（同事务；official 导入版本带
+   *   production 不受影响，文件导入仍是 official 场景的兜底真相源）
    * - P2002（并发撞 (scenarioId, assetId, version) 唯一键）静默吞掉：注册失败不拖垮 run 事件事务
+   *
+   * 键序敏感说明：hash 比对按 JSON.stringify 原样键序——同一来源（快照构造/文件导入）键序
+   * 确定，hash 稳定；跨来源同语义不同键序最多多登记一个版本，属可接受保守行为，不做
+   * canonical 化（KISS）。
    */
   private async ensureScenarioAssets(
     tx: Tx,
@@ -85,11 +92,6 @@ export class IngestRepository {
         })
       }
       if (!snapshot) return
-      const hasDefaults = await tx.defaultsAsset.findFirst({
-        where: { scenarioId, assetId: "default" },
-        select: { id: true },
-      })
-      if (hasDefaults) return
       const content = {
         ...(Array.isArray(snapshot.metric_definitions)
           ? { metric_definitions: snapshot.metric_definitions }
@@ -99,15 +101,29 @@ export class IngestRepository {
           : {}),
       }
       if (!Object.keys(content).length) return
+      const hash = hashDefaultsContent(content)
+      const pkgVersion = (snapshot.package as { version?: string } | undefined)?.version
+      // 版本数少，全量取：hash 命中判定 + latest 摘除都需要
+      const versions = await tx.defaultsAsset.findMany({
+        where: { scenarioId, assetId: "default" },
+        select: { version: true, labels: true, contentHash: true },
+      })
+      if (versions.some((v) => v.contentHash === hash)) return
+      // 摘旧 latest：仅限其它 auto-ingest 版本（official 导入版本零影响）
+      for (const v of versions.filter((v) => v.labels.includes("auto-ingest") && v.labels.includes("latest"))) {
+        await tx.defaultsAsset.update({
+          where: { scenarioId_assetId_version: { scenarioId, assetId: "default", version: v.version } },
+          data: { labels: v.labels.filter((l) => l !== "latest") },
+        })
+      }
       await tx.defaultsAsset.create({
         data: {
           scenarioId,
           assetId: "default",
-          version:
-            ((snapshot.package as { version?: string } | undefined)?.version) ?? "0.0.0-snapshot",
-          labels: ["auto-ingest"],
+          version: `${pkgVersion ?? "0.0.0-snapshot"}+${hash.slice("sha256:".length, "sha256:".length + 8)}`,
+          labels: ["auto-ingest", "latest"],
           content: content as Prisma.InputJsonValue,
-          contentHash: hashDefaultsContent(content),
+          contentHash: hash,
           createdBy: "ingest:auto",
         },
       })
@@ -131,7 +147,9 @@ export class IngestRepository {
     let snapshotId = d.run_config_snapshot_id ?? null
     if (d.run_config_snapshot) {
       const snap = d.run_config_snapshot as Record<string, unknown>
-      const contentHash = (snap.snapshot_hash as string) ?? "sha256:unknown"
+      // 批次 C：contentHash 服务端重算（与三处写入方同约定），不信任客户端 snapshot_hash——
+      // 缺省 "sha256:unknown" 会让所有无 hash 快照错误共享一行；存量 unknown 行不动（不可变审计事实）
+      const contentHash = hashDefaultsContent(snap)
       const existing = await tx.runConfigSnapshot.findFirst({ where: { contentHash } })
       snapshotId = existing
         ? existing.id
@@ -139,8 +157,8 @@ export class IngestRepository {
             await tx.runConfigSnapshot.create({
               data: {
                 scenarioId: (snap.scenario_id as string) ?? "",
-                packageId: ((snap.package as { id?: string })?.id) ?? "",
-                packageVersion: ((snap.package as { version?: string })?.version) ?? "",
+                packageId: (snap.package as { id?: string })?.id ?? "",
+                packageVersion: (snap.package as { version?: string })?.version ?? "",
                 content: snap as Prisma.InputJsonValue,
                 contentHash,
               },
@@ -213,6 +231,10 @@ export class IngestRepository {
         totalDurationMs: d.total_duration_ms ?? null,
         llmCalls: d.llm_calls ?? 0,
         tokenUsage: d.token_usage ?? 0,
+        // run_error 诊断摘要（arch/16 §4.6 合同五）落 extra jsonb
+        extra: (d.error_summary
+          ? { error_summary: d.error_summary }
+          : undefined) as Prisma.InputJsonValue,
       },
       update: {
         contentHash: d.content_hash ?? null,
@@ -222,6 +244,9 @@ export class IngestRepository {
         totalDurationMs: d.total_duration_ms ?? null,
         llmCalls: d.llm_calls ?? 0,
         tokenUsage: d.token_usage ?? 0,
+        extra: (d.error_summary
+          ? { error_summary: d.error_summary }
+          : undefined) as Prisma.InputJsonValue,
       },
       select: { id: true },
     })

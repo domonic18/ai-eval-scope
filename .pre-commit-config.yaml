@@ -34,7 +34,6 @@ repos:
           (?x)^(
             uv\.lock|.*\.lock|
             docs/design/.*|
-            samples/大单元学习总导/.*|
             workspace/.*
           )$
 

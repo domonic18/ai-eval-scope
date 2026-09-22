@@ -151,16 +151,30 @@ async def refresh_input_url(job: EvalJob) -> str | None:
     try:
         token = await _resolve_submit_token(job)
         if not token:
+            # 无提交者身份（Key 不存在/已吊销/解密失败）→ 无法以提交者身份重签，回退
+            # claim 时 URL。留告警便于追溯——20260921：InvalidTag 后静默回退 external
+            # URL，容器内不可达，input load ConnectError 的排查链过长。
+            LOG.warning("input.url_refresh_no_token", job_id=job.job_id)
             return None
         cfg = load_config()
         if not cfg.host:
             return None
         import httpx
 
+        # audience：声明下载方所在网络（EVALEXECUTOR_INPUT_PRESIGN_AUDIENCE）。
+        # presigned URL 的签名 Host 不可事后改写——容器内 executor 需让 web 以内部端点
+        # 签发（本地栈 external 是宿主回环地址，容器内不可达）；默认空 = 沿用 external。
+        settings = get_settings()
+        params = (
+            {"audience": settings.input_presign_audience}
+            if settings.input_presign_audience
+            else None
+        )
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(
                 f"{cfg.host}/api/v1/jobs/{job.job_id}/input-url",
                 headers={"Authorization": f"Bearer {token}"},
+                params=params,
             )
         if resp.status_code == 200:
             url = (resp.json() or {}).get("url")

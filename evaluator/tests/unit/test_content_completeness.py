@@ -65,7 +65,7 @@ def test_placeholder_page_fails_gate(tmp_path):
     assert "模块/空内容.html" in r.reason
     assert r.details["empty_count"] == 1
     assert r.details["total_files"] == 3
-    # 涉及文件联动（docs/arch/15）：空壳文件进 source_files
+    # 涉及文件联动：空壳文件进 source_files
     assert {"filename": "模块/空内容.html"} in r.details["source_files"]
 
 

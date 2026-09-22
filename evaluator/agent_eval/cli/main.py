@@ -1,7 +1,7 @@
 """CLI 引导与轻量顶层命令 — app 装配、全局参数、version / start / open / doctor。
 
 其余顶层命令（pack / eval / run / pipeline / upload）在 ``cmds/`` 各模块定义，
-由 ``agent_eval.cli`` 包统一注册（唯一装配点，arch/15 §2.2 组织约定 1）。
+由 ``agent_eval.cli`` 包统一注册（唯一装配点）。
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from agent_eval.cli._common import rprint
 load_dotenv()
 
 # 平台身份密钥区（auth login 写入 ~/.agent_eval/platform.json）注入进程 env；
-# 仅补缺——.env / shell / CI 显式 env 优先（对齐 arch/06 §4.7 双通道）
+# 仅补缺——.env / shell / CI 显式 env 优先
 from agent_eval.config.platform_file import apply_platform_env  # noqa: E402
 
 apply_platform_env()
@@ -81,7 +81,7 @@ def version() -> None:
 def start(
     domain: str = typer.Option(None, "--domain", help="直达工作域：scn | exec | runs | account"),
 ) -> None:
-    """交互式评测工作台（向导式覆盖评测全生命周期，Sprint 10）。"""
+    """交互式评测工作台（向导式覆盖评测全生命周期）。"""
     from agent_eval.cli.workbench.session import WorkbenchSession
 
     WorkbenchSession().run(domain)
@@ -92,7 +92,7 @@ def open_(
     target: str = typer.Argument(..., help="platform | report | docs"),
     run_id: str | None = typer.Argument(None, help="目标 run_id（open report <run_id> 必填）"),
 ) -> None:
-    """浏览器直达：平台首页 / 本地报告（arch/15 §5.3）。"""
+    """浏览器直达：平台首页 / 本地报告。"""
     from agent_eval.cli.cmds.open_url import open_target
 
     open_target(target, run_id)

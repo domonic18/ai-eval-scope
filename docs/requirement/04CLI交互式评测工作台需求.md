@@ -20,6 +20,7 @@
 | 模型配置 | `models login/list/test/logout` 交互式向导 |
 | 凭证管理 | `secrets set/list/delete` + env 双通道 |
 | 场景包 | `package init/validate/list/pull`；内置 courseware / chat / code 三包 |
+| 数据集 | `dataset download/list`：HF / ModelScope 双源下载至 `workspace/datasets/`（DatasetManager + 索引 yaml） |
 | 结果上报 | `upload` 回填 + ResultSink 自动摄取；`--upload` 开关 |
 
 **差距**（本需求要解决的）：
@@ -30,6 +31,8 @@
 4. **结果查看原始**：评测完成后需自行翻 `workspace/runs/{run_id}/` 下的 JSON/Markdown 文件。
 5. **配置分散、身份缺位**：平台接入靠手输 host + 网页复制 API Key，无账号体系概念；模型、凭证、平台配置分属不同命令与文件，缺少统一自检。
 6. **命令命名语义不精确**：`models login` 暗示登录认证而非模型配置；`package`（场景包）与 `pack`（打包执行包）名词撞车；无浏览器联动（打开平台页/报告/注册页均需手动复制 URL）。
+7. **执行可观测性档位粗**（v1.6 补）：过程输出仅 `--verbose` 二档（DEBUG/INFO）——任务内重要过程（SUT 请求/响应、judge 交互、重试）默认不可见，全开又输出过载；缺中间档位与静默档。
+8. **Agent 能力域单一**（v1.6 补）：对话式 Agent 仅覆盖场景包工程（+SUT 接入调试）——执行评测、结果查看、数据集管理仍需切换向导/命令；CLI 已有的数据集下载能力未接入 Agent。
 
 ### 1.3 名词术语
 
@@ -38,7 +41,7 @@
 | **向导模式** | 交互式问答/选择驱动的 CLI 形态（选择 + 回车，免记忆参数） |
 | **非交互模式** | 参数完备、无任何提示阻塞的 CLI 形态（CI/脚本用） |
 | **工作台** | `agent-eval start` 进入的向导式主入口，串联全部工作域 |
-| **PackageAgent** | 基于 DeepAgents 的场景包工程 Agent，经工具面对包做增删改查 |
+| **WorkbenchAgent** | 基于 DeepAgents 的统一工作台 Agent（v1.6 前称 **PackageAgent**，包工程为其首个能力域）：经多域工具面覆盖包工程 / SUT 接入调试 / 评测执行 / 数据集（架构见 [15 CLI交互式评测工作台设计](../arch/15CLI交互式评测工作台设计.md) §6） |
 | **项目包** | 当前目录下 `./<scenario>-package/` 形态的场景包（git 可管理，`--package-dir` 引用） |
 | **内置包** | 随 pip 包发布的 `agent_eval/assets/packages/` 场景包（**只读**） |
 | **本地包仓库** | `~/.agent_eval/packages/` 下的包（`scenario pull` 目的地） |
@@ -52,6 +55,7 @@
 | [02 Agent评估系统需求](./02Agent评估系统需求.md) | 上位需求；本文细化其 CLI 交互面 |
 | [13 配置管理设计](../arch/13配置管理设计.md) | 场景包结构 / 包清单 / 命名空间的唯一规范，工作台不另造格式 |
 | [03 执行引擎设计](../arch/03执行引擎设计.md) | DeepAgents 底座、`build_chat_model` 桥接、BudgetGuard、工具面护栏（tool_guard）的既有实现基础 |
+| [15 CLI交互式评测工作台设计](../arch/15CLI交互式评测工作台设计.md) | 工作台的架构设计正本：WorkbenchAgent 会话机 / 沙盒工具面 / SUT 接入调试 / 失控防线的实现权威（本文需求向其提供输入并随落地同步） |
 | [06 数据管理与配置规范](../arch/06数据管理与配置规范.md) | 配置面（llm.json / sut_credentials.json / .env / 平台 Secrets）的权威定义 |
 | [09 Web可观测平台架构设计](../arch/09Web可观测平台架构设计.md) | 平台账号 / API Key / SSO 与 CLI `auth` 浏览器配对的对接面 |
 | 内置场景包（`agent_eval/assets/packages/`） | PackageAgent 生成新场景包时的方法论参照与 few-shot 素材 |
@@ -118,7 +122,7 @@
         PackageManager   PipelineEngine    ResultSink / upload
               ▲
               │ 工具面（沙盒）
-        PackageAgent（DeepAgents）          ← 仅包工程域引入 Agent
+        WorkbenchAgent（DeepAgents）       ← 统一 Agent：包工程 / 执行 / 数据集多域工具面（v1.6）
 ```
 
 ### 3.2 命令体系（目标态）
@@ -158,7 +162,9 @@
 | `config platform` / `config doctor`（规划稿） | `auth login`（平台接入）+ 顶层 `doctor` | 平台接入本质是身份与凭证，归 auth；doctor 提升为顶层命令提高可发现性 |
 | `results`（规划稿） | `runs list / runs show` | 对齐领域语言（`workspace/runs/`、平台 Run 实体）与 `gh run` 惯例 |
 
-### 3.4 PackageAgent（场景包工程 Agent）
+### 3.4 WorkbenchAgent（统一工作台 Agent）
+
+> v1.6 对齐 [15](../arch/15CLI交互式评测工作台设计.md) 现状术语：原 PackageAgent 已演进为统一 WorkbenchAgent——包工程为首个能力域，v4.x 落地 SUT 接入调试（五阶段创建/会话机/沙盒门禁见该文档 §6）；v1.6 新增**执行域**（§4.11）与**数据集域**（§4.12）。本节保留包工程域的基线描述。
 
 - **底座**：复用 [03](../arch/03执行引擎设计.md) §3.2 的 `create_deep_agent` + `build_chat_model`（LLM 角色 `agent`，未配置回退 `text`）；不挂 checkpointer（一次性会话）；预算沿用 BudgetGuard；System Prompt 资产化（`agent_eval/assets/configs/package_agent_prompts.yaml`，对齐 v4.6.5 惯例）。
 - **工具面**（全部限定包根目录，路径逃逸校验沿用 task_id 白名单范式）：
@@ -171,9 +177,12 @@
 | `validate_package` | JSON Schema + 语义校验，返回结构化错误列表 |
 | `search_reference` | 检索内置包（courseware/chat/code）作为生成参照 |
 | `preview_diff` | 生成统一 diff 供用户确认 |
+| `run_evaluation`（v1.6） | 发起评测执行（复用 run/pipeline 内核，确认流见 F-C-AGENT-02）；入参含包/考卷/SUT/规则集/**日志级别** |
+| `list_runs` / `show_run` / `upload_run`（v1.6） | 执行后衔接：本地结果查询、失败归因、平台上报（F-C-AGENT-05） |
+| `list_datasets` / `download_dataset`（v1.6） | 数据集发现与下载（白名单沙盒，F-C-DATA） |
 
 - **会话流程**：用户自然语言需求 → Agent 输出**改动计划**（改哪些文件、为什么）→ 调工具生成 → `preview_diff` 展示 → 用户确认（逐文件 / 全部 / 放弃）→ `validate_package` 门禁（不过则拒绝落盘并回改）→ 落盘 + 记录会话日志（含 token/耗时）。
-- **安全红线**：sut_config 内只允许写 `credential_ref` 引用，**禁止生成凭证明文**（发现即拒绝并提示走 `secrets set`）；工具面无 shell / 无网络 / 无包外路径；非交互 Agent 模式（CI 无人确认）必须显式 `--trust-agent` 才可启用。
+- **安全红线**：sut_config 内只允许写 `credential_ref` 引用，**禁止生成凭证明文**（发现即拒绝并提示走 `secrets set`）；工具面无 shell / 无包外路径，网络面按域白名单开列（SUT 探测面与数据集下载是仅有的两个受控出网域，F-C-DATA-03）；非交互 Agent 模式（CI 无人确认）必须显式 `--trust-agent` 才可启用；**执行工具永不经 `--trust-agent` 旁路自主触发**（必须用户逐次确认，F-C-AGENT-06）。
 
 ### 3.5 身份与配置面
 
@@ -283,10 +292,11 @@
 |----|------|--------|
 | F-C-EXEC-01 | 执行向导五步：选包（内置 / 项目包 / 本地仓库）→ 选考卷（包内 task_sets，可 `--task` 细选）→ 选 SUT（包内 sut_configs）→ 选规则集（缺省=包清单 default_rule_set）→ 选模式（run 仅执行 / pipeline 一体化）；eval-only 场景自动收敛步骤 | P0 |
 | F-C-EXEC-02 | 执行前摘要确认页：包/考卷/SUT/规则集/LLM 角色/预估规模（任务数）一览，回车开始 | P0 |
-| F-C-EXEC-03 | 执行过程两种展示：**完整输出**（现有日志流，`--verbose`）与**进度视图**（任务级进度条 + 实时状态表：任务、阶段、结果），进度视图结束回落完整摘要 | P0 |
+| F-C-EXEC-03 | 执行过程两种展示：**进度视图**（任务级进度条 + 实时状态表：任务、阶段、结果；默认）与**完整日志流**；展示密度由日志级别统一控制（F-C-EXEC-07），进度视图结束回落完整摘要 | P0 |
 | F-C-EXEC-04 | 高级选项折叠区：LLM 角色、缓存开关、并发、预算上限、上传开关 | P1 |
-| F-C-EXEC-05 | 中断处理：Ctrl-C 询问（终止 / 跳过当前任务继续评估 / 保存已完成部分）；已完成包与 run_manifest 保持可用 | P1 |
+| F-C-EXEC-05 | 中断处理（v1.7 降级 P2）：三选询问（终止 / 跳过当前任务继续评估 / 保存已完成部分）拆出为 P2 独立立项——先落执行内核，CLI / 向导 / Agent 域同步受益；本版交付口径 = Ctrl-C 能中断执行即可（任务边界协作取消），已完成包与 run_manifest 保持可用 | P2 |
 | F-C-EXEC-06 | 向导选择结果映射为既有命令执行（F-C-NAV-05 同步显示等价命令），执行内核与参数形态完全同源 | P0 |
+| F-C-EXEC-07 | **执行日志四档**（v1.6）：`--log-level quiet\|normal\|verbose\|debug` 取代 `--verbose` 二档（P6 惯例一次性切换，教程/CI 片段全仓引用同步清理）。**normal**=现状默认（任务级进度 + 关键阶段事件）；**verbose**=过程可见性核心档：SUT 请求/响应摘要、judge 交互、重试事件；**debug**=全量原文（含完整请求/响应体）；**quiet**=仅任务结果行 + 总摘要（CI 日志友好）。作用于 `run/pipeline/eval/suite`、向导高级选项与 Agent 会话执行（三形态同源，F-C-AGENT-03） | P0 |
 
 ### 4.8 结果查看与上报（F-C-RUNS）
 
@@ -315,6 +325,31 @@
 | F-C-INTEG-03 | 退出码规范：0 成功；1 评测业务失败（含门控阈值未达）；2 配置/输入错误；3 依赖不可用（LLM/SUT/平台）；130 用户中断。文档化并纳入测试 | P0 |
 | F-C-INTEG-04 | 幂等与缓存：相同输入 + 内容指纹命中缓存跳过 LLM 调用（既有 W8 机制），CI 重复构建不产生重复开销 | P0（复用） |
 | F-C-INTEG-05 | Jenkins 集成范式：提供声明式 pipeline 片段（非交互 + JSON 解析 + 退出码门禁 + 报告归档 artifact），纳入 `docs/guide` | P1 |
+
+### 4.11 会话式执行与统一 Agent（F-C-AGENT，v1.6 新增）
+
+> 需求来源：v1.6 用户反馈。在 WorkbenchAgent 已落地的包工程 + SUT 接入调试域之上新增**执行域**，使「创建场景包 → 执行评测 → 查看结果 → 上报」在一个会话内闭环（**统一会话**，不另设执行 Agent）。核心约束是需求 2：**Agent 发起的执行，输出内容与样式必须与命令行执行完全一致**。
+
+| ID | 需求 | 优先级 |
+|----|------|--------|
+| F-C-AGENT-01 | **统一会话**：现有 WorkbenchAgent 会话扩展执行域工具，跨域上下文延续——刚创建/修改的场景包可直接在同一会话发起执行，无需切换向导或退出会话 | P1 |
+| F-C-AGENT-02 | **执行意图交互**：用户输入「执行评测」类意图 → Agent 列出候选场景包（三源发现：内置 / 项目包 / 本地仓库，含版本、任务数、SUT 通道概要）→ 用户对话式确认或一句话指定（如「travel 包用 staging 只跑 default 考卷」）→ 输出执行摘要确认页（包/考卷/SUT/规则集/日志级别/预估规模 + 等价命令，同 F-C-EXEC-02）→ 确认后执行 | P1 |
+| F-C-AGENT-03 | **输出直通（与 CLI 同源）**：执行期间 LLM 不转述、不复述过程输出——进度视图/日志流经 rich console 直出终端，与命令行执行**内容与样式一致**（同一 `--log-level` 控制，F-C-EXEC-07）；Agent 仅在开始前输出确认摘要、结束后输出简短总结与下一步建议（看结果 / 上传 / 调参数重跑） | P0 |
+| F-C-AGENT-04 | **执行不占会话预算**：执行调用是直通阻塞操作而非 LLM 活动——不计 Agent 会话 token/步数预算（[15](../arch/15CLI交互式评测工作台设计.md) §6.6 预算缰绳只约束 Agent 自身推理）；执行中 Ctrl-C 中断执行即可（任务边界协作取消，已完成包与 run_manifest 保持可用；三选询问见 F-C-EXEC-05，P2） | P1 |
+| F-C-AGENT-05 | **执行后衔接**：执行完成回执 run_id + 指标摘要后，会话内可继续「看结果 / 失败归因 / 上传 / 换参数再跑」，复用 runs 域查询与 upload 能力 | P1 |
+| F-C-AGENT-06 | **非交互边界不变**：Agent 会话执行是交互形态能力，不新增非交互旁路义务——无人值守评测仍走既有 `run/pipeline` 非交互命令；执行工具永不因 Agent 自主决策跳过用户确认（无 `--trust-agent` 旁路） | P0 |
+
+### 4.12 数据集 Agent 域（F-C-DATA，v1.6 新增）
+
+> 需求来源：v1.6 用户反馈。CLI 已有 `dataset download/list`（DatasetManager：HF / ModelScope 双源 + 索引 yaml），本节将其接入 WorkbenchAgent 工具面；**数据集驱动考卷生成**（以真实数据集为素材制作 task_set，替代纯 LLM 凭空生成）为后续独立立项（§8 P2 期）。
+
+| ID | 需求 | 优先级 |
+|----|------|--------|
+| F-C-DATA-01 | `list_datasets` 工具：索引清单（`assets/datasets/dataset_index.yaml`：id / 名称 / 类别 / 双源 repo）+ 本地已下载状态（`workspace/datasets/` 下 manifest 扫描：已下载 / 版本 / 规模） | P1 |
+| F-C-DATA-02 | `download_dataset` 工具：复用 DatasetManager 全参数（source / revision / token / force）下载至 `workspace/datasets/{name}/`；下载前向用户确认目标与来源；完成回执含 manifest 路径与数据规模 | P1 |
+| F-C-DATA-03 | 网络与路径白名单：下载仅允许经 DatasetManager（HF / MS 域名），是与 SUT 探测面并列的**第二个受控出网域**（域名白名单随 source 收窄，工具面其余部分维持无网络红线）；写路径仅限 `workspace/datasets/`（独立于包沙盒根的第二写域，须在 ToolSpec 描述中声明） | P0 |
+| F-C-DATA-04 | token 安全：数据集访问 token 经 env / `secrets` 传入，禁止出现在对话消息、会话日志与回执中 | P0 |
+| F-C-DATA-05 | **数据集驱动考卷生成**（远期规划）：读已下载数据集样本 → 抽样 → 生成 / 校准 task_set——涉及样本质量与考卷校验门禁，单独立项评审后排期 | P2 |
 
 ---
 
@@ -488,6 +523,50 @@ stage('评测回归') {
 }
 ```
 
+### 5.8 Agent 会话执行评测（统一会话，v1.6）
+
+```text
+你> 执行评测
+🤖 当前可用场景包:
+   ❯ travel@0.1.0      项目包 ./travel-package · 3 考卷 · http SUT
+     chat@1.0.0        内置 · 2 考卷 · cli SUT
+     courseware@1.0.0  内置 · 1 考卷 · http SUT
+? 执行哪个？（可直接说，如「travel 用 staging 只跑 default」）
+你> travel，staging 环境，default 考卷，日志详细一点
+
+── 执行摘要 ────────────────────────────────────────────
+  包: travel@0.1.0   考卷: default (12)   SUT: travel-agent@staging
+  规则集: travel-default   日志级别: verbose
+  等价命令: agent-eval pipeline --package-dir ./travel-package \
+            --task-set default --sut-config travel-agent@staging \
+            --log-level verbose
+? 开始执行? (Y/n) y
+
+⠋ 执行中…  ████████░░░░  8/12 任务        ← 直通输出，与 CLI 执行完全一致
+  task-07  ✅ reward 0.82
+  [verbose] SUT POST /api/plan → 200 (1.8s) · judge safety.compliance ✓
+  ...
+
+✅ 执行完成 run=20260920_150012  reward 0.86
+🤖 12 个任务全部完成，2 个任务有 safety 扣分（task-03 / task-11）。
+   可以说「看结果」「上传」，或「调回 normal 日志再跑一次」。
+你> 上传
+🤖 ✅ 已上报平台 → https://…/runs/20260920_150012
+```
+
+### 5.9 Agent 会话数据集（v1.6）
+
+```text
+你> 有哪些数据集可以用？
+🤖 索引中 5 个:  ceval（教育 · 中文学科）  gsm8k（数学推理）  …
+   本地已下载 1 个: ceval → workspace/datasets/ceval（1.2 万行）
+你> 下载 gsm8k
+? 确认下载 gsm8k（HuggingFace: openai/gsm8k）→ workspace/datasets/gsm8k? (Y/n) y
+  ✅ 下载完成 → workspace/datasets/gsm8k
+     manifest: workspace/datasets/gsm8k/_dataset_manifest.json
+🤖 后续制作场景包时可以引用该数据集生成考卷（规划中，见 F-C-DATA-05）。
+```
+
 ---
 
 ## 六、非功能需求
@@ -522,7 +601,7 @@ stage('评测回归') {
 
 ### 7.2 全局参数
 
-`--no-input`（禁一切交互，缺失即错）· `--output-format text\|json` · `--verbose` · `--color/NO_COLOR` · `--workspace-dir`
+`--no-input`（禁一切交互，缺失即错）· `--output-format text\|json` · `--log-level quiet\|normal\|verbose\|debug`（v1.6 取代 `--verbose`）· `--color/NO_COLOR` · `--workspace-dir`
 
 ### 7.3 退出码
 
@@ -544,6 +623,15 @@ stage('评测回归') {
 | **P1 账号+Agent 包工程** | `auth login/status/logout`（浏览器配对 + 粘贴 Key）、`auth register`；`models set`（含打开 Provider 控制台）；`scenario new/edit`（计划/diff/校验门禁/会话日志）；secrets 引导；上传向导 | 浏览器配对登录全流程可用；「一句话改包」端到端可用；校验门禁拦截率 100% |
 | **P2 增强** | `auth logout --revoke`；scenario 版本管理；run 对比；`--trust-agent` 非交互 Agent；包 push 到平台（视开放问题 #2）；TUI 全屏（远期） | 按需评估 |
 
+**v1.6 增量分期**（在上述 P0–P2 基线之后执行）：
+
+| 期 | 内容 | 验收标志 |
+|----|------|---------|
+| **P1-a 日志级别** | `--log-level` 四档落地（F-C-EXEC-07：run/pipeline/eval/suite + 向导高级选项 + Agent 会话切换）；`--verbose` 移除与全仓引用清理（教程 / CI 片段同步） | 三形态输出一致；verbose 档可见 SUT 请求/响应摘要与 judge 交互；quiet 档 CI 日志体积显著下降 |
+| **P1-b Agent 执行域** | 统一 WorkbenchAgent 执行域（F-C-AGENT-01~06）：执行/结果/上传工具 + 输出直通 + 预算豁免 | 「执行评测」一句话发评；输出与 CLI 同源；Ctrl-C 语义与 CLI 一致 |
+| **P1-c 数据集工具面** | `list_datasets` / `download_dataset`（F-C-DATA-01~04） | 会话内完成数据集发现与白名单下载；token 不入对话与日志 |
+| **P2 数据集→考卷** | 数据集驱动 task_set 生成（F-C-DATA-05） | 单独立项评审后排期 |
+
 ---
 
 ## 九、开放问题
@@ -554,6 +642,7 @@ stage('评测回归') {
 4. **向导会话持久化**：工作台上下文（活动包/SUT 等）是否跨 `start` 会话记忆（`workspace/.workbench.yaml`）？记忆失效策略？
 5. **交互组件选型**：questionary / InquirerPy / 基于 rich 自研 select 的取舍（typer 无原生列表选择），实现阶段技术确认。
 6. **Windows 兼容深度**：基本可用（NF-C-04）还是完整支持（影响组件与颜色方案选型）？
+7. **执行直通输出与会话消息流的终端混排**（v1.6，arch/15 已裁决）：采用**输出直通**——执行期间挂起 Agent 会话渲染（单输出流，结构性消解混排），rich console 直出与 CLI 同一渲染路径，LLM 只见紧凑摘要并在结束后回填一句总结（D-CLI-9）。
 
 ---
 
@@ -567,3 +656,5 @@ stage('评测回归') {
 | v1.3 | 2026-09-01 | **F-C-AUTH 落地同步（Sprint 11）**：`auth login/status/logout/register` 四命令 + 工作台账号域「平台账号」子向导；身份探测走平台新增 `GET /api/public/whoami`（旧平台 404 回退 `/api/public/secrets` 轻探测）；浏览器通道降级打开 `/login` 引导（前端暂无独立 Keys 页与 `/cli-auth`，B 通道与设备码流仍为 P2）；参数表按实际形态修订 |
 | v1.4 | 2026-09-01 | **secrets 执行前缺失自动补录落地（Sprint 11）**：§3.5 凭证行补执行前行为——`ensure_sut_credentials` 挂执行阶段，交互终端列缺失字段 → 确认 → 隐藏输入一次落盘 → 复检继续；取消/`--no-input` 退回 fail fast（CI 零变化） |
 | v1.5 | 2026-09-07 | **移除 F-C-AUTH-06 设备码流免粘贴**（不做——复杂度高，粘贴 Key 双通道已满足）；F-C-AUTH-07 编号保持不变，开放问题 #1 收敛为平台轻量授权页 |
+| v1.6 | 2026-09-20 | **会话执行 + 日志级别 + 数据集域（用户反馈四则）**：①统一 WorkbenchAgent 新增执行域——「执行评测→看结果→上传」会话内闭环，输出直通与 CLI 同源（F-C-AGENT，§4.11）；②执行日志四档 `--log-level quiet\|normal\|verbose\|debug` 取代 `--verbose` 二档，三形态同源（F-C-EXEC-07，§4.7 修订）；③数据集接入 Agent 工具面（F-C-DATA，§4.12，list/download 白名单沙盒，与 SUT 探测面并列的第二个受控出网域），数据集驱动考卷生成列 P2 独立立项；④术语对齐 arch/15（PackageAgent→WorkbenchAgent）+ 现状/差距补数据集与可观测性两项、原型 §5.8/§5.9、v1.6 增量分期、开放问题 #7 |
+| v1.7 | 2026-09-20 | **14b 设计评审裁决两项**：①输出直通的编排复用形态定为 `pipeline_core` 编排纯函数抽取（单一真相源，CLI 薄壳化 + Agent 域双端消费）——否决「Agent 域直通 `_stages` 手拼编排」（会成第三份拷贝，同源必然漂移）；②F-C-EXEC-05 三选询问 P1→P2 独立立项（先落内核），本版 Ctrl-C 口径降为「能中断执行即可」（任务边界协作取消，产物与清单已落盘可溯源） |

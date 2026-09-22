@@ -1,4 +1,4 @@
-"""AgentProtocolChannel 测试（arch/03 §4.0.6）——httpx.MockTransport 全离线。"""
+"""AgentProtocolChannel 测试——httpx.MockTransport 全离线。"""
 
 from __future__ import annotations
 
@@ -215,7 +215,7 @@ def test_get_agent_info_and_capability_check() -> None:
 def test_session_401_auto_relogin_once_and_replay(monkeypatch) -> None:
     monkeypatch.setenv("AGENT_EVAL_SUT__CW__USERNAME", "u")
     monkeypatch.setenv("AGENT_EVAL_SUT__CW__PASSWORD", "p")
-    """会话失效自愈：401 → 重登一次 → 重放成功（§4.0.4-4）。"""
+    """会话失效自愈：401 → 重登一次 → 重放成功。"""
     state = {"logins": 0, "token": "stale"}
 
     def handler(request: httpx.Request) -> httpx.Response:

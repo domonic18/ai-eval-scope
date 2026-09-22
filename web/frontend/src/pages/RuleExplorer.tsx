@@ -28,7 +28,7 @@
 `}</style>
 
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useSearchParams, useParams } from "react-router-dom"
 import { useCrumbs } from "../context/navigation"
 import { Page, PageHead, TierChip } from "../components/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/shadcn/card"
@@ -108,8 +108,27 @@ type Selection =
   | { type: "policy" }
   | { type: "metrics" }
 
+/** 深链 ?select= 的资产 kind → 树节点 Selection（kind 与 catalog/旧编辑器同款，如 rule-sets:quality）。 */
+const SELECT_KIND_TO_SELECTION: Record<string, Selection["type"]> = {
+  "rule-sets": "rule-set",
+  prompts: "prompt",
+  datasets: "dataset",
+  "task-sets": "task-set",
+  "sut-configs": "sut-config",
+}
+
+function parseSelect(raw: string | null): Selection | null {
+  if (!raw) return null
+  const sep = raw.indexOf(":")
+  if (sep <= 0) return null
+  const type = SELECT_KIND_TO_SELECTION[raw.slice(0, sep)]
+  const assetId = raw.slice(sep + 1)
+  return type && assetId ? ({ type, assetId } as Selection) : null
+}
+
 export default function RuleExplorer() {
   const { id = "" } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const { setCrumbs } = useCrumbs()
   const [catalog, setCatalog] = useState<{
     rule_sets: CatalogEntry[]
@@ -133,10 +152,12 @@ export default function RuleExplorer() {
         setCatalog(c)
         setDefs(d)
         setHasPolicy(!!p)
-        if (c.rule_sets.length) setSel({ type: "rule-set", assetId: c.rule_sets[0].asset_id })
+        // 深链定位（目录页/运行详情跳入），无效或缺省时回退首个规则集
+        setSel(parseSelect(searchParams.get("select")) ??
+          (c.rule_sets.length ? { type: "rule-set", assetId: c.rule_sets[0].asset_id } : null))
       })
       .catch(() => {})
-  }, [id, setCrumbs])
+  }, [id, searchParams, setCrumbs])
 
   return (
     <Page>

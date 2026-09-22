@@ -1,4 +1,4 @@
-"""CLI `run` 命令测试（arch/03 Phase B：task_set + sut_config → 执行包）。"""
+"""CLI `run` 命令测试（task_set + sut_config → 执行包）。"""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ class FakeExecutionAgent:
         self._package_cls = ExecutionPackage
         self.extra_tool_servers = extra_tool_servers or []
 
-    async def run_task_set(self, task_set, *, run_id: str | None = None):
+    async def run_task_set(self, task_set, *, run_id: str | None = None, cancel_event=None):
         packages_root = Path(self.config.workspace_dir) / "runs" / (run_id or "r_fake") / "packages"
         packages = []
         for task in task_set.tasks:
@@ -160,7 +160,7 @@ def test_run_command_declined_fill_exits_clean_without_run(tmp_path, monkeypatch
 
 
 def test_run_command_rejects_unscheduled_channel(tmp_path) -> None:
-    """browser 仍未排期（v4.7 起 generic_http 已落地，SCHEDULED_CHANNELS=协议+HTTP）。"""
+    """browser 仍未排期（SCHEDULED_CHANNELS=协议+HTTP）。"""
     task_set = tmp_path / "task_set.yaml"
     sut_cfg = tmp_path / "sut.yaml"
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")
@@ -208,7 +208,7 @@ def test_run_command_multi_sut_requires_name(tmp_path) -> None:
 
 
 def test_run_command_closes_channel_same_loop(tmp_path, monkeypatch) -> None:
-    """通道 aclose 必须与 run 同一 event loop 恰好执行一次（v4.6.3 收尾修复）。"""
+    """通道 aclose 必须与 run 同一 event loop 恰好执行一次。"""
     task_set = tmp_path / "task_set.yaml"
     sut_cfg = tmp_path / "sut.yaml"
     out_dir = tmp_path / "out"

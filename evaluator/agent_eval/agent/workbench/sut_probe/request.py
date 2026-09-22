@@ -161,8 +161,14 @@ class RequestTool:
                 )
             }
         rendered_body = rendered_map["0"]
-        # 渲染值必须压过 req_headers 的模板原文（原文含 {{ 变量 }}，直发即泄漏）
-        rendered_headers = {k: rendered_map[str(i + 1)] for i, k in enumerate(header_names)}
+        # 渲染值必须压过 req_headers 的模板原文（原文含 {{ 变量 }}，直发即泄漏）。
+        # 模板源是整行 "Key: Value"（渲染可落在行内任意位置），回填前须再切出
+        # 值——直接整行回填会把 wire 头发成 "Key: Key: Value"（实测事故：显式
+        # Content-Type 因此从未真正生效，FastAPI 靠子串匹配侥幸解析 JSON）
+        rendered_headers: dict[str, str] = {}
+        for i, name in enumerate(header_names):
+            _, _, rendered_value = rendered_map[str(i + 1)].partition(":")
+            rendered_headers[name] = rendered_value.strip()
         cred_in_headers = any(f in h for h in raw_headers for f in cred_fields)
         if residual := _UNRENDERED_PLACEHOLDER_RE.findall(rendered_body):
             return {
@@ -176,8 +182,10 @@ class RequestTool:
         # 含 " / \ 破坏模板拼接，SUT 都只回一句 422——把我方参数变形伪装成「后端
         # 格式不明」，实测烧掉整轮探测预算（jxb-server 422 误诊事故）。与占位符
         # 守卫同哲学：凡可机械判定的变形不发给 SUT 让 Agent 瞎猜。显式非 JSON
-        # Content-Type（text/plain 等原始报文探测）不适用本校验；数组 body 合法放行
+        # Content-Type 的 JSON 对象 body 走下方机械归一化（标签修正）；原始
+        # 标量/非 JSON 报文探测不适用本校验；数组 body 合法放行
         content_type = next((v for k, v in req_headers.items() if k.lower() == "content-type"), "")
+        content_type_normalized = ""
         if rendered_body and "json" in content_type.lower():
             try:
                 parsed_body = json.loads(rendered_body)
@@ -198,6 +206,25 @@ class RequestTool:
                         "外层引号层以单层对象形态重传；body 直接传 dict 参数会机械序列化"
                     )
                 }
+        elif rendered_body and content_type:
+            # 显式非 JSON Content-Type 会同时旁路上面的 auto 补齐与双重编码门禁：
+            # 实测事故（jxb-server 422 误诊）——正确的 JSON 报文顶着 text/plain/
+            # form-urlencoded 标签上 wire，FastAPI 不做 JSON 解析，Pydantic 把
+            # body 原文当字符串校验回 422 model_attributes_type（input 回显原文
+            # 带引号，形似双重编码），LLM「换格式重试」烧光探测预算。body 实为
+            # JSON 对象/数组时机械归一化标签（凡可机械归一的变形不经 LLM 转述）；
+            # 标量/非 JSON 的原始报文探测原样放行
+            try:
+                raw_parsed = json.loads(rendered_body)
+            except ValueError:
+                raw_parsed = None
+            if isinstance(raw_parsed, (dict, list)):
+                ct_key = next(k for k in req_headers if k.lower() == "content-type")
+                req_headers[ct_key] = "application/json"
+                if ct_key in rendered_headers:
+                    rendered_headers[ct_key] = "application/json"
+                content_type_normalized = content_type
+                self.ctx.log("request", event="content_type_normalized", original=content_type)
         # 凭证注入请求的门禁面（非凭证请求只过 host 门禁）
         if cred_fields:
             if not ref.strip():
@@ -244,8 +271,17 @@ class RequestTool:
                 content=rendered_body.encode() if rendered_body else None,
             )
         except Exception as e:  # noqa: BLE001 — 网络面异常统一转错误数据
-            self.ctx.log("request", method=verb, url=url, event="failed", error=net_err(e)[:200])
-            return {"status": 0, "error": f"请求失败: {net_err(e)}"}
+            err = net_err(e)
+            if "timeout" in err.lower():
+                # 实测事故：本机代理（http_proxy→Clash）把 0.3s 的请求拖到 11.7s，
+                # 顶爆 10s 探测超时，Agent 误判「服务不可用」转向换格式瞎试。
+                # SUT 可能在内网须走用户代理，工具不擅改 trust_env——指引自查
+                err += (
+                    "（超时常见于本机代理劫持：http_proxy/https_proxy 经 Clash 等代理会"
+                    "把 10s 探测超时顶爆——为 SUT 域配置 NO_PROXY 直连或临时 unset 代理后重试）"
+                )
+            self.ctx.log("request", method=verb, url=url, event="failed", error=err[:200])
+            return {"status": 0, "error": f"请求失败: {err}"}
         elapsed_ms = round((time.monotonic() - started) * 1000)
         status = response.status_code
         # 防锁红线（认证层拒绝语义）：带凭证组合被 4xx/5xx 拒绝即入锁不自动重发；
@@ -283,7 +319,7 @@ class RequestTool:
                 },
             }
         self.ctx.log("request", method=verb, url=url, status=status, ref=ref, step=step)
-        return structure_response(
+        result = structure_response(
             self.ctx,
             verb,
             url,
@@ -293,3 +329,9 @@ class RequestTool:
             credentialed=bool(cred_fields),
             ref=ref.lower(),
         )
+        if content_type_normalized:
+            result["content_type_normalized"] = (
+                f"{content_type_normalized} → application/json（body 实为 JSON 对象，"
+                "标签已机械归一化——422 若再现与此无关）"
+            )
+        return result

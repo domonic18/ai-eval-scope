@@ -9,6 +9,7 @@
 import { MetricCard } from "./MetricCard"
 import type { ExplainContent } from "./ExplainTooltip"
 import type { MetricDef, MetricExplain } from "../types"
+import { fmtSeconds } from "../lib/format"
 
 /** dd 行 tone → 颜色（强调重点）。 */
 const TONE_COLOR: Record<NonNullable<MetricExplain["rows"][number]["tone"]>, string> = {
@@ -30,8 +31,10 @@ function toExplainContent(e: MetricExplain): ExplainContent {
   }
 }
 
-function fmt(v: number | undefined): string {
+/** 指标值展示：unit=ms 转秒带单位（耗时按秒读，用户口径）；其余按三位小数。 */
+function fmtMetric(d: MetricDef, v: number | undefined): string {
   if (v == null || Number.isNaN(v)) return "—"
+  if (d.unit === "ms") return fmtSeconds(v)
   return v.toFixed(3)
 }
 
@@ -54,7 +57,7 @@ export function DynamicMetricGrid({
           <div key={d.id} className="min-w-[180px] flex-1">
             <MetricCard
               label={d.name ?? d.id}
-              value={fmt(val)}
+              value={fmtMetric(d, val)}
               explain={explain}
               valueClassName={
                 hasThr ? (pass ? "text-emerald-400" : "text-red-400") : undefined

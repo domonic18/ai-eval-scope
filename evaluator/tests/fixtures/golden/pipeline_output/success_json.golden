@@ -1,0 +1,16 @@
+exit_code=0
+----
+任务集: <TMP>/task_set.yaml（1 个任务）
+被测系统: cw-agent（channel=agent_protocol, base_url=https://ap.example.com）
+规则集: <TMP>/rs.yaml
+运行 ID: <RUN_ID>（一体化流水线，mode=pipeline）
+执行完成: 1/1 成功；结构化日志: <TMP>/ws/runs/<RUN_ID>/agent_logs/
+                    任务结果（1）                    
+┏━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ task_id  ┃ 状态    ┃ 输出目录                     ┃
+┡━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ t_pipe_1 │ success │ pkg_<RUN_ID>_t_pipe_1 │
+└──────────┴─────────┴──────────────────────────────┘
+✅ 评估完成 — 结果已保存至 workspace
+✅ 流水线完成 — <TMP>/ws/runs/<RUN_ID>
+{"run_id": "<RUN_ID>", "mode": "pipeline", "package_ref": null, "task_set": "<TMP>/task_set.yaml", "sut": {"name": "cw-agent", "base_url": "https://ap.example.com"}, "total": 1, "succeeded": 1, "packages": [{"task_id": "t_pipe_1", "status": "success", "output": "pkg_<RUN_ID>_t_pipe_1"}], "run_dir": "<TMP>/ws/runs/<RUN_ID>", "metrics": {"edu:reward": 4.5}, "total_samples": 1}

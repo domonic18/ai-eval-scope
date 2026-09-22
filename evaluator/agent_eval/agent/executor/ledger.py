@@ -1,4 +1,4 @@
-"""资源账本与证据台账（arch/16 §4.3-4.4 P3+P4-a）。
+"""资源账本与证据台账。
 
 ResourceLedger —— 机械壳的额度仲裁者：预算消耗归机器，不靠提示词自觉。
 ``authorize`` 在工具入口仲裁额度（消耗即记账，与调用成败无关——尝试语义），
@@ -21,7 +21,7 @@ from typing import Any
 from agent_eval.execution.models import InteractionPolicy
 
 _SUMMARY_MAX_CHARS = 200
-# 连拒升级阈值：同 action 连续被拒达此次数，拒绝载荷点名收尾路径（Phase 2.1）
+# 连拒升级阈值：同 action 连续被拒达此次数，拒绝载荷点名收尾路径
 _REFUSAL_ESCALATION_THRESHOLD = 3
 _REFUSAL_ESCALATION_ACTION = "write_package"
 
@@ -38,11 +38,19 @@ def _truncate(value: Any) -> str:
 class EvidenceLedger:
     """语义证据台账 —— append-only 事件流，dump 为执行包内 ledger.jsonl。
 
-    事件 kind：sut_call / state_poll / gate_refusal / artifact / close /
-    decision（P2 决策简报预留，本期不产生）。
+    事件 kind：sut_call / sut_observation（观测载荷入账）/
+    state_poll / gate_refusal / artifact / close / decision。
     """
 
-    KINDS = ("sut_call", "state_poll", "gate_refusal", "artifact", "close", "decision")
+    KINDS = (
+        "sut_call",
+        "sut_observation",
+        "state_poll",
+        "gate_refusal",
+        "artifact",
+        "close",
+        "decision",
+    )
 
     def __init__(self) -> None:
         self.events: list[dict[str, Any]] = []
@@ -294,7 +302,7 @@ class ResourceLedger:
             self.evidence.log("gate_refusal", action=action, **error)
         return payload
 
-    # ─── 连拒升级（Phase 2.1：重放显示 13 连拒零依从，空转要被点名） ───
+    # ─── 连拒升级（重放显示 13 连拒零依从，空转要被点名） ───
 
     def _refusal_streak(self, action: str) -> int:
         """尾部连续同 action 拒绝次数（被其它动作打断则清零重计）。"""

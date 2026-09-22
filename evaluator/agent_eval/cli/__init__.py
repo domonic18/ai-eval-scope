@@ -1,4 +1,4 @@
-"""CLI 入口 — 唯一装配点（arch/15 §2.2 组织约定 1）。
+"""CLI 入口 — 唯一装配点。
 
 新增命令（组或顶层）= ``cmds/`` 新模块 + 此处一行注册，其余零改动。
 入口：``agent-eval = "agent_eval.cli:app"``
@@ -27,8 +27,8 @@ app.command()(pipeline)
 app.command()(upload)
 
 # ── 子命令组 ──
-app.add_typer(auth_app, name="auth")  # Sprint 11：平台账号（login/status/logout/register）
-app.add_typer(scenario_app)  # Sprint 10 重命名：原 package 组
+app.add_typer(auth_app, name="auth")  # 平台账号（login/status/logout/register）
+app.add_typer(scenario_app)  # 场景包命令组（原 ``package`` 组）
 app.add_typer(runs_app)
 app.add_typer(models_app, name="models")
 app.add_typer(secrets_app, name="secrets")

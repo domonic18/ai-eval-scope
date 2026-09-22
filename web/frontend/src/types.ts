@@ -20,6 +20,36 @@ export interface Membership {
   org: { id: string; name: string; slug: string }
 }
 
+/** 组织成员行（GET /orgs/:org/members，成员页表格）。 */
+export interface MemberRow {
+  userId: string
+  role: string
+  email: string
+  name: string | null
+  joinedAt: string
+  /** 最近登录时间（「最近活跃」列）；null = 从未登录。 */
+  lastActive: string | null
+}
+
+/** 待接受邀请行（GET /orgs/:org/invitations，owner 专属）。 */
+export interface OrgInvitationRow {
+  id: string
+  email: string
+  role: string
+  createdAt: string
+  resentAt: string | null
+  inviter: { id: string; name: string | null; email: string }
+}
+
+/** 加入申请行（GET /orgs/:org/join-requests，owner 待审批区块）。 */
+export interface JoinRequestRow {
+  id: string
+  status: string
+  message: string | null
+  createdAt: string
+  user: { id: string; email: string; name: string | null }
+}
+
 export interface DashboardProject {
   id: string
   name: string
@@ -33,6 +63,8 @@ export interface DashboardProject {
     createdAt: string | null
     metrics?: Record<string, number> | null
     scenarioId: string | null
+    /** 行级 defs 配对（docs/plan/08 批次 C）：锚定该 run 自带快照，无快照老 run 走场景 defaults 兜底 */
+    metricDefinitions?: MetricDef[]
   } | null
 }
 
@@ -97,6 +129,25 @@ export interface MetricExplainRow {
   tone?: "default" | "primary" | "danger" | "success" | "warning"
 }
 
+/** 快照语义「最近一次上报」（docs/arch/09 §9.6）：run 与其场景指标定义服务端原子配对下发。 */
+export interface LatestRunSnapshot {
+  run: RunSummary | null
+  metricDefinitions: MetricDef[]
+  /** 血缘 meta（docs/plan/08 批次 C）：defs 解析来源 + 锚定版本 hash（暂无 UI 消费，供核查） */
+  defsSource?: "run-snapshot" | "scenario-defaults" | "none"
+  snapshotHash?: string | null
+  defaultsHash?: string | null
+}
+
+/** 样本视图 tab 词表（docs/arch/09 §9.7；与后端 SAMPLE_VIEW_TABS 同源）。 */
+export type SampleViewTab = "doc" | "task" | "transcript" | "shot" | "trace"
+
+/** 场景样本视图呈现配置（场景级，管理端可编辑；null = 前端机械兜底）。 */
+export interface SampleViewConfig {
+  tabs: SampleViewTab[]
+  labels?: { doc?: string }
+}
+
 /** 项目下样本（课件）清单项（docs/arch/09 §9.4）。 */
 export interface ProjectSample {
   externalSampleId: string
@@ -107,17 +158,14 @@ export interface ProjectSample {
   latestContentHash: string | null
 }
 
-/** 样本走势点（某 externalSampleId 跨 run 的时间序列，docs/arch/09 §9.4）。 */
+/** 样本走势点（某 externalSampleId 跨 run 的时间序列，docs/arch/09 §9.4；指标为场景化 JSONB）。 */
 export interface SampleTrendPoint {
   run_id: string
   created_at: string
   reward: number
-  s_format: number
-  s_common: number
-  s_soft: number
-  s_pref: number
   status: string
   content_hash: string | null
+  metrics?: Record<string, number>
 }
 
 export interface ConstraintRow {

@@ -72,6 +72,17 @@ router.get(
   }),
 )
 
+// ── Query：快照语义「最近一次上报」（§9.6）——run 与场景指标定义服务端配对原子下发 ──
+router.get(
+  "/:id/latest-run",
+  requireAuth,
+  projectGuard(),
+  wrap(async (req, res) => {
+    const svc = createQueryService(req.tenant!)
+    res.json(await svc.latestRunSnapshot(req.params.id))
+  }),
+)
+
 // ── Query：样本级走势（§14）──
 router.get(
   "/:id/samples",

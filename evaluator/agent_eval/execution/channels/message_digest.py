@@ -1,4 +1,4 @@
-"""Agent Protocol 消息摘要（thread_commands 拆出，plan/07 G4）——纯函数无 IO。
+"""Agent Protocol 消息摘要（thread_commands 拆出）——纯函数无 IO。
 
 Agent 协议线程的 messages 形态整形：取最终回答文本、压缩整表摘要。
 执行器（protocol_tools）与通道轮询（thread_commands）共用。
@@ -13,22 +13,29 @@ AI_ROLES = frozenset({"ai", "assistant"})
 COMPACT_TEXT_MAX_CHARS = 800  # 消息摘要单条文本上限（整表仍受 bounded_result 截断约束）
 
 
+def ai_message_text(message: dict[str, Any]) -> str:
+    """单条 ai 消息的文本（content 为类型块列表，跳过 reasoning；无文本返回空串）。"""
+    if message.get("role") not in AI_ROLES and message.get("type") not in AI_ROLES:
+        return ""
+    content = message.get("content")
+    parts: list[str] = []
+    if isinstance(content, str):
+        parts.append(content)
+    elif isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                parts.append(block.get("text") or "")
+    return "\n".join(p for p in parts if p.strip())
+
+
 def final_ai_text(messages: list[dict[str, Any]] | None) -> str:
     """取最后一条含非空文本的 ai 消息（content 为类型块列表，跳过 reasoning）。"""
     for message in reversed(messages or []):
-        if message.get("role") not in AI_ROLES and message.get("type") not in AI_ROLES:
+        if not isinstance(message, dict):
             continue
-        content = message.get("content")
-        parts: list[str] = []
-        if isinstance(content, str):
-            parts.append(content)
-        elif isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "text":
-                    parts.append(block.get("text") or "")
-        texts = [p for p in parts if p.strip()]
-        if texts:
-            return "\n".join(texts)
+        text = ai_message_text(message)
+        if text.strip():
+            return text
     return ""
 
 

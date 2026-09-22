@@ -1,4 +1,4 @@
-"""http_steps 测试（plan/06 M1 会话续接 + M2 轮询步）——MockTransport 全离线。"""
+"""http_steps 测试——MockTransport 全离线。"""
 
 from __future__ import annotations
 
@@ -248,7 +248,7 @@ def test_poll_until_true_passes_without_sleep() -> None:
 
 
 def test_poll_retries_until_terminal_with_injected_sleep() -> None:
-    """前几轮未终态 → 注入 sleep 推进，终态轮通过（NF-1 不等真实间隔）。"""
+    """前几轮未终态 → 注入 sleep 推进，终态轮通过（不等真实间隔）。"""
     intervals: list[float] = []
 
     async def fake_sleep(seconds: float) -> None:

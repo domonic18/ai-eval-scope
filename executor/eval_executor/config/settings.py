@@ -55,6 +55,15 @@ class Settings(BaseSettings):
         alias="EVALEXECUTOR_HTTP_TIMEOUT_SEC",
         description="经 presigned URL 下载输入的 HTTP 超时",
     )
+    input_presign_audience: str = Field(
+        default="",
+        alias="EVALEXECUTOR_INPUT_PRESIGN_AUDIENCE",
+        description=(
+            "重签输入下载 URL 的 audience（空=默认 external 对外端点；'internal' = 与 web "
+            "同内网的容器内消费者。MinIO 严格校验签名 Host，本地栈 external 是宿主回环地址、"
+            "容器内不可达，docker-compose 部署应设 internal）"
+        ),
+    )
 
 
 def get_settings() -> Settings:

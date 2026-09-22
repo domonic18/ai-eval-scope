@@ -1,4 +1,4 @@
-"""secrets 命令与凭证文件源测试（arch/16 §2.2 本机密钥区）。
+"""secrets 命令与凭证文件源测试。
 
 覆盖：文件存取 0600、CredentialStore env→文件双通道、CLI 交互（CliRunner）。
 """

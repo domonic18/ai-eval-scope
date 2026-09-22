@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { api } from "../api/client"
-import { fmt3, fmtMsRaw, num } from "../lib/format"
+import { fmt3, fmtSeconds, num } from "../lib/format"
 import { DynamicMetricGrid } from "../components/DynamicMetricGrid"
 import { extractMetricDefs } from "../lib/metricGrid"
 import { useScenarioDefaults } from "../hooks/useScenarioDefaults"
@@ -64,11 +64,6 @@ interface OverviewData {
   }>
 }
 
-/** 运行模式中文标签：eval_only=仅评估；agent=执行器执行+评估（run 产物）；pipeline=一体化流水线 */
-function modeLabel(mode: string): string {
-  return { eval_only: "仅评估", agent: "Agent 执行", pipeline: "流水线" }[mode] ?? mode
-}
-
 /** 从指标定义中提取大白话描述：优先 summary → explain.定义 → name */
 function metricHint(d: MetricDef): string {
   return d.summary
@@ -85,6 +80,8 @@ export default function RunDetail() {
   const [overview, setOverview] = useState<OverviewData | null>(null)
   const toast = useToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // 运行导出（arch/09 §9.8）：后端流式 zip 自描述 bundle，前端只触发不合成
+  const [downloading, setDownloading] = useState(false)
   const defaultDefs = useScenarioDefaults(run?.scenarioId)
 
   useEffect(() => {
@@ -103,23 +100,26 @@ export default function RunDetail() {
   const passCount = overview?.summary?.passed ?? run.samples.filter((s) => s.status === "pass" || s.status === "passed").length
   const failCount = overview?.summary?.failed ?? run.samples.filter((s) => s.status === "fail" || s.status === "failed").length
   const metricDefs = extractMetricDefs(run.runConfigSnapshot)
-  // 优先用最新场景默认指标定义（id 稳定，name/explain 随场景包更新）；
-  // 运行快照里的 metric_definitions 是历史拷贝（旧名/已删指标），仅在默认缺失时回退
-  const activeDefs = defaultDefs.length > 0 ? defaultDefs : metricDefs
+  // 展示锚定该 run 自带快照（时间一致 = 审计一致，docs/plan/08 不变量 3）：
+  // 阈值/口径/名称均用执行时刻语义；场景 defaults 仅在快照无定义时兜底（极老 run）。
+  // 「当前定义解释历史数据」跨包代际必错（edu:* 旧 defaults × kb:* 新快照改名事故根因）。
+  const activeDefs = metricDefs.length > 0 ? metricDefs : defaultDefs
   const rawMetrics = overview?.metrics_raw ?? run.metrics ?? {}
+  // 防御（不变量 5）：有指标值但定义键零交集 → 显式降级提示，不渲染一排无从察觉的 "—"
+  const defsMismatchRun =
+    Object.keys(rawMetrics).length > 0 && activeDefs.length > 0 &&
+    !activeDefs.some((d) => rawMetrics[d.id] != null)
 
-  function downloadReport(kind: "md" | "json") {
-    const m = run!.metrics ?? {}
-    const summary = { run: run!.externalRunId, mode: run!.mode, samples: run!.totalSamples, metrics: m, pass: passCount, fail: failCount }
-    const mdMetrics = Object.entries(m).map(([k, v]) => `${k}=${fmt3(v)}`).join(" · ")
-    const text = kind === "json" ? JSON.stringify(summary, null, 2) : `# 运行 #${run!.externalRunId}\n\n- 样本：${run!.totalSamples}（通过 ${passCount} / 失败 ${failCount}）\n- ${mdMetrics}\n`
-    const blob = new Blob([text], { type: kind === "json" ? "application/json" : "text/markdown" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `run-${run!.externalRunId}.${kind}`
-    a.click()
-    URL.revokeObjectURL(url)
+  async function downloadZip() {
+    if (!id || downloading) return
+    setDownloading(true)
+    try {
+      await api.runDownload(id)
+    } catch (e) {
+      toast.error("打包下载失败：" + ((e as Error).message ?? ""))
+    } finally {
+      setDownloading(false)
+    }
   }
 
   async function doDelete() {
@@ -134,10 +134,10 @@ export default function RunDetail() {
     }
   }
 
-  // 规则集链接
+  // 规则集链接 → 只读规则浏览器，深链定位到该规则集（docs/plan/08 纯可视化：包编辑器已移除）
   const ruleSetId = run.ruleSetVersion?.split(":")[0] ?? run.ruleSetVersion
   const ruleSetLink = run.scenarioId && ruleSetId
-    ? `/config/scenarios/${run.scenarioId}/edit?select=rule-sets:${ruleSetId}`
+    ? `/config/scenarios/${run.scenarioId}/explorer?select=rule-sets:${ruleSetId}`
     : null
 
   // verdict 从 overview 取（与第三方 API 一致）
@@ -155,7 +155,7 @@ export default function RunDetail() {
     <Page>
       <PageHead
         title={<span className="flex items-center gap-2 font-mono">运行 #{run.externalRunId} <StatusBadge status={run.status} /></span>}
-        sub={`${modeLabel(run.mode)} 模式 · ${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
+        sub={`${num(run.totalSamples)} 个样本 · ${new Date(run.createdAt).toLocaleString("zh-CN")}`}
         right={
           <div className="flex gap-2">
             {langfuseUrl && (
@@ -165,8 +165,8 @@ export default function RunDetail() {
                 </a>
               </Button>
             )}
-            <Button variant="outline" onClick={() => downloadReport("md")}>
-              <Download className="size-4" /> 下载报告
+            <Button variant="outline" disabled={downloading} onClick={downloadZip}>
+              <Download className="size-4" /> {downloading ? "打包中…" : "打包下载"}
             </Button>
             {run.canDelete && (
               <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
@@ -194,18 +194,13 @@ export default function RunDetail() {
         )}
         <Sep />
         <span className="inline-flex items-center gap-1.5">
-          <span className="text-muted-foreground">评估模式</span>
-          <span className="font-medium">{modeLabel(run.mode)}</span>
-        </span>
-        <Sep />
-        <span className="inline-flex items-center gap-1.5">
           <span className="text-muted-foreground">样本数</span>
           <span className="font-medium tabular-nums">{num(run.totalSamples)}</span>
         </span>
         <Sep />
         <span className="inline-flex items-center gap-1.5">
           <span className="text-muted-foreground">平均耗时</span>
-          <span className="font-medium tabular-nums">{fmtMsRaw(rawMetrics["avg_time_ms"] ?? 0)}</span>
+          <span className="font-medium tabular-nums">{fmtSeconds(rawMetrics["avg_time_ms"] ?? 0)}</span>
         </span>
         <Sep />
         <span className="inline-flex items-center gap-1.5">
@@ -217,17 +212,20 @@ export default function RunDetail() {
       {/* 场景化指标 */}
       <section className="space-y-2">
         <h3 className="text-sm font-medium text-muted-foreground">场景化指标</h3>
-        <DynamicMetricGrid defs={activeDefs} metrics={run.metrics} />
+        {defsMismatchRun ? (
+          <div className="rounded-md border border-yellow-500/20 bg-yellow-500/5 px-3 py-2 text-xs text-muted-foreground">
+            指标定义与该运行的指标数据不匹配（无同名指标键），已跳过指标卡渲染。
+            {metricDefs.length === 0 && " 该运行未携带指标定义快照，回退的场景默认定义与数据代际不一致。"}
+          </div>
+        ) : (
+          <DynamicMetricGrid defs={activeDefs} metrics={run.metrics} />
+        )}
       </section>
 
       {/* 摘要报告 */}
       <SectionCard>
         <SectionCardHeader>
           <SectionCardTitle>摘要报告</SectionCardTitle>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => downloadReport("md")}>MD</Button>
-            <Button size="sm" variant="outline" onClick={() => downloadReport("json")}>JSON</Button>
-          </div>
         </SectionCardHeader>
         <SectionCardContent className="space-y-4 text-sm">
           {/* LLM 生成的人话摘要（优先展示，未生成时回退到结构化拼装） */}

@@ -1,73 +1,75 @@
-# Agent Eval 评估器
+# EvalScope Evaluator (`agent-eval`)
 
 [![PyPI](https://img.shields.io/pypi/v/ai-eval-scope.svg)](https://pypi.org/project/ai-eval-scope/)
 [![Python](https://img.shields.io/pypi/pyversions/ai-eval-scope.svg)](https://pypi.org/project/ai-eval-scope/)
 [![License: MIT](https://img.shields.io/pypi/l/ai-eval-scope.svg)](https://pypi.org/project/ai-eval-scope/)
 
-Agent 能力评估框架（`agent-eval` CLI）——基于 Agent-Driven 架构，支持课件生成、
-代码生成、RAG、对话等多类 Agent 评估。
+The evaluator of [EvalScope](https://github.com/domonic18/ai-eval-scope) — an agent-driven evaluation framework. It ships the `agent-eval` CLI: scenario packages as versioned YAML "exam papers", an ExecutionAgent that drives the system under test, and layered scoring (format gate → rule engine → LLM judge → vision).
 
-## 安装（发布后）
+> Package name `ai-eval-scope`, import name `agent_eval`, CLI command `agent-eval`. Python ≥ 3.11.
+
+## Install
 
 ```bash
-pip install ai-eval-scope                 # 基础：规则评估（无 LLM 依赖）
-pip install "ai-eval-scope[llm]"          # + LLM Judge（OpenAI/Anthropic 兼容）
-pip install "ai-eval-scope[agent]"        # + ExecutionAgent 执行引擎（DeepAgents 底座）
-pip install "ai-eval-scope[vision]"       # + 视觉评估（playwright 截图渲染）
-pip install "ai-eval-scope[datasets]"     # + 数据集下载（HuggingFace/ModelScope）
+pip install ai-eval-scope                 # core: rule-based evaluation (no LLM deps)
+pip install "ai-eval-scope[llm]"          # + LLM judge (OpenAI / Anthropic compatible)
+pip install "ai-eval-scope[agent]"        # + ExecutionAgent runtime (DeepAgents-based)
+pip install "ai-eval-scope[vision]"       # + vision evaluation (Playwright screenshots)
+pip install "ai-eval-scope[datasets]"     # + dataset download (HuggingFace / ModelScope)
+pip install "ai-eval-scope[agent,llm]"    # typical setup: execute + judge
 
-uv tool install "ai-eval-scope[agent]"    # uv：全局 CLI 工具安装
-uvx --from "ai-eval-scope[agent]" agent-eval --help   # 一次性运行，不落盘
+uv tool install "ai-eval-scope[agent,llm]"          # uv: global CLI install
+uvx --from "ai-eval-scope[agent,llm]" agent-eval --help   # one-off run, nothing installed
 ```
 
-> 包名 `ai-eval-scope`，import 名 `agent_eval`，CLI 命令 `agent-eval`（命令名≠包名）。
-> Python ≥ 3.11。LLM 与凭证配置见 [CLI 使用教程](../docs/guide/CLI使用教程.md)。
-
-## 开发
+## Quickstart
 
 ```bash
-cd evaluator
-uv sync --group dev                # 开发依赖组（PEP 735，含 llm/vision 测试依赖）
-uv run playwright install chromium  # 下载 Chromium 浏览器二进制（~150MB，装到用户缓存）
+# ① Configure the judging model (interactive wizard: provider → API key → connectivity test)
+agent-eval models set
+
+# ② Open the workbench and describe what you want to evaluate in plain language
+agent-eval start
+
+# …or run the whole chain non-interactively (execute → evaluate → report → upload)
+agent-eval pipeline --package chat --task "safety_*" --upload
+```
+
+### Model configuration
+
+`agent-eval models set` walks you through provider / protocol selection (any OpenAI- or Anthropic-compatible endpoint, including a custom `base_url`), hidden API-key input, and per-role model confirmation:
+
+- `text` — LLM judge (required for AI scoring)
+- `vision` — screenshot evaluation (needed by vision rule sets)
+- `agent` — execution-side model that drives the system under test (falls back to `text`)
+
+```bash
+agent-eval models list    # show config (API keys masked)
+agent-eval models test    # one live call per configured role, with latency
+agent-eval models clear   # remove stored config (including keys)
+```
+
+Keys are stored in `~/.agent_eval/llm.json` with `0600` permissions and are never printed or logged.
+
+## Development
+
+```bash
+git clone https://github.com/domonic18/ai-eval-scope.git
+cd ai-eval-scope/evaluator
+uv sync --group dev                 # dev toolchain (PEP 735 dependency group)
+uv run playwright install chromium  # only needed for vision-evaluation tests
 uv run agent-eval --help
+uv run pytest tests/unit -q         # fast gate; `make test` at the repo root for the full suite
 ```
 
-## 配置
+## Documentation
 
-### 交互式向导（推荐）
+Full command handbook, scenario-package layout, and evaluation walkthroughs live in the repo docs:
 
-```bash
-uv run agent-eval models login
-```
+- [CLI Tutorial](https://github.com/domonic18/ai-eval-scope/blob/main/docs/guide/CLI使用教程.md) (Chinese)
+- [Architecture overview](https://github.com/domonic18/ai-eval-scope/blob/main/docs/arch/01整体架构设计.md) (Chinese)
+- [Contributing](https://github.com/domonic18/ai-eval-scope/blob/main/CONTRIBUTING.md)
 
-向导流程：
+## License
 
-1. **选择提供商**：`anthropic` / `openai` / `deepseek` / `custom`（自定义 OpenAI 兼容端点）
-2. **API Base URL**：按提供商给默认值（anthropic 缺省 `https://api.moonshot.cn/anthropic`，即 Kimi 的 Anthropic 协议端点；openai 缺省 `https://api.openai.com/v1`；deepseek 缺省 `https://api.deepseek.com/v1`）
-3. **API Key**：隐藏输入
-4. **逐角色确认模型**：
-   - `text` — 文本 LLM Judge（默认必配）
-   - `vision` — 视觉评估模型（用视觉规则集时需要）
-   - `agent` — 执行侧模型（`run`/`pipeline` 驱动被测 Agent 用；未配置时自动回退 `text`）
-
-### 查看与验证
-
-```bash
-uv run agent-eval models list    # 查看（API Key 脱敏显示 前4…后4）
-uv run agent-eval models test    # 对每个已配角色真实调用一次，打印时延
-uv run agent-eval models logout  # 删除配置（含 key）
-```
-
-详见 [CLI 使用教程](../docs/guide/CLI使用教程.md) 与 [CLAUDE.md](./CLAUDE.md)。
-
-## 运行
-
-```bash
-uv run agent-eval eval \
-  --package-dir workspace/packages/<包目录>/ \
-  --package courseware
-```
-
-验证是否真正执行：产物中出现 `*.png` 截图、评估耗时显著增加（视觉渲染 + 视觉 LLM 调用），
-且日志无「视觉跳过」「Chromium 启动失败」字样。缓存命中时会跳过视觉重算，调试时加
-`--no-cache` 强制重评。
+[MIT](https://github.com/domonic18/ai-eval-scope/blob/main/LICENSE)

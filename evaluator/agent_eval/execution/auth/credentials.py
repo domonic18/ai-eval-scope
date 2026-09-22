@@ -1,8 +1,8 @@
-"""CredentialStore — 凭证读取（arch/03 §4.0.1/§4.0.5；arch/06 §4.7 双通道）。
+"""CredentialStore — 凭证读取。
 
 读取顺序：进程 env（云端注入）→ 本机密钥区文件（`~/.agent_eval/sut_credentials.json`，
 `agent-eval secrets set` 录入）；sut_config 只存 credential_ref 引用。
-凭证是**通用 KV**（arch/06 §4.7）：env 命名 `AGENT_EVAL_SUT__<CREDENTIAL_REF>__<FIELD>`，
+凭证是**通用 KV**：env 命名 `AGENT_EVAL_SUT__<CREDENTIAL_REF>__<FIELD>`，
 字段名自由——所需字段由配置声明（见 required_credential_fields），代码不枚举字段集。
 sut_config 中出现明文密码/token 属安全红线违规。
 """
@@ -74,11 +74,11 @@ def _template_fields(body_template: str) -> list[str]:
 
 
 def required_credential_fields(sut: Any) -> list[str]:
-    """sut_config 声明的所需凭证字段（大写）——**数据驱动，非代码枚举**（06 §4.7 通用 KV）。
+    """sut_config 声明的所需凭证字段（大写）——**数据驱动，非代码枚举**。
 
     - api_login / session_cookie：``auth.login.body_template`` 的 Jinja2 变量即字段
       （模板写 ``{{ account }}`` 就要求 ``ref.account``；无 login 段由 AuthProvider 报配置错）；
-    - static_token：协议约定字段 ``token``（arch/03 §4.0.2 语义）；
+    - static_token：协议约定字段 ``token``；
     - none：无。
     """
     auth = getattr(sut, "auth", None)

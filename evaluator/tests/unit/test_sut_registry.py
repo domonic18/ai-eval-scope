@@ -1,4 +1,4 @@
-"""SUTRegistry 与 sut_config v2 模型测试（arch/03 §4.0.3）。"""
+"""SUTRegistry 与 sut_config v2 模型测试。"""
 
 from __future__ import annotations
 
@@ -138,7 +138,7 @@ def test_auth_type_validator() -> None:
         )
 
 
-# ── ${VAR} / ${VAR:-默认值} 环境变量展开（arch/17 开源红线：内置包不硬编码内部域名）──
+# ── ${VAR} / ${VAR:-默认值} 环境变量展开（内置包不硬编码内部域名）──
 
 PLACEHOLDER_YAML = """
 sut:
@@ -268,7 +268,7 @@ def test_validate_document_undefined_env_ref_reported() -> None:
     assert any("UNDEFINED_VAR_X" in e for e in errors)
 
 
-# ── generic_http 通道（v4.7 落地）：request_template / response_mapping ──────
+# ── generic_http 通道：request_template / response_mapping ──────
 
 
 GENERIC_HTTP_YAML = """
@@ -346,7 +346,7 @@ def test_validate_generic_http_accepts_full_config() -> None:
     assert validate_sut_config_document(doc) == []
 
 
-# ── steps 链式模板 + 模板变量审计（v4.8：jxb 事故——input 未消费/变量拼错落盘前打回）──
+# ── steps 链式模板 + 模板变量审计（jxb 事故——input 未消费/变量拼错落盘前打回）──
 
 
 CHAIN_YAML = """
@@ -500,7 +500,7 @@ def test_request_template_without_steps_or_path_rejected() -> None:
         RequestTemplateConfig()
 
 
-# ── once 会话步 + poll 轮询步（plan/06 M1+M2）：形态校验与审计扩展 ────────────
+# ── once 会话步 + poll 轮询步：形态校验与审计扩展 ────────────
 
 
 def test_validate_generic_http_accepts_once_and_poll_chain() -> None:
@@ -556,7 +556,7 @@ def test_validate_step_rejects_nonpositive_interval_and_timeout() -> None:
 
 
 def test_validate_step_rejects_timeout_over_cap() -> None:
-    """timeout_s 防呆上界 900（plan/06 §3.4）。"""
+    """timeout_s 防呆上界 900。"""
     with pytest.raises(ValueError):
         PollConfig(until="{{ a.ok }}", timeout_s=901)
 
@@ -604,7 +604,124 @@ def test_validate_generic_http_rejects_undefined_variable_in_until() -> None:
 
 
 def test_validate_generic_http_legacy_chain_without_new_fields_passes() -> None:
-    """存量 v4.8 链（无 once/poll）零改动通过（NF-2 存量兼容）。"""
+    """存量 v4.8 链（无 once/poll）零改动通过（存量兼容）。"""
     import yaml
 
     assert validate_sut_config_document(yaml.safe_load(CHAIN_YAML)) == []
+
+
+# ── steps 链未知键下钻（run 20260917_003025 事故：幻觉字段静默丢弃 11/11 全挂） ──
+
+HALLUCINATED_STEPS_YAML = """
+sut:
+  name: jxb-bad
+  channel: generic_http
+  base_url: https://x.example.com/api
+  auth:
+    type: api_login
+    credential_ref: X
+    login:
+      method: POST
+      path: https://x.example.com/api/auth/login
+      body_template: '{"phone": "{{ phone }}", "password": "{{ password }}"}'
+    extract:
+      token_path: data.token
+      token_type: Bearer
+  request_template:
+    steps:
+      - name: create_conversation
+        method: POST
+        path: /chat/conversations
+        kind: once
+        body: {}
+        response_mapping:
+          conversation_id: data.id
+      - name: send_message
+        method: POST
+        path: "/chat/conversations/{{ create_conversation.data.id }}/messages"
+        kind: poll
+        depends_on: create_conversation
+        headers:
+          Accept: "text/event-stream"
+        body:
+          type: "text"
+          content: "{{ input }}"
+        until:
+          field: stream_closed
+          value: true
+        response_mapping:
+          answer: "events[type=content].-1.content"
+  response_mapping:
+    text: "events[type=content].-1.content"
+"""
+
+
+def _hallucinated_steps_doc() -> dict:
+    import yaml
+
+    return yaml.safe_load(HALLUCINATED_STEPS_YAML)
+
+
+def test_validate_document_rejects_step_kind_and_depends_on() -> None:
+    """事故字段 kind/depends_on：步骤字段白名单外，逐项打回并带步骤下标定位。"""
+    errors = validate_sut_config_document(_hallucinated_steps_doc())
+    assert any("steps[0] 含未知字段 'kind'" in e for e in errors)
+    assert any("steps[1] 含未知字段 'kind'" in e for e in errors)
+    assert any("steps[1] 含未知字段 'depends_on'" in e for e in errors)
+
+
+def test_validate_document_rejects_step_level_until_and_response_mapping() -> None:
+    """事故字段裸 until / 步骤级 response_mapping：轮询语义属 poll 段、提取属顶层映射。"""
+    errors = validate_sut_config_document(_hallucinated_steps_doc())
+    assert any("steps[1] 含未知字段 'until'" in e for e in errors)
+    assert any("steps[0] 含未知字段 'response_mapping'" in e for e in errors)
+
+
+def test_validate_document_step_error_carries_field_education() -> None:
+    """错误即教学：消息列出步骤合法字段集与 once/poll 正确形态（照抄即可修正）。"""
+    errors = validate_sut_config_document(_hallucinated_steps_doc())
+    step_errors = [e for e in errors if "steps[" in e]
+    assert step_errors, "应有步骤级未知键错误"
+    for e in step_errors:
+        assert "once: true" in e and "poll:" in e and "顶层 response_mapping" in e
+
+
+def test_validate_document_rejects_poll_invented_fields() -> None:
+    """poll 段未知键同样打回（白名单 until/interval_s/timeout_s）。"""
+    doc: dict = {
+        "sut": {
+            "name": "x",
+            "channel": "generic_http",
+            "base_url": "https://x",
+            "request_template": {
+                "steps": [
+                    {
+                        "name": "status",
+                        "method": "GET",
+                        "path": "/j",
+                        "poll": {
+                            "until": "{{ status.data.state == 'done' }}",
+                            "backoff": "exponential",
+                        },
+                    }
+                ]
+            },
+        }
+    }
+    errors = validate_sut_config_document(doc)
+    assert any("steps[0].poll 含未知字段 'backoff'" in e for e in errors)
+
+
+def test_registry_load_rejects_hallucinated_steps(tmp_path) -> None:
+    """加载卡口（旁路写入者兜底）：幻觉字段在 load 期显式拒绝，不再静默丢弃。"""
+    path = _write(tmp_path, "sut.yaml", HALLUCINATED_STEPS_YAML)
+    with pytest.raises(SUTChannelError, match="steps\\[0\\] 含未知字段 'kind'"):
+        SUTRegistry.load(path)
+
+
+def test_registry_load_valid_chain_still_passes(tmp_path) -> None:
+    """加载卡口不误伤合法链式配置（存量无 once/poll 链照常加载）。"""
+    yaml_text = CHAIN_YAML.replace("name: chained-api", "name: chained-ok")
+    path = _write(tmp_path, "sut.yaml", yaml_text)
+    registry = SUTRegistry.load(path)
+    assert registry.names == ["chained-ok"]

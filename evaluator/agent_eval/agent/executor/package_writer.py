@@ -1,6 +1,6 @@
 """执行包物化（task/trace/answer/transcript/metrics + 机械守卫）——显式入参纯函数。
 
-从 agent.py 拆出（plan/07 G4）：write_package 由 Agent（LLM）调用后，执行器
+从 agent.py 拆出：write_package 由 Agent（LLM）调用后，执行器
 在包上补齐结构化文件与机械守卫。原为 ExecutionAgent 私有方法，实例状态只有
 last_run / llm_role 两个读取点，改为显式入参后与执行循环解耦。全部 merge
 语义 / 幂等：保留 LLM 已写字段，setdefault 补过程统计。
@@ -16,11 +16,16 @@ from agent_eval.agent.core.session import AgentSession
 from agent_eval.agent.executor.ledger import EvidenceLedger
 from agent_eval.agent.executor.prompts import extract_instruction
 from agent_eval.agent.executor.sut_tools import content_fingerprint
+from agent_eval.agent.executor.terminal import (
+    classify_terminal_result,
+    render_deliverable,
+)
 from agent_eval.agent.executor.transcript import build_transcript
+from agent_eval.core.types import TerminalKind
 from agent_eval.execution.models import ProcessMetrics, Task
 from agent_eval.storage.package import ExecutionPackage
 
-# Agent 未调用 write_package 时兜底失败包的归因文案（plan/07 决策#6 统一两处兜底）
+# Agent 未调用 write_package 时兜底失败包的归因文案
 FALLBACK_NOT_WRITTEN = "Agent 未调用 write_package，已由 ExecutionAgent 兜底写包"
 
 
@@ -94,16 +99,24 @@ def ensure_trace_file(
     _write_json_object(trace_file, trace)
 
 
-def ensure_answer_file(package_dir: Any, last_sut_run: dict[str, Any] | None) -> None:
-    """SUT 回答物化为 output/answer.md（对话型任务无产物文件；评估器按文件收集文本）。"""
-    text = (last_sut_run or {}).get("text") or ""
-    if not text.strip():
-        return
+def ensure_answer_file(package_dir: Any, last_sut_run: dict[str, Any] | None) -> str:
+    """SUT 终态交付物化为 output/answer.md（合同三）。
+
+    交付物 = {text, output, questions} 三元全量渲染（宁可重复不可丢失）：
+    text 是 SUT 发言；结构化 output 转 generic markdown；反问显式标注
+    「待应答」——此前只渲染 text，text 停在播报时 answer.md 即播报（run
+    20260916_074046 neg_001/sem_002）。返回渲染内容（空串=无交付证据），
+    供守卫与测试判读；已有产物文件时不重复物化。
+    """
+    deliverable = render_deliverable(classify_terminal_result(last_sut_run))
+    if not deliverable.strip():
+        return ""
     output_dir = package_dir / "output"
     if output_dir.exists() and any(output_dir.iterdir()):
-        return  # SUT 已有产物文件，不重复物化
+        return deliverable  # SUT 已有产物文件，不重复物化
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "answer.md").write_text(text, encoding="utf-8")
+    (output_dir / "answer.md").write_text(deliverable, encoding="utf-8")
+    return deliverable
 
 
 def ensure_transcript_file(
@@ -195,6 +208,55 @@ def guard_answered_manifest(package_dir: Any, last_run: dict[str, Any] | None) -
     _write_json_object(metadata_file, metadata)
 
 
+def guard_deliverable(package_dir: Any, last_run: dict[str, Any] | None) -> None:
+    """交付物守卫（合同三纵深防御）：无交付证据而对话非空 → 留痕。
+
+    执行侧证据缺陷不裸穿透到评估结论：answer 空 + output 目录空 + 台账无
+    交付观测，但 transcript 有完整对话——说明 SUT 交付在链路上丢失（而非
+    SUT 未交付），metadata 记 degraded_evidence 供评估侧与 Web 端甄别。
+    """
+    if classify_terminal_result(last_run).kind is not TerminalKind.NO_EVIDENCE:
+        return
+    output_dir = package_dir / "output"
+    if output_dir.exists() and any(output_dir.iterdir()):
+        return
+    transcript = package_dir / "transcript.md"
+    try:
+        if not transcript.read_text(encoding="utf-8").strip():
+            return
+    except OSError:
+        return
+    metadata_file = package_dir / "metadata.json"
+    metadata = _load_json_object(metadata_file)
+    metadata["degraded_evidence"] = True
+    _write_json_object(metadata_file, metadata)
+
+
+def guard_evaluable_abort(package_dir: Any, last_run: dict[str, Any] | None) -> None:
+    """可评估性守卫（合同四）：异常收尾但 SUT 已交付 → 翻回可评估。
+
+    执行会话崩 ≠ SUT 未交付（run 20260916_074046 media_001/002 等 5 样本：
+    评估侧 LLM 断连崩会话，SUT 已完整交付正确答案，guard_aborted_manifest
+    强制 failed 后引擎按 RUN_ERROR 剔出分母——reward 归零、门禁被翻转）。
+    可评估性只看证据：last_run 终态分类为 delivered / interrupt_pending 即翻
+    回 success 进评分分母；真实错误保留在 trace.error 与 error_summary。
+    与 guard_echo 同款守卫惯例：metadata 记 guard_evaluable_abort 留痕。
+    仅 abort 路径在 guard_aborted_manifest 之后调用（正常收尾由作答守卫负责）。
+    """
+    if not classify_terminal_result(last_run).evaluable:
+        return
+    manifest_file = package_dir / "manifest.json"
+    data = json.loads(manifest_file.read_text(encoding="utf-8"))
+    if data.get("status") != "failed":
+        return
+    data["status"] = "success"
+    _write_json_object(manifest_file, data)
+    metadata_file = package_dir / "metadata.json"
+    metadata = _load_json_object(metadata_file)
+    metadata["guard_evaluable_abort"] = True
+    _write_json_object(metadata_file, metadata)
+
+
 def guard_aborted_manifest(package_dir: Any, error: str) -> None:
     """异常收尾守卫：任务以异常终止时 manifest 强制翻为 failed。
 
@@ -278,12 +340,16 @@ async def finalize_execution_package(
         aborted_reason=fallback_error,
     )
     ensure_metrics_file(session, package_dir)
+    guard_deliverable(package_dir, last_sut_run)
     guard_answered_manifest(package_dir, last_sut_run)
     guard_echo_answer(package_dir, last_sut_run)
     if fallback_error is not None:
         # 异常收尾（fallback_error 仅由 abort 路径传入）：LLM 已写的 success
         # 判定不可信，强制翻 failed——正常收尾不设此守卫
         guard_aborted_manifest(package_dir, fallback_error)
+        # 合同四：强制 failed 之后按证据复核——SUT 已交付的
+        # 样本翻回可评估（执行会话崩 ≠ SUT 未交付），后置保证异常语义不松
+        guard_evaluable_abort(package_dir, last_sut_run)
     if evidence is not None:
         # 先落证据再算指纹——content_hash 覆盖最终包内容（含 ledger.jsonl）
         evidence.log("close", reason=close_reason)
@@ -302,6 +368,8 @@ __all__ = [
     "finalize_execution_package",
     "guard_aborted_manifest",
     "guard_answered_manifest",
+    "guard_deliverable",
     "guard_echo_answer",
+    "guard_evaluable_abort",
     "refresh_content_hash",
 ]

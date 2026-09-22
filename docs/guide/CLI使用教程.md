@@ -27,7 +27,7 @@
 **环境要求**：Python 3.11+、[uv](https://docs.astral.sh/uv/)。
 
 ```bash
-git clone https://github.com/domonic18/ai-eval-scope.git && cd agent-eval-system/evaluator
+git clone https://github.com/domonic18/ai-eval-scope.git && cd ai-eval-scope/evaluator
 uv sync                      # 基础安装（pack/eval 即可用）
 ```
 
@@ -59,7 +59,7 @@ uv sync                      # 基础安装（pack/eval 即可用）
 | `models set/list/test/clear` | LLM 模型配置管理 | 配置 API Key 与各角色模型（Sprint 10 起 login/logout 更名 set/clear） |
 | `secrets set/list/delete` | SUT 凭证管理 | 录入被测系统账号密码 |
 | `scenario new/edit/show/validate/list/pull` | 场景包管理 | 创建（skeleton/agent）/Agent 改包/查看/校验/发现场景包（Sprint 10 起 package 组更名 scenario；`init` 并入 `new --mode skeleton`） |
-| `start / doctor / runs / open` | 交互式工作台（Sprint 10） | 向导式全流程 / 一键自检 / 本地结果浏览 / 浏览器直达 |
+| `start / doctor / runs / open` | 交互式工作台（Sprint 10） | 向导式全流程（首启未配模型有引导卡，可一步直达 `models set`）/ 一键自检 / 本地结果浏览 / 浏览器直达 |
 | `suite plan/run` | 声明式评测矩阵（suite.yaml 批量运行） | 多包多任务集对照评测 |
 | `rule-set validate/list-templates` | 规则集校验与模板浏览 | 包外规则集维护 |
 | `dataset download/list` | 评测数据集下载与索引 | 知识库/评测题数据 |
@@ -209,6 +209,7 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
 
 - 前置：`agent-eval models set` 配置 LLM；`uv sync --extra agent` 安装 DeepAgents 底座
 - 工作过程**流式直播**（claude code 式）：`✻` 思考过程（暗色）、`🤖` 回复正文、`🔧` 工具调用行（带文件/查询参数）实时滚动；写大文件时显示 `⏳ write_file 生成参数中 · N 字` 单行进度（参数在生成、并非卡住）；Ctrl+C 中断当前轮（磁盘不受影响，可继续输入）
+- **正文 markdown 渲染**：回复中的标题/粗体/行内代码/列表/引用在终端直接渲染为样式（围栏代码块逐字保真），无需读原始 markdown 标记；复杂任务 Agent 会先列 `📋 任务清单`（✓ 完成 / ▶ 进行中 / ○ 待办）再逐项推进，进度跨轮可见
 - Agent 需要参照格式时会用 `search_reference` / `read_reference` 只读内置包（chat/code/courseware）的真实文件——清单/规则集/提示词一律以内置包格式为准
 - 单轮失败（如 LLM 网关瞬时断流）不杀会话：CLI 打印失败原因并回滚暂存，直接重发上一条需求即可
 - 沙盒红线：仅限包内 `.yaml/.yml/.json/.md`；`sut_configs/` 禁止凭证明文（走 `credential_ref` + `agent-eval secrets set`）；落盘门禁要求 `rules/` 与 `prompts/` 各含至少一个 `.yaml` 资产（只写 `.md` 会被加载器忽略）
@@ -255,19 +256,19 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
 
 ## 七、实战一：课件评测（courseware）
 
-以项目自带样例 `samples/大单元学习总导/`（HTML 课件目录）为例：
+以自备的 HTML 课件目录为评测输入（下文以 `<课件目录>` 指代，如 `my-courseware/`；多文件打散形态见本节末尾的常用变体）：
 
 ```bash
 cd evaluator
 
-# ① 打包：遍历目录生成 ExecutionPackage（task-id 取目录名"大单元学习总导"）
+# ① 打包：遍历目录生成 ExecutionPackage（task-id 取目录名）
 uv run agent-eval pack \
-  --source-dir ../samples/大单元学习总导/ \
+  --source-dir /path/to/<课件目录>/ \
   --output-dir workspace/packages
 
 # ② 评估：引用内置 courseware 包（缺省用其 default_rule_set = coursework-vision）
 uv run agent-eval eval \
-  --package-dir workspace/packages/大单元学习总导/ \
+  --package-dir workspace/packages/<课件目录名>/ \
   --package courseware
 
 # ③ 查看报告
@@ -287,7 +288,7 @@ uv run agent-eval pack --source-dir /path/to/output/ \
 
 # 显式选择规则集档位（包内名称）
 uv run agent-eval eval \
-  --package-dir workspace/packages/大单元学习总导/ \
+  --package-dir workspace/packages/<课件目录名>/ \
   --package courseware --rule-set coursework-gate     # 只跑格式+常识门控（无 LLM 也准确）
 
 # 未配置 LLM 强制阻断而不是降级跳过

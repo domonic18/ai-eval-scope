@@ -1,4 +1,4 @@
-"""GenericHttp 语义工具面（generic_http 通道，arch/03 §4.2）。
+"""GenericHttp 语义工具面（generic_http 通道）。
 
 sut_request 单语义工具：请求模板渲染与响应提取都在通道内完成——执行
 Agent 只给 input 与 metadata，不手搓请求（与 AgentProtocolToolServer 的
@@ -14,6 +14,7 @@ from typing import Any
 from agent_eval.agent.core.tools import ToolExporterMixin, ToolSpec
 from agent_eval.agent.executor.ledger import ResourceLedger, uninjected_ledger_refusal
 from agent_eval.agent.executor.protocol_tools import bounded_result, tool_guard
+from agent_eval.agent.executor.terminal import log_sut_observation
 from agent_eval.execution.channels.generic_http import GenericHttpChannel
 
 TOOL_SPECS: list[ToolSpec] = [
@@ -52,10 +53,10 @@ class GenericHttpToolServer(ToolExporterMixin):
         self.default_metadata = default_metadata or {}
         # 最近一次 SUT 请求摘要（ExecutionPackage trace 回填 SUT 回答文本用）
         self.last_run: dict[str, Any] | None = None
-        # 交互预算账本（arch/16 §4.3）——缺省 None=fail-closed（未注入即拒绝，
+        # 交互预算账本——缺省 None=fail-closed（未注入即拒绝，
         # 见 sut_request）；由 ExecutionAgent 逐任务注入新实例
         self.ledger: ResourceLedger | None = None
-        # once 步会话键（plan/06 M1）——ExecutionAgent.run_task 逐任务注入
+        # once 步会话键——ExecutionAgent.run_task 逐任务注入
         # task.id，多任务隔离由键空间机械保证（不依赖 Agent 在 metadata 自觉传）
         self.current_session_key: str | None = None
 
@@ -63,6 +64,7 @@ class GenericHttpToolServer(ToolExporterMixin):
         """记录最近一次请求的状态、输入与回答文本（与 AgentProtocolToolServer 同契约）。
 
         input 一并记录：ExecutionAgent 的机械回显守卫据此判定「SUT 返回=请求原文」。
+        output 一并保留：结构化交付不再当场丢弃，供交付物渲染。
         """
         output = result.get("output") or {}
         self.last_run = {
@@ -70,7 +72,10 @@ class GenericHttpToolServer(ToolExporterMixin):
             "run_id": (result.get("run") or {}).get("run_id"),
             "text": result.get("text") or output.get("text") or "",
             "input": input,
+            "output": output or None,
         }
+        # 观测载荷同步入台账（sut_observation 事件，载荷截断全量在 trace）
+        log_sut_observation(self.ledger, source="sut_request", run=self.last_run)
 
     @tool_guard
     async def sut_request(
@@ -81,7 +86,7 @@ class GenericHttpToolServer(ToolExporterMixin):
     ) -> dict[str, Any]:
         """向被测系统发送一次请求：input 进入预置请求模板，返回归一化结果。
 
-        多轮会话自动续接（plan/06 M1）：配置了 once 步时该请求与此前调用共享
+        多轮会话自动续接：配置了 once 步时该请求与此前调用共享
         同一会话（键由执行框架按任务注入）；``new_session=True`` 丢弃当前会话
         整链重建——仅明确要换会话时使用，勿自作主张。
 

@@ -50,6 +50,8 @@ export interface SampleEventData {
   total_duration_ms?: number
   llm_calls?: number
   token_usage?: number
+  // run_error 样本诊断摘要（arch/16 §4.6 合同五）：落 samples.extra
+  error_summary?: string
   dimensions?: DimensionInput[]
 }
 

@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "ai-eval-scope"
-version = "0.3.0"
+version = "0.4.2"
 source = { editable = "../evaluator" }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -65,6 +65,7 @@ provides-extras = ["llm", "agent", "vision", "datasets"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "ai-eval-scope", extras = ["agent"] },
     { name = "ai-eval-scope", extras = ["llm"] },
     { name = "ai-eval-scope", extras = ["vision"] },
     { name = "commitizen", specifier = ">=3.29" },

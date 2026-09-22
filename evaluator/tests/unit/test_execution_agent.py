@@ -1,4 +1,4 @@
-"""ExecutionAgent 单元测试（DeepAgents 底座，arch/03 §三 v4.6）——伪 deepagents/langchain 全离线。"""
+"""ExecutionAgent 单元测试（DeepAgents 底座）——伪 deepagents/langchain 全离线。"""
 
 from __future__ import annotations
 
@@ -143,7 +143,7 @@ def test_run_task_success_with_agent_package(tmp_path, monkeypatch) -> None:
     assert package.task_data["input"] == {"subject": "数学"}  # 缺省补写 task.json
 
     # ainvoke 配置：recursion_limit 恒由 policy 推导（未声明→全局缺省 158）、双回调；
-    # 不注入 thread_id（无 checkpointer，单任务单发无恢复语义，v4.6.3）
+    # 不注入 thread_id（无 checkpointer，单任务单发无恢复语义）
     _, config = graph.invocations[0]
     assert "configurable" not in config
     assert config["recursion_limit"] == 158
@@ -205,7 +205,7 @@ def test_run_task_recursion_error_becomes_timeout(tmp_path, monkeypatch) -> None
 
 
 def test_run_task_ignores_legacy_max_turns_declaration(tmp_path, monkeypatch) -> None:
-    """单轨保险丝（arch/16 §七 Phase 2）：constraints.max_turns 声明不再生效。
+    """单轨保险丝：constraints.max_turns 声明不再生效。
 
     旧双轨时代任务声明 5 会把 recursion_limit 压到 10——轮次天花板伪装保险丝。
     降格后保险丝恒由 interaction_policy 推导（未声明走全局缺省），与
@@ -284,7 +284,7 @@ def test_run_task_set_shares_run_id(tmp_path, monkeypatch) -> None:
 
 
 def test_run_task_set_isolates_task_failure(tmp_path, monkeypatch) -> None:
-    """任务隔离（arch/16 Phase 1 收尾）：单任务熔断不烧整场。
+    """任务隔离：单任务熔断不烧整场。
 
     两次 staging 重放实测（run 20260911_050015 / 073626）首个任务异常后
     其余考卷从未执行——失败包由 _abort 补齐链物化，登记后继续下一任务。
@@ -306,6 +306,53 @@ def test_run_task_set_isolates_task_failure(tmp_path, monkeypatch) -> None:
     assert _read_json(failed_dir / "manifest.json")["status"] == "failed"
     assert "保险丝触发" in _read_json(failed_dir / "trace.json")["error"]
     assert _read_json(_pkg_root(tmp_path) / "t_b" / "manifest.json")["status"] == "success"
+
+
+def test_run_task_set_cancel_stops_at_task_boundary(tmp_path, monkeypatch) -> None:
+    """协作取消：任务边界粒度——首任务完成后置位，次任务不启动。
+
+    已完成任务的包正常物化（cancelled 后返回部分列表，run_manifest 由
+    execute_stage 照常登记——Agent 域「产物可溯源」的根基）。
+    """
+    import threading
+
+    _fix_run_id(monkeypatch)
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    cancel = threading.Event()
+    original_ainvoke = graph.ainvoke
+
+    async def ainvoke_then_signal(payload, config=None):
+        result = await original_ainvoke(payload, config)
+        cancel.set()  # 宿主视角：首任务执行中收到 Ctrl+C（置位不抛）
+        return result
+
+    graph.ainvoke = ainvoke_then_signal
+
+    agent = _agent(tmp_path)
+    task_set = TaskSet(id="ts", name="批量", tasks=[_task("t_a"), _task("t_b")])
+    run_id, packages = asyncio.run(agent.run_task_set(task_set, cancel_event=cancel))
+
+    assert run_id == "r_fix"
+    assert [p.manifest.task_id for p in packages] == ["t_a"]  # 部分列表
+    assert len(graph.invocations) == 1  # 第二任务从未启动
+    assert (_pkg_root(tmp_path) / "t_a" / "manifest.json").exists()  # 已完成产物落盘
+    assert not (_pkg_root(tmp_path) / "t_b").exists()
+
+
+def test_run_task_set_cancel_preset_runs_nothing(tmp_path, monkeypatch) -> None:
+    """预置置位：零任务执行、零图调用（Agent 域 fast-fail 形态）。"""
+    import threading
+
+    graph = _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
+    agent = _agent(tmp_path)
+    cancel = threading.Event()
+    cancel.set()
+    task_set = TaskSet(id="ts", name="批量", tasks=[_task("t_a")])
+
+    run_id, packages = asyncio.run(agent.run_task_set(task_set, cancel_event=cancel))
+
+    assert packages == []
+    assert graph.invocations == []
 
 
 def test_prompt_contents(tmp_path) -> None:
@@ -350,13 +397,13 @@ def test_prompts_sourced_from_yaml_asset(tmp_path) -> None:
     assert "## 输出规范" in system_prompt
     assert "scan_directory" in system_prompt
     assert "BudgetExhausted" in system_prompt  # 预算闸门纪律：拒绝即按 guidance 行动
-    assert "TimeoutBudgetExhausted" in system_prompt  # 超时机械守卫纪律（v4.17）
-    # 完成仲裁标准（arch/16 §5.2 Phase 2）：四枚举 + rationale 留痕是提示词主体
+    assert "TimeoutBudgetExhausted" in system_prompt  # 超时机械守卫纪律
+    # 完成仲裁标准：四枚举 + rationale 留痕是提示词主体
     for verdict in ("complete", "progressing", "stalled", "unknown"):
         assert verdict in system_prompt
     assert "rationale" in system_prompt
     assert "briefing" in system_prompt  # 决策简报是行动依据
-    # 数字条款清零（arch/16 §5.3）：预算面由闸门拒绝载荷实时告知，提示词不再出现轮次数
+    # 数字条款清零：预算面由闸门拒绝载荷实时告知，提示词不再出现轮次数
     assert "max_turns" not in system_prompt
     assert "max_retries" not in system_prompt
     assert "轮为限" not in system_prompt
@@ -379,7 +426,7 @@ class _DisciplineStubServer:
 
 
 def test_channel_discipline_follows_tool_surface(tmp_path) -> None:
-    """通道纪律与工具面同源（plan/07 G3）：按注册表 discipline_key 拼装。
+    """通道纪律与工具面同源：按注册表 discipline_key 拼装。
 
     深层动机：generic_http 任务的工具面里没有 answer_sut_questions/run_on_thread，
     其纪律不该出现在那些任务的 system prompt 里（工具面与规则面同源）。
@@ -427,7 +474,7 @@ def test_prompt_asset_declares_channel_discipline() -> None:
 
 
 def test_build_graph_resets_visible_tool_surface(tmp_path, monkeypatch) -> None:
-    """执行图挂工具面复位中间件：模型可见面 = 自研装配清单（plan/07 G1）。
+    """执行图挂工具面复位中间件：模型可见面 = 自研装配清单。
 
     深层动机：deepagents 内置虚拟 FS 工具（ls/read_file/…）additive 混入曾致
     最后两轮烧在内置 ls 上，且与自研 read_file 同名歧义——复位后内置全剥。
@@ -508,7 +555,7 @@ class _ResettableSutServer(_StubSutServer):
 def test_task_start_routes_reset_through_reset_task_state(tmp_path, monkeypatch) -> None:
     """实现统一清账入口的注册表：任务起点走 reset_task_state（超时计数随之清零），
     不再走仅清 last_run 的旧路径——否则上一任务的超时残留会让下一任务被误判
-    TimeoutBudgetExhausted（v4.17）。"""
+    TimeoutBudgetExhausted。"""
     _fix_run_id(monkeypatch)
     _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
     server = _ResettableSutServer(last_run={"status": "success", "text": "残留"})
@@ -523,7 +570,7 @@ def test_task_start_routes_reset_through_reset_task_state(tmp_path, monkeypatch)
 
 def test_trace_backfills_sut_last_run_text(tmp_path, monkeypatch) -> None:
     _fix_run_id(monkeypatch)
-    """trace 回填 SUT 最终回答（工具注册表记录的 last_run，v4.6.4）。"""
+    """trace 回填 SUT 最终回答（工具注册表记录的 last_run）。"""
     server = _StubSutServer()
     record = {
         "status": "success",
@@ -542,7 +589,7 @@ def test_trace_backfills_sut_last_run_text(tmp_path, monkeypatch) -> None:
     assert package.manifest.status == "success"
     trace = _read_json(_pkg_root(tmp_path) / "task_1" / "trace.json")
     assert trace["response"]["sut"]["text"].startswith("一元一次方程")
-    # 过程指标（Sprint 9 v6.0）：trace.response 携带真轮次与执行耗时
+    # 过程指标：trace.response 携带真轮次与执行耗时
     assert "turns" in trace["response"]
     assert "duration_ms" in trace["response"]
     assert trace["response"]["sut"]["thread_id"] == "th-1"
@@ -596,7 +643,7 @@ def test_trace_without_sut_run_keeps_counts_only(tmp_path, monkeypatch) -> None:
 
 
 def test_workspace_injected_into_all_tool_servers(tmp_path, monkeypatch) -> None:
-    """凡带 workspace_dir 属性的注册表统一注入落盘根（v4.10：download_sut_file 落包）。"""
+    """凡带 workspace_dir 属性的注册表统一注入落盘根（download_sut_file 落包）。"""
     _fix_run_id(monkeypatch)
     _install_fakes(monkeypatch, FakeGraph(result={"messages": _messages()}))
 
@@ -623,7 +670,7 @@ def test_workspace_injected_into_all_tool_servers(tmp_path, monkeypatch) -> None
 
 
 def test_session_key_injected_per_task(tmp_path, monkeypatch) -> None:
-    """generic_http 语义工具面逐任务注入 current_session_key=task.id（plan/06 M1）。
+    """generic_http 语义工具面逐任务注入 current_session_key=task.id。
 
     多任务隔离由键空间机械保证；无该属性的工具面（协议/SUT 工具）不受影响。
     """
@@ -778,7 +825,7 @@ def test_extract_instruction_variants() -> None:
 
 
 def test_trace_merge_preserves_llm_sut_run_and_adds_agent_stats(tmp_path, monkeypatch) -> None:
-    """merge 语义（Sprint 9 v6.0）：LLM write_package 已写 SUT-run 形态 trace/metrics 时，
+    """merge 语义：LLM write_package 已写 SUT-run 形态 trace/metrics 时，
     Agent 过程统计以 setdefault 补充，不覆盖其字段。"""
     import asyncio
 
@@ -880,7 +927,7 @@ def test_content_hash_reflects_materialized_content(tmp_path, monkeypatch) -> No
     )
 
 
-# ─── 机械壳任务装配与统一收尾（arch/16 Phase 1：policy/ledger/evidence/CLOSE） ───
+# ─── 机械壳任务装配与统一收尾（policy/ledger/evidence/CLOSE） ───
 
 
 def test_recursion_limit_derived_from_declared_policy(tmp_path, monkeypatch) -> None:
@@ -934,7 +981,13 @@ def test_abort_package_carries_trace_answer_ledger(tmp_path, monkeypatch) -> Non
 
     pkg_dir = _pkg_root(tmp_path) / "task_1"
     manifest = _read_json(pkg_dir / "manifest.json")
-    assert manifest["status"] == "failed"
+    # 合同四：SUT 已交付（「课件已全部完成！」）→ 可评估性
+    # 只看证据，异常收尾翻转后由 guard_evaluable_abort 翻回 success 进评分
+    # 分母（run 20260916_074046 media_001 教训：SUT 交付 + 会话崩 ≠ run_error）
+    assert manifest["status"] == "success"
+    metadata = _read_json(pkg_dir / "metadata.json")
+    assert metadata["guard_abort"] is True  # 异常语义留痕不擦除
+    assert metadata["guard_evaluable_abort"] is True
     trace = _read_json(pkg_dir / "trace.json")
     # 真实错误入 trace.error（write_package 的 error 只进返回摘要不入包）
     assert "graph 中断" in trace["error"]
@@ -992,7 +1045,7 @@ class _LedgerConsumingGraph(FakeGraph):
 
 
 def test_ledger_fresh_per_task(tmp_path, monkeypatch) -> None:
-    """账本逐任务新实例：上一任务的消耗不串入下一任务（v4.12 同因回归）。"""
+    """账本逐任务新实例：上一任务的消耗不串入下一任务。"""
     _fix_run_id(monkeypatch)
     host = _LedgerHost()
     graph = _LedgerConsumingGraph(host, result={"messages": _messages()})

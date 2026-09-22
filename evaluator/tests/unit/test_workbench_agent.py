@@ -1,4 +1,4 @@
-"""WorkbenchAgent / PackageToolServer 单测 — 沙盒红线、门禁回改、落盘原子性（arch/15 §六）。
+"""WorkbenchAgent / PackageToolServer 单测 — 沙盒红线、门禁回改、落盘原子性。
 
 LLM 链路以回放状态机 mock（monkeypatch ``WorkbenchAgent._invoke``），
 不依赖 deepagents / LLM / 网络；工具面直调异步方法。
@@ -7,6 +7,7 @@ LLM 链路以回放状态机 mock（monkeypatch ``WorkbenchAgent._invoke``），
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -21,6 +22,9 @@ from agent_eval.agent.workbench.agent import (
     _resume_messages,
     repair_orphan_tool_calls,
 )
+from agent_eval.agent.workbench.gates import sut_evidence_gate
+from agent_eval.agent.workbench.memory import session_key
+from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
 from agent_eval.agent.workbench.tools import PackageToolServer
 from agent_eval.core.exceptions import AgentError
 
@@ -80,6 +84,12 @@ async def _write_valid(server: PackageToolServer) -> str:
     await server.write_file("datasets/ref.yaml", "data: []\n")
     await server.write_file("metrics/policy.yaml", POLICY)
     return "已生成完整场景包"
+
+
+async def _write_valid_with_skeleton(server: PackageToolServer, skeleton: str) -> str:
+    """完整包 + 骨架（五阶段流程回放用）。"""
+    await server.write_file("SKELETON.md", skeleton)
+    return await _write_valid(server)
 
 
 # ── 沙盒工具面 ──────────────────────────────────────────────────────────
@@ -170,6 +180,56 @@ class TestSandbox:
         assert "0.2.0" in server.staging["agent_eval.yaml"]
         assert "staging" in server.staging["agent_eval.yaml"]
 
+    def test_update_manifest_roundtrip_structure(self, tmp_path: Path) -> None:
+        """实测事故回放：曾手拼 "package:\\n" + dump(扁平 dict)——子键零缩进、
+        package: 为 null，落盘清单结构性损坏（read_manifest 的 get 回退又把坏
+        结构读回「自洽」）。结构回读断言防回归。"""
+        import yaml as _yaml
+
+        _seed_valid_package(tmp_path)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.update_manifest({"version": "0.2.0"}))
+        content = server.staging["agent_eval.yaml"]
+        assert "\n  id: demo" in content  # package 下字段两空格缩进
+        data = _yaml.safe_load(content)
+        assert data["package"]["id"] == "demo"
+        assert data["package"]["version"] == "0.2.0"
+
+    def test_validate_rejects_truncated_yaml_anywhere(self, tmp_path: Path) -> None:
+        """实测事故回放：task_sets/smoke.yaml 首写被截断，解析门禁只扫 rules/
+        时漏网（靠 Agent read_file 自检才发现）——全量 .yaml/.yml 解析，截断
+        文件带路径打回。"""
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            await _write_valid(server)
+            # 绕过 write_file 预检直接入暂存（跨进程恢复的旧快照等旁路）——
+            # validate 的全量解析门禁是纵深防御，截断文件带路径打回
+            server.staging["task_sets/smoke.yaml"] = (
+                'task_sets:\n  - id: smoke\n    steps: ["未闭合'
+            )
+            result = await server.validate_package()
+            assert not result["ok"]
+            assert any("task_sets/smoke.yaml" in e for e in result["errors"])
+
+        asyncio.run(run())
+
+    def test_write_file_rejects_truncated_yaml(self, tmp_path: Path) -> None:
+        """截断 YAML 在写入时当场打回（垃圾进不了暂存，省掉靠 Agent 自检发现的
+        一整轮）；合法 YAML 与非 YAML 扩展名不受影响。"""
+        server = PackageToolServer(tmp_path)
+
+        async def run() -> None:
+            bad = await server.write_file("task_sets/smoke.yaml", 'a: "未闭合')
+            assert "YAML 解析失败" in bad["error"] and "未入暂存区" in bad["error"]
+            assert server.staging == {}
+            ok = await server.write_file("task_sets/smoke.yaml", "task_sets: []\n")
+            assert ok["ok"] is True and "task_sets/smoke.yaml" in server.staging
+            md = await server.write_file("notes.md", '# 任意文本 "未闭合\n')
+            assert md["ok"] is True
+
+        asyncio.run(run())
+
     def test_validate_empty_and_minimal(self, tmp_path: Path) -> None:
         server = PackageToolServer(tmp_path)
 
@@ -215,7 +275,7 @@ class TestSandbox:
         asyncio.run(run())
 
     def test_validate_online_requires_task_sets(self, tmp_path: Path) -> None:
-        # 在线形态缺考卷在落盘前打回——此前一路绿灯到运行时才炸（指南 §1 task_sets/ 必需）
+        # 在线形态缺考卷在落盘前打回——此前一路绿灯到运行时才炸
         server = PackageToolServer(tmp_path)
 
         async def run() -> None:
@@ -333,7 +393,7 @@ class TestSandbox:
         asyncio.run(stage())
         assert server.staged_manifest_id() == "demo-pkg"
 
-    # ── list_packages / read_reference 三源发现（arch/15 v4.4） ──
+    # ── list_packages / read_reference 三源发现 ──
 
     def _isolate_package_roots(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """三源发现根全部钉到 tmp：local 缺省 ~/.agent_eval（开发者真机有包）也要隔离。"""
@@ -390,7 +450,7 @@ class TestSandbox:
         self._isolate_package_roots(tmp_path, monkeypatch)
         server = PackageToolServer(tmp_path)
         notes = asyncio.run(server.list_packages())["notes"]
-        assert "scenario edit" in notes and "换新 scenario/id" in notes
+        assert "edit_package" in notes and "换新 scenario/id" in notes
         assert "read_reference" in notes
         # 空结果给创建指引（project/local 隔离为空，仍剩 builtin → 需显式过滤 project）
         empty = asyncio.run(server.list_packages("project"))
@@ -416,10 +476,845 @@ class TestSandbox:
     def test_tool_specs_include_list_packages(self) -> None:
         names = PackageToolServer(Path()).get_tool_names()
         assert "list_packages" in names
-        assert len(PackageToolServer.TOOL_SPECS) == 12
+        assert "edit_package" in names
+        assert len(PackageToolServer.TOOL_SPECS) == 14
+
+
+# ── edit_package：会话内切换到既有包原位编辑 ──
+
+
+class TestEditPackage:
+    """既有包轻量编辑正道：门槛分支 + 切根生命周期（含会话记录迁移）。"""
+
+    def _isolate_roots(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+        """三源发现根 + workspace 全部钉到 tmp；返回（源包根，目标包根）。"""
+        monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "project"))
+        monkeypatch.setenv("AGENT_EVAL_PACKAGE_DIR", str(tmp_path / "local"))
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "ws"))
+        src = tmp_path / "project" / "from-package"
+        dst = tmp_path / "project" / "target-package"
+        _seed_valid_package(src)
+        _seed_valid_package(dst)
+        (dst / "agent_eval.yaml").write_text(
+            "package:\n  id: target\n  scenario: target\n  version: 0.2.0\n",
+            encoding="utf-8",
+        )
+        return src, dst
+
+    @staticmethod
+    async def _confirm(question: str, *, options: list[str] | None, secret: bool) -> str:
+        assert "切换" in question and "目标" in question
+        return options[0] if options else "确认切换"
+
+    @staticmethod
+    def _no_relocate(root: Path, *, note: str | None = None) -> None:
+        raise AssertionError("拒绝/取消路径不应触发切根")
+
+    def test_refused_non_interactive(self) -> None:
+        server = PackageToolServer(Path.cwd())  # ask_fn=None：无确认通道
+        result = asyncio.run(server.edit_package("anywhere/any"))
+        assert result["status"] == "refused" and "scenario edit" in result["reason"]
+
+    def test_refused_builtin_readonly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._isolate_roots(tmp_path, monkeypatch)
+        asked: list[str] = []
+
+        async def ask(question: str, *, options: Any, secret: bool) -> str:
+            asked.append(question)
+            return "确认切换"
+
+        server = PackageToolServer(tmp_path, ask_fn=ask)
+        server.relocate_fn = self._no_relocate
+        result = asyncio.run(server.edit_package("chat/chat"))
+        assert result["status"] == "refused" and "fork" in result["reason"]
+        assert asked == []  # 拒绝发生在确认之前
+
+    def test_not_found_points_to_list_packages(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._isolate_roots(tmp_path, monkeypatch)
+        server = PackageToolServer(tmp_path, ask_fn=self._confirm)
+        server.relocate_fn = self._no_relocate
+        result = asyncio.run(server.edit_package("ghost/nothing"))
+        assert result["status"] == "not_found" and "list_packages" in result["next_step"]
+
+    def test_already_on_target_root(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        src, _dst = self._isolate_roots(tmp_path, monkeypatch)
+        server = PackageToolServer(src, ask_fn=self._confirm)
+        server.relocate_fn = self._no_relocate
+        result = asyncio.run(server.edit_package(str(src)))
+        assert result["status"] == "already"
+
+    def test_refused_when_staging_nonempty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+
+        async def never(question: str, *, options: Any, secret: bool) -> str:
+            raise AssertionError("staging 非空应在确认之前拒绝")
+
+        server = PackageToolServer(src, ask_fn=never)
+        server.relocate_fn = self._no_relocate
+        asyncio.run(server.write_file("rules/extra.yaml", "x: 1\n"))
+        result = asyncio.run(server.edit_package("target/target"))
+        assert result["status"] == "refused" and "放弃" in result["reason"]
+        assert server.has_staged_changes and server.root == src.resolve()
+
+    def test_declined_does_not_switch(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+
+        async def decline(question: str, *, options: Any, secret: bool) -> str:
+            return "取消"
+
+        server = PackageToolServer(src, ask_fn=decline)
+        server.relocate_fn = self._no_relocate
+        server.skeleton_archive = "keep-me"
+        result = asyncio.run(server.edit_package("target/target"))
+        assert result["status"] == "declined"
+        assert server.root == src.resolve()  # 未切根
+        assert server.skeleton_archive == "keep-me"  # 旧根态不动
+
+    def test_switch_lifecycle_with_real_agent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """快乐路径：确认后切根 + 图重建标记 + 旧根态清账 + 注记进对话 + 记录迁移。"""
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+        agent = WorkbenchAgent(src, log_dir=tmp_path / "log", ask_fn=self._confirm)
+        # 前置：模拟会话已有目标图与旧根态，切换后应全部复位/清账
+        agent._graph = object()
+        agent.server.skeleton_archive = "stale-skeleton"
+        agent.server._granted.add(tmp_path / "outside")
+        agent._session_store.record("hi", "hello", str(src))
+        old_file = agent._session_store.session_file
+        assert old_file.exists()
+
+        result = asyncio.run(agent.server.edit_package("target/target"))
+
+        assert result["status"] == "switched"
+        assert agent.server.root == dst.resolve()
+        assert agent._graph is None  # 图重建标记：下次调用烘焙新 {pkg_root}
+        assert agent.server.skeleton_archive is None  # 骨架归档不跨根携带
+        assert agent.server._granted == set()  # 授权账本不跨根携带
+        assert agent.server.staging == {}  # 切根前 staging 为空（守卫隐含）
+        # 系统注记进对话（Agent 知道以新位置为准）
+        kind, text = agent._messages[-1]
+        assert kind == "user" and "会话目标已切换" in text and str(dst) in text
+        # 会话记录迁移：新 key 落位、旧 key 清除、store 指向新文件
+        new_file = old_file.parent / session_key(dst)
+        assert agent._session_store.session_file == new_file
+        assert new_file.exists() and not old_file.exists()
+
+    def test_relocate_fn_missing_defensive(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path, ask_fn=self._confirm)
+        server.relocate_fn = None  # 防御：宿主装配缺失 → error 而非崩溃
+        result = asyncio.run(server.edit_package("target/target"))
+        assert "error" in result and "relocate_fn" in result["error"]
+
+
+# ── 证据对账门禁的磁盘基线豁免（既有包轻量编辑不触发凭证重验） ──
+
+SUT_DISK = (
+    "sut:\n"
+    "  name: jxb-server\n"
+    "  channel: generic_http\n"
+    "  base_url: https://jxb.example.com\n"
+    "  auth:\n"
+    "    type: api_login\n"
+    "    credential_ref: jxb-login\n"
+    "    login:\n"
+    "      method: POST\n"
+    "      path: https://jxb.example.com/auth/login\n"
+    '      body_template: \'{"u": "{{ username }}"}\'\n'
+    "    extract:\n"
+    "      token_path: token\n"
+)
+
+
+class TestEvidenceGateBaseline:
+    """对账范围收窄至暂存增量：磁盘基线全等豁免，任何相对基线的变更仍需账本。"""
+
+    @staticmethod
+    def _seed_disk_sut(tmp_path: Path, name: str, content: str) -> None:
+        sut_dir = tmp_path / "sut_configs"
+        sut_dir.mkdir(parents=True, exist_ok=True)
+        (sut_dir / name).write_text(content, encoding="utf-8")
+
+    def test_untouched_disk_sut_not_reconciled(self, tmp_path: Path) -> None:
+        """用户场景复刻：只改 task_sets，磁盘既有 sut_config 不再要求本会话实测。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("task_sets/default.yaml", "cases: []\n"))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_rewritten_identical_sut_exempt(self, tmp_path: Path) -> None:
+        """本轮重写但与磁盘基线逐字段相同 → 豁免（无转述变形）。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("sut_configs/jxb-server.yaml", SUT_DISK))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_changed_login_path_requires_evidence(self, tmp_path: Path) -> None:
+        """本轮改 login.path = 新结论 → 仍需账本实测（拦截力不降）。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(
+            server.write_file(
+                "sut_configs/jxb-server.yaml", SUT_DISK.replace("/auth/login", "/auth/sso")
+            )
+        )
+        errors = sut_evidence_gate(server, SUTProbeToolServer())
+        assert errors and "未经本会话" in "\n".join(errors)
+
+    def test_deleted_sut_staged_passes_gate(self, tmp_path: Path) -> None:
+        """删除标记：无配置可对账（删除动作本身不在对账范围）。"""
+        self._seed_disk_sut(tmp_path, "jxb-server.yaml", SUT_DISK)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.delete_file("sut_configs/jxb-server.yaml"))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_new_sut_without_baseline_still_gated(self, tmp_path: Path) -> None:
+        """无磁盘基线的新文件：收窄前行为保持（api_login 无账本打回）。"""
+        server = PackageToolServer(tmp_path)  # 磁盘无 sut_configs
+        asyncio.run(server.write_file("sut_configs/new.yaml", SUT_DISK))
+        errors = sut_evidence_gate(server, SUTProbeToolServer())
+        assert errors and "未经本会话" in "\n".join(errors)
+
+    def test_protocol_baseline_equality_exempt(self, tmp_path: Path) -> None:
+        """agent_protocol 结论三元组与磁盘基线全等 → 豁免协议对账（无账本也过）。"""
+        proto = (
+            "sut:\n  name: web\n  channel: agent_protocol\n  base_url: https://web.example.com\n"
+        )
+        self._seed_disk_sut(tmp_path, "web.yaml", proto)
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("sut_configs/web.yaml", proto))
+        assert sut_evidence_gate(server, SUTProbeToolServer()) == []
+
+    def test_protocol_base_url_change_requires_evidence(self, tmp_path: Path) -> None:
+        """换 base_url 域 = 新结论 → 打回（协议主机必须本会话实测）。"""
+        self._seed_disk_sut(
+            tmp_path,
+            "web.yaml",
+            "sut:\n  name: web\n  channel: agent_protocol\n  base_url: https://web.example.com\n",
+        )
+        server = PackageToolServer(tmp_path)
+        asyncio.run(
+            server.write_file(
+                "sut_configs/web.yaml",
+                "sut:\n  name: web\n  channel: agent_protocol\n"
+                "  base_url: https://other.example.com\n",
+            )
+        )
+        errors = sut_evidence_gate(server, SUTProbeToolServer())
+        assert errors and "未经 probe_protocol 实测" in "\n".join(errors)
+
+
+class TestRelocateRootConservation:
+    """relocate_root 对既有目标会话记录的保育：不覆盖、对话并入、账本合并恢复。"""
+
+    def _isolate_roots(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
+        monkeypatch.setenv("AGENT_EVAL_PROJECT_DIR", str(tmp_path / "project"))
+        monkeypatch.setenv("AGENT_EVAL_PACKAGE_DIR", str(tmp_path / "local"))
+        monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "ws"))
+        src = tmp_path / "project" / "from-package"
+        dst = tmp_path / "project" / "target-package"
+        _seed_valid_package(src)
+        _seed_valid_package(dst)
+        (dst / "agent_eval.yaml").write_text(
+            "package:\n  id: target\n  scenario: target\n  version: 0.2.0\n",
+            encoding="utf-8",
+        )
+        return src, dst
+
+    @staticmethod
+    async def _confirm(question: str, *, options: Any, secret: bool) -> str:
+        return options[0] if options else "确认切换"
+
+    def test_existing_target_record_conserved(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """切到编辑过的既有包：目标对话史不丢、账本快照恢复且可续写。"""
+        src, dst = self._isolate_roots(tmp_path, monkeypatch)
+        target_file = tmp_path / "ws" / "agent_sessions" / session_key(dst)
+        target_file.parent.mkdir(parents=True)
+        fact = {
+            "ref": "jxb-login",
+            "method": "POST",
+            "url": "https://jxb.example.com/auth/login",
+            "body_template": '{"u": "{{ username }}"}',
+            "token_path": "token",
+            "auth_snippet": "auth: {}",
+        }
+        target_file.write_text(
+            json.dumps(
+                {
+                    "root": str(dst),
+                    "dialogue": [
+                        {"role": "user", "text": "早前的问题"},
+                        {"role": "assistant", "text": "早前的回答"},
+                    ],
+                    "snapshot": {
+                        "staged": {},
+                        "ledger": {
+                            "verified_logins": {"jxb-login": fact},
+                            "verified_protocols": {},
+                        },
+                    },
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        agent = WorkbenchAgent(src, log_dir=tmp_path / "log", ask_fn=self._confirm)
+        result = asyncio.run(agent.server.edit_package("target/target"))
+
+        assert result["status"] == "switched"
+        assert agent._session_store.session_file == target_file
+        assert agent.probe.verified_login("jxb-login") is not None  # 账本合并恢复
+        agent._record_turn("新问题", "新回答")  # 续写不再覆盖目标史
+        data = json.loads(target_file.read_text(encoding="utf-8"))
+        texts = [d["text"] for d in data["dialogue"]]
+        assert "早前的问题" in texts and "新问题" in texts
+        # 合并后的账本随下一轮进度快照持久化
+        assert data["snapshot"]["ledger"]["verified_logins"]["jxb-login"]["ref"] == "jxb-login"
 
 
 # ── WorkbenchAgent 会话状态机（mock _invoke 回放） ────────────────────────
+
+
+# ── 创建骨架（Plan-as-Artifact：开槽门禁 / commit 排除归档 / 事实机械回填） ──
+
+SKELETON_OPEN = (
+    "# 创建骨架（demo）\n"
+    "## SUT 接入 sut_configs/sut.yaml\n"
+    "- [ ] 事实槽：登录接口地址与字段形态？—— 证据：request 实测 + declare_token\n"
+    "- [x] 事实槽：协议形态 generic_http（证据：probe_protocol 两形态核心端点均 ❌）\n"
+    "## 考卷 task_sets/default.yaml\n"
+    "- [ ] 决策槽：题目覆盖面与阈值（确认方：用户）\n"
+)
+SKELETON_CLOSED = (
+    "# 创建骨架（demo）\n"
+    "## SUT 接入 sut_configs/sut.yaml\n"
+    "- [x] 事实槽：登录 POST https://sut.example.com/auth/login（证据：request 200 "
+    "+ declare_token 提取成功，auth 段已机械生成）\n"
+    "## 考卷 task_sets/default.yaml\n"
+    "- [x] 决策槽：11 题覆盖六大类（证据：用户确认）\n"
+)
+
+
+class TestSkeletonWorkflow:
+    """五阶段创建流程的骨架机制：配置只在事实齐备后生成。"""
+
+    def test_validate_blocks_open_slots(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", SKELETON_OPEN))
+        errors = asyncio.run(server.validate_package())["errors"]
+        skeleton_errors = [e for e in errors if "SKELETON.md" in e]
+        assert skeleton_errors and any("未闭合槽位" in e for e in skeleton_errors)
+        assert any("事实槽：登录接口地址与字段形态" in e for e in skeleton_errors)
+
+    def test_validate_requires_evidence_marker_on_closed_slots(self, tmp_path: Path) -> None:
+        """闭槽 = 有证据的结论：- [x] 行缺「证据：」不放行（防表态式闭合）。"""
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", "# 骨架\n- [x] 事实槽：登录接口已实测\n"))
+        errors = asyncio.run(server.validate_package())["errors"]
+        assert any("证据" in e for e in errors)
+
+    def test_validate_passes_all_slots_closed(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", SKELETON_CLOSED))
+        errors = asyncio.run(server.validate_package())["errors"]
+        assert not any("SKELETON.md" in e for e in errors)
+
+    def test_no_skeleton_behaves_unchanged(self, tmp_path: Path) -> None:
+        """骨架 opt-in：克隆/fork 既有包（无骨架）行为不变。"""
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("agent_eval.yaml", MANIFEST))
+        errors = asyncio.run(server.validate_package())["errors"]
+        assert not any("SKELETON.md" in e for e in errors)
+
+    def test_commit_excludes_skeleton_and_archives(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", SKELETON_CLOSED))
+        asyncio.run(server.write_file("agent_eval.yaml", MANIFEST))
+        changed = server.commit()
+        assert not (tmp_path / "SKELETON.md").exists()  # 过程产物不入包
+        assert (tmp_path / "agent_eval.yaml").is_file()
+        assert server.skeleton_archive == SKELETON_CLOSED  # 留档供宿主归档
+        assert any("SKELETON.md" in f for f in changed)
+        assert not server.has_staged_changes
+
+    def test_append_skeleton_fact_accumulates(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        server.append_skeleton_fact("事实槽：无骨架时静默忽略（证据：opt-in）")
+        assert "SKELETON.md" not in server.staging  # 无骨架：静默忽略
+        asyncio.run(server.write_file("SKELETON.md", "# 骨架\n- [ ] 事实槽：待验证\n"))
+        server.append_skeleton_fact("事实槽：登录实测（证据：request 2xx）")
+        text = server.staging["SKELETON.md"]
+        assert "## 机械实测事实" in text
+        assert "- [x] 事实槽：登录实测（证据：request 2xx）" in text
+        server.append_skeleton_fact("事实槽：协议矩阵（证据：probe_protocol）")
+        text2 = server.staging["SKELETON.md"]
+        assert text2.count("- [x] 事实槽：") == 2  # 追加累积
+        assert "- [ ] 事实槽：待验证" in text2  # Agent 自写的开槽不受影响
+
+    def test_fact_append_survives_commit_round(self, tmp_path: Path) -> None:
+        """提交轮吃掉骨架后，下一轮事实回填仍续写（skeleton_archive 兜底种子）。"""
+        server = PackageToolServer(tmp_path)
+        asyncio.run(server.write_file("SKELETON.md", "# 骨架\n"))
+        server.commit()
+        server.append_skeleton_fact("事实槽：二轮实测（证据：request 2xx）")
+        assert "- [x] 事实槽：二轮实测" in server.staging["SKELETON.md"]
+
+    def test_turn_blocks_open_skeleton_then_recovers(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """回放：开槽骨架被门禁打回 → 闭合后提交；骨架不入包、会话区有归档。"""
+
+        async def open_skeleton(server: PackageToolServer) -> str:
+            await server.write_file("SKELETON.md", SKELETON_OPEN)
+            await _write_valid(server)
+            return "初版（含开槽）"
+
+        fake, calls = _replay(
+            [open_skeleton, lambda s: _write_valid_with_skeleton(s, SKELETON_CLOSED)]
+        )
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert result.committed
+        assert len(calls) == 2  # 门禁打回一轮后通过
+        assert not (tmp_path / "SKELETON.md").exists()  # 骨架不入包
+        archived = agent._session_store.session_file.with_suffix(".SKELETON.md")  # noqa: SLF001
+        assert archived.is_file()
+        assert "证据：" in archived.read_text(encoding="utf-8")
+
+    def test_probe_fact_sink_wired_in_agent(self, tmp_path: Path) -> None:
+        """装配：探测 server 的 fact_sink 指向包沙盒的骨架机械回填（阶段1 落骨架
+        后，阶段2 探测事实直达骨架）。"""
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.probe.fact_sink is not None
+        asyncio.run(agent.server.write_file("SKELETON.md", "# 骨架\n- [ ] 事实槽：登录形态？\n"))
+        agent.probe.fact_sink("事实槽：装配冒烟（证据：test）")
+        text = agent.server.staging["SKELETON.md"]
+        assert "- [x] 事实槽：装配冒烟（证据：test）" in text
+
+
+class TestWriteSutConfig:
+    """机械物化（阶段3）：auth 从探测账本 verbatim 注入，幻觉字段内联打回。"""
+
+    @staticmethod
+    async def _allow(question: str, **kw: Any) -> str:
+        return "允许"
+
+    def _ledgered_server(self, tmp_path: Path) -> tuple[PackageToolServer, str]:
+        """账本播种：走真实 request + declare_token 链生成 auth_snippet
+        （MockTransport，零联网），绑定给包沙盒。"""
+        import httpx
+
+        from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
+        from agent_eval.execution.auth.credentials import CredentialStore
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"token": "T0KPEN"}, request=request)
+
+        probe = SUTProbeToolServer(
+            allowed_hosts={"sut.example.com"},
+            ask_fn=self._allow,
+            credential_store=CredentialStore(
+                env={
+                    "AGENT_EVAL_SUT__SUT__USERNAME": "u1",
+                    "AGENT_EVAL_SUT__SUT__PASSWORD": "p1",
+                }
+            ),
+            http_client_factory=lambda: httpx.AsyncClient(
+                transport=httpx.MockTransport(handler), timeout=1.0, follow_redirects=False
+            ),
+        )
+        asyncio.run(
+            probe.request(
+                "POST",
+                "https://sut.example.com/api/login",
+                body='{"u": "{{ username }}", "p": "{{ password }}"}',
+                ref="SUT",
+            )
+        )
+        declared = asyncio.run(probe.declare_token("SUT", token_path="token"))
+        assert declared["ok"] is True
+        server = PackageToolServer(tmp_path)
+        server.ledger = probe
+        return server, declared["sut_config_auth_snippet"]
+
+    def test_requires_verified_login(self, tmp_path: Path) -> None:
+        """无账本事实 → 拒绝并引导先实测（auth 不能凭记忆/示例手写）。"""
+        server = PackageToolServer(tmp_path)  # 未绑定账本
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {"name": "SUT", "channel": "generic_http", "base_url": "https://x.example.com"},
+            )
+        )
+        assert "没有已验证的登录实测" in result["error"]
+        assert "request" in result["error"] and "declare_token" in result["error"]
+
+    def test_accepts_bare_filename_normalized_into_sut_configs(self, tmp_path: Path) -> None:
+        """实测事故回放：裸名 <名字>.yaml 曾被「平铺文件」守卫拒之门外（parent 是
+        "."），错误不指路致 Agent 在 payload 结构上空转多轮——裸名须机械归位
+        sut_configs/ 后放行。"""
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "jxb-agent.yaml",  # 裸名（实测会话里的真实写法）
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "body": {"content": "{{ input }}"},
+                            }
+                        ]
+                    },
+                    "response_mapping": {"text": "data.reply"},
+                },
+                credential_ref="SUT",
+            )
+        )
+        assert "ok" in result, result
+        assert "sut_configs/jxb-agent.yaml" in server.staging  # 归位到 sut_configs/
+        assert result["staged"] == "sut_configs/jxb-agent.yaml"
+
+    def test_rejects_nested_path_with_copyable_guidance(self, tmp_path: Path) -> None:
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sub/sut.yaml",
+                {"name": "SUT", "channel": "generic_http", "base_url": "https://x.example.com"},
+            )
+        )
+        assert "平铺文件" in result["error"]
+        assert "sut_configs/<名字>.yaml" in result["error"]  # 可照抄的权威形态
+        assert not server.staging  # 未入暂存
+
+    def test_injects_auth_verbatim_and_passes_gates(self, tmp_path: Path) -> None:
+        """核心验收：注入的 auth 与账本 snippet 逐字节一致，且
+        sut_evidence_gate 必过——「不再重探」的机制基础。"""
+        import yaml
+
+        from agent_eval.agent.workbench.gates import sut_evidence_gate
+
+        server, snippet = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "body": {"content": "{{ input }}"},
+                            }
+                        ]
+                    },
+                    "response_mapping": {"text": "data.reply"},
+                },
+                credential_ref="SUT",
+            )
+        )
+        assert "ok" in result, result
+        staged = server.staging["sut_configs/sut.yaml"]
+        injected_auth = yaml.safe_load(staged)["sut"]["auth"]
+        # 逐字节一致：snippet 再序列化与注入段完全相等（零转述的机械证明）
+        assert (
+            yaml.safe_dump({"auth": injected_auth}, allow_unicode=True, sort_keys=False).strip()
+            == snippet
+        )
+        # 执行器同款 schema 校验 + 落盘对账门禁双绿
+        from agent_eval.execution.registry import validate_sut_config_document
+
+        assert validate_sut_config_document(yaml.safe_load(staged)) == []
+        assert sut_evidence_gate(server, server.ledger) == []
+
+    def test_rejects_agent_supplied_auth(self, tmp_path: Path) -> None:
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "auth": {"type": "none"},
+                },
+            )
+        )
+        assert "不接受手写" in result["error"]
+
+    def test_rejects_hallucinated_step_fields_inline(self, tmp_path: Path) -> None:
+        """内联 schema 校验：jxb 事故字段集在入暂存前当场打回（带教学指引）。"""
+        server, _ = self._ledgered_server(tmp_path)
+        result = asyncio.run(
+            server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "kind": "http",
+                                "until": "data.done",
+                                "response_mapping": {"text": "x"},
+                            }
+                        ]
+                    },
+                },
+            )
+        )
+        assert "schema 校验未通过" in result["error"]
+        assert "kind" in result["error"] and "until" in result["error"]
+        assert "sut_configs/sut.yaml" not in server.staging  # 未入暂存
+
+    def test_fix_round_does_not_reprobe(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """badcase 回放：修复环查账本，不触发重复实测——jxb 会话
+        「验证过了又来一遍」的事故链在新流程下被改写：登录实测只发生（用户）一次。"""
+        from agent_eval.agent.workbench.sut_probe.tokens import _render_auth_snippet
+
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        probe_calls: list[tuple[Any, ...]] = []
+        original_request = agent.probe.request
+
+        async def counting_request(*args: Any, **kw: Any) -> Any:
+            probe_calls.append(args)
+            return await original_request(*args, **kw)
+
+        monkeypatch.setattr(agent.probe, "request", counting_request)
+        # 账本播种 = 此前已完成的那一次登录实测（snippet 由真实渲染器生成，与
+        # declare_token 成功路径产出的逐字节同源）
+        url, template, token_path = (
+            "https://sut.example.com/api/login",
+            '{"u": "{{ username }}"}',
+            "token",
+        )
+        agent.probe._record_login(
+            {
+                "ref": "SUT",
+                "method": "POST",
+                "url": url,
+                "body_template": template,
+                "token_path": token_path,
+                "token_source": "Bearer",
+                "expires_in_path": "",
+                "auth_snippet": _render_auth_snippet(
+                    ref="SUT",
+                    method="POST",
+                    url=url,
+                    template=template,
+                    token_type="Bearer",
+                    token_path=token_path,
+                ),
+            }
+        )
+        sut_fields: dict[str, Any] = {
+            "name": "SUT",
+            "channel": "generic_http",
+            "base_url": "https://sut.example.com",
+            "request_template": {
+                "steps": [
+                    {
+                        "name": "send",
+                        "method": "POST",
+                        "path": "/chat",
+                        "body": {"q": "{{ input }}"},
+                    }
+                ]
+            },
+            "response_mapping": {"text": "data.reply"},
+        }
+
+        async def incomplete(server: PackageToolServer) -> str:
+            await server.write_sut_config("sut_configs/sut.yaml", sut_fields, credential_ref="SUT")
+            await server.write_file("agent_eval.yaml", MANIFEST)
+            return "初版（缺资源目录，触发修复环）"
+
+        fake, calls = _replay(
+            [incomplete, lambda s: _write_valid_with_skeleton(s, SKELETON_CLOSED)]
+        )
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+
+        result = asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert result.committed  # 修复环一轮后通过
+        assert len(calls) == 2
+        assert probe_calls == []  # 整个提交链（含修复环）零重复实测——账本直供
+
+    def test_agent_wires_ledger_and_sink(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.server.ledger is agent.probe  # noqa: SLF001 — 装配内省
+        assert agent.probe.fact_sink is not None  # noqa: SLF001
+
+
+class TestCrossProcessResume:
+    """跨进程续跑：暂存 + 骨架留档 + 证据账本随会话记录持久化，重启
+    恢复——五阶段中间进度不再「跨进程蒸发」（实测事故：代理超时后建议重启续作，
+    暂存与账本实际全丢，只能从头再来）。"""
+
+    def _seed_login_fact(self, probe: Any) -> dict[str, str]:
+        """账本播种（snippet 由真实渲染器生成，schema 必合法；零联网零真实链）。"""
+        from agent_eval.agent.workbench.sut_probe.tokens import _render_auth_snippet
+
+        url, template, token_path = (
+            "https://sut.example.com/api/login",
+            '{"u": "{{ username }}"}',
+            "token",
+        )
+        fact = {
+            "ref": "SUT",
+            "method": "POST",
+            "url": url,
+            "body_template": template,
+            "token_path": token_path,
+            "token_source": "Bearer",
+            "expires_in_path": "",
+            "auth_snippet": _render_auth_snippet(
+                ref="SUT",
+                method="POST",
+                url=url,
+                template=template,
+                token_type="Bearer",
+                token_path=token_path,
+                expires_in_path="",
+            ),
+        }
+        probe._record_login(fact)  # noqa: SLF001 — 测试/门禁专用别名
+        return fact
+
+    def test_snapshot_roundtrip_restores_staging_and_ledger(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "draft"
+        draft.mkdir()
+        agent_a = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        self._seed_login_fact(agent_a.probe)
+        asyncio.run(agent_a.server.write_file("task_sets/smoke.yaml", "task_sets: []\n"))
+        agent_a._record_turn("推进创建", "骨架已落、smoke 已写")
+
+        session_file = agent_a._session_store.session_file
+        raw = session_file.read_text(encoding="utf-8")
+        assert '"snapshot"' in raw
+        assert "T0KPEN" not in raw and "password" not in raw.lower()  # 无凭证值/明文字段
+
+        agent_b = WorkbenchAgent(draft, log_dir=tmp_path / "log2")  # 模拟重启新进程
+        assert "task_sets/smoke.yaml" in agent_b.server.staging  # 暂存恢复
+        assert agent_b.probe.verified_login("sut") is not None  # 账本恢复（免重探）
+        assert agent_b.restored_progress["staged"] == 1
+        assert agent_b.restored_progress["logins"] == 1
+
+    def test_resumed_agent_writes_sut_config_without_reprobe(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """核心验收：新进程 write_sut_config 直接过账本
+        注入——恢复的会话不重做已完成的登录实测。"""
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "draft"
+        draft.mkdir()
+        agent_a = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        self._seed_login_fact(agent_a.probe)
+        agent_a._record_turn("登录已验证", "账本已登记")
+
+        agent_b = WorkbenchAgent(draft, log_dir=tmp_path / "log2")
+        result = asyncio.run(
+            agent_b.server.write_sut_config(
+                "sut_configs/sut.yaml",
+                {
+                    "name": "SUT",
+                    "channel": "generic_http",
+                    "base_url": "https://sut.example.com",
+                    "request_template": {
+                        "steps": [
+                            {
+                                "name": "send",
+                                "method": "POST",
+                                "path": "/chat",
+                                "body": {"content": "{{ input }}"},
+                            }
+                        ]
+                    },
+                    "response_mapping": {"text": "data.reply"},
+                },
+                credential_ref="SUT",
+            )
+        )
+        assert result["ok"] is True, result
+        assert "sut_configs/sut.yaml" in agent_b.server.staging
+        assert result["auth_injected"]["credential_ref"] == "SUT"
+
+    def test_resume_note_reports_restored_progress(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = tmp_path / "draft"
+        draft.mkdir()
+        agent_a = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        self._seed_login_fact(agent_a.probe)
+        agent_a._record_turn("推进", "登录已验证")
+
+        agent_b = WorkbenchAgent(draft, log_dir=tmp_path / "log2")
+
+        async def _reply(_s: Any) -> str:
+            return "继续推进"
+
+        fake, _calls = _replay([_reply])
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", fake)
+        asyncio.run(agent_b.turn("继续", confirm_fn=lambda r, d: True))
+
+        notes = [m for m in agent_b._messages if "已恢复上次会话进度" in str(m)]
+        assert len(notes) == 1
+        assert "已验证登录 1 项" in str(notes[0])
+
+    def test_snapshot_without_progress_is_noop(self, tmp_path: Path) -> None:
+        """无快照/快照残缺：恢复为 no-op（新会话零影响）。"""
+        server = PackageToolServer(tmp_path)
+        assert server.import_staging_snapshot(None) == 0
+        assert server.import_staging_snapshot({"staging": "垃圾"}) == 0
+        assert server.staging == {}
+        from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
+
+        probe = SUTProbeToolServer(allowed_hosts=set())
+        assert probe.restore_ledgers(None) == 0
+        assert probe.restore_ledgers({"verified_logins": ["垃圾"]}) == 0
+        assert probe.ledger_snapshot() == {"verified_logins": {}, "verified_protocols": {}}
+
+    def test_local_skeleton_archive_wins_over_snapshot(self, tmp_path: Path) -> None:
+        server = PackageToolServer(tmp_path)
+        server.skeleton_archive = "# 本会话留档"
+        restored = server.import_staging_snapshot(
+            {"staging": {"a.yaml": "x"}, "skeleton_archive": "# 旧会话留档"}
+        )
+        assert restored == 1
+        assert server.skeleton_archive == "# 本会话留档"  # 本地更新优先
 
 
 class TestAgentTurn:
@@ -601,7 +1496,7 @@ class TestAgentTurn:
     def test_generic_http_channel_passes_without_protocol_ledger(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """generic_http 已排期（v4.7 落地）且无协议端点语义：不需 probe_protocol
+        """generic_http 已排期且无协议端点语义：不需 probe_protocol
         账本即可落盘（登录对账仍由 _reconcile_login 覆盖）。"""
 
         async def write_http_sut(server: PackageToolServer) -> str:
@@ -883,7 +1778,7 @@ class TestAgentTurn:
     def test_turn_interrupt_pauses_with_scene_kept(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # Ctrl+C 中断（协内表现为 CancelledError）= 暂停保现场（§6.7 D-WB-4）：
+        # Ctrl+C 中断（协内表现为 CancelledError）= 暂停保现场：
         # 暂存保留 + 历史保留（需求不丢），唯一回滚触发器是用户显式「放弃」。
         # 不用 KeyboardInterrupt 直抛——Runner 的 SIGINT 机制会接管并重试循环
         async def boom(
@@ -906,6 +1801,27 @@ class TestAgentTurn:
         agent.abandon_pending()  # 用户显式放弃 → 唯一回滚触发器
         assert not agent.server.staging
         assert not (tmp_path / "rules").exists()
+
+    def test_turn_keyboard_interrupt_salvages_and_reraises(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 交互桥 ^C 以 KI 形态穿透工具层：turn 捕 BaseException →
+        # salvage 保现场 → re-raise 交宿主呈现中断；KI 与 CancelledError 同归
+        # reason="interrupted"（日志/事件语义，行为同为 raise）
+        async def boom(
+            self: WorkbenchAgent, messages: list[Any], *, on_event: Any = None
+        ) -> dict[str, Any]:
+            await self.server.write_file("rules/a.yaml", RULES)
+            raise KeyboardInterrupt
+
+        monkeypatch.setattr(WorkbenchAgent, "_invoke", boom)
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(agent.turn("生成包", confirm_fn=lambda r, d: True))
+
+        assert agent.server.staging  # salvage 保现场
+        assert agent._dialogue and agent._dialogue[-1]["text"] == "生成包"
 
     def test_emit_tool_events_from_updates(self) -> None:
         from agent_eval.agent.workbench.messages import emit_tool_events as _emit_tool_events
@@ -939,6 +1855,44 @@ class TestAgentTurn:
             "args": {"path": "rules/a.yaml"},
         }
         assert events[1]["type"] == "tool_end" and events[1]["ok"] is True
+
+    def test_todo_items_normalize_dict_and_object(self) -> None:
+        # write_todos 落状态可能是 dict（TypedDict）也可能是对象形态——统一规范化
+        from agent_eval.agent.workbench.messages import _todo_items
+
+        assert _todo_items([{"content": "a", "status": "in_progress"}]) == [
+            {"content": "a", "status": "in_progress"}
+        ]
+        assert _todo_items([SimpleNamespace(content="b", status="pending")]) == [
+            {"content": "b", "status": "pending"}
+        ]
+        assert _todo_items(None) == []
+
+    def test_stream_collect_extracts_todo_state(self) -> None:
+        # write_todos 后 updates delta 携带 todos 键——提取成独立事件交宿主渲染
+        from agent_eval.agent.workbench.messages import stream_collect as _stream_collect
+
+        class _FakeGraph:
+            async def astream(self, inp: dict, config: dict | None = None, stream_mode: Any = None):
+                yield (
+                    "updates",
+                    {
+                        "tools": {
+                            "todos": [{"content": "探测接口", "status": "in_progress"}],
+                            "messages": [],
+                        }
+                    },
+                )
+                yield ("values", {"messages": [_ai("清单已更新")], "todos": []})
+
+        events: list[dict[str, Any]] = []
+        final = asyncio.run(
+            _stream_collect(_FakeGraph(), [], {"configurable": {"thread_id": "t"}}, events.append)
+        )
+        assert [e for e in events if e["type"] == "todos"] == [
+            {"type": "todos", "todos": [{"content": "探测接口", "status": "in_progress"}]}
+        ]
+        assert final["messages"] == [_ai("清单已更新")]  # values 收集不受影响
 
     def test_invoke_streams_block_content_and_collects_state(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -1226,6 +2180,15 @@ class TestCliEntries:
         )
         assert _landing_hint(empty) is None
 
+    def test_landing_verb_matches_root_kind(self) -> None:
+        """落点动词区分草稿区归位与既有包原位（v4.12.3：edit_package 切根后横幅
+        曾一律称「归位」，实际是原位生效——文案与机制对齐）。"""
+        from agent_eval.cli.cmds.workbench_agent import _landing_verb
+
+        draft = Path("workspace/.staging/agent-eval-pkg-abcd1234")
+        assert _landing_verb(draft) == "归位"
+        assert _landing_verb(Path("proj/demo-package")) == "原位落盘"
+
     def test_edit_rejects_builtin(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from agent_eval.cli.cmds.workbench_agent import agent_edit_package
 
@@ -1281,7 +2244,7 @@ class TestCliEntries:
     def test_repl_pause_then_abandon_rolls_back(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
-        # Ctrl+C 暂停（进度保留）→ 用户输入「放弃」→ 暂存回滚、会话继续（D-WB-4）
+        # Ctrl+C 暂停（进度保留）→ 用户输入「放弃」→ 暂存回滚、会话继续
         from agent_eval.cli.cmds import workbench_agent as sa
 
         _seed_valid_package(tmp_path)
@@ -1308,6 +2271,51 @@ class TestCliEntries:
         assert not agent.server.staging  # 「放弃」= 唯一回滚触发器
         assert not (tmp_path / "rules" / "a.yaml").exists()  # 暂存未落盘
 
+    def test_repl_idle_ctrlc_armed_double_press_exits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # 空闲态 ^C 二按退出：首按只武装提示不退会话，
+        # 二按才退出——误触不再有清场代价
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        _seed_valid_package(tmp_path)
+        presses = iter([typer.Abort, typer.Abort])
+
+        def fake_ask(prompt: str) -> str:
+            raise next(presses)
+
+        monkeypatch.setattr(sa, "ask", fake_ask)
+        sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), None)
+        out = capsys.readouterr().out
+        assert "再按一次退出" in out  # 首按 armed 提示
+        assert "会话结束" in out  # 二按退出
+
+    def test_repl_idle_ctrlc_armed_resets_on_input(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # ^C 武装后输入任意内容即重置——误触用户正常续用，无残留状态
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        _seed_valid_package(tmp_path)
+        monkeypatch.setattr(
+            "agent_eval.agent.workbench.agent.run_turn",
+            lambda agent, text, *, confirm_fn, on_event=None: TurnResult(
+                reply="ok", diff="", staged=False
+            ),
+        )
+        presses = iter([typer.Abort, "接着干", typer.Abort, typer.Abort])
+
+        def fake_ask(prompt: str) -> str:
+            item = next(presses)
+            if isinstance(item, str):
+                return item
+            raise item
+
+        monkeypatch.setattr(sa, "ask", fake_ask)
+        sa._session(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"), None)
+        out = capsys.readouterr().out
+        assert out.count("再按一次退出") == 2  # 首按与重置后各武装一次，二按才退
+
     def test_emitter_renders_checkpoint_phase(self, capsys) -> None:
         # P1 自动分段：checkpoint 事件 → 「已自动续跑」提示行
         from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
@@ -1319,14 +2327,16 @@ class TestCliEntries:
         finish()
         assert "已自动续跑（第 2 / 3 段" in capsys.readouterr().out
 
-    def test_intro_text_from_asset(self, tmp_path: Path) -> None:
-        # §6.10 横幅资产化：{root}/{domains} 展开，示例与红线同源（CLI 只渲染）
+    def test_banner_data_from_asset(self, tmp_path: Path) -> None:
+        # 横幅资产化：{root}/{domains} 展开，CLI 只渲染
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
-        intro = agent.intro_text()
-        assert "工作台 Agent" in intro
-        assert str(tmp_path) in intro  # {root}
-        assert "场景包工程 · SUT 接入调试" in intro  # {domains} 与系统提示同源
-        assert "暂存" in intro and "Ctrl+C" in intro  # 红线与控制方式
+        parts = agent.banner_data()
+        assert "工作台 Agent" in parts["identity"]
+        assert parts["root"] == str(tmp_path)  # {root}
+        assert "场景包工程 · SUT 接入调试" in parts["domains"]  # {domains} 与系统提示同源
+        assert "暂存" in parts["rules"] and "Ctrl+C" in parts["control"]  # 红线与控制
+        assert any("gsm8k" in ex for ex in parts["examples"])  # 数据集域示例随 v4.13 增装
+        assert parts["homepage"] == "https://github.com/domonic18/ai-eval-scope"
 
     def test_session_renders_intro_banner(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
@@ -1363,16 +2373,50 @@ class TestCliEntries:
         assert "工作台 Agent" in out and "可以这样用我" in out  # 横幅在会话日志行之前
 
     def test_intro_silent_for_non_tty(self, tmp_path: Path, capsys) -> None:
-        # CI / 管道形态横幅静默（§6.10）
+        # CI / 管道形态横幅静默
         from agent_eval.cli.cmds import workbench_agent as sa
 
         sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
         assert capsys.readouterr().out == ""
 
+    def test_intro_renders_rich_banner(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # v4.13.2 欢迎首屏富渲染（cli/console/banner.py）：wordmark、结构字形与版本
+        # 脚注在 TTY 输出；无 markdown 标记透出；元信息行独立不并段
+        import sys as _sys
+
+        from agent_eval import __version__
+        from agent_eval.cli.cmds import workbench_agent as sa
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+
+        class _Tty:  # capsys 的 stdout 非 TTY——横幅设计为 TTY 专属，垫一层
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(sa.sys, "stdout", _Tty(_sys.stdout))
+        sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
+        out = capsys.readouterr().out
+        assert "AGENT EVAL" in out  # wordmark（假终端 80 列 → 单行降级形态）
+        assert "工作台 Agent" in out and "把评测工程" in out  # 身份与 slogan
+        assert "✦" in out and "▸" in out  # 分区结构字形
+        assert f"v{__version__}" in out and "github.com/domonic18" in out  # 脚注
+        assert "**" not in out  # markdown 标记不透出
+        meta = [ln for ln in out.splitlines() if "当前任务对象" in ln]
+        assert meta and all("可用能力域" not in ln for ln in meta)  # 元信息不并段
+
     def test_agent_entry_direct_conversation_no_menu(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # §3.5 实测反馈：入口无前置菜单——横幅先于会话直入 REPL（Claude Code 式），
+        # 实测反馈：入口无前置菜单——横幅先于会话直入 REPL（Claude Code 式），
         # 新建/改已有包都是会话里的一句话；默认任务对象 = 新包草稿
         from agent_eval.cli.cmds import workbench_agent as sa
 
@@ -1449,6 +2493,289 @@ class TestCliEntries:
         sa._session(agent, None, show_intro=False)
         sa._session(agent, None)
         assert calls == [True]
+
+
+# ── 交互等待期 Ctrl+C：选择器 ^C = 中断本轮 ──────────────
+
+
+class TestInterruptBridge:
+    """宿主桥把 click 的 Abort（Exception 子类）转回 KI（BaseException）——
+
+    KI 穿透工具层 `except Exception` 兜底直达 turn() 统一暂停语义。实测事故：
+    Abort 被 _json_tool 吞成 `{"type":"Abort","message":""}` 回流 LLM，诱发重试；
+    SIG_IGN 滞留整轮后 ^C 全面失效，空回车落默认「允许」放行外发。
+    """
+
+    def test_ask_fn_options_abort_becomes_ki(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        def boom(label: str, options: list[str], **kwargs: Any) -> str:
+            raise typer.Abort
+
+        monkeypatch.setattr(sa, "select", boom)
+        ask_fn = sa._make_ask_fn()
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(ask_fn("允许探测？", options=["允许", "不允许"], secret=False))
+
+    def test_ask_fn_secret_abort_becomes_ki(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        def boom(label: str, **kwargs: Any) -> str:
+            raise typer.Abort
+
+        monkeypatch.setattr(sa, "ask", boom)
+        ask_fn = sa._make_ask_fn()
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(ask_fn("录入 phone", options=None, secret=True))
+
+    def test_cli_confirm_abort_becomes_ki(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        def boom(label: str, options: list[str], **kwargs: Any) -> str:
+            raise typer.Abort
+
+        monkeypatch.setattr(sa, "select", boom)
+        with pytest.raises(KeyboardInterrupt):
+            sa._cli_confirm("回复", "diff 内容", None)
+
+    def test_json_tool_keyboard_interrupt_not_swallowed(self) -> None:
+        # KI 是控制流信号不是工具错误：`except Exception` 兜底不得吞掉
+        # （回归守卫——兜底若被改宽成 BaseException，五态统一在机制上瓦解）
+        from agent_eval.agent.core.tools import ToolExporterMixin
+
+        async def ki_tool() -> str:
+            raise KeyboardInterrupt
+
+        wrapped = ToolExporterMixin()._json_tool(ki_tool)
+        with pytest.raises(KeyboardInterrupt):
+            asyncio.run(wrapped())
+
+    def test_json_tool_empty_message_falls_back_to_type_name(self) -> None:
+        # str 为空的异常（click Abort 无参构造）至少可解释——空 message 曾诱发
+        # Agent 盲目反问卡点
+        from agent_eval.agent.core.tools import ToolExporterMixin
+
+        class _SilentError(Exception):
+            pass
+
+        async def fail() -> str:
+            raise _SilentError()
+
+        wrapped = ToolExporterMixin()._json_tool(fail)
+        payload = json.loads(asyncio.run(wrapped()))
+        assert payload["status"] == "failed"
+        assert payload["error"]["message"] == "_SilentError"
+
+
+# ── 落盘即归位：首次确认落盘即归位 + 沙盒重定向 + 会话记录迁移 ────
+
+
+class TestRelocateOnCommit:
+    def _draft(self, tmp_path: Path, name: str = "agent-eval-pkg-ab12cd34") -> Path:
+        draft = tmp_path / "workspace" / ".staging" / name
+        draft.mkdir(parents=True)
+        return draft
+
+    def test_relocate_root_rebinds_and_migrates_session(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from agent_eval.agent.workbench.memory import session_key
+
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        final = tmp_path / "study-trip-package"
+        agent = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        agent._session_store.record("需求", "已生成", str(draft))  # 会话记录已落盘
+        old_file = agent._session_store.session_file
+        assert old_file.is_file()
+
+        agent.relocate_root(final)
+
+        assert agent.server.root == final.resolve()
+        new_file = old_file.parent / session_key(final)
+        assert new_file.is_file() and not old_file.exists()  # 记录随包迁移
+        assert agent._session_store.session_file == new_file
+        assert agent._graph is None  # 系统提示烘焙了旧 {pkg_root}——强制重建
+        notes = [m for m in agent._messages if "已归位" in str(m)]
+        assert len(notes) == 1  # 归位事实进对话：Agent 知道以新位置为准
+
+    def test_relocate_root_moves_skeleton_archive(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        agent = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+        agent._session_store.record("q", "a", str(draft))
+        skeleton = agent._session_store.session_file.with_suffix(".SKELETON.md")
+        skeleton.write_text("# 骨架", encoding="utf-8")
+
+        agent.relocate_root(tmp_path / "study-trip-package")
+
+        new_file = agent._session_store.session_file
+        assert new_file.with_suffix(".SKELETON.md").is_file()  # 审计产物跟进新会话键
+        assert not skeleton.exists()
+
+    def test_relocate_root_same_root_noop(self, tmp_path: Path) -> None:
+        root = tmp_path / "pkg"
+        root.mkdir()
+        agent = WorkbenchAgent(root, log_dir=tmp_path / "log")
+        agent._graph = object()  # 非空标记：noop 不得触发重建
+        agent.relocate_root(root)
+        assert agent._graph is not None
+        assert agent._messages == []
+
+    def test_relocate_after_commit_moves_draft(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        (draft / "agent_eval.yaml").write_text(
+            "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+        )
+        rebinds: list[Path] = []
+        agent = SimpleNamespace(server=SimpleNamespace(root=draft), relocate_root=rebinds.append)
+
+        from agent_eval.cli.cmds.workbench_agent import _relocate_after_commit
+
+        landed = _relocate_after_commit(agent)
+
+        assert landed == tmp_path / "study-trip-package"
+        assert (landed / "agent_eval.yaml").is_file() and not draft.exists()
+        assert rebinds == [landed]  # 沙盒同步重定向
+
+    def test_relocate_after_commit_skips_in_place_sessions(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        # 非草稿前缀（edit / --output 定址 / 已归位）：原地生效，返回 None
+        rooted = tmp_path / "demo-package"
+        rooted.mkdir()
+        (rooted / "agent_eval.yaml").write_text(MANIFEST, encoding="utf-8")
+        no_rebind = SimpleNamespace(
+            server=SimpleNamespace(root=rooted),
+            relocate_root=lambda p: pytest.fail("原地会话不得重定向"),
+        )
+        from agent_eval.cli.cmds.workbench_agent import _relocate_after_commit
+
+        assert _relocate_after_commit(no_rebind) is None
+        # 草稿区但清单未落盘（防御：理论不可达）——留给会话末 finalize
+        bare = self._draft(tmp_path, "agent-eval-pkg-aa11")
+        assert (
+            _relocate_after_commit(
+                SimpleNamespace(server=SimpleNamespace(root=bare), relocate_root=pytest.fail)
+            )
+            is None
+        )
+        assert bare.exists()
+
+    def test_relocate_after_commit_collision_keeps_draft(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        (draft / "agent_eval.yaml").write_text(
+            "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+        )
+        (tmp_path / "study-trip-package").mkdir()  # 落点已被占
+        agent = SimpleNamespace(
+            server=SimpleNamespace(root=draft),
+            relocate_root=lambda p: pytest.fail("撞名不得重定向"),
+        )
+
+        from agent_eval.cli.cmds.workbench_agent import _relocate_after_commit
+
+        assert _relocate_after_commit(agent) is None
+        assert draft.exists()  # 包留草稿位不打断会话——会话末 finalize 兜底
+        assert "已存在" in capsys.readouterr().out
+
+    def test_repl_continues_on_relocated_package_after_landing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """v4.9 核心验收：确认落盘即归位；同一会话可继续自然语言修改已归位的包。"""
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.chdir(tmp_path)
+        draft = self._draft(tmp_path)
+        agent = WorkbenchAgent(draft, log_dir=tmp_path / "log")
+
+        def fake_run_turn(agent_: Any, text: str, *, confirm_fn: Any, on_event: Any = None) -> Any:
+            root = agent_.server.root
+            if not (root / "agent_eval.yaml").exists():
+                (root / "agent_eval.yaml").write_text(
+                    "package:\n  id: study-trip\n  scenario: travel\n", encoding="utf-8"
+                )
+                return TurnResult(
+                    reply="已生成",
+                    diff="d",
+                    staged=True,
+                    committed=True,
+                    committed_files=["A agent_eval.yaml"],
+                )
+            (root / "rules").mkdir(exist_ok=True)  # 第二轮写操作落在当前沙盒根
+            (root / "rules" / "late.yaml").write_text("rules: []\n", encoding="utf-8")
+            return TurnResult(
+                reply="已补充",
+                diff="d",
+                staged=True,
+                committed=True,
+                committed_files=["A rules/late.yaml"],
+            )
+
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
+        inputs = iter(["补一条规则", ""])
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
+        sa._session(agent, "创建研学包")
+
+        final = tmp_path / "study-trip-package"
+        assert (final / "agent_eval.yaml").is_file()  # 首轮确认后包立即可见（不再等会话结束）
+        assert not draft.exists()
+        assert (final / "rules" / "late.yaml").is_file()  # 第二轮写进已归位的包
+        assert agent.server.root == final
+
+    def test_session_end_rename_sync_after_landing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """归位后自然语言改包名：目录名在会话末按最终清单 id 同步（finalize 兜底语义）。"""
+        from agent_eval.cli.cmds import workbench_agent as sa
+
+        monkeypatch.setattr(sa, "_guard_llm_ready", lambda: None)
+        monkeypatch.chdir(tmp_path)
+
+        def fake_run_turn(agent_: Any, text: str, *, confirm_fn: Any, on_event: Any = None) -> Any:
+            manifest = agent_.server.root / "agent_eval.yaml"
+            pid = "study-trip" if not manifest.exists() else "trip-v2"
+            manifest.write_text(f"package:\n  id: {pid}\n  scenario: travel\n", encoding="utf-8")
+            return TurnResult(
+                reply="ok",
+                diff="d",
+                staged=True,
+                committed=True,
+                committed_files=["M agent_eval.yaml"],
+            )
+
+        monkeypatch.setattr("agent_eval.agent.workbench.agent.run_turn", fake_run_turn)
+        inputs = iter(["把包名改成 trip-v2", ""])
+        monkeypatch.setattr(sa, "ask", lambda prompt: next(inputs))
+        root = sa.agent_new_package(
+            ref=None, output=None, instruction="创建", yes=False, trust_agent=False
+        )
+        assert root == tmp_path / "trip-v2-package"
+        assert (root / "agent_eval.yaml").is_file()
+        assert not (tmp_path / "study-trip-package").exists()  # 首归位目录已按新名同步
+        assert not any(p.name.startswith("agent-eval-pkg-") for p in tmp_path.rglob("*"))
+
+    def test_finalize_silent_when_already_landed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        final = tmp_path / "demo-package"
+        final.mkdir()
+        (final / "agent_eval.yaml").write_text(MANIFEST, encoding="utf-8")  # id: demo
+        from agent_eval.cli.cmds.workbench_agent import _finalize_new_package
+
+        assert _finalize_new_package(final, movable=True) == final
+        assert "已保存" not in capsys.readouterr().out  # 归位提示已在落盘时刻给出，不重复
 
 
 # ── 流式渲染（claude code 式工作过程直播） ──────────────────────────────
@@ -1554,8 +2881,102 @@ class TestStreamRender:
         out = capsys.readouterr().out
         assert "正文进行中" in out and "🔧 write_file · a.yaml" in out
 
+    def test_emitter_tty_renders_markdown_lite(self, capsys, monkeypatch) -> None:
+        # TTY 下正文行缓冲经 markdown-lite 渲染：markdown 标记不再裸奔
+        import re as _re
+        import sys as _sys
 
-# ── 泛化文件工具（Claude Code 式分级授权，arch/15 §6.11.1） ─────────────
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+
+        class _Tty:
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(_sys, "stdout", _Tty(_sys.stdout))
+        emit, finish = _make_stream_emitter()
+        emit(
+            {
+                "type": "token",
+                "text": "## 执行摘要\n\n**结论**: 收到 `{}`\n- [x] 探测完成\n",
+            }
+        )
+        finish()
+        raw = capsys.readouterr().out
+        out = _re.sub(r"\x1b\[[0-9;]*m", "", raw)  # 去 ANSI 后断言纯文本形态
+        assert "## " not in out and "**" not in out  # 标记被转换
+        assert "执行摘要" in out and "结论" in out and "✓ 探测完成" in out
+
+    def test_emitter_tty_keeps_paragraph_gap_and_buffers_partial_line(
+        self, capsys, monkeypatch
+    ) -> None:
+        # 行缓冲语义：完整行才落笔（部分行挂起），段落间隔保留，工具行紧邻
+        import sys as _sys
+
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+
+        class _Tty:
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(_sys, "stdout", _Tty(_sys.stdout))
+        emit, finish = _make_stream_emitter()
+        emit({"type": "token", "text": "第一段\n\n第二段 "})
+        first = capsys.readouterr().out
+        assert "第二段" not in first  # 部分行挂起（未收到换行）
+        emit({"type": "tool_start", "name": "request", "args": {}})
+        finish()
+        out = first + capsys.readouterr().out
+        assert "第一段\n\n第二段" in out  # 段落间隔保留
+        assert "第二段" in out and "🔧 request" in out  # 部分行兜底落笔 + 工具行
+
+    def test_emitter_renders_todo_list_with_dedupe(self, capsys) -> None:
+        from agent_eval.cli.console.agent_stream import make_stream_emitter as _make_stream_emitter
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+        emit, finish = _make_stream_emitter()
+        todos = [
+            {"content": "探测接口", "status": "completed"},
+            {"content": "修正头", "status": "in_progress"},
+            {"content": "重放断言", "status": "pending"},
+        ]
+        emit({"type": "todos", "todos": todos})
+        emit({"type": "todos", "todos": list(todos)})  # 与上次相同——去重不重画
+        emit(
+            {
+                "type": "todos",
+                "todos": [
+                    {"content": "探测接口", "status": "completed"},
+                    {"content": "修正头", "status": "completed"},
+                ],
+            }
+        )
+        finish()
+        out = capsys.readouterr().out
+        assert out.count("任务清单") == 2  # 首次 + 变化后；重复事件不重画
+        assert "✓ 探测接口" in out and "▶ 修正头" in out and "○ 重放断言" in out
+        assert "任务清单 2/2" in out  # 完成进度计数
+
+
+# ── 泛化文件工具（Claude Code 式分级授权） ─────────────
 
 
 class TestGeneralizedFileTools:
@@ -1686,7 +3107,7 @@ class TestGeneralizedFileTools:
     def test_system_prompt_references_guide_without_hardcoded_structure(
         self, tmp_path: Path
     ) -> None:
-        # 结构知识外置（§6.11.1）：提示词只指路规范文档，字段表不再 hardcode
+        # 结构知识外置：提示词只指路规范文档，字段表不再 hardcode
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         prompt = agent._build_system_prompt()
         assert "scenario-package-format.md" in prompt
@@ -1694,7 +3115,7 @@ class TestGeneralizedFileTools:
         assert "内容规范" not in prompt
 
     def test_system_prompt_workbench_identity_with_domain_segment(self, tmp_path: Path) -> None:
-        # 定位升维（D-WB-2）：会话机段=工作台身份，场景包只是装配域段
+        # 定位升维：会话机段=工作台身份，场景包只是装配域段
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
         prompt = agent._build_system_prompt()
         assert "工作台的对话式 Agent（WorkbenchAgent）" in prompt
@@ -1713,8 +3134,190 @@ class TestGeneralizedFileTools:
         assert "rules/" not in text  # 目录清单不再 hardcode 在模板（task_sets/sut_configs 除外）
 
 
+class TestStructuredFileRead:
+    """格式感知读取 + workspace 自动授权域（系统性通用读原语）。"""
+
+    @staticmethod
+    def _server(root: Path, ws: Path | None, ask_fn: Any = None) -> PackageToolServer:
+        return PackageToolServer(root, ask_fn=ask_fn, workspace_root=ws)
+
+    def test_workspace_auto_granted(self, tmp_path: Path) -> None:
+        """workspace 运行产物区（数据集等）读取/列举零弹窗——读自己的产物免授权。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ds = ws / "datasets" / "openbookqa"
+        ds.mkdir(parents=True)
+        (ds / "data.csv").write_text("q,a\n1+1,2\n2+2,4\n3+3,6\n", encoding="utf-8")
+        (ds / "README.md").write_text("# OpenBookQA", encoding="utf-8")
+        server = self._server(root, ws)
+
+        async def ask_fn(*a: Any, **kw: Any) -> str:
+            raise AssertionError("workspace 内读取不得触发授权询问")
+
+        server.ask_fn = ask_fn
+
+        async def run() -> None:
+            listing = await server.list_files(str(ds))
+            assert listing["files"] == ["README.md", "data.csv"]
+            preview = await server.read_file(str(ds / "data.csv"), limit=2)
+            assert preview["format"] == "csv"
+            assert preview["columns"] == ["q", "a"]
+            assert len(preview["sample_rows"]) == 2
+            readme = await server.read_file(str(ds / "README.md"))
+            assert "OpenBookQA" in readme["content"]
+
+        asyncio.run(run())
+
+    def test_in_package_dataset_file_structured(self, tmp_path: Path) -> None:
+        """包内数据文件同享格式解析（原语按路径不分域）。"""
+        root = tmp_path / "root"
+        (root / "datasets").mkdir(parents=True)
+        (root / "datasets" / "smoke.jsonl").write_text('{"q": "1"}\n{"q": "2"}\n', encoding="utf-8")
+        server = self._server(root, None)
+
+        async def run() -> None:
+            preview = await server.read_file("datasets/smoke.jsonl")
+            assert preview["format"] == "jsonl"
+            assert [r["q"] for r in preview["sample_rows"]] == ["1", "2"]
+
+        asyncio.run(run())
+
+    def test_parquet_via_stubbed_pyarrow(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """parquet 解析走 pyarrow（stub）：列名/样本行滤索引列 + row_count。"""
+        import sys
+        import types
+
+        rows = [{"id": "1", "q": "sun?", "__index_level_0__": 0}]
+
+        class _FakePF:
+            def __init__(self, _path: object) -> None:
+                self.schema_arrow = types.SimpleNamespace(names=["id", "q", "__index_level_0__"])
+                self.metadata = types.SimpleNamespace(num_rows=123)
+
+            def iter_batches(self, batch_size: int):  # type: ignore[no-untyped-def]
+                yield types.SimpleNamespace(to_pylist=lambda: rows[:batch_size])
+
+        mod = types.SimpleNamespace(ParquetFile=_FakePF)
+        # 顶层模块须携带 parquet 属性——`import pyarrow.parquet as pq` 经 getattr
+        # 绑定（sys.modules 子模块键在部分解释器版本只作 fallback）
+        monkeypatch.setitem(sys.modules, "pyarrow", types.SimpleNamespace(parquet=mod))
+        monkeypatch.setitem(sys.modules, "pyarrow.parquet", mod)
+
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "main.parquet").write_bytes(b"PARQUET")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            preview = await server.read_file(str(ws / "main.parquet"))
+            assert preview["format"] == "parquet"
+            assert preview["columns"] == ["id", "q"]
+            assert preview["row_count"] == 123
+            assert preview["sample_rows"] == [{"id": "1", "q": "sun?"}]
+
+        asyncio.run(run())
+
+    def test_parquet_without_pyarrow_gives_install_hint(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import sys
+
+        monkeypatch.setitem(sys.modules, "pyarrow", None)  # None → import 抛 ImportError
+        monkeypatch.setitem(sys.modules, "pyarrow.parquet", None)
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "x.parquet").write_bytes(b"P")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            result = await server.read_file(str(ws / "x.parquet"))
+            assert "uv sync --extra datasets" in result["error"]
+
+        asyncio.run(run())
+
+    def test_json_and_zip_previews(self, tmp_path: Path) -> None:
+        import zipfile
+
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "items.json").write_text('[{"a": 1}, {"a": 2}, {"a": 3}]', encoding="utf-8")
+        with zipfile.ZipFile(ws / "bundle.zip", "w") as zf:
+            zf.writestr("dev/set1.csv", "q,a\n1,2\n")
+            zf.writestr("dev/set2.csv", "q,a\n3,4\n")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            js = await server.read_file(str(ws / "items.json"), limit=1)
+            assert js["format"] == "json" and js["item_count"] == 3
+            assert js["sample_rows"] == [{"a": 1}]
+            zp = await server.read_file(str(ws / "bundle.zip"))
+            assert zp["format"] == "zip" and zp["entry_count"] == 2
+            assert "dev/set1.csv" in zp["entries"]
+
+        asyncio.run(run())
+
+    def test_text_fallback_unchanged(self, tmp_path: Path) -> None:
+        """文本类回落原文截断（回执形态向后兼容：path/content）。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "notes.md").write_text("# 标题\n正文", encoding="utf-8")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            result = await server.read_file(str(ws / "notes.md"))
+            assert result["content"].startswith("# 标题")
+            assert "format" not in result
+
+        asyncio.run(run())
+
+    def test_no_workspace_root_still_prompts(self, tmp_path: Path) -> None:
+        """未装配 workspace 域时行为不变（向后兼容）：外部路径仍走授权通道。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+        result = asyncio.run(self._server(root, None).read_file(str(elsewhere)))
+        assert "需用户授权" in result["error"]
+
+    def test_grant_once_covers_sibling_and_subdir(self, tmp_path: Path) -> None:
+        """授权记账提升到所在目录：同目录兄弟文件与子文件不再重复询问。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "user-data"
+        (outside / "sub").mkdir(parents=True)
+        for rel in ("a.txt", "b.txt", "sub/c.txt"):
+            (outside / rel).write_text(rel, encoding="utf-8")
+        server = self._server(root, None)
+        asks: list[str] = []
+
+        async def ask_fn(question: str, *, options: Any, secret: bool) -> str:
+            asks.append(question)
+            return "允许"
+
+        server.ask_fn = ask_fn
+
+        async def run() -> None:
+            for rel in ("a.txt", "b.txt", "sub/c.txt"):
+                result = await server.read_file(str(outside / rel))
+                assert "error" not in result
+
+        asyncio.run(run())
+        assert len(asks) == 1  # 问一次，整目录放行
+
+
 class TestAgentConfig:
-    """WorkbenchAgentConfig——tunables 单点载体（§6.11.2，§6.7 P2 CLI 旗标同注入路径）。"""
+    """WorkbenchAgentConfig——tunables 单点载体。"""
 
     def test_defaults_and_frozen(self) -> None:
         cfg = WorkbenchAgentConfig()
@@ -1743,7 +3346,7 @@ class TestAgentConfig:
         assert "第一轮很长" not in joined  # 条数取最后 1 条
 
     def test_config_defaults_and_frozen(self) -> None:
-        # tunables 单点（§6.11.2）：默认值冻结，改动须经显式 config 注入
+        # tunables 单点：默认值冻结，改动须经显式 config 注入
         cfg = WorkbenchAgentConfig()
         assert cfg.max_turns == 40 and cfg.max_fix_rounds == 3
         with pytest.raises(Exception):  # noqa: B017, PT011 — frozen dataclass 不允许改字段
@@ -1780,12 +3383,12 @@ class TestPromptAssets:
     def test_intro_mentions_package_listing(self) -> None:
         from agent_eval.agent.workbench.prompts import load_prompts
 
-        intro = str(load_prompts()["intro"])  # intro 是多行字符串而非 mapping
-        assert "有哪些评测场景包" in intro
+        examples = load_prompts()["banner"]["examples"]  # v4.13.2 结构化 banner 段
+        assert any("有哪些评测场景包" in ex for ex in examples)
 
 
 class TestSessionMachine:
-    """§6.7 会话机：salvage 保现场 / 自动分段续跑 / 预算缰绳（D-WB-3/4/5）。"""
+    """会话机：salvage 保现场 / 自动分段续跑 / 预算缰绳。"""
 
     @staticmethod
     def _recursion_exc() -> type[BaseException]:
@@ -1925,3 +3528,149 @@ class TestSessionMachine:
         assert result.aborted_reason == "segment_limit"  # max_segments=1：撞线即暂停
         assert len(agent._messages) == 3  # human + ai + 合成的失败 ToolMessage
         assert getattr(agent._messages[-1], "tool_call_id", "") == "c9"
+
+
+class TestExecutionDomainAssembly:
+    """执行域装配回归。"""
+
+    @staticmethod
+    def _exec_outcome():
+        from agent_eval.cli.pipeline_core import PipelineOutcome
+
+        return PipelineOutcome(
+            stage="done",
+            exit_code=0,
+            run_id="20260101_000000",
+            run_dir="/ws/runs/20260101_000000",
+            metrics={"m:reward": 0.9},
+            total_samples=2,
+            gate={"mode": "off", "enabled": False, "passed": True},
+            upload_receipt={"enabled": False},
+            payload={"total": 2, "succeeded": 2},
+            result=SimpleNamespace(report=SimpleNamespace(failure_breakdown={"safety": 1})),
+        )
+
+    def test_execution_server_assembles_five_tools(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        names = {t.name for t in agent.execution.to_langchain_tools()}
+        assert names == {
+            "run_evaluation",
+            "list_eval_targets",
+            "list_runs",
+            "show_run",
+            "upload_run",
+        }
+        assert {s.name for s in agent.execution.TOOL_SPECS} == names  # 面单一致
+
+    def test_describe_tools_includes_execution_domain(self, tmp_path: Path) -> None:
+        # 三 server 展平：包域 + 探测 + 执行域同进 {tools} 段
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        described = agent._describe_tools()
+        assert "run_evaluation" in described
+        assert "list_eval_targets" in described
+        assert "upload_run" in described
+
+    def test_config_field_set_unchanged(self) -> None:
+        # 回归：WorkbenchAgentConfig 零改动——执行域装配走构造 kwarg
+        # （render_bridge）而非扩配置；字段集漂移 = 扩展机制失效信号
+        import dataclasses
+
+        assert {f.name for f in dataclasses.fields(WorkbenchAgentConfig)} == {
+            "max_turns",
+            "max_fix_rounds",
+            "max_segments",
+            "budget_usd",
+            "max_dialogue_entries",
+            "resume_max_entries",
+            "resume_max_chars",
+            "probe_budgets",
+            "probe_timeout_s",
+        }
+
+    def test_interrupt_active_two_states(self, tmp_path: Path) -> None:
+        import threading
+
+        from agent_eval.cli.console.exec_bridge import ExecutionRenderBridge
+
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.interrupt_active_execution() is False  # 无活跃执行
+
+        bridge = ExecutionRenderBridge(None)
+        agent.bind_render_bridge(bridge)
+        agent.execution.ctx.active_event = threading.Event()
+        assert agent.interrupt_active_execution() is True  # 置位 + 封缄
+        assert agent.execution.ctx.active_event.is_set()
+
+    def test_new_turn_does_not_reset_active_event(self, tmp_path: Path) -> None:
+        # 生命周期约定：active_event 归 run_evaluation，不随 REPL 换轮复位
+        import threading
+
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        event = threading.Event()
+        agent.execution.ctx.active_event = event
+        agent.execution.new_turn()
+        assert agent.execution.ctx.active_event is event
+
+    def test_execution_bypasses_session_budget(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """预算豁免回归：执行评测不消耗会话预算（BudgetGuard 仅挂 on_llm_end）。
+
+        双保险断言：①空转 pipeline_core 走完整 run_evaluation 后 spent_usd 不变；
+        ②结构性断言 PipelineParams 无 budget 字段（执行参数进不了预算通道）。
+        """
+        import dataclasses
+        import threading
+
+        import agent_eval.agent.workbench.execution.run_eval as run_eval_mod
+        from agent_eval.cli.pipeline_core import PipelineParams
+
+        assert not {f.name for f in dataclasses.fields(PipelineParams)} & {
+            "budget_usd",
+            "budget",
+        }  # 结构性：执行参数无预算字段
+
+        cfg = WorkbenchAgentConfig(budget_usd=1.0)
+        agent = WorkbenchAgent(tmp_path, config=cfg, log_dir=tmp_path / "log")
+        assert agent._budget_guard is not None and agent._budget_guard.spent_usd == 0
+
+        core_calls: list[str] = []
+
+        def fake_core(params, *, progress, cancel_event, credential_filler):
+            core_calls.append("core")
+            assert isinstance(cancel_event, threading.Event)
+            return self._exec_outcome()
+
+        monkeypatch.setattr(run_eval_mod, "pipeline_core", fake_core)
+
+        async def ask_fn(question, *, options=None, secret=False):
+            return "确认执行"
+
+        agent.execution.ctx.ask_fn = ask_fn  # 与 bind_render_bridge 同风格：ctx 公开名直写
+        result = asyncio.run(agent.execution.run_evaluation(package="demo-pkg"))
+        assert result["status"] == "done"
+        assert core_calls == ["core"]
+        assert agent._budget_guard.spent_usd == 0  # 会话预算分文未动
+
+
+class TestDatasetDomainAssembly:
+    """数据集域装配回归。"""
+
+    def test_dataset_server_assembles_two_tools(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        names = {t.name for t in agent.datasets.to_langchain_tools()}
+        assert names == {"list_datasets", "download_dataset"}
+        assert {s.name for s in agent.datasets.TOOL_SPECS} == names  # 面单一致
+
+    def test_describe_tools_includes_dataset_domain(self, tmp_path: Path) -> None:
+        # 四 server 展平：包域 + 探测 + 执行 + 数据集域同进 {tools} 段
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        described = agent._describe_tools()
+        assert "list_datasets" in described
+        assert "download_dataset" in described
+
+    def test_datasets_server_shares_session_log(self, tmp_path: Path) -> None:
+        # 数据集域事件账本与会话日志同文件（时间线完整，同 probe/execution 惯例）
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.datasets.ctx.log_path == agent._log_path
+        assert agent.datasets.ctx.workspace_root is not None

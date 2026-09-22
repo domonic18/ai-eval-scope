@@ -21,6 +21,16 @@ class DataSourceNotFoundError(KnowledgePipelineError):
         self.name = name
 
 
+class SourceDataMissingError(KnowledgePipelineError):
+    """数据源目录缺失或为空（无可读取的数据文件）——fail-fast，不做空读。"""
+
+    def __init__(self, source: str, data_dir: object, expectation: str):
+        super().__init__(
+            f"{source} 数据目录缺失或为空（{expectation}）: {data_dir}",
+            details={"source": source, "data_dir": str(data_dir)},
+        )
+
+
 class ExtractorNotFoundError(KnowledgePipelineError):
     """提取器未注册。"""
 

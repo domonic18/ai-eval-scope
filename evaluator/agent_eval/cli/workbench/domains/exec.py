@@ -1,4 +1,4 @@
-"""执行评测域 — 五步选择 + 摘要确认 + 等价命令（F-C-EXEC，arch/15 §3.4）。
+"""执行评测域 — 五步选择 + 摘要确认 + 等价命令（F-C-EXEC）。
 
 向导最终以与命令行相同的参数对象调用 ``main.pipeline/run``（双前端同构，
 组织约定 3）；等价命令由 ``console/equiv`` 从同一参数组装，天然不漂移。
@@ -76,7 +76,7 @@ def main(session: Any) -> None:
     if channels[sut] not in SCHEDULED_CHANNELS:
         rprint(
             f"[red]通道 {channels[sut]!r} 预留未排期（本期排期通道 "
-            f"{'、'.join(SCHEDULED_CHANNELS)}，arch/03 §4.0.6/§4.2）——"
+            f"{'、'.join(SCHEDULED_CHANNELS)}）——"
             "请先把 sut_configs 的 channel 修正为排期通道（可在工作台会话中"
             "让 Agent 重新探测修正）。[/red]"
         )
@@ -91,10 +91,30 @@ def main(session: Any) -> None:
 
     mode = select("执行模式", ["pipeline（执行 + 评估 + 报告）", "run（仅执行）"])
 
+    # 日志档位（F-C-EXEC-07 三形态同源：CLI/向导/Agent 会话共用一档位语义）
+    level_options = [
+        "normal（默认进度）",
+        "verbose（SUT 请求/judge 过程事件）",
+        "debug（全量原文日志）",
+        "quiet（仅结果行，CI 友好）",
+    ]
+    log_level = select("日志档位", level_options, default=level_options[0]).split("（")[0]
+
     argv = (
-        pipeline_argv(package=ref, task_set=task_set, sut_name=sut, rule_set=rule_set)
+        pipeline_argv(
+            package=ref,
+            task_set=task_set,
+            sut_name=sut,
+            rule_set=rule_set,
+            **({"log_level": log_level} if log_level != "normal" else {}),
+        )
         if mode.startswith("pipeline")
-        else run_argv(package=ref, task_set=task_set, sut_name=sut)
+        else run_argv(
+            package=ref,
+            task_set=task_set,
+            sut_name=sut,
+            **({"log_level": log_level} if log_level != "normal" else {}),
+        )
     )
     rprint("[bold]── 执行摘要 ──[/bold]")
     rprint(f"  包: [cyan]{ref}[/cyan]   考卷: [cyan]{task_set}[/cyan]   SUT: [cyan]{sut}[/cyan]")
@@ -109,6 +129,8 @@ def main(session: Any) -> None:
     from agent_eval.cli.cmds.execute import execute_pipeline, execute_run
 
     if mode.startswith("pipeline"):
-        execute_pipeline(package=ref, task_set=task_set, sut_name=sut, rule_set=rule_set)
+        execute_pipeline(
+            package=ref, task_set=task_set, sut_name=sut, rule_set=rule_set, log_level=log_level
+        )
     else:
-        execute_run(package=ref, task_set=task_set, sut_name=sut)
+        execute_run(package=ref, task_set=task_set, sut_name=sut, log_level=log_level)

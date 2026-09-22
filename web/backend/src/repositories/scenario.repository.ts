@@ -7,10 +7,10 @@
  */
 
 import { createHash } from "crypto"
-import { Prisma, type PrismaClient } from "@prisma/client"
+import type { PrismaClient } from "@prisma/client"
 import { getPrisma } from "../infra/prisma"
 import { PlatformError } from "../middleware/errorHandler"
-import { MUTUALLY_EXCLUSIVE_LABELS, pickLatestPerAsset } from "../utils/versioning"
+import { pickLatestPerAsset } from "../utils/versioning"
 
 function hashContent(content: unknown): string {
   return "sha256:" + createHash("sha256").update(JSON.stringify(content)).digest("hex")
@@ -117,7 +117,7 @@ export class ScenarioRepository {
     return { assetId, version: input.version }
   }
 
-  /** 列出场景默认配置的全部历史版本（VersionTimeline 用）。 */
+  /** 列出场景默认配置的全部历史版本（只读查看）。 */
   async listDefaultsVersions(
     scenarioId: string,
   ): Promise<Array<{ version: string; labels: string[]; contentHash: string; createdAt: Date }>> {
@@ -132,7 +132,12 @@ export class ScenarioRepository {
   async getDefaultsContent(
     scenarioId: string,
     version?: string,
-  ): Promise<{ version: string; labels: string[]; content: Record<string, unknown> } | null> {
+  ): Promise<{
+    version: string
+    labels: string[]
+    content: Record<string, unknown>
+    contentHash: string
+  } | null> {
     const rows = await this.prisma.defaultsAsset.findMany({
       where: { scenarioId, assetId: "default" },
     })
@@ -143,31 +148,8 @@ export class ScenarioRepository {
       version: chosen.version,
       labels: chosen.labels,
       content: chosen.content as Record<string, unknown>,
+      contentHash: chosen.contentHash,
     }
-  }
-
-  /** 标签晋升：覆盖默认配置某版本的 labels（latest/production/staging 互斥）。 */
-  async setDefaultsLabels(scenarioId: string, version: string, labels: string[]): Promise<void> {
-    const exclusive = labels.filter((l) => (MUTUALLY_EXCLUSIVE_LABELS as readonly string[]).includes(l))
-    await this.prisma.$transaction(async (tx) => {
-      if (exclusive.length) {
-        const others = await tx.defaultsAsset.findMany({
-          where: { scenarioId, assetId: "default", NOT: { version } },
-          select: { id: true, labels: true },
-        })
-        for (const o of others) {
-          if (!o.labels.some((l) => exclusive.includes(l))) continue
-          await tx.defaultsAsset.update({
-            where: { id: o.id },
-            data: { labels: o.labels.filter((l) => !exclusive.includes(l)) },
-          })
-        }
-      }
-      await tx.defaultsAsset.updateMany({
-        where: { scenarioId, assetId: "default", version },
-        data: { labels },
-      })
-    })
   }
 
   /** 发布/更新一个场景包版本（幂等 upsert；场景不存在则创建）。 */
@@ -454,7 +436,7 @@ export class ScenarioRepository {
     return { assetId: input.assetId, version: input.version }
   }
 
-  /** 列出某资产的全部历史版本（VersionTimeline 用）。 */
+  /** 列出某资产的全部历史版本（只读查看）。 */
   async listAssetVersions(
     scenarioId: string,
     kind: RepoAssetKind,
@@ -500,66 +482,6 @@ export class ScenarioRepository {
     }
     const latest = pickLatestPerAsset(rows)[0]
     return latest.content as Record<string, unknown>
-  }
-
-  /**
-   * 标签晋升：覆盖某资产版本的 labels（S1-4 互斥）。
-   * production / staging / latest 为互斥标签——赋予某版本时，从同资产其它版本摘除同名标签，
-   * 保证每个互斥标签在资产内全局唯一。其余自定义标签不受影响。
-   */
-  async setAssetLabels(
-    scenarioId: string,
-    kind: RepoAssetKind,
-    assetId: string,
-    version: string,
-    labels: string[],
-  ): Promise<void> {
-    const exclusive = labels.filter((l) => (MUTUALLY_EXCLUSIVE_LABELS as readonly string[]).includes(l))
-    await this.prisma.$transaction(async (tx) => {
-      if (exclusive.length) {
-        await this._stripLabelsFromOthers(tx, kind, scenarioId, assetId, version, exclusive)
-      }
-      const filter = { scenarioId, assetId, version }
-      if (kind === "rule-sets") await tx.ruleSetAsset.updateMany({ where: filter, data: { labels } })
-      else if (kind === "datasets") await tx.datasetAsset.updateMany({ where: filter, data: { labels } })
-      else if (kind === "task-sets") await tx.taskSetAsset.updateMany({ where: filter, data: { labels } })
-      else if (kind === "sut-configs") await tx.sutConfigAsset.updateMany({ where: filter, data: { labels } })
-      else await tx.promptTemplateAsset.updateMany({ where: filter, data: { labels } })
-    })
-  }
-
-  /** 从同资产、非目标版本上摘除指定互斥标签（事务内调用）。 */
-  private async _stripLabelsFromOthers(
-    tx: Prisma.TransactionClient,
-    kind: RepoAssetKind,
-    scenarioId: string,
-    assetId: string,
-    version: string,
-    labels: string[],
-  ): Promise<void> {
-    const whereOther = { scenarioId, assetId, NOT: { version } }
-    const select = { id: true, labels: true }
-    let others: Array<{ id: string; labels: string[] }>
-    if (kind === "rule-sets") {
-      others = await tx.ruleSetAsset.findMany({ where: whereOther, select })
-    } else if (kind === "datasets") {
-      others = await tx.datasetAsset.findMany({ where: whereOther, select })
-    } else if (kind === "task-sets") {
-      others = await tx.taskSetAsset.findMany({ where: whereOther, select })
-    } else if (kind === "sut-configs") {
-      others = await tx.sutConfigAsset.findMany({ where: whereOther, select })
-    } else {
-      others = await tx.promptTemplateAsset.findMany({ where: whereOther, select })
-    }
-    for (const o of others) {
-      if (!o.labels.some((l) => labels.includes(l))) continue
-      const cleaned = o.labels.filter((l) => !labels.includes(l))
-      if (kind === "rule-sets") await tx.ruleSetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
-      else if (kind === "datasets") await tx.datasetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
-      else if (kind === "task-sets") await tx.taskSetAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
-      else if (kind === "sut-configs") await tx.sutConfigAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
-      else await tx.promptTemplateAsset.update({ where: { id: o.id }, data: { labels: cleaned } })
-    }
   }
 
   async getCatalog(scenarioId: string): Promise<ScenarioCatalog | null> {

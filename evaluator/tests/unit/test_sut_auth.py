@@ -1,4 +1,4 @@
-"""鉴权架构测试（arch/03 §4.0）：CredentialStore / SUTSession / SessionStore / AuthProvider。"""
+"""鉴权架构测试：CredentialStore / SUTSession / SessionStore / AuthProvider。"""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from agent_eval.execution.registry import (
     SUTSystemConfig,
 )
 
-# api_login 提取规则（token 路径属系统配置，须显式声明；形态同 arch/03 §4.0.3 示例）
+# api_login 提取规则（token 路径属系统配置，须显式声明）
 EXTRACT = AuthExtractConfig(token_path="data.access_token", expires_in_path="data.expires_in")
 
 
@@ -323,7 +323,7 @@ def test_preflight_noop_for_auth_none_and_flags_missing_ref() -> None:
 def test_preflight_fields_declared_by_template_not_enumerated(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # 通用 KV（06 §4.7）：模板写 {{ account }}/{{ api_key }} 就要求这两个字段——
+    # 通用 KV：模板写 {{ account }}/{{ api_key }} 就要求这两个字段——
     # username/password 未录也不报错（字段集由配置声明，非代码枚举）
     login = AuthLoginConfig(
         method="POST",
