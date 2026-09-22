@@ -8,7 +8,8 @@
 <link rel="stylesheet" href="assets/theme.css">
 <style>
   /* 与 docs-quickstart.html 同款文档站骨架 */
-  .nav { height: 60px; }
+  .nav { height: 60px; border-bottom: 1px solid var(--border); position: relative; z-index: 10; background: rgba(10,12,16,0.7); backdrop-filter: blur(12px); }
+  .nav-in { max-width: 1160px; margin: 0 auto; padding: 0 32px; height: 100%; display: flex; align-items: center; justify-content: space-between; }
   .doc-mid { flex: 1; max-width: 460px; margin: 0 28px; }
   .doc-mid .doc-search { position: relative; }
   .doc-mid .kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
