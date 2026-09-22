@@ -256,19 +256,19 @@ uv run agent-eval scenario new demo/smoke --mode agent -o ./demo-package \
 
 ## 七、实战一：课件评测（courseware）
 
-以项目自带样例 `samples/大单元学习总导/`（HTML 课件目录）为例：
+以自备的 HTML 课件目录为评测输入（下文以 `<课件目录>` 指代，如 `my-courseware/`；多文件打散形态见本节末尾的常用变体）：
 
 ```bash
 cd evaluator
 
-# ① 打包：遍历目录生成 ExecutionPackage（task-id 取目录名"大单元学习总导"）
+# ① 打包：遍历目录生成 ExecutionPackage（task-id 取目录名）
 uv run agent-eval pack \
-  --source-dir ../samples/大单元学习总导/ \
+  --source-dir /path/to/<课件目录>/ \
   --output-dir workspace/packages
 
 # ② 评估：引用内置 courseware 包（缺省用其 default_rule_set = coursework-vision）
 uv run agent-eval eval \
-  --package-dir workspace/packages/大单元学习总导/ \
+  --package-dir workspace/packages/<课件目录名>/ \
   --package courseware
 
 # ③ 查看报告
@@ -288,7 +288,7 @@ uv run agent-eval pack --source-dir /path/to/output/ \
 
 # 显式选择规则集档位（包内名称）
 uv run agent-eval eval \
-  --package-dir workspace/packages/大单元学习总导/ \
+  --package-dir workspace/packages/<课件目录名>/ \
   --package courseware --rule-set coursework-gate     # 只跑格式+常识门控（无 LLM 也准确）
 
 # 未配置 LLM 强制阻断而不是降级跳过
