@@ -12,7 +12,8 @@ from typing import Any
 import httpx
 import pytest
 
-from agent_eval.agent.executor import protocol_tools
+from agent_eval.agent.executor import protocol_state as protocol_state_mod
+from agent_eval.agent.executor import protocol_tools_sut
 from agent_eval.agent.executor.ledger import EvidenceLedger, ResourceLedger
 from agent_eval.agent.executor.protocol_tools import AgentProtocolToolServer
 from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
@@ -30,7 +31,7 @@ WAIT_PAYLOAD = {
 def _downloads_enabled_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
     """生产默认停用下载（SUT_FILE_DOWNLOAD_ENABLED=False，临时措施）——本模块
     单测恢复开启以验证下载行为；停用行为单独测（见 test_download_disabled_*）。"""
-    monkeypatch.setattr(protocol_tools, "SUT_FILE_DOWNLOAD_ENABLED", True)
+    monkeypatch.setattr(protocol_tools_sut, "SUT_FILE_DOWNLOAD_ENABLED", True)
 
 
 def _permissive_ledger(**policy_kwargs: Any) -> ResourceLedger:
@@ -428,7 +429,7 @@ _REFRESH_FINAL = {
 def test_refresh_final_state_reconciles_latest_answer(monkeypatch: pytest.MonkeyPatch) -> None:
     """snapshot/reconcile：run 过早返回中间播报后，收尾刷新把最新 ai 回答回写
     last_run.text——只改 text，input 原值保留（guard_echo_answer 语义不漂移）。"""
-    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.01)
     # 次序：busy → 空窗(中间播报) → busy → 空窗×2（稳定窗误判收口，旧病复现）
     # → 真终态（刷新取到）
     server = _commands_server(
@@ -454,7 +455,7 @@ def test_refresh_final_state_busy_thread_times_out_silently(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """线程持续忙碌 → settle 超时静默保留现值——收尾取证失败不 fail 任务。"""
-    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.01)
     server = _commands_server([_REFRESH_BUSY])  # 末态复用：恒 busy
     server.last_run = {
         "status": "success",
@@ -513,7 +514,7 @@ def test_refresh_final_state_records_evidence_without_budget(
 ) -> None:
     """收尾取证不耗 LLM 轮询额度（state_polls 耗尽后闸门必拒，本方法照常完成），
     但落 state_poll 证据留痕（evidence ledger 可复盘）。"""
-    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.01)
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.01)
     server = _commands_server([_REFRESH_FINAL])
     evidence = EvidenceLedger()
     server.ledger = ResourceLedger(InteractionPolicy(state_polls=1), evidence=evidence)
@@ -784,7 +785,7 @@ def test_download_http_error_returns_failed_result(tmp_path: Path) -> None:
 
 def test_download_size_cap_aborts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """流式累计超 DOWNLOAD_MAX_BYTES 中止：failed 结果 + 半截文件清除。"""
-    monkeypatch.setattr(protocol_tools, "DOWNLOAD_MAX_BYTES", 8)
+    monkeypatch.setattr(protocol_tools_sut, "DOWNLOAD_MAX_BYTES", 8)
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, content=b"x" * 64)
@@ -821,7 +822,7 @@ def test_download_disabled_returns_guidance_without_budget_or_network(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """停用期间入口即拒：不触网、不耗下载预算，指引写包收尾；证据流记 disabled。"""
-    monkeypatch.setattr(protocol_tools, "SUT_FILE_DOWNLOAD_ENABLED", False)  # 盖过 autouse
+    monkeypatch.setattr(protocol_tools_sut, "SUT_FILE_DOWNLOAD_ENABLED", False)  # 盖过 autouse
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -1234,7 +1235,7 @@ def test_refresh_final_state_interrupt_pending_is_terminal_no_spin(
 ) -> None:
     """neg_001 根因回归（arch/16 §4.6 合同二）：反问挂起是一等终态——收尾刷新
     单采样立即返回并对账 pending，不再空转 settle 满超时后带旧值早退。"""
-    monkeypatch.setattr(protocol_tools, "COMMANDS_POLL_INTERVAL_S", 0.05)
+    monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.05)
     server = _commands_server([INTERRUPT_STATE])
     server.last_run = {
         "status": "interrupted",

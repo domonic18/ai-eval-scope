@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_eval.evaluation.evaluators.commonsense_evaluators import (
+from agent_eval.evaluation.evaluators.commonsense import (
     InfoAccuracyEvaluator,
 )
 from agent_eval.evaluation.evaluators.format_evaluators import (
