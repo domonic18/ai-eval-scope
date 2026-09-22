@@ -4,7 +4,7 @@
 ToolExporterMixin（agent/tools.py）惰性导出 LangChain Tool 显式绑定给
 DeepAgents；MCP 封装为可选能力（未在本期排期）。
 
-工具面白名单（v4.8 安全裁剪）：默认仅导出通用工具（DEFAULT_EXECUTION_TOOLS），
+工具面白名单：默认仅导出通用工具（DEFAULT_EXECUTION_TOOLS），
 invoke_http_sut/invoke_cli_sut **退出 LLM 工具面**——SUT 交互唯一出口是通道
 语义工具（agent_run 族 / sut_request）。实测 generic_http 任务中 LLM 借
 invoke_cli_sut（任意 shell 无沙箱）cat 凭证与 .env，prompts 禁令拦不住，
@@ -289,7 +289,7 @@ class SUTToolServer(ToolExporterMixin):
     def _within_workspace(self, path: Path) -> bool:
         """文件工具读取边界：路径 resolve 后须位于 workspace 子树或允许根内。
 
-        纵深防御（v4.8）：裸调用工具裁撤后 read_file 是唯一的任意路径读取面——
+        纵深防御：裸调用工具裁撤后 read_file 是唯一的任意路径读取面——
         实测 LLM 曾读取 .secret/.env 与凭证文件并回流上下文。未设 workspace_dir
         不限制（纯方法级使用/测试兼容）。
         """

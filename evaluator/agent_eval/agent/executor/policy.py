@@ -1,4 +1,4 @@
-"""交互预算解析（arch/16 §4.1 P1 声明式预算）。
+"""交互预算解析。
 
 InteractionPolicy 声明「允许与 SUT 发生多少次交互」——一等预算面；
 recursion_limit 由 :func:`derive_recursion_limit` 自动推导为保险丝，

@@ -5,7 +5,7 @@ description: |
   从科学题目提取可入库的数值常数（constants），供 InfoAccuracyEvaluator 在课件中做
   数值校验。constants 用 extract_pattern 正则从课件文本提取数值，比对 value±tolerance。
   与 misconceptions 不同：constants 的 extract_pattern（正则）LLM 生成后需在真实课件
-  文本上验证迭代（见 docs/plan/02知识点数据集完善方案.md §五）。
+  文本上验证迭代。
 
 system_prompt: |
   你是教育知识工程师。任务：从科学题目中提取可入库的「数值常数（constants）」。

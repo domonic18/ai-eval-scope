@@ -13,7 +13,7 @@
   v4.14）→ 外部路径经 ``ask_fn`` 向用户申请授权（拒绝即拉黑，允许按目录记账
   含子目录）；
   凭证类路径（密钥区 / sut_sessions / .env）一律硬拒，先于授权——凭证不回流 LLM 上下文。
-- **读的格式感知**（v4.14）：read_file 按扩展名分派——parquet/CSV/JSONL/JSON/
+- **读的格式感知**：read_file 按扩展名分派——parquet/CSV/JSONL/JSON/
   zip 解析为「列名 + 行数 + 样本行」结构化视图（:mod:`file_read` 原语），
   文本类返回截断原文；数据集/run 产物等任意本地数据共用同一读取能力。
 
@@ -70,7 +70,7 @@ class PackageToolServer(
         *,
         assets_root: Path | None = None,
         ask_fn: Any = None,  # async (question, *, options, secret) -> str（外部读取授权）
-        workspace_root: Path | None = None,  # 运行产物区（自动授权只读域，v4.14）
+        workspace_root: Path | None = None,  # 运行产物区（自动授权只读域）
     ) -> None:
         self.root = Path(pkg_root).resolve()
         self.assets_root = (assets_root or _ASSETS_ROOT).resolve()

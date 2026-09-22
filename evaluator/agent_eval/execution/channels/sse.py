@@ -1,4 +1,4 @@
-"""SSE 行级解析（thread_commands 拆出，plan/07 G4）——runs 与 commands 两形态共用。
+"""SSE 行级解析（thread_commands 拆出）——runs 与 commands 两形态共用。
 
 只负责「字节流 → (event, data) 块」的解析与 deadline 判定；事件语义、终态
 收口归各传输模块（thread_commands / agent_protocol）。

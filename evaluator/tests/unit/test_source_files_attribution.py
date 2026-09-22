@@ -1,4 +1,4 @@
-"""评估器 source_files 文件定位（docs/arch/15 §4.1）。
+"""评估器 source_files 文件定位。
 
 P1：format（B 档）/ commonsense.info_accuracy（A 档）/ vision.quality（A 档）
 在 details.source_files 产出相对路径，供前端「涉及文件」chip 联动切换预览。

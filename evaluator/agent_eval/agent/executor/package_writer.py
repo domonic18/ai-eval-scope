@@ -1,6 +1,6 @@
 """执行包物化（task/trace/answer/transcript/metrics + 机械守卫）——显式入参纯函数。
 
-从 agent.py 拆出（plan/07 G4）：write_package 由 Agent（LLM）调用后，执行器
+从 agent.py 拆出：write_package 由 Agent（LLM）调用后，执行器
 在包上补齐结构化文件与机械守卫。原为 ExecutionAgent 私有方法，实例状态只有
 last_run / llm_role 两个读取点，改为显式入参后与执行循环解耦。全部 merge
 语义 / 幂等：保留 LLM 已写字段，setdefault 补过程统计。
@@ -25,7 +25,7 @@ from agent_eval.core.types import TerminalKind
 from agent_eval.execution.models import ProcessMetrics, Task
 from agent_eval.storage.package import ExecutionPackage
 
-# Agent 未调用 write_package 时兜底失败包的归因文案（plan/07 决策#6 统一两处兜底）
+# Agent 未调用 write_package 时兜底失败包的归因文案
 FALLBACK_NOT_WRITTEN = "Agent 未调用 write_package，已由 ExecutionAgent 兜底写包"
 
 
@@ -100,7 +100,7 @@ def ensure_trace_file(
 
 
 def ensure_answer_file(package_dir: Any, last_sut_run: dict[str, Any] | None) -> str:
-    """SUT 终态交付物化为 output/answer.md（合同三，arch/16 §4.6）。
+    """SUT 终态交付物化为 output/answer.md（合同三）。
 
     交付物 = {text, output, questions} 三元全量渲染（宁可重复不可丢失）：
     text 是 SUT 发言；结构化 output 转 generic markdown；反问显式标注
@@ -209,7 +209,7 @@ def guard_answered_manifest(package_dir: Any, last_run: dict[str, Any] | None) -
 
 
 def guard_deliverable(package_dir: Any, last_run: dict[str, Any] | None) -> None:
-    """交付物守卫（合同三纵深防御，arch/16 §4.6）：无交付证据而对话非空 → 留痕。
+    """交付物守卫（合同三纵深防御）：无交付证据而对话非空 → 留痕。
 
     执行侧证据缺陷不裸穿透到评估结论：answer 空 + output 目录空 + 台账无
     交付观测，但 transcript 有完整对话——说明 SUT 交付在链路上丢失（而非
@@ -233,7 +233,7 @@ def guard_deliverable(package_dir: Any, last_run: dict[str, Any] | None) -> None
 
 
 def guard_evaluable_abort(package_dir: Any, last_run: dict[str, Any] | None) -> None:
-    """可评估性守卫（合同四，arch/16 §4.6）：异常收尾但 SUT 已交付 → 翻回可评估。
+    """可评估性守卫（合同四）：异常收尾但 SUT 已交付 → 翻回可评估。
 
     执行会话崩 ≠ SUT 未交付（run 20260916_074046 media_001/002 等 5 样本：
     评估侧 LLM 断连崩会话，SUT 已完整交付正确答案，guard_aborted_manifest
@@ -347,7 +347,7 @@ async def finalize_execution_package(
         # 异常收尾（fallback_error 仅由 abort 路径传入）：LLM 已写的 success
         # 判定不可信，强制翻 failed——正常收尾不设此守卫
         guard_aborted_manifest(package_dir, fallback_error)
-        # 合同四（arch/16 §4.6）：强制 failed 之后按证据复核——SUT 已交付的
+        # 合同四：强制 failed 之后按证据复核——SUT 已交付的
         # 样本翻回可评估（执行会话崩 ≠ SUT 未交付），后置保证异常语义不松
         guard_evaluable_abort(package_dir, last_sut_run)
     if evidence is not None:

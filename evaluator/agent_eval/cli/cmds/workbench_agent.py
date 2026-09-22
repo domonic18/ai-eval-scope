@@ -1,11 +1,11 @@
-"""场景包 Agent 会话入口 — REPL 式自然语言改包（arch/15 §六，requirement F-C-SCN-AGENT）。
+"""场景包 Agent 会话入口 — REPL 式自然语言改包（requirement F-C-SCN-AGENT）。
 
 用户在 CLI 持续输入自然语言（``你> ...``），WorkbenchAgent 经沙盒工具面改包，工作
 过程**流式直播**（claude code 式：回复 token 直出 + 工具调用行实时可见）；每轮展示
 diff → 确认（全部应用/放弃）→ 校验门禁 → 原子落盘（草稿区会话落盘即归位
 ``cwd/<id>-package/``，沙盒同步重定向，同一会话可继续自然语言修改已归位的包）。
 空行退出会话；Ctrl+C 中断当前轮（进度保留，直接说下一步即可接着干、「放弃」回滚
-暂存——§6.7 D-WB-4）；空闲提示符上连按两次退出（对齐 Claude Code，v4.12.4）。
+暂存）；空闲提示符上连按两次退出（对齐 Claude Code）。
 非交互形态（CI）需 ``--instruction`` + ``--yes --trust-agent`` 双开关。
 """
 
@@ -56,7 +56,7 @@ def _render_outcome(result: Any, landing: Path | None = None) -> None:  # noqa: 
         rprint("[red]❌ 校验未通过（未落盘）:[/red]")
         for e in result.validation_errors:
             rprint(f"  • {e}")
-        # 失败侧归位时序说清（v3.19 的补充）：未落盘 = 磁盘未动，包仍在暂存区
+        # 失败侧归位时序说清：未落盘 = 磁盘未动，包仍在暂存区
         rprint("[dim]磁盘未做任何修改，变更仍在暂存区——继续对话修复上述错误后重新确认[/dim]")
     elif not result.staged:
         rprint("[yellow]（本轮无文件变更——可继续描述需求或换种说法）[/yellow]")
@@ -83,13 +83,13 @@ def _stream_pair() -> tuple[Callable[[dict[str, Any]], None], Callable[[], None]
 
 @contextmanager
 def _graceful_exec_interrupt(agent: Any) -> Iterator[None]:  # noqa: ANN001 — WorkbenchAgent
-    """交互会话的 SIGINT 分流（Sprint 14b，仅 _run_one 装配；非交互维持现行 KI 语义）。
+    """交互会话的 SIGINT 分流（仅 _run_one 装配；非交互维持现行 KI 语义）。
 
     评测执行期首按 Ctrl+C：协作中断（当前任务完成后停止）——不抛 KI，tool future
     拿 cancelled 摘要正常收轮；无活跃执行或二按：屏蔽后续信号后抛 KI，走现行
     `_attempt` 暂停语义（进度保留，「继续」接着跑）。
 
-    二按前置 ``SIG_IGN``（v4.12.1 硬中断终局隔离）：KI 打断 asyncio.run 的
+    二按前置 ``SIG_IGN``：KI 打断 asyncio.run 的
     teardown（cancel tasks / shutdown asyncgens）期间若再进信号，会击穿
     ``run_forever`` 登记/清理 running-loop 线程态的窗口——泄漏后本轮报
     「Cannot close a running event loop」、后续轮报「asyncio.run() cannot be
@@ -124,7 +124,7 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
     emit, finish = _stream_pair() or (None, None)
     if emit:
         rprint("[dim]⏳ Agent 工作中（流式输出，Ctrl+C 中断本轮）…[/dim]")
-    # 执行域渲染桥（Sprint 14b）：emit=None（JSON）时桥仍在——gated_emit 自然
+    # 执行域渲染桥：emit=None（JSON）时桥仍在——gated_emit 自然
     # no-op、管线渲染照常直出；桥每轮新建并与 agent 绑定（emitter 是逐轮产物）
     bridge = ExecutionRenderBridge(emit, finish)
     agent.bind_render_bridge(bridge)
@@ -152,7 +152,7 @@ def _run_one(agent: Any, text: str) -> None:  # noqa: ANN001 — WorkbenchAgent
 
 
 def _landing_verb(root: Path) -> str:
-    """落点动词：草稿区根「归位」（落盘即迁 cwd/<id>-package/，v4.9）；其余原位。"""
+    """落点动词：草稿区根「归位」（落盘即迁 cwd/<id>-package/）；其余原位。"""
     return "归位" if root.name.startswith("agent-eval-pkg-") else "原位落盘"
 
 
@@ -165,21 +165,21 @@ def _cli_confirm(reply: str, diff: str, agent: Any = None) -> bool:  # noqa: ANN
         # 不预设门禁通过（实测：门禁打回后横幅仍称「确认落盘即归位」，用户误以为
         # 已落盘）——落盘是「确认 → 门禁通过 → 落盘」的链（v4.9 起落盘即归位，
         # 不再等会话结束），任何一环失败都不落。动词区分草稿区归位与既有包原位
-        # （v4.12.3：edit_package 切根后横幅曾一律称「归位」，实际是原位生效）
+        # （edit_package 切根后横幅曾一律称「归位」，实际是原位生效）
         rprint(
             f"[green]确认后经校验门禁，通过即{_landing_verb(Path(agent.server.root))} → {landing}[/green]"
         )
     try:
         return select("确认变更", ["全部应用", "放弃"], no_default=True) == "全部应用"
     except typer.Abort:
-        raise KeyboardInterrupt from None  # 落盘确认 ^C = 中断本轮（v4.12.4，同 ask_fn 桥）
+        raise KeyboardInterrupt from None  # 落盘确认 ^C = 中断本轮（同 ask_fn 桥）
 
 
 def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
     """确认时刻的预计落点：暂存清单 id 已定则显示 ./<id>-package/（形态 B 归位预告）。
 
     归位预告随确认提示出现——草稿区路径只是会话中间态，确认前让用户看清最终落点
-    （v4.9 起预告路径在门禁通过后立即成为现实，不再是「会话后」）。
+    （不再是「会话后」）。
     """
     import re as _re
 
@@ -189,7 +189,7 @@ def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
     pid = agent.server.staged_manifest_id()
     if pid:
         slug = _re.sub(r"[^A-Za-z0-9._-]+", "-", pid).strip("-.") or "scenario"
-        if root.name.startswith("agent-eval-pkg-"):  # 草稿区 → 落盘即归位 cwd（v4.9）
+        if root.name.startswith("agent-eval-pkg-"):  # 草稿区 → 落盘即归位 cwd
             return Path.cwd() / f"{slug}-package"
         return root  # 非草稿区（edit / --output 定址）原地生效，落点就是 root
     if not (root / MANIFEST_FILENAME).is_file():
@@ -198,10 +198,10 @@ def _landing_hint(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
 
 
 def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — WorkbenchSession
-    """``start`` 主菜单一级入口（§3.5）：横幅介绍能力后**直入对话**（Claude Code 式）。
+    """``start`` 主菜单一级入口：横幅介绍能力后**直入对话**（Claude Code 式）。
 
-    无前置菜单——新建 / 改已有包 / 排查都是会话里的一句话（能力与样例见横幅，
-    §6.10）。默认任务对象为新包草稿（workspace/.staging，首次确认落盘即按清单 id
+    无前置菜单——新建 / 改已有包 / 排查都是会话里的一句话（能力与样例见横幅）。
+    默认任务对象为新包草稿（workspace/.staging，首次确认落盘即按清单 id
     归位 ``cwd/<id>-package/``）；改已有项目包由 Agent 经 read_file 读入现有内容后在
     草稿中改造（prompts 域段规约）。LLM 未配置在此阻断（无模型 Agent 不可用）。
     """
@@ -227,7 +227,7 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
         rprint(f"[yellow]⚠ 会话中断，草稿已保留: {draft}[/yellow]")
         rprint(f"[dim]续作: agent-eval scenario new --mode agent --output {draft}[/dim]")
         raise
-    live_root = Path(agent.server.root)  # 归位后与初始 root 不同（v4.9）
+    live_root = Path(agent.server.root)  # 归位后与初始 root 不同
     if not any(live_root.iterdir()):
         live_root.rmdir()  # 空会话（用户看一眼就退出）不留草稿残目录
         return
@@ -235,7 +235,7 @@ def agent_workbench_entry(session: Any = None) -> None:  # noqa: ANN001 — Work
 
 
 def _render_intro(agent: Any) -> None:  # noqa: ANN001 — WorkbenchAgent
-    """启动欢迎首屏（§6.8 v4.13.2）：渐变 logo 富渲染；--json 与非 TTY 静默。"""
+    """启动欢迎首屏：渐变 logo 富渲染；--json 与非 TTY 静默。"""
     from agent_eval.cli.console.output import is_json
 
     if is_json() or not sys.stdout.isatty():
@@ -249,9 +249,9 @@ def _render_intro(agent: Any) -> None:  # noqa: ANN001 — WorkbenchAgent
 def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> None:
     """REPL 主循环：空输入退出；每轮 流式生成 → 确认 → 门禁 → 落盘/回滚。
 
-    启动渲染自我介绍横幅（§6.10，会话日志行之前）；入口已渲染过横幅时以
-    ``show_intro=False`` 抑制，避免重复（§3.5 直入对话形态）。
-    中断/瞬时错误 = 暂停保现场（§6.7 D-WB-4）：暂存与对话上下文完整，「继续」
+    启动渲染自我介绍横幅（会话日志行之前）；入口已渲染过横幅时以
+    ``show_intro=False`` 抑制，避免重复。
+    中断/瞬时错误 = 暂停保现场：暂存与对话上下文完整，「继续」
     接着跑；「放弃」是唯一回滚触发器（显式指令，防误触丢进度）。
     """
     import asyncio
@@ -268,7 +268,7 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
         try:
             _run_one(agent, text)
         except (KeyboardInterrupt, asyncio.CancelledError):
-            # 中断措辞去状态化（v4.12.4，对齐 Claude Code）：中断即回提示符，
+            # 中断措辞去状态化（对齐 Claude Code）：中断即回提示符，
             # 任意输入自然续跑（checkpoint 已回对话，「继续」从来不是魔法词）
             rprint("\n[yellow]⏹ 已中断（进度已保留：暂存草稿与对话上下文完整）[/yellow]")
             rprint("[dim]直接说下一步即可接着干；输入「放弃」回滚本轮暂存改动[/dim]")
@@ -294,7 +294,7 @@ def _session(agent: Any, first_text: str | None, *, show_intro: bool = True) -> 
         rprint(f"[dim]已续接此前会话记录（{resumed} 条对话），Agent 可延续此前的讨论上下文[/dim]")
     if first_text:
         _attempt(first_text)
-    quit_armed = False  # 空闲态 ^C 二按退出（v4.12.4 对齐 Claude Code：首按不清场）
+    quit_armed = False  # 空闲态 ^C 二按退出（首按不清场）
     while True:
         try:
             text = ask("你>")
@@ -356,7 +356,7 @@ def _run_noninteractive(agent: Any, text: str) -> None:  # noqa: ANN001 — Work
 
 
 def _make_ask_fn() -> Any:
-    """ask_user 桥（arch/15 §6.6）：SUT 探测工具的提问转发 CLI 交互原语。
+    """ask_user 桥：SUT 探测工具的提问转发 CLI 交互原语。
 
     凭证录入走隐藏回显；返回值交探测工具内部处理（凭证直写密钥区，不回流对话）。
     长问题先独立展示再输入——塞进 ask/select 提示行会挤压成一行（实测不可读）。
@@ -379,7 +379,7 @@ def _make_ask_fn() -> Any:
             _show(question)
             return ask("└─ 输入")
         except typer.Abort:
-            # 交互等待期 Ctrl+C = 中断本轮（v4.12.4 五态语义，对齐 Claude Code）：
+            # 交互等待期 Ctrl+C = 中断本轮（对齐 Claude Code）：
             # click 把 KI 降级成 Abort（Exception 子类），不转回会被工具层
             # `except Exception` 吞成 failed 结果回流 LLM（实测事故：Abort 空
             # message 诱发 Agent 反复重试，SIG_IGN 滞留整轮后 ^C 全面失效，空回车
@@ -421,7 +421,7 @@ def _new_draft_root() -> Path:
 
 
 def _relocate_after_commit(agent: Any) -> Path | None:  # noqa: ANN001 — WorkbenchAgent
-    """首次确认落盘成功即归位（v4.9）：草稿 root → ``cwd/<id>-package/`` 并重定向沙盒。
+    """首次确认落盘成功即归位：草稿 root → ``cwd/<id>-package/`` 并重定向沙盒。
 
     只对草稿区会话（``agent-eval-pkg-`` 前缀）生效——edit / ``--output`` 定址的
     会话原地生效，返回 None。撞名红字报错、包留草稿位、**不打断会话**：会话末
@@ -450,7 +450,7 @@ def _relocate_after_commit(agent: Any) -> Path | None:  # noqa: ANN001 — Workb
 
 
 def _finalize_new_package(root: Path, movable: bool) -> Path:
-    """会话末按**最终清单 id** 归位（v4.9 起为兜底 + 改名同步，首归位在落盘时刻）。
+    """会话末按**最终清单 id** 归位（首归位在落盘时刻）。
 
     归位到 ``cwd/<id>-package/``（与 skeleton 模式 ``./<id>/`` 方向一致）。已随
     首次落盘归位的包（root 即 cwd 落点）静默返回——归位提示已在落盘时刻给出，
@@ -513,7 +513,7 @@ def agent_new_package(
     from agent_eval.packages import MANIFEST_FILENAME, parse_ref
 
     _guard_llm_ready()
-    movable = ref is None and output is None  # 目录名后定 → 落盘即归位（v4.9）
+    movable = ref is None and output is None  # 目录名后定 → 落盘即归位
     if ref:
         scenario, package_id, _ = parse_ref(ref)
         package_id = package_id or scenario

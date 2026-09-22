@@ -1,4 +1,4 @@
-"""agent-eval runs — 本地运行结果浏览（list / show，arch/15 §7.2）。
+"""agent-eval runs — 本地运行结果浏览（list / show）。
 
 数据零新存储：``list`` 扫描 ``workspace/runs/``（manifest + summary 直接读取），
 ``show`` 直读 run 目录并按 ``metric_definitions`` 动态渲染指标（不硬编码）。

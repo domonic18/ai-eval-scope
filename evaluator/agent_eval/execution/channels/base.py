@@ -1,4 +1,4 @@
-"""SUTChannel 通道基座（arch/03 §4.0.1）。
+"""SUTChannel 通道基座。
 
 统一"向被测系统发起一次交互"的公共机制：共享 AsyncClient（连接池 + cookie
 jar，同一运行内复用）、凭证自动挂载、401/403 自动重登一次并重放（含频次
@@ -169,7 +169,6 @@ def create_channel(
 
         return GenericHttpChannel(sut, http_client_factory=http_client_factory)
     raise SUTChannelError(
-        f"通道 {sut.channel!r} 预留未排期（本期排期通道 {'、'.join(SCHEDULED_CHANNELS)}，"
-        "arch/03 §4.0.6/§4.2）",
+        f"通道 {sut.channel!r} 预留未排期（本期排期通道：{'、'.join(SCHEDULED_CHANNELS)}）",
         details={"sut": sut.name, "channel": sut.channel},
     )

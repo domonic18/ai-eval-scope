@@ -152,7 +152,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
         records: list[dict[str, Any]] = []
         for idx, (doc, png) in enumerate(zip(doc_files, screenshots, strict=False)):
             doc_name = Path(doc).stem
-            # 相对 output 目录的路径（docs/arch/15 文件定位）；无 output_dir 时回退基名
+            # 相对 output 目录的路径；无 output_dir 时回退基名
             doc_path = str(Path(doc).relative_to(output_dir)) if output_dir else Path(doc).name
             variables = {"title": title, "num_documents": 1}
             try:
@@ -232,7 +232,7 @@ class VisionQualityEvaluator(BaseLLMJudgeEvaluator):
             "screenshot_paths": [str(p) for p in screenshots],
             "total_documents": total_docs,
             "evaluated_documents": len(ok_docs),
-            # 文件定位（docs/arch/15）：逐文档相对路径，前端点击 chip → 切到对应截图
+            # 文件定位：逐文档相对路径，前端点击 chip → 切到对应截图
             "source_files": [
                 {"filename": d.get("doc_path"), "artifact_kind": "shot"}
                 for d in per_doc

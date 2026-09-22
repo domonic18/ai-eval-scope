@@ -17,7 +17,7 @@ _CRED_FIELD_RE = re.compile(
     r"^\s*(password|token|api_key|secret)\s*:\s*([^#\n]+?)\s*$", re.MULTILINE
 )
 
-# 创建骨架（Plan-as-Artifact，arch/15 五阶段创建流程）：探测期只写骨架不写配置，
+# 创建骨架（Plan-as-Artifact）：探测期只写骨架不写配置，
 # 槽位机器可检——开槽 = ``- [ ]``（未验证），闭槽 = ``- [x]`` 且行内含「证据：」。
 # 骨架是过程产物：validate 拦开槽，commit 排除出包并归档为审计产物
 SKELETON_FILENAME = "SKELETON.md"

@@ -111,7 +111,7 @@ class ProtocolRunToolsMixin(ProtocolStateMixin):
 
         rationale 缺失即拒绝且不耗额度（NudgeRationaleRequired，资格闸门）；
         提供则落 decision 台账（verdict 缺省 stalled——催促的前提判断），
-        供事后复盘每一次催促的依据（arch/16 §5.2 验收门①）。
+        供事后复盘每一次催促的依据。
         """
         if not (isinstance(rationale, str) and rationale.strip()):
             return self._rationale_refusal()
@@ -148,7 +148,7 @@ class ProtocolRunToolsMixin(ProtocolStateMixin):
         thread_busy=false = SUT 已空闲，产物线索看 values（messages 保尾摘要）；
         有路径/链接直接 download_sut_file，无证据才 run_on_thread 索取。
 
-        verdict/rationale（完成仲裁捕获，arch/16 §5.2）：提供即落 decision
+        verdict/rationale（完成仲裁捕获）：提供即落 decision
         台账——取证是决策点，结论（complete/progressing/stalled/unknown）
         与理由必须留痕供复盘；verdict 非法枚举直接拒绝（受控枚举是契约）。
         """

@@ -64,7 +64,7 @@ class InfoAccuracyLLMVerify:
         combined_text = "\n\n".join(combined_parts)
 
         # info_accuracy LLM 独立评估原文事实性，不注入规则可疑条目（解耦）：
-        # 对照实验证实（docs/arch/12 §3.4），把规则误报（如"水的pH 800"实为报告字数）
+        # 对照实验证实，把规则误报（如"水的pH 800"实为报告字数）
         # 作为"可疑条目"传给 LLM 会严重污染整体评分（化学样本 factual 4.0→10.0）。
         # 规则 findings 由 fact_verdict 过滤后经 rule_errors 独立计分，与 LLM 解耦。
         variables = {

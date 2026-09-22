@@ -1,12 +1,12 @@
-"""SUTRegistry 与 sut_config v2 模型（arch/03 §4.0.3）。
+"""SUTRegistry 与 sut_config v2 模型。
 
 一份 sut_config.yaml 描述一个被测系统（顶层键 `sut:`），多系统即多份文件；
-按 sut.name 索引聚合。注意与 arch/13 的 SUTConfig（benchmark 被测模型配置，
-§5.3 Inferencer 路径）是两个不同概念——本模块为被测**系统**配置。
+按 sut.name 索引聚合。注意与 benchmark 评估侧的 SUTConfig（被测**模型**配置、
+Inferencer 路径）是两个不同概念——本模块为被测**系统**配置。
 
-地址类字段支持 ``${VAR}`` / ``${VAR:-默认值}`` 环境变量展开（arch/17 开源
-红线：内置包不得硬编码内部域名，真实端点由用户 env 提供，缺省回退占位域名）。
-凭证值不走此通道——仍由 ``credential_ref`` 引用密钥区（06 §4.7）。
+地址类字段支持 ``${VAR}`` / ``${VAR:-默认值}`` 环境变量展开（内置包不得硬编码
+内部域名：真实端点由用户 env 提供，缺省回退占位域名）。
+凭证值不走此通道——仍由 ``credential_ref`` 引用密钥区。
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from agent_eval.core.exceptions import SUTChannelError
 # 支持的通道（schema 合法值，含预留项）
 CHANNEL_TYPES = ("agent_protocol", "generic_http", "browser")
 # 本期已排期可执行通道（执行工厂/落盘门禁/执行域预检三处共用；排期变更只改这里，
-# 与 CHANNEL_TYPES 互为补充）。v4.7 裁决：generic_http 落地（arch/03 §4.2），browser 仍预留
+# 与 CHANNEL_TYPES 互为补充）。v4.7 裁决：generic_http 落地，browser 仍预留
 SCHEDULED_CHANNELS = ("agent_protocol", "generic_http")
 # generic_http 请求模板允许的 HTTP 方法
 HTTP_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")
@@ -43,7 +43,7 @@ EXEC_MODES = ("wait", "background", "stream")
 STREAM_MODES = ("values", "messages", "updates", "custom")
 AUTH_TYPES = ("none", "static_token", "api_login", "session_cookie")
 # Agent Protocol 两种部署形态：runs（/runs/wait 族）| commands（/threads/{id}/commands + state）
-# Agent Protocol 两种部署形态（plan/07 G5 显式化）：
+# Agent Protocol 两种部署形态：
 # - runs：协议标准的 POST /runs/wait 族（通用默认）
 # - commands：POST /threads/{id}/commands + GET state 轮询（AG-UI 网关族官方
 #   Streaming 端点形态）。注意 commands 的信封/中断/终态语义目前以参考 SUT
@@ -111,7 +111,7 @@ class AuthMountConfig(BaseModel):
 
 
 class AuthConfig(BaseModel):
-    """鉴权策略配置（arch/03 §4.0.2）。"""
+    """鉴权策略配置。"""
 
     type: str = Field(
         default="none", description="none | static_token | api_login | session_cookie"
@@ -151,7 +151,7 @@ def _normalize_http_method(v: str) -> str:
 
 
 class PollConfig(BaseModel):
-    """链式请求模板的轮询步配置（plan/06 M2，异步任务型 API）。
+    """链式请求模板的轮询步配置（异步任务型 API）。
 
     do-while 语义：先发请求再判终态——``until`` 渲染结果（strip+lower）为
     true/1/yes 即通过；轮询中 ≥400 不立即失败（受理后短暂不一致是常态），
@@ -169,7 +169,7 @@ class PollConfig(BaseModel):
 
 
 class RequestStepConfig(BaseModel):
-    """链式请求模板的单步定义（arch/03 §4.2）。
+    """链式请求模板的单步定义。
 
     每步响应（JSON）进入渲染上下文，后续步以 ``{{ 步骤名.路径 }}`` 引用其值
     （值全程服务端流动，不经 LLM 转述）——jxb 类「建会话 → 发消息 → 查历史」
@@ -186,12 +186,12 @@ class RequestStepConfig(BaseModel):
     )
     once: bool = Field(
         default=False,
-        description="会话步（plan/06 M1）：响应跨 sut_request 调用缓存，仅会话首轮执行"
+        description="会话步：响应跨 sut_request 调用缓存，仅会话首轮执行"
         "（建会话类步骤标 true，多轮续接由通道会话存储保证）",
     )
     poll: PollConfig | None = Field(
         default=None,
-        description="轮询步（plan/06 M2）：反复执行直到 until 渲染为真或超时（异步任务型 API）",
+        description="轮询步：反复执行直到 until 渲染为真或超时（异步任务型 API）",
     )
 
     @field_validator("name")
@@ -220,7 +220,7 @@ class RequestStepConfig(BaseModel):
 
 
 class RequestTemplateConfig(BaseModel):
-    """generic_http 通道的请求模板（arch/03 §4.2）。
+    """generic_http 通道的请求模板。
 
     body/headers 的字符串值支持 Jinja2 模板（变量空间 ``input``/``metadata``，
     由通道渲染）；凭证字段不得写在模板里——由 auth 会话自动挂载。
@@ -414,7 +414,7 @@ def _template_variables(shape: dict[str, Any]) -> set[str]:
 def _template_audit_errors(rt: dict[str, Any]) -> list[str]:
     """generic_http 模板变量审计：变量引用必须可解析，且必须消费 {{ input }}。
 
-    实测事故（jxb，v4.8）：request_template 连 {{ input }} 都没写——16 条
+    实测事故（jxb）：request_template 连 {{ input }} 都没写——16 条
     测试指令从未发给被测系统，每次调用只是「创建会话」，status=success 假成功
     烧穿执行轮次。凡可机械判定的配置变形在落盘前打回，不留给运行时让执行
     Agent 猜。
@@ -535,7 +535,7 @@ class SUTRegistry:
 
     文件名 stem 作为**取用容错键**（实测两次：向导/CLI 以文件名列出并选择 SUT，
     Agent 生成包的 ``sut.name`` 却与文件名漂移——get() 在注册名未命中时按 stem
-    兜底。机械容错而非门禁拦卡：一致性问题不拦 Agent（v3.12 评审裁决），执行侧
+    兜底。机械容错而非门禁拦卡：一致性问题不拦 Agent，执行侧
     让 stem 与 name 等价可解析）。
     """
 

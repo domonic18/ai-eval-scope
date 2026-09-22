@@ -1,4 +1,4 @@
-"""CLI `pipeline` 命令测试（Sprint 9 一体化：执行 → 评估 → 上报，单 run_id 贯通）。
+"""CLI `pipeline` 命令测试（执行 → 评估 → 上报，单 run_id 贯通）。
 
 范式同 test_cli_run.py：FakeExecutionAgent（patch 源模块属性）+ FakeChannel；
 评估段用真实 golden 链路过重（依赖 LLM），此处 patch build_judge_context /
@@ -314,7 +314,7 @@ def test_pipeline_gate_failure_exits_3(tmp_path, monkeypatch) -> None:
 
 
 def test_pipeline_json_payload_uses_report_fr4(tmp_path, monkeypatch) -> None:
-    """FR-4：--output-format json 终态渲染走 result.report，不再 AttributeError。"""
+    """--output-format json 终态渲染走 result.report，不再 AttributeError。"""
     task_set = tmp_path / "task_set.yaml"
     sut_cfg = tmp_path / "sut.yaml"
     task_set.write_text(TASK_SET_YAML, encoding="utf-8")

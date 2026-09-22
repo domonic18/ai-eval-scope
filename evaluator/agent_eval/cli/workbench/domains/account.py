@@ -1,4 +1,4 @@
-"""账号与配置域 — auth / models / secrets / doctor（arch/15 §3.3）。"""
+"""账号与配置域 — auth / models / secrets / doctor。"""
 
 from __future__ import annotations
 

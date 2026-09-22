@@ -1,5 +1,5 @@
 # courseware 默认场景配置 — 跨语言单一源（evaluator Python + backend TS 均从此读取）
-# 对齐 13 配置管理设计 §10/§七之二；镜像 evaluator defaults.py + backend coursewareDefaults.ts
+# 镜像 evaluator defaults.py + backend coursewareDefaults.ts
 
 aggregation_policy:
   id: courseware-default

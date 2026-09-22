@@ -1,4 +1,4 @@
-"""JUnit XML 渲染器（requirement/06 FR-1）。
+"""JUnit XML 渲染器。
 
 从内存 MetricsReport 直接渲染（与 schema 同源同版本，禁止从 summary.json
 反序列化再渲染——杜绝版本错位），供 CI 的 junit 步骤原生消费
@@ -11,7 +11,7 @@
 - ``samples`` 套件：每样本一条用例，失败 = sample_scores 中该样本 reward 缺失
   （执行或判分未产出，无论门禁开关恒失败——异常必须显形）。
 
-纯标准库（xml.etree.ElementTree），零新增第三方依赖（NF-1）。
+纯标准库（xml.etree.ElementTree），零新增第三方依赖。
 """
 
 from __future__ import annotations

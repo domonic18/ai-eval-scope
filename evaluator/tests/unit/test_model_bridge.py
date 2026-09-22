@@ -1,4 +1,4 @@
-"""model_bridge 单元测试（arch/03 §3.2 v4.6）——全部离线（伪 langchain 包）。"""
+"""model_bridge 单元测试——全部离线（伪 langchain 包）。"""
 
 from __future__ import annotations
 

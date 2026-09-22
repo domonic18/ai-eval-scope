@@ -42,7 +42,7 @@ class CapabilityResolver:
         """派生规则集所需能力。
 
         - rule_set 为 None（纯格式评估）→ 空集。
-        - 仅扫描 enabled 规则（enabled=false 的规则不产生需求，见 [04] §5.6）。
+        - 仅扫描 enabled 规则（enabled=false 的规则不产生需求）。
         - 未注册的评估器 id 忽略（不阻断，由管线侧另行报错）。
         """
         if rule_set is None:

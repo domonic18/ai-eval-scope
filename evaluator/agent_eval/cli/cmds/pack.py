@@ -1,4 +1,4 @@
-"""agent-eval pack — 将手动产出物打包为标准 ExecutionPackage（arch/15 组织约定 2）。"""
+"""agent-eval pack — 将手动产出物打包为标准 ExecutionPackage。"""
 
 from __future__ import annotations
 

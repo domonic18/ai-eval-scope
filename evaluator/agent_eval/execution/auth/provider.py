@@ -1,4 +1,4 @@
-"""AuthProvider — 登录引导与会话管理（arch/03 §4.0.2/§4.0.4）。
+"""AuthProvider — 登录引导与会话管理。
 
 按 sut_config 的 auth 策略完成登录 → 产出 SUTSession（进程内缓存 + 落盘
 持久化，跨运行复用避免重复登录触发风控）；负责过期检测与自动重登频次限制。
@@ -97,7 +97,7 @@ class AuthProvider:
         """业务请求自动挂载的凭证头。"""
         return session.mount_headers()
 
-    # ─── 自动重登频次限制（§4.0.4：默认每系统 30 分钟 ≤ 1 次） ───
+    # ─── 自动重登频次限制（默认每系统 30 分钟 ≤ 1 次） ───
 
     def auto_relogin_allowed(self) -> bool:
         """检查自动重登是否在频次窗口内允许。"""
@@ -120,7 +120,7 @@ class AuthProvider:
                 details={"sut": self.sut.name},
             )
         ref = self.auth.credential_ref or self.sut.name
-        # 凭证键名由模板声明（通用 KV，06 §4.7）：body_template 写 {{ account }}
+        # 凭证键名由模板声明（通用 KV）：body_template 写 {{ account }}
         # 就取 ref.account——不预设 username/password 字段集
         from agent_eval.execution.auth.credentials import required_credential_fields
 

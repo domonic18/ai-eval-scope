@@ -76,7 +76,7 @@ class ProtocolStateMixin:
             "text": result.get("text") or output.get("text") or "",
             "input": input,
             "pending": pending,
-            # 合同一（arch/16 §4.6）：结构化交付不再当场丢弃（run 20260916_074046
+            # 合同一：结构化交付不再当场丢弃（run 20260916_074046
             # sem_002：resources_found 等 _extract_output 产物此前只进 LLM 视野）
             "output": output or None,
         }
@@ -93,7 +93,7 @@ class ProtocolStateMixin:
         """任务起点清账（ExecutionAgent._clear_stale_tool_state 统一调用）。
 
         last_run 单槽与超时计数都是任务集共享实例上的任务级状态——跨任务
-        残留轻则串台（v4.12），重则让下一任务被误判超时预算耗尽。
+        残留轻则串台，重则让下一任务被误判超时预算耗尽。
         ledger 例外：账本随任务生灭，由 ExecutionAgent 在任务起点注入新实例
         （换新即清零），此处不清。观察时间线同属任务级状态，此处换新。
         """
@@ -121,7 +121,7 @@ class ProtocolStateMixin:
         }
 
     def _budget(self, action: str) -> dict[str, Any] | None:
-        """交互预算闸门（arch/16 §4.3）：拒绝载荷（含 guidance）或 None 放行。
+        """交互预算闸门：拒绝载荷（含 guidance）或 None 放行。
 
         账本未注入即拒绝（fail-closed）：装配链遗漏注入时闸门收紧而非静默
         放行——「无账本」不能等于「无额度」。
@@ -140,7 +140,7 @@ class ProtocolStateMixin:
             )
 
     def _log_decision(self, action: str, verdict: str | None, rationale: str | None) -> None:
-        """仲裁决策落台账（arch/16 §5.2：结论为受控枚举 + rationale 供复盘）。"""
+        """仲裁决策落台账（结论为受控枚举 + rationale 供复盘）。"""
         ledger = self.ledger
         if ledger is None or ledger.evidence is None:
             return
@@ -152,11 +152,11 @@ class ProtocolStateMixin:
         )
 
     def _rationale_refusal(self) -> dict[str, Any]:
-        """催促缺 rationale 的资格拒绝（arch/16 §5.2 十二连催病理的机械对应物）。
+        """催促缺 rationale 的资格拒绝。
 
         rationale 是资格不是额度——缺理由不消耗催促额度，也不触网；额度闸门
         管「还能催几次」，本闸门管「每次催促必须是决策而非习惯」。拒绝载荷
-        附可抄模板（Phase 2.1：抽象要求改为示例填法，重放显示零依从的根因）；
+        附可抄模板（抽象要求改为示例填法，重放显示零依从的根因）；
         同 action 连拒升级语由账本统一追加（连拒 3 次起）。
         """
         error = {
@@ -176,7 +176,7 @@ class ProtocolStateMixin:
         return {"status": "failed", "error": {"type": "NudgeRationaleRequired", **error}}
 
     def _enrich_result(self, result: Any, *, tool: str) -> Any:
-        """挂点 b（arch/16 §5.1）：动作工具结果统一前置决策简报。
+        """挂点 b：动作工具结果统一前置决策简报。
 
         仅账本就位（ExecutionAgent 驱动）时注入——gate 拒绝载荷同享简报
         （拒的是动作，简报告诉决策体接下来该去哪）；直连使用（无账本）
@@ -202,7 +202,7 @@ class ProtocolStateMixin:
         return {**self.default_metadata, **(metadata or {})}
 
     async def refresh_final_state(self, *, settle_timeout_s: float = 120.0) -> None:
-        """收尾终局快照刷新（arch/16 §4.5 snapshot/reconcile，壳层机械动作非 LLM 工具）。
+        """收尾终局快照刷新（壳层机械动作非 LLM 工具）。
 
         run 工具返回时刻 ≠ SUT 最终发言时刻：阶段切换空窗误判终态后，后续取证
         （read_thread_state）只读不回写，last_run.text 冻结在中间播报，answer.md
@@ -212,7 +212,7 @@ class ProtocolStateMixin:
 
         - 门控：无 last_run/thread_id 或非 commands 形态直接返回（runs 形态
           thread_state 直接 raise；generic_http 无线程概念，无本方法自然跳过）；
-        - settle 判据归一（合同二，arch/16 §4.6）：classify_thread_state 分类，
+        - settle 判据归一（合同二）：classify_thread_state 分类，
           interrupt_pending 是一等终态单采样立即返回——interrupt 线程 ``next``
           永不清空，此前自建循环只看 ``next`` 会空转满 120s 带旧值早退（run
           20260916_074046 neg_001）；空转仅对 no_evidence 生效；

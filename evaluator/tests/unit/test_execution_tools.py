@@ -1,4 +1,4 @@
-"""评测执行域工具单测（Sprint 14b，arch/15 v4.12）。
+"""评测执行域工具单测。
 
 工具直调（不经 LLM 面）：确认门槛/旁路拒绝/busy/摘要分支/取消令牌接线/
 凭证补录循环/三只读工具数据形态/硬中断终局（daemon worker 生命周期）。
@@ -167,7 +167,7 @@ class TestRunEvaluationGate:
 
 
 class TestHardInterruptTeardown:
-    """硬中断终局（v4.12.1）：daemon worker 零 join，会话不被僵尸拖垮。
+    """硬中断终局：daemon worker 零 join，会话不被僵尸拖垮。
 
     场景还原 v4.12 实测事故：二按 KI 打断等待侧后（teardown cancel 等效于
     task.cancel()），旧实现 Runner.close 会 join to_thread 默认池把终端冻住

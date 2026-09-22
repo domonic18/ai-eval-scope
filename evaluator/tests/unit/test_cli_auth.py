@@ -1,4 +1,4 @@
-"""auth 组单测 — login/status/logout/register（requirement/04 F-C-AUTH）。
+"""auth 组单测 — login/status/logout/register。
 
 探测层用 httpx.MockTransport 注入（网络必须 mock）；.env 落盘经 find_env_path
 monkeypatch 到 tmp_path 隔离。

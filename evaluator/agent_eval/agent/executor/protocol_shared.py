@@ -30,7 +30,7 @@ DOWNLOAD_MAX_BYTES = 50 * 1024 * 1024
 SUT_FILE_DOWNLOAD_ENABLED = False
 # SPA 前端壳嗅探窗口（网关 fallback 页面远小于此）
 SPA_SNIFF_BYTES = 4096
-# 同任务 SUT 调用超时重试上限（机械守卫，不依赖 LLM 自觉——v4.8 哲学）：
+# 同任务 SUT 调用超时重试上限（机械守卫）：
 # 真超时后再重试只会重烧同量级时长（run 20260910_134410 实测 chinese/english
 # 各烧 3.7h/3.9h）。超过上限后 SUT 执行调用直接返回 TimeoutBudgetExhausted，
 # 证据随结果透出供写失败包；只读取证与产物下载不受限
@@ -77,7 +77,7 @@ def tool_guard(
 def briefing_enriched(
     fn: Callable[..., Awaitable[dict[str, Any]]],
 ) -> Callable[..., Awaitable[dict[str, Any]]]:
-    """动作工具出口统一过 ``_enrich_result``（arch/16 §5.1 挂点 b）。
+    """动作工具出口统一过 ``_enrich_result``。
 
     叠在 tool_guard 之上（guard 先把通道异常转 failed，简报随后照常注入
     ——拒绝载荷同样需要指路）；方法层而非导出层（_json_tool）：直调与
@@ -94,7 +94,7 @@ def briefing_enriched(
     return wrapper
 
 
-# 决策简报注入面（arch/16 §5.1 挂点 b）：对外部世界的昂贵动作 + 取证动作——
+# 决策简报注入面：对外部世界的昂贵动作 + 取证动作——
 # 每次执行后刷新，决策体在下一轮看的是最新现实；取证收尾类工具
 # （answer_sut_questions/cancel_run/get_agent_info/create_thread）不注入
 _BRIEFING_TOOLS = frozenset(

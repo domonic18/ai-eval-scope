@@ -1,4 +1,4 @@
-"""PromptStore / FilePromptStore 单测（Phase 1）。"""
+"""PromptStore / FilePromptStore 单测。"""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""数据集域工具单测（Sprint 14c，arch/15 v4.13 §6.11）。
+"""数据集域工具单测。
 
 工具直调（不经 LLM 面）：确认门槛/旁路拒绝/委托参数红线（无 output/token）/
 本地状态配对/失败语义。DatasetManager 全程 monkeypatch（编排回归在

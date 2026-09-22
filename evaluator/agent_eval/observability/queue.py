@@ -1,7 +1,7 @@
-"""离线队列（SQLite）+ 重放 + 死信（docs/arch/09 §8.4）。
+"""离线队列（SQLite）+ 重放 + 死信。
 
 发送失败（网络/5xx/429）的事件入队；下次 eval 启动或后台线程重放。
-重放时重复发送是安全的——后端按 event_id 幂等去重（§7.2），故「发了就算成功」。
+重放时重复发送是安全的——后端按 event_id 幂等去重，故「发了就算成功」。
 
 队列存储：<queue_dir>/queue.sqlite，表 pending_events(id, payload, attempts, last_error, next_retry_at)。
 退避：指数退避 + 抖动；超过 max_attempts → 移入 dead_letter 表（保留审计）。

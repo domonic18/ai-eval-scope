@@ -1,4 +1,4 @@
-"""AgentProtocolToolServer 测试（arch/03 §4.0.6-b 语义工具面）。"""
+"""AgentProtocolToolServer 测试。"""
 
 from __future__ import annotations
 
@@ -111,7 +111,7 @@ def test_metadata_merged_into_run_body() -> None:
     )
     server.ledger = _permissive_ledger()
     asyncio.run(server.agent_run("input", metadata={"task_id": "t-9"}))
-    # §4.0.6-e：metadata 携带 eval_run_id/task_id/sut_name 供被测系统侧审计
+    # metadata 携带 eval_run_id/task_id/sut_name 供被测系统侧审计
     assert captured["metadata"] == {"eval_run_id": "run_x", "sut_name": "cw", "task_id": "t-9"}
 
 
@@ -191,7 +191,7 @@ def test_agent_run_records_last_run_summary() -> None:
     }
 
 
-# ─── answer_sut_questions（askQuestion 反问应答闭环；arch/03 §4.0.6-b v4.11） ───
+# ─── answer_sut_questions（askQuestion 反问应答闭环） ───
 
 INTERRUPT_STATE = {
     "next": ["tools"],
@@ -600,7 +600,7 @@ def test_bounded_result_short_messages_kept_intact() -> None:
 
 
 def test_bounded_result_values_payload_keeps_tail_symmetrically() -> None:
-    """values 复合载荷（外壳 + messages）保尾弃头与消息列表同病同治（plan/07 P3）。
+    """values 复合载荷（外壳 + messages）保尾弃头与消息列表同病同治。
 
     整表 dumps 头部截断会把 values.messages 里最新回复挤出窗口——长历史 +
     短最新回复时最易触发。
@@ -620,7 +620,7 @@ def test_bounded_result_values_payload_keeps_tail_symmetrically() -> None:
     assert "total_messages" in dumped  # 外壳字段保留
 
 
-# ─── download_sut_file（产物下载落包；arch/03 §4.0.6-b v4.10） ───
+# ─── download_sut_file（产物下载落包） ───
 
 
 def _download_server(handler, tmp_path: Path, **sut_kwargs) -> AgentProtocolToolServer:
@@ -845,7 +845,7 @@ def test_download_disabled_returns_guidance_without_budget_or_network(
     assert evidence.events[-1]["outcome"] == "disabled"  # 证据流留痕
 
 
-# ─── 超时重试机械守卫（TimeoutBudgetExhausted，v4.17） ───
+# ─── 超时重试机械守卫（TimeoutBudgetExhausted） ───
 
 
 def _timeout_commands_server(monkeypatch: pytest.MonkeyPatch) -> AgentProtocolToolServer:
@@ -904,7 +904,7 @@ def test_read_thread_state_not_blocked_by_timeout_budget(
     assert result["pending_questions"] == []
 
 
-# ─── 交互预算闸门（BudgetExhausted，arch/16 §4.3 Phase 1 机械壳） ───
+# ─── 交互预算闸门（BudgetExhausted） ───
 
 
 def test_dispatch_exhausted_blocks_agent_run_without_network() -> None:
@@ -1016,7 +1016,7 @@ def test_ungated_tools_do_not_consume_budget() -> None:
     assert ledger.counters["sut_call"] == 1  # 只有 dispatch 那一次
 
 
-# ─── 完成仲裁与决策简报（arch/16 §5 决策回路，Phase 2） ───
+# ─── 完成仲裁与决策简报 ───
 
 
 def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> None:
@@ -1030,7 +1030,7 @@ def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> N
     refused = asyncio.run(server.run_on_thread("th-1", "继续"))
     assert refused["status"] == "failed"
     assert refused["error"]["type"] == "NudgeRationaleRequired"
-    # 拒绝载荷附可抄模板（Phase 2.1：抽象要求→示例填法，修零依从）
+    # 拒绝载荷附可抄模板（抽象要求→示例填法，修零依从）
     assert 'rationale="' in refused["error"]["message"]
     assert ledger.counters["nudge"] == 0  # 资格闸门不耗额度
     assert captured.get("posts") is None  # 拒绝在触网之前
@@ -1040,7 +1040,7 @@ def test_run_on_thread_without_rationale_refused_without_quota_or_network() -> N
 
 
 def test_run_on_thread_consecutive_rationale_refusals_escalate() -> None:
-    """连拒 3 次起载荷点名收尾路径（Phase 2.1：13 连拒空转的机械对应物）。"""
+    """连拒 3 次起载荷点名收尾路径（13 连拒空转的机械对应物）。"""
     server = _commands_server([RESUMED_STATE])
     evidence = EvidenceLedger()
     ledger = ResourceLedger(InteractionPolicy(), evidence=evidence)
@@ -1195,7 +1195,7 @@ def test_state_tracker_resets_across_tasks_and_feeds_idle() -> None:
     assert server._tracker.last_busy is None  # 新任务无观察，不串上一任务状态
 
 
-# ─── 合同一/二：观测入账 + interrupt 一等终态（arch/16 §4.6，Phase 2.3） ───
+# ─── 合同一/二：观测入账 + interrupt 一等终态 ───
 
 
 def test_agent_run_logs_sut_observation_event() -> None:
@@ -1233,7 +1233,7 @@ def test_agent_run_logs_sut_observation_event() -> None:
 def test_refresh_final_state_interrupt_pending_is_terminal_no_spin(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """neg_001 根因回归（arch/16 §4.6 合同二）：反问挂起是一等终态——收尾刷新
+    """neg_001 根因回归：反问挂起是一等终态——收尾刷新
     单采样立即返回并对账 pending，不再空转 settle 满超时后带旧值早退。"""
     monkeypatch.setattr(protocol_state_mod, "COMMANDS_POLL_INTERVAL_S", 0.05)
     server = _commands_server([INTERRUPT_STATE])

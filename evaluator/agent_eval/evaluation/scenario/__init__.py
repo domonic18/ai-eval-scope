@@ -1,4 +1,4 @@
-"""场景化聚合与指标（数据驱动）— 对齐 04 评估引擎设计 §七之二、13 配置管理设计 §十。
+"""场景化聚合与指标（数据驱动）—
 
 公开类型：
 - ScenarioConfig / AggregationPolicy / StageWeight / MetricDefinition：配置模型

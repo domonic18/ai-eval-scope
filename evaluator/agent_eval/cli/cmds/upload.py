@@ -1,4 +1,4 @@
-"""agent-eval upload — 历史运行评估结果回填可观测平台（Sprint 7e）。"""
+"""agent-eval upload — 历史运行评估结果回填可观测平台。"""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def upload(
         None, "--project", help="目标项目（覆盖 AGENT_EVAL_PROJECT）"
     ),
 ) -> None:
-    """把历史运行的评估结果回填到可观测平台（Sprint 7e）。
+    """把历史运行的评估结果回填到可观测平台。
 
     从 workspace/runs/{run}/ 的 summary.json + 各 task 的 report.json 重建事件并推送。
     需配置 AGENT_EVAL_HOST / AGENT_EVAL_API_KEY。

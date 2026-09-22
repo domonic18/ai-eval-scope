@@ -1,7 +1,7 @@
 """Agent 工作过程流式渲染（claude code 式直播）— 表现层基础设施。
 
 与 console/prompts、console/render 同层：无业务语义，命令层与向导层双向复用。
-事件契约（WorkbenchAgent.turn 的 ``on_event`` 回调，§六）：
+事件契约（WorkbenchAgent.turn 的 ``on_event`` 回调）：
 
 - ``token`` / ``thinking``——正文与思考增量（Anthropic 风格 blocks 已在会话机
   拆分）。正文 TTY 下行缓冲经 markdown-lite 渲染（完整行才转换，部分行挂起至
@@ -11,7 +11,7 @@
   仅 TTY；非 TTY 静默，防管道日志被控制符污染）
 - ``todos``——Agent 任务清单更新（write_todos 工具落状态后提取），与上次相同
   则不重复渲染
-- ``phase: checkpoint``——自动分段续跑提示（§6.7 P1）
+- ``phase: checkpoint``——自动分段续跑提示
 """
 
 from __future__ import annotations

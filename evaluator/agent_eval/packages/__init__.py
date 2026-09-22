@@ -1,11 +1,11 @@
-"""场景包（Scenario Package）管理 — 对齐 13 配置管理设计 §四/§五。
+"""场景包（Scenario Package）管理 —
 
 一个场景包是规则/提示词/数据集等配置资产的可分发、可版本化单元，由
 ``agent_eval.yaml`` 清单描述。本子包提供：
 - :class:`PackageManifest` / :class:`ResolvedPackage`：清单与解析结果
 - :class:`PackageStore`：内置包 + 本地缓存仓库读写
 - :class:`PackageManager`：按 scenario/package:version_or_label 解析
-- :class:`RemotePackageClient`：线上拉取抽象（Phase 2 仅假实现）
+- :class:`RemotePackageClient`：线上拉取抽象
 """
 
 from __future__ import annotations

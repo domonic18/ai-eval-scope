@@ -1,4 +1,4 @@
-"""ExecContext — 执行域共享状态（Sprint 14b，arch/15 v4.12 §6.10）。
+"""ExecContext — 执行域共享状态。
 
 与 ProbeContext 同构的最小上下文：ask_fn 交互桥 / render_bridge（None 可
 降级）/ active_event（活跃执行的取消令牌兼 busy 哨兵）/ workspace_root /
@@ -8,7 +8,7 @@ log_path（jsonl 事件账本，格式同 ProbeContext.log）。
 - ``active_event`` 仅由 run_evaluation ④ 置位、⑥ finally 复位——它是 busy
   哨兵（非 None = 有执行在 worker 线程），不随 REPL 换轮复位（new_turn 不
   触碰；执行期 REPL 阻塞在 tool future 上，不存在并发轮）。**硬中断例外**
-  （v4.12.1）：KI/取消打断等待侧后 daemon worker 仍在后台收尾，令牌保留作
+  ：KI/取消打断等待侧后 daemon worker 仍在后台收尾，令牌保留作
   其取消通道，由下次 run_evaluation 入口 reap（worker 已退出时）。
 - ``worker_thread`` 记录当前 pipeline daemon 线程（``worker_alive()`` 判
   存活）——busy 守卫与 reap 的判据，run_evaluation 装配时写入。

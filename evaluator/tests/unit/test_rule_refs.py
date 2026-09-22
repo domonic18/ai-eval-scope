@@ -214,7 +214,7 @@ def test_default_template_found_contract_still_applies(tmp_path: Path) -> None:
 
 
 def test_guide_variable_contract_table_matches_registry() -> None:
-    """meta 钉死（防文档副本漂移）：guide §4 变量契约表与评估器类声明双向一致。"""
+    """meta 钉死（防提示词副本漂移）：提示词模板变量契约与评估器类声明双向一致。"""
     import agent_eval.evaluation.evaluators  # noqa: F401
     import agent_eval.evaluation.evaluators.scenario.chat  # noqa: F401
     import agent_eval.evaluation.evaluators.scenario.code  # noqa: F401 — guide 表亦收 code.*

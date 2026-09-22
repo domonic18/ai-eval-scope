@@ -1,4 +1,4 @@
-"""Agent Protocol 中断提取（thread_commands 拆出，plan/07 G2/G4）——纯函数无 IO。
+"""Agent Protocol 中断提取（thread_commands 拆出）——纯函数无 IO。
 
 LangGraph interrupt 结构的识别与诊断：反问挂起提取、未识别类型透出、
 ask_question 工具调用 id 留档。通道轮询与协议探测共用。
@@ -58,7 +58,7 @@ def unrecognized_interrupt_types(
     state: dict[str, Any] | None,
     interrupt_types: Sequence[str] = ("ask_question",),
 ) -> list[str]:
-    """线程上出现过但不在识别集内的 interrupt 类型（超时诊断，plan/07 G2）。
+    """线程上出现过但不在识别集内的 interrupt 类型（超时诊断）。
 
     接入新 SUT 时若其中断形态未配进 sut.interrupt_types，症状是「轮询到超时」
     而非清晰失败——把线程上实际挂着的未识别类型写进错误 details，排障第一眼

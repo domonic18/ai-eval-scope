@@ -1,4 +1,4 @@
-"""DatasetToolServer — 数据集域组装壳（Sprint 14c，arch/15 v4.13 §6.11）。
+"""DatasetToolServer — 数据集域组装壳。
 
 与 ExecutionToolServer 同形态的组合薄壳：DatasetContext（共享状态）+ 每域
 一个工具类，本壳只做装配与委托（签名逐字复制供 StructuredTool schema 推导）。

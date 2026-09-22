@@ -1,4 +1,4 @@
-"""向导原语 — select / confirm / ask 统一收口（arch/15 §3.2）。
+"""向导原语 — select / confirm / ask 统一收口。
 
 编号选择（gcloud 同款交互）。``--no-input``（``AGENT_EVAL_NO_INPUT``）下走旁路：
 ``env_key`` 或 ``default`` 提供则直接采用，否则报错退出（exit 2），**绝不挂起等待**
@@ -80,7 +80,7 @@ def select(
 ) -> str:
     """单选：编号列表 + 回车确认；--no-input 下走 env/default 旁路。
 
-    ``no_default=True``（放行类选择专用，v4.12.4）：空回车不再隐式选第一项，
+    ``no_default=True``（放行类选择专用）：空回车不再隐式选第一项，
     提示改「输入编号」、空输入按无效选择重问。隐式默认曾是安全纵伤——host
     授权/凭证外发/执行确认/落盘确认的选择器空回车一律落放行项（「允许」
     「确认执行」「全部应用」），而编号列表从未展示默认态，「回车确认」的
@@ -154,8 +154,8 @@ def _maskable() -> bool:
 def _masked_input(prompt: str) -> str:
     """掩码回显输入（POSIX termios cbreak）：逐键 ``*`` 上屏、退格抹除。
 
-    click 的 hide_input 全静默，用户无法感知输入是否生效（v4.13.3 验收反馈）。
-    cbreak 保留 ISIG——^C 仍以 KeyboardInterrupt 中断（v4.12.4 语义不变）；
+    click 的 hide_input 全静默，用户无法感知输入是否生效。
+    cbreak 保留 ISIG——^C 仍以 KeyboardInterrupt 中断；
     ^D / 读尽视为 EOF 抛 Abort（与 click.prompt 同语义，ask_fn 桥已有
     Abort→KI 转换）。终端态 finally 复原，中断路径不残留原始回显。
     """

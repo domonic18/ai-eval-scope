@@ -1,4 +1,4 @@
-"""platform_file 单测 — 密钥区读写与 env 注入优先级（arch/06 §4.7）。"""
+"""platform_file 单测 — 密钥区读写与 env 注入优先级。"""
 
 from __future__ import annotations
 

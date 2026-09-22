@@ -23,7 +23,7 @@ class Task(BaseModel):
     """单个评测任务 — 定义被测 Agent 需要完成的输入与期望。"""
 
     id: str = Field(description="任务唯一标识，如 math_grade7_001")
-    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §3.1）
+    # 场景包标识
     scenario_id: str | None = Field(
         default=None, description="所属场景 ID（命名空间），如 courseware"
     )
@@ -64,7 +64,7 @@ class Task(BaseModel):
 
 
 class InteractionPolicy(BaseModel):
-    """交互预算声明（arch/16 §4.1 P1）— 一等预算面，替代 max_turns 的裸轮次纪律。
+    """交互预算声明— 一等预算面，替代 max_turns 的裸轮次纪律。
 
     声明「允许与 SUT 发生多少次交互」而非「LLM 允许思考多少步」；
     recursion_limit 由 `derive_recursion_limit` 按此自动推导为保险丝。
@@ -135,7 +135,7 @@ class TaskSet(BaseModel):
     """任务集 — 一组相关任务的集合。"""
 
     id: str = Field(description="任务集唯一标识")
-    # 场景包标识（Phase 0 新增，对齐 13 配置管理设计 §3.1）
+    # 场景包标识
     # YAML 中以 `scenario:` 键承载场景 ID，Python 侧统一用 scenario_id
     scenario_id: str | None = Field(
         default=None,
@@ -146,7 +146,7 @@ class TaskSet(BaseModel):
     name: str = Field(description="任务集名称")
     description: str = Field(default="", description="任务集描述")
     tasks: list[Task] = Field(default_factory=list, description="任务列表")
-    # 交互预算（arch/16 P1）— 任务集级缺省，任务级 constraints.interaction_policy 可部分覆盖
+    # 交互预算— 任务集级缺省，任务级 constraints.interaction_policy 可部分覆盖
     interaction_policy: InteractionPolicy | None = Field(
         default=None,
         description="任务集级交互预算声明（None=继承全局缺省）",
@@ -233,7 +233,7 @@ class SUTToolsConfig(BaseModel):
 
 
 class AgentConfig(BaseModel):
-    """ExecutionAgent 配置 — 控制 Agent 执行行为（arch/03 §六 v4.6：模型无关）。"""
+    """ExecutionAgent 配置 — 控制 Agent 执行行为（模型无关）。"""
 
     # Agent 执行参数
     max_turns: int = Field(
@@ -253,7 +253,7 @@ class AgentConfig(BaseModel):
         description="工具调用失败最大重试次数",
     )
 
-    # 模型配置（v4.6 双协议桥接；LLM② 起走角色注册表，见 arch/06 §4.6）
+    # 模型配置（LLM② 起走角色注册表）
     llm_role: str = Field(
         default=AGENT_DEFAULTS.llm_role,
         description="执行侧 LLM 角色（text|vision|agent），经 build_chat_model 桥接",

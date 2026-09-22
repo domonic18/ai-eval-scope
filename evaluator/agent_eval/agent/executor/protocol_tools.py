@@ -66,10 +66,10 @@ class AgentProtocolToolServer(
         self.last_run: dict[str, Any] | None = None
         # 本任务 SUT 调用超时留证（reset_task_state 逐任务清账）
         self._timeout_errors: list[str] = []
-        # 交互预算账本（arch/16 §4.3）——缺省 None=fail-closed（未注入即拒绝，
+        # 交互预算账本——缺省 None=fail-closed（未注入即拒绝，
         # 见 _budget）；ExecutionAgent 逐任务注入新实例（账本随任务生灭，
         # reset_task_state 不清它——换新即清零）
         self.ledger: ResourceLedger | None = None
-        # SUT 状态观察时间线（arch/16 §5.1 决策简报素材）——reset_task_state
+        # SUT 状态观察时间线——reset_task_state
         # 逐任务换新，与账本同节奏
         self._tracker = SutStateTracker()

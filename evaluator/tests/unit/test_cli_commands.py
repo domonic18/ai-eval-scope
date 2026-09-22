@@ -25,7 +25,7 @@ class TestVersion:
         assert "agent-eval v" in result.output
 
     def test_version_flag_exits_cleanly(self) -> None:
-        # --version 旗标（arch/17 发布流水线隔离冒烟口令，须先于其余参数生效）
+        # --version 旗标（须先于其余参数生效）
         result = runner.invoke(app, ["--version"])
         assert result.exit_code == 0, result.output
         assert "agent-eval v" in result.output
@@ -195,7 +195,7 @@ class TestUploadCommand:
         assert result.exit_code == 1
         assert "summary.json" in result.output
 
-    # ── upload_run_core（Sprint 14b 提纯：回执 + UploadError kind）────────
+    # ── upload_run_core（回执 + UploadError kind）────────
 
     def test_upload_core_receipt_structured(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -237,7 +237,7 @@ class TestUploadCommand:
         assert ei.value.kind == "no_credentials"
 
 
-# ── observability 拆分（Sprint 14b：flush 无渲染核心 + 回执渲染）────────
+# ── observability 拆分（flush 无渲染核心 + 回执渲染）────────
 
 
 class TestObservabilitySplit:
@@ -634,7 +634,7 @@ class _FlowStubs:
             metrics={"chat:reward": 0.8},
             failure_breakdown={"safety.compliance": 1},
         )
-        # evaluate_stage 返回 EvalResult 形态：指标真相在 .report（FR-4 修复后契约），
+        # evaluate_stage 返回 EvalResult 形态：指标真相在 .report（修复后契约），
         # gate 为门禁判定结果（off = 不判定）
         self.eval_result = SimpleNamespace(
             run_id="20260101_000000",
@@ -755,7 +755,7 @@ class TestProgressView:
 
 
 class TestLogLevelContract:
-    """--log-level 四档契约（F-C-EXEC-07，Sprint 14a）。"""
+    """--log-level 四档契约（F-C-EXEC-07）。"""
 
     def test_run_help_exposes_log_level_without_verbose(self) -> None:
         result = runner.invoke(app, ["run", "--help"])

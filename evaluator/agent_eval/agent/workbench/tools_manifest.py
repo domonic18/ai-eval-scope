@@ -166,7 +166,7 @@ class ManifestToolsMixin:
             # 资源目录按包形态判定（运行时真相，与 scenario validate 同源）：清单声明
             # default_task_set = 在线 SUT 形态，考卷来自 task_sets/、datasets 不参与
             # （内置 chat 包即无 datasets/）；未声明 = 离线文件形态，datasets/ 必需。
-            # 在线形态 task_sets/ 同样必需（指南 §1）——缺失此前到运行时才炸
+            # 在线形态 task_sets/ 同样必需——缺失此前到运行时才炸
             required_dirs = ["rules", "prompts"]
             if manifest is not None and manifest.default_task_set is None:
                 required_dirs.append("datasets")

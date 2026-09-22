@@ -1,4 +1,4 @@
-"""agent-eval secrets — SUT 凭证管理（arch/06 §4.7 本机密钥区）。
+"""agent-eval secrets — SUT 凭证管理。
 
 通用 KV 录入（<ref>.<field>，字段名自由、隐藏输入），保存到
 `~/.agent_eval/sut_credentials.json`（0600）。值不打印、不入日志。
@@ -101,7 +101,7 @@ def _discover_credential_refs() -> list[str]:
 def secrets_wizard() -> None:
     """工作台「SUT 凭证」交互子向导：查看 / 录入 / 删除（纯函数动作，workbench 复用）。
 
-    凭证是**通用 KV**（06 §4.7，``<ref>.<field>`` 字段名自由、不绑定凭证形态）：
+    凭证是**通用 KV**（``<ref>.<field>`` 字段名自由、不绑定凭证形态）：
     录入时字段名自由输入（sut_config 的 body_template 引用什么就录什么），
     ref 沿已录键与场景包 sut_configs 的 credential_ref 数据发现供选，不枚举固定集。
     """

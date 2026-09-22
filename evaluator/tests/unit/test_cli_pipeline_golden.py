@@ -1,4 +1,4 @@
-"""pipeline 命令输出黄金快照基线（Sprint 14b 薄壳化重构护栏，arch/15 v4.12）。
+"""pipeline 命令输出黄金快照基线。
 
 在抽取 pipeline_core 之前，先从**现行实现**固化四形态 + JSON 形态输出
 （exit_code + stdout/stderr 混流）；薄壳化验收门 = 本快照零 diff

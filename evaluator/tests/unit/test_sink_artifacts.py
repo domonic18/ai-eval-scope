@@ -163,7 +163,7 @@ class TestContentTypeFor:
 
 class TestTranscriptUpload:
     def test_transcript_uploaded_as_transcript_kind(self, tmp_path: Path) -> None:
-        """包根 transcript.md → kind="transcript"（arch/09 v1.8「对话过程」栏）。"""
+        """包根 transcript.md → kind="transcript"。"""
         sink, client = _make_sink(tmp_path)
         root = _make_pkg_set(tmp_path, ["t"])
         (root / "t" / "transcript.md").write_text("# 执行对话记录\n", encoding="utf-8")

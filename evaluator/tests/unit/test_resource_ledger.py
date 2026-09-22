@@ -1,4 +1,4 @@
-"""ResourceLedger / EvidenceLedger 单测（arch/16 §4.3-4.4 P3+P4-a）。"""
+"""ResourceLedger / EvidenceLedger 单测。"""
 
 from __future__ import annotations
 
@@ -175,7 +175,7 @@ class TestResourceLedgerEvidence:
 
 
 class TestRefusalEscalation:
-    """连拒升级（Phase 2.1）：同 action 连拒 ≥3 次点名收尾路径，打断即重计。"""
+    """连拒升级：同 action 连拒 ≥3 次点名收尾路径，打断即重计。"""
 
     def test_refusal_streak_counts_tail_and_resets_on_other_action(self) -> None:
         ledger = ResourceLedger(InteractionPolicy())

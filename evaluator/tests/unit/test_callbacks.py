@@ -1,4 +1,4 @@
-"""LangGraph 回调单元测试（BudgetGuard / SessionLogCallback，arch/03 §7a.6）。"""
+"""LangGraph 回调单元测试（BudgetGuard / SessionLogCallback）。"""
 
 from __future__ import annotations
 

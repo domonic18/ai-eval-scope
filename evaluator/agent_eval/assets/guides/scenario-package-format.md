@@ -173,7 +173,7 @@ id: sec_smoke_001
 name: 代码安全冒烟
 description: 单任务冒烟考卷
 interaction_policy:
-  sut_calls_total: 8      # SUT 执行类调用总额（字段缺省值见 arch/16 §4.1）
+  sut_calls_total: 8      # SUT 执行类调用总额
   nudges: 2               # 续跑/催促次数
 tasks:
   - id: injection_001
@@ -284,7 +284,7 @@ steps 链约束：
 - SSE 流式末步（`text/event-stream`）自动解析 `data:` 帧为 `events` 列表；未配置
   mapping 时整段原文即回答。
 
-**会话续接（once 步，plan/06 M1）**：建会话类步骤标 `once: true`——响应跨
+**会话续接（once 步）**：建会话类步骤标 `once: true`——响应跨
 `sut_request` 调用缓存，多轮任务同一会话续问，不再每轮重建会话丢失上下文：
 
 ```yaml
@@ -305,7 +305,7 @@ steps 链约束：
 （服务端会话过期）自动清缓存整链重建一次，结果标注 `session_rebuilt: true`，
 重建仍 404 才 failed（带两轮证据）。会话缓存随运行 `aclose` 全清，不跨运行存活。
 
-**异步轮询（poll 步，plan/06 M2）**：提交 job → 轮询 status → 取结果的任务型
+**异步轮询（poll 步）**：提交 job → 轮询 status → 取结果的任务型
 API 用 `poll` 声明轮询步——反复执行直到 `until` 渲染为真（true/1/yes）或超时：
 
 ```yaml

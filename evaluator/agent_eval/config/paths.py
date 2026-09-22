@@ -70,7 +70,7 @@ class ProjectPaths:
         """``assets/configs/`` — 配置文件（llm_config 等）。"""
         return self.assets_dir / "configs"
 
-    # ── 内置场景包（Scenario Package，Phase 2 重组）──
+    # ── 内置场景包（Scenario Package）──
     # 原 assets/{rules,prompts,knowledge}/ 已归入 assets/packages/courseware/<version>/
     # rules/prompts/datasets 访问器透出到内置 courseware 包，旧调用点无需改动。
 

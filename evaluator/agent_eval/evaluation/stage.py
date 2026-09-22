@@ -74,7 +74,7 @@ class PipelineStage:
             if constraint_result.duration_ms == 0.0:
                 constraint_result.duration_ms = (time.monotonic() - ev_start) * 1000
 
-            # verbose 档过程事件（arch/15 §4.4）：评估器/结论/耗时——rule 与 LLM
+            # verbose 档过程事件：评估器/结论/耗时——rule 与 LLM
             # 判官同点埋，normal/quiet 档由事件日志器静默丢弃（旁路，不改指标逻辑）
             exec_events.judge_evaluated(
                 evaluator=evaluator.name or evaluator.evaluator_id,

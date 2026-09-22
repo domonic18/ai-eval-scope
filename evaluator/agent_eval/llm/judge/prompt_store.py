@@ -1,11 +1,11 @@
-"""Prompt 模板存储抽象（arch/05 v2.1 + arch/13 §8.2）。
+"""Prompt 模板存储抽象。
 
 PromptStore 把 TemplateManager 的「单一目录加载」升级为多源抽象：
-- FilePromptStore：场景包 prompts/ 目录（Phase 1）
-- DbPromptStore：Web DB 经公开端点（Phase 2）
-- SnapshotPromptStore：RunConfigSnapshot 回放（Phase 3）
+- FilePromptStore：场景包 prompts/ 目录
+- DbPromptStore：Web DB 经公开端点
+- SnapshotPromptStore：RunConfigSnapshot 回放
 
-scenario_id 实现为 Optional 以兼容旧式无场景 YAML（偏离 arch/13 草图的 str 必填）。
+scenario_id 实现为 Optional 以兼容旧式无场景 YAML。
 render 为 ABC 具体方法（三实现共用 Jinja2，无状态）。
 """
 
@@ -35,7 +35,7 @@ class PromptTemplateSummary:
 
 
 class PromptStore(ABC):
-    """Prompt 模板存储抽象（arch/13 §8.2）。
+    """Prompt 模板存储抽象。
 
     scenario_id 传 None 时不按场景过滤（兼容旧式无场景 YAML 与单参直访点）。
     """

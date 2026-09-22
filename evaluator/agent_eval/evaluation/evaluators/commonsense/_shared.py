@@ -28,7 +28,7 @@ def _collect_text_content(output_dir: Path) -> str:
     """收集目录下所有文档的文本内容（带文件边界标记，合并为单字符串）。
 
     logical_consistency 使用：判官读到 `=== FILE: 相对路径 ===` 标记后，可在 issue
-    的 involved_files 引用具体文件名（docs/arch/15 §5.1）。
+    的 involved_files 引用具体文件名。
     """
     return collect_text_content_with_markers(output_dir)
 

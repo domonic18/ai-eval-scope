@@ -7,7 +7,7 @@ BudgetGuard/SessionLogCallback 以 LangGraph 回调注入（预算/结构化日�
 
 本模块只保留装配与执行循环；prompt 构建见 executor/prompts.py，
 包物化与机械守卫见 executor/package_writer.py，transcript 渲染见
-executor/transcript.py（plan/07 G4 拆分）。
+executor/transcript.py。
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ class ExecutionAgent:
                 server.workspace_dir = workspace_dir
 
     def _inject_ledger(self, ledger: ResourceLedger) -> None:
-        """向所有带 ledger 属性的工具注册表注入交互预算账本（arch/16 §4.3）。
+        """向所有带 ledger 属性的工具注册表注入交互预算账本。
 
         逐任务注入新实例（账本随任务生灭，跨任务计数不串）；协议与
         generic_http 注册表共享同一账本——SUT 交互总额跨通道统一计量。
@@ -107,7 +107,7 @@ class ExecutionAgent:
                 server.ledger = ledger
 
     def _inject_session_key(self, session_key: str) -> None:
-        """向 generic_http 语义工具面注入 once 步会话键（plan/06 M1）。
+        """向 generic_http 语义工具面注入 once 步会话键。
 
         键=task.id：once 步会话缓存的多任务隔离由键空间机械保证——与
         workspace_dir/ledger 同一注入模式，不依赖 Agent 在 metadata 自觉传。
@@ -128,11 +128,11 @@ class ExecutionAgent:
         """批量执行任务集（共享 run_id），返回 (run_id, 执行包列表)。
 
         run_id 可由调用方（CLI）注入——用于运行清单登记与外部关联。
-        cancel_event（Sprint 14b 协作取消）：任务边界粒度——置位后当前任务
+        cancel_event：任务边界粒度——置位后当前任务
         跑完（正常包/失败包均已物化）即停，返回已完成的部分列表；缺省 None
         行为不变（CLI 形态不变式）。
 
-        任务隔离（arch/16 Phase 1 收尾）：单任务异常终止不再烧掉整场——
+        任务隔离：单任务异常终止不再烧掉整场——
         两次 staging 重放实测（run 20260911_050015 / 073626）首个任务熔断后
         其余考卷从未执行。失败包已由 _abort 补齐链物化，从包根恢复登记后
         继续下一任务；包缺失（收尾链自身故障）才向上抛。
@@ -199,7 +199,7 @@ class ExecutionAgent:
         Args:
             task: 待执行任务。
             run_id: 运行标识（缺省自动生成）。
-            task_set: 所属任务集——interaction_policy 声明的继承来源（arch/16 §4.1）。
+            task_set: 所属任务集——interaction_policy 声明的继承来源。
 
         Raises:
             AgentTimeoutError: 超过轮次限制（已写入含部分结果的执行包）。
@@ -221,15 +221,15 @@ class ExecutionAgent:
             [Path(task.directory_path)] if task.directory_path else []
         )
         self._clear_stale_tool_state()
-        # 机械壳任务装配（arch/16 §4）：预算/账本/证据随任务生灭——逐任务新实例，
-        # 跨任务计数不串（v4.12 同因）；解析失败静默落缺省（闸门兜运行期额度，
+        # 机械壳任务装配：预算/账本/证据随任务生灭——逐任务新实例，
+        # 跨任务计数不串；解析失败静默落缺省（闸门兜运行期额度，
         # 不做配置期报错）
         policy = resolve_interaction_policy(task, task_set)
         evidence = EvidenceLedger()
         self._inject_ledger(ResourceLedger(policy, evidence))
-        # once 步会话键随任务换新（plan/06 M1）——跨任务不串由键空间保证
+        # once 步会话键随任务换新——跨任务不串由键空间保证
         self._inject_session_key(task.id)
-        # 单轨（arch/16 §七 Phase 2）：保险丝恒由 policy 推导——max_turns
+        # 单轨：保险丝恒由 policy 推导——max_turns
         # 旧链退役，constraints.max_turns 声明不再生效（解析层有全局缺省兜底）
         recursion_limit = derive_recursion_limit(policy)
         package_dir = run_packages_root / task.id
@@ -243,7 +243,7 @@ class ExecutionAgent:
             graph = self._ensure_graph()
             result = await graph.ainvoke(
                 {"messages": [{"role": "user", "content": self._build_task_prompt(task)}]},
-                # 保险丝语义（arch/16 §4.1）：宽于语义预算、只兜图失控；仍假设
+                # 保险丝语义：宽于语义预算、只兜图失控；仍假设
                 # 「1 轮 ≈ 2 step（模型 + 工具节点）」——给执行图加会推进 step
                 # 的中间件时须同步校准此倍数
                 config={
@@ -356,7 +356,7 @@ class ExecutionAgent:
         return None
 
     async def _refresh_sut_final_state(self) -> None:
-        """freeze 前终局快照刷新（arch/16 §4.5 snapshot/reconcile）。
+        """freeze 前终局快照刷新。
 
         answer.md 物化的输入是 last_run.text，而 run 工具返回时刻 ≠ SUT 最终
         发言时刻（run 20260912_000410：answer 冻结在中间播报）。包物化前机械
@@ -401,7 +401,7 @@ class ExecutionAgent:
         *,
         evidence: EvidenceLedger,
     ) -> None:
-        """异常路径统一收尾（arch/16 §4.5 CLOSE）：走补齐链物化完整失败包。
+        """异常路径统一收尾：走补齐链物化完整失败包。
 
         图抛异常时无 result——以空 session 过 finalize：trace 以 last_sut_run
         回填 SUT 侧证据（status/text/thread_id），answer.md 据此物化——修

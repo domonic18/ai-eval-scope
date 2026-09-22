@@ -19,7 +19,7 @@ from typing import Any
 from agent_eval.core.exceptions import GateConfigError
 from agent_eval.evaluation.models import MetricsReport
 
-# 门禁关闭（"0" 兼容消费方历史传参习惯，requirement/06 验收 #7）
+# 门禁关闭（"0" 兼容消费方历史传参习惯）
 _OFF_SPECS = ("", "off", "0")
 
 

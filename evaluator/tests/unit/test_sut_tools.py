@@ -1,4 +1,4 @@
-"""SUTToolServer 单元测试（arch/03 §四 v4.6）。
+"""SUTToolServer 单元测试。
 
 全部离线：HTTP 用 httpx.MockTransport，子进程用本地 echo/sleep。
 """
@@ -208,7 +208,7 @@ def test_collect_results_unconfigured_workspace_rejected(tmp_path) -> None:
 
 
 def test_collect_results_mkdir_oserror_becomes_tool_error(tmp_path) -> None:
-    """mkdir 的 OSError 必须转 ToolExecutionError（tool_guard 才能兜住，v4.6.3）。"""
+    """mkdir 的 OSError 必须转 ToolExecutionError（tool_guard 才能兜住）。"""
     import asyncio
 
     from agent_eval.core.exceptions import ToolExecutionError
@@ -267,7 +267,7 @@ def _install_fake_langchain_core(monkeypatch) -> dict[str, dict]:
 
 
 def test_to_langchain_tools_default_five_excludes_invoke(monkeypatch, tmp_path) -> None:
-    """默认工具面 = 安全默认集：invoke_* 裸调用工具不进 LLM 面（v4.8 裁剪）。"""
+    """默认工具面 = 安全默认集：invoke_* 裸调用工具不进 LLM 面。"""
     import asyncio
 
     _install_fake_langchain_core(monkeypatch)
@@ -302,7 +302,7 @@ def test_enabled_tools_restores_invoke_and_rejects_unknown(monkeypatch) -> None:
 
 
 def test_read_file_outside_workspace_rejected(tmp_path) -> None:
-    """read_file 边界：workspace 外路径拒绝（凭证/.env 泄漏面，v4.8）。"""
+    """read_file 边界：workspace 外路径拒绝（凭证/.env 泄漏面）。"""
     import asyncio
 
     ws = tmp_path / "ws"

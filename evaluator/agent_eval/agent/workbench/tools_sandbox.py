@@ -69,7 +69,7 @@ class SandboxViewMixin:
         return self._view()
 
     def disk_text(self, rel_path: str) -> str | None:
-        """磁盘原文（不含暂存覆盖）——落盘对账门禁的基线读取口（v4.12.3）。
+        """磁盘原文（不含暂存覆盖）——落盘对账门禁的基线读取口。
 
         与 :meth:`read_file`（分级授权、暂存优先、截断）不同：这是机械通道，
         仅供门禁取「此前已落盘放行」的基线内容；越界/缺失/不可读一律 None

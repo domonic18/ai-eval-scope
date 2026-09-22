@@ -1,4 +1,4 @@
-"""Agent Protocol commands 形态传输（官方 Streaming 端点，arch/03 §4.0.6）。
+"""Agent Protocol commands 形态传输（官方 Streaming 端点）。
 
 对应部署形态（AG-UI 网关族）：POST /threads/{id}/commands（JSON-RPC 风格
 信封，method=run.start）+ GET /threads/{id}/state 轮询。线程由客户端生成
@@ -7,7 +7,7 @@ UUID（首个 run.start 隐式建线程）；业务请求携带 `makers-conversa
 
 本模块只保留 run/poll 编排与线契约（信封/消息/请求头）；消息摘要见
 message_digest.py、中断提取见 interrupts.py、SSE 解析见 sse.py、流式
-run 见 commands_stream.py（plan/07 G4 拆分）。
+run 见 commands_stream.py。
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ if TYPE_CHECKING:  # 防循环导入（agent_protocol 反向引用本模块的�
     from agent_eval.execution.channels.agent_protocol import AgentProtocolChannel
 
 COMMANDS_POLL_INTERVAL_S = 1.5
-# 终态稳定窗（arch/16 §4.5 settle）：连续 N 次采样满足终态条件才返回——
+# 终态稳定窗：连续 N 次采样满足终态条件才返回——
 # SUT 阶段切换/反问 resume 后存在 next 瞬时空窗，单采样会误判完成并把
 # 中间播报焊死成 answer（run 20260912_000410）。形态无关的时间维度确认，
 # 不是又一个「完成的形状」判定式
@@ -77,7 +77,7 @@ def messages_from_input(input: Any) -> list[dict[str, Any]]:
 
     消息形态为 LangGraph/LangChain 格式（`type: human|ai`，无 role 字段）——
     AG-UI 网关族按 type 识别，Agent Protocol 的 `role: user` 会被静默丢弃
-    （v4.6.4 实测：SUT 收不到输入、按空会话即兴回答）。
+    （SUT 收不到输入、按空会话即兴回答）。
     """
     if isinstance(input, str):
         return [{"type": "human", "id": str(uuid.uuid4()), "content": input}]
@@ -175,7 +175,7 @@ def run_start_envelope(
     configurable: dict[str, Any] | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """构造 run.start 命令信封；消息置于 params.input.messages（v4.6.4 契约）。
+    """构造 run.start 命令信封；消息置于 params.input.messages。
 
     执行器与协议探测共用同一构造（v3.9 同构：probe 说执行器的方言，
     信封/消息形态/请求头永不漂移）。
@@ -279,7 +279,7 @@ async def _poll_state(
             }
             if unrecognized:
                 # 线程挂有未配置识别的中断形态——「超时」的真因大概率是它，
-                # 补进 sut.interrupt_types 即可识别（plan/07 G2）
+                # 补进 sut.interrupt_types 即可识别
                 details["unrecognized_interrupts"] = sorted(unrecognized)
             raise AgentProtocolTimeoutError(
                 f"run 超时：state 轮询 {channel.sut.timeout}s 未达终态",

@@ -1,4 +1,4 @@
-"""场景包管理域 — 查看 / 列出 / 校验 / Agent 生成与改包（Sprint 11）。"""
+"""场景包管理域 — 查看 / 列出 / 校验 / Agent 生成与改包。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from agent_eval.cli.console.prompts import ask, select
 
 
 def main(session: Any) -> None:  # WorkbenchSession（避免循环导入用 duck type）
-    # Agent 两项为「档位快捷方式」（§3.5）：预载对象上下文的快捷入口——
+    # Agent 两项为「档位快捷方式」：预载对象上下文的快捷入口——
     # 语义从「Agent 的功能」改为「用 Agent 做某事」，通用对话式入口在主菜单一级
     action = select(
         "场景包动作",

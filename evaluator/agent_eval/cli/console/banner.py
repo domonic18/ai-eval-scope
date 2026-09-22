@@ -1,4 +1,4 @@
-"""工作台欢迎首屏富渲染（arch/15 §6.8 v4.13.2）——开源 CLI 风格渐变 logo 横幅。
+"""工作台欢迎首屏富渲染——开源 CLI 风格渐变 logo 横幅。
 
 表现层专属：ASCII wordmark（ANSI Shadow 字形，零依赖）+ 竖直渐变色带 + 分区配色
 （身份与 slogan / 元信息 / 使用示例 / 红线与控制 / 版本与主页脚注）。文案仍是资产
@@ -30,7 +30,7 @@ _GLYPHS: dict[str, list[str]] = {
 }
 _WORD_GAP = 3  # 词间留白列数
 _INDENT = "  "
-_MAX_WIDTH = 100  # 横幅不拉满超宽终端（CJK 双宽截断防护，沿 §6.8 旧约束）
+_MAX_WIDTH = 100  # 横幅不拉满超宽终端（CJK 双宽截断防护）
 
 # 竖直渐变色带：青 → 蓝 → 紫 → 洋红（深/浅色终端背景均可读）
 _RAMP: tuple[str, ...] = ("#00D7FF", "#3FA9FF", "#7B6FFF", "#A95FFF", "#D75FFF", "#FF5FD7")
@@ -126,7 +126,7 @@ def render_banner(parts: dict[str, Any], version: str) -> None:
     else:
         out.append_text(_wordmark_text())
     out.append("\n\n")
-    # 身份 + slogan（§6.8 五要素之首）
+    # 身份 + slogan
     out.append("✦ ", style="bold cyan")
     out.append(str(parts["identity"]), style="bold")
     out.append(" —— ", style="dim")

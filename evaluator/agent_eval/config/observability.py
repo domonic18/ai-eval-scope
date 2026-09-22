@@ -1,7 +1,7 @@
 """可观测平台对接默认参数（ResultSink / IngestionClient 用）。
 
 仿 LangfuseDefaults：仅提供默认值；实际启用须经 AGENT_EVAL_* 环境变量配置凭据。
-可观测平台后端契约见 docs/arch/09 §七（摄取）/ §八（评估器对接）。
+可观测平台后端契约
 """
 
 from __future__ import annotations

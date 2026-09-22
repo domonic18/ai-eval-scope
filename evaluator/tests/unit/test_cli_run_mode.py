@@ -33,7 +33,7 @@ class TestDetectRunMode:
         assert _detect_run_mode(_make_run(tmp_path, "eval_only")) == "eval_only"
 
     def test_pipeline_manifest_mode_returns_pipeline(self, tmp_path: Path) -> None:
-        # pipeline 一体化产物复评时保持 pipeline 语义（Sprint 9）
+        # pipeline 一体化产物复评时保持 pipeline 语义
         assert _detect_run_mode(_make_run(tmp_path, "pipeline")) == "pipeline"
 
     def test_no_manifest_returns_eval_only(self, tmp_path: Path) -> None:

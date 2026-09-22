@@ -27,7 +27,7 @@ def _ensure_utf8_streams() -> None:
 # debug 诊断）不压，全量放行。
 _NOISY_HTTP_LOGGERS = ("httpx", "httpcore", "openai", "anthropic")
 
-# 执行日志四档（arch/15 §4.4）：quiet=仅结果行 / normal=现状默认 / verbose=过程事件
+# 执行日志四档：quiet=仅结果行 / normal=现状默认 / verbose=过程事件
 # 直出（SUT 请求响应摘要、judge 交互、重试，见 core/exec_events.py）/ debug=全量原文。
 _LOG_LEVEL_MAP = {
     "quiet": "WARNING",
@@ -150,7 +150,7 @@ class _ExecEventLineHandler(logging.Handler):
     """verbose/debug 档执行事件行渲染器：``· <事件消息>`` 直出 stderr。
 
     纯文本行（非 rich）——verbose 档的重要场景是 CI 与长评测人读过程，
-    确定性平文比终端样式更可靠（arch/15 §4.4 事件行直出）。
+    确定性平文比终端样式更可靠。
     """
 
     def emit(self, record: logging.LogRecord) -> None:

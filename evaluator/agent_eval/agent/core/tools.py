@@ -53,7 +53,7 @@ class ToolExporterMixin:
     # 通道专属纪律段键（execution_agent_prompts.yaml channel_discipline 段的键）：
     # 语义工具注册表声明自己的纪律落在哪一段，ExecutionAgent 按注册表拼装
     # {channel_rules}——工具面与规则面同源，generic_http 任务不背 agent-protocol
-    # 规则噪声（plan/07 G3）。None = 无专属纪律（如 SUTToolServer 文件工具面）。
+    # 规则噪声。None = 无专属纪律（如 SUTToolServer 文件工具面）。
     discipline_key: str | None = None
 
     def to_langchain_tools(self) -> list[Any]:
@@ -77,7 +77,7 @@ class ToolExporterMixin:
     def _enrich_result(self, result: Any, *, tool: str) -> Any:
         """工具结果出口的统一挂钩（默认恒等）——子类可注入附加上下文。
 
-        挂点 b（arch/16 §5.1 决策简报注入）：动作工具的结果经装饰器在
+        挂点 b：动作工具的结果经装饰器在
         方法出口统一过本钩子，子类（如 AgentProtocolToolServer）按需前置
         决策简报；基类与未覆写的注册表行为不变。放在方法层而非导出层
         （_json_tool）：直调与 LangChain 导出两条路径行为一致，测试也无需

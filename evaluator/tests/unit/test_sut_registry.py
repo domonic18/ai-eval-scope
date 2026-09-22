@@ -1,4 +1,4 @@
-"""SUTRegistry 与 sut_config v2 模型测试（arch/03 §4.0.3）。"""
+"""SUTRegistry 与 sut_config v2 模型测试。"""
 
 from __future__ import annotations
 
@@ -138,7 +138,7 @@ def test_auth_type_validator() -> None:
         )
 
 
-# ── ${VAR} / ${VAR:-默认值} 环境变量展开（arch/17 开源红线：内置包不硬编码内部域名）──
+# ── ${VAR} / ${VAR:-默认值} 环境变量展开（内置包不硬编码内部域名）──
 
 PLACEHOLDER_YAML = """
 sut:
@@ -268,7 +268,7 @@ def test_validate_document_undefined_env_ref_reported() -> None:
     assert any("UNDEFINED_VAR_X" in e for e in errors)
 
 
-# ── generic_http 通道（v4.7 落地）：request_template / response_mapping ──────
+# ── generic_http 通道：request_template / response_mapping ──────
 
 
 GENERIC_HTTP_YAML = """
@@ -346,7 +346,7 @@ def test_validate_generic_http_accepts_full_config() -> None:
     assert validate_sut_config_document(doc) == []
 
 
-# ── steps 链式模板 + 模板变量审计（v4.8：jxb 事故——input 未消费/变量拼错落盘前打回）──
+# ── steps 链式模板 + 模板变量审计（jxb 事故——input 未消费/变量拼错落盘前打回）──
 
 
 CHAIN_YAML = """
@@ -500,7 +500,7 @@ def test_request_template_without_steps_or_path_rejected() -> None:
         RequestTemplateConfig()
 
 
-# ── once 会话步 + poll 轮询步（plan/06 M1+M2）：形态校验与审计扩展 ────────────
+# ── once 会话步 + poll 轮询步：形态校验与审计扩展 ────────────
 
 
 def test_validate_generic_http_accepts_once_and_poll_chain() -> None:
@@ -556,7 +556,7 @@ def test_validate_step_rejects_nonpositive_interval_and_timeout() -> None:
 
 
 def test_validate_step_rejects_timeout_over_cap() -> None:
-    """timeout_s 防呆上界 900（plan/06 §3.4）。"""
+    """timeout_s 防呆上界 900。"""
     with pytest.raises(ValueError):
         PollConfig(until="{{ a.ok }}", timeout_s=901)
 
@@ -604,7 +604,7 @@ def test_validate_generic_http_rejects_undefined_variable_in_until() -> None:
 
 
 def test_validate_generic_http_legacy_chain_without_new_fields_passes() -> None:
-    """存量 v4.8 链（无 once/poll）零改动通过（NF-2 存量兼容）。"""
+    """存量 v4.8 链（无 once/poll）零改动通过（存量兼容）。"""
     import yaml
 
     assert validate_sut_config_document(yaml.safe_load(CHAIN_YAML)) == []

@@ -1,4 +1,4 @@
-"""管线编排纯函数（Sprint 14b，arch/15 v4.12「编排单一真相源」）。
+"""管线编排纯函数。
 
 ``pipeline_core(params, *, progress, cancel_event, credential_filler) → PipelineOutcome``：
 无渲染 / 无交互 / 无 typer——终端呈现经 progress 事件（``console.pipeline_render``
@@ -8,7 +8,7 @@ cancel_event（任务边界粒度，透传 ``run_task_set``）。
 
 CLI 壳（``cmds/execute.execute_pipeline``）与 WorkbenchAgent 执行域
 （``agent/workbench/execution``）共用本函数——两宿主自此零编排复制。
-退出码契约**返回而非 raise**（requirement/06 FR-3）：0=成功（含门禁通过）|
+退出码契约**返回而非 raise**：0=成功（含门禁通过）|
 1=配置/执行失败 | 3=质量门禁未达标 | 130=协作取消（仅 Agent 域可达，
 CLI 的 cancel_event 恒 None）。
 """
@@ -300,7 +300,7 @@ def pipeline_core(
         packages=packages,
         run_dir=run_dir,
         # EvalResult 的指标真相在 .report（MetricsReport）——曾误写
-        # result.metrics 致终态渲染 AttributeError（requirement/06 FR-4）
+        # result.metrics 致终态渲染 AttributeError
         metrics=dict(result.report.metrics),
         total_samples=result.report.total_samples,
     )

@@ -43,7 +43,7 @@ def load_prompts() -> dict[str, Any]:
 
 
 def banner_parts(prompts: dict[str, Any], domain: str, root: str) -> dict[str, Any]:
-    """横幅结构化文案（§6.8 v4.13.2）：``banner:`` 资产 + {root}/{domains} 字面 replace。
+    """横幅结构化文案：``banner:`` 资产 + {root}/{domains} 字面 replace。
 
     返回 dict 供 ``cli/console/banner.py`` 富渲染（渐变 logo 与配色是表现层，不入
     资产）；资产缺 ``banner`` 段返回空 dict（渲染端据此静默跳过）。

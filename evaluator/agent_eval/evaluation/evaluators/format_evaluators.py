@@ -107,7 +107,7 @@ class ResponseFormatEvaluator(BaseEvaluator):
 
         # 收集所有输出文件（跳过 _manifest.json）
         files = [f for f in output_dir.rglob("*") if f.is_file() and f.name != "_manifest.json"]
-        # 文件定位（docs/arch/15）：相对路径供前端「涉及文件」chip 联动切换预览
+        # 文件定位：相对路径供前端「涉及文件」chip 联动切换预览
         source_files = [{"filename": str(f.relative_to(output_dir))} for f in files]
 
         if not files:
@@ -225,7 +225,7 @@ class HtmlValidityEvaluator(BaseEvaluator):
             )
 
         html_files = list(output_dir.rglob("*.html")) + list(output_dir.rglob("*.htm"))
-        # 文件定位（docs/arch/15）：相对路径供前端「涉及文件」chip 联动切换预览
+        # 文件定位：相对路径供前端「涉及文件」chip 联动切换预览
         source_files = [{"filename": str(f.relative_to(output_dir))} for f in html_files]
 
         if check_html_only and not html_files:

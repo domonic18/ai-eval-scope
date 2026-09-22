@@ -1,6 +1,6 @@
 """UploadTool — 运行补传（upload_run）。
 
-薄包 ``cli.cmds.upload.upload_run_core``（Sprint 14b C2 提纯）：进度行经
+薄包 ``cli.cmds.upload.upload_run_core``：进度行经
 note 回调，Agent 域传 None 静默（回执自带计数）；URL 真源 =
 ObservabilityConfig.run_view_url（upload_run_core 内拼装）。
 """

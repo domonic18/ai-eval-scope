@@ -494,7 +494,7 @@ class TestCachePersistence:
 
 
 class TestEvalOnlyCiIntegration:
-    """CI 集成：门禁判定 + 按需追加报告格式（requirement/06）。"""
+    """CI 集成：门禁判定 + 按需追加报告格式。"""
 
     @staticmethod
     def _tool_version() -> str:
@@ -558,7 +558,7 @@ class TestEvalOnlyCiIntegration:
         golden_package: Path,
         workspace: Workspace,
     ) -> None:
-        """summary.json 顶层含 gate / package_id / tool_version（FR-3 联动）。"""
+        """summary.json 顶层含 gate / package_id / tool_version。"""
         orch = Orchestrator(workspace=workspace)
         result = orch.eval_only(golden_package, package_id="edu")
 

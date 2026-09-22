@@ -100,7 +100,7 @@ def test_transport_info_noise_suppressed_but_warnings_pass(monkeypatch):
     assert "Retrying request" in out
 
 
-# ── 执行日志四档（arch/15 §4.4，Sprint 14a）─────────────────────────────────
+# ── 执行日志四档─────────────────────────────────
 
 
 @pytest.mark.parametrize(

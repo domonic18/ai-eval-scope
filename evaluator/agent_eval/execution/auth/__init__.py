@@ -1,4 +1,4 @@
-"""鉴权架构（arch/03 §4.0）：CredentialStore / SUTSession / SessionStore / AuthProvider。"""
+"""鉴权架构：CredentialStore / SUTSession / SessionStore / AuthProvider。"""
 
 from agent_eval.execution.auth.credentials import CredentialStore
 from agent_eval.execution.auth.provider import AuthProvider

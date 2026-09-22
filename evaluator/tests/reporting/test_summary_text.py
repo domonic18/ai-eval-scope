@@ -1,4 +1,4 @@
-"""纯文本摘要渲染器测试（requirement/06 FR-2）。"""
+"""纯文本摘要渲染器测试。"""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ class TestFirstLine:
         assert first == "run 20260914_135901 · 10 样本 · ❌ 4.50 · agent-eval 0.3.2"
 
     def test_gate_off_no_mark_no_extra_space(self) -> None:
-        """门禁关闭：结论标记为空，得分段保留（FR-2 得分独立规则），无多余空格。"""
+        """门禁关闭：结论标记为空，得分段保留，无多余空格。"""
         gate = {
             "mode": "off",
             "enabled": False,
