@@ -4,6 +4,7 @@ runs list / dataset list / rule-set / suite / knowledge（全离线 mock）。""
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,6 +14,16 @@ from typer.testing import CliRunner
 from agent_eval.cli.main import app
 
 runner = CliRunner()
+
+# typer 在 GITHUB_ACTIONS / FORCE_COLOR / PY_COLORS 环境下强制彩色渲染，
+# rich 高亮器会把选项名按 span 切开（如 --log-level 被转义码打断），
+# 字面子串断言须在去 ANSI 后的纯文本上做。
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """剥离 ANSI 转义序列，返回纯文本。"""
+    return _ANSI_RE.sub("", text)
 
 
 # ── version ────────────────────────────────────────────────────────────
@@ -760,13 +771,13 @@ class TestLogLevelContract:
     def test_run_help_exposes_log_level_without_verbose(self) -> None:
         result = runner.invoke(app, ["run", "--help"])
         assert result.exit_code == 0
-        assert "--log-level" in result.output
-        assert "--verbose" not in result.output
+        assert "--log-level" in _plain(result.output)
+        assert "--verbose" not in _plain(result.output)
 
     def test_pipeline_help_exposes_log_level(self) -> None:
         result = runner.invoke(app, ["pipeline", "--help"])
         assert result.exit_code == 0
-        assert "--log-level" in result.output
+        assert "--log-level" in _plain(result.output)
 
     def test_verbose_flag_is_rejected(self) -> None:
         """--verbose 一次性移除（D-CLI-6 无别名）：误用即 usage error。"""
