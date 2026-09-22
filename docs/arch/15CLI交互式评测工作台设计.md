@@ -393,7 +393,7 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 
 | 工具 | 实现要点 |
 |------|---------|
-| `list_files` / `read_file` | **分级授权读取**（Claude Code 式）：会话根内（暂存视图优先，含 added/staged/deleted 标记）→ 随包资源 `assets/`（自动授权只读，如包结构规范 guide）→ 外部路径经 `ask_fn` 向用户申请（拒绝即拉黑）；read 截断长文件（防上下文爆炸） |
+| `list_files` / `read_file` | **分级授权读取**（Claude Code 式）：会话根内（暂存视图优先，含 added/staged/deleted 标记）→ 随包资源 `assets/` 与**运行产物区 `workspace/`**（自动授权只读，v4.14——数据集/run 产物是本系统自己的产物，读取免弹窗）→ 外部路径经 `ask_fn` 向用户申请（拒绝即拉黑；**允许按目录记账**，v4.14——曾按文件精确记账让同目录兄弟文件再次弹窗）；read 截断长文本（防上下文爆炸）。**格式感知读取**（v4.14）：按扩展名分派——parquet/CSV/JSONL/JSON/zip 解析为「列名 + 行数 + 样本行」结构化视图（`workbench/file_read.py` 原语，样本行数 `limit` 夹取 1-20、单值截断；parquet 经 pyarrow 惰性导入，未装返回安装指引），文本类返回截断原文；数据集落盘 / run 产物 / 包内 datasets/ 共用同一读取原语——**工具面不随格式清单增长**（系统性能力而非逐格式打补丁：曾因只认 UTF-8 文本，用户看 parquet 数据集被拒、Agent 逐目录翻找触发连环授权） |
 | `write_file` / `delete_file` | **先写暂存区**（staging dict），不直接落盘——diff 确认与校验门禁通过后才由宿主提交（§6.3） |
 | `read_manifest` / `update_manifest` | `agent_eval.yaml` 读写同样走暂存（update 为浅合并） |
 | `validate_package` | 对暂存视图执行清单合法 + 资源目录 + 规则 YAML 可解析校验（含对账门禁族，§6.3），返回结构化 errors |
@@ -405,9 +405,10 @@ system_prompt（与工具同源注入），域提示词资产不重复维护；d
 | `preview_diff` | 暂存区 vs 磁盘原文的统一 diff（宿主确认界面同源） |
 | `write_sut_config`（v4.7） | **机械物化**（§6.5 五阶段之阶段 3）：filename 传 `sut_configs/<名字>.yaml` 或裸名 `<名字>.yaml`（机械归位 sut_configs/，v4.9——守卫曾只认带前缀形态却自称「只写平铺文件」，裸名被拒且错误不指路，Agent 在 payload 结构上空转多轮）；agent 只给决策字段（name/channel/base_url/timeout/request_template/response_mapping 等），服务端从探测证据账本取该 ref 的 `auth_snippet` **verbatim 注入 auth 段**——「验证→配置」的传递不经 LLM 转述；无账本事实即拒绝并引导先 request 实测 + declare_token；注入后**内联执行器同款 schema 校验**（未知键/模板变量审计当场打回）才入暂存；`auth` 键手写一律拒绝（防转述变形）——取代「snippet 原样粘贴」纪律，转述类打回在机制上消失。`write_file` 写 sut_configs 的旧路径保留兜底（auth_chain 链式认证等未落地形态） |
 
-**沙盒规则（读写不对称）**：**读**分级授权（会话根 → assets → 用户授权的外部路径；
-凭证类路径——密钥区 / sut_sessions / `.env`——**先于授权逻辑硬拒**，凭证不回流 LLM
-上下文）；**写**不泛化：write/delete 硬沙盒 confined 会话根，路径 `resolve()` 后必须
+**沙盒规则（读写不对称）**：**读**分级授权（会话根 → assets / workspace 运行产物区 →
+用户授权的外部路径；凭证类路径——密钥区 / sut_sessions / `.env`——**先于授权逻辑硬拒**，
+凭证不回流 LLM 上下文）；**写**不泛化：write/delete 硬沙盒 confined 会话根，路径
+`resolve()` 后必须
 `is_relative_to(pkg_root.resolve())`（防 `..` 与 symlink 逃逸），扩展名白名单
 `.yaml/.yml/.json/.md`；无 shell、无网络、无包外路径。
 
@@ -1066,3 +1067,4 @@ review 检查项。
 | v4.13.1 | 2026-09-21 | **启动横幅 Markdown 渲染（用户验收反馈：横幅以纯文本透出 `**` 加粗符）**：`_render_intro` 渲染器 `Text` → `Markdown`（与非流式回复同源）——加粗/列表/链接生效；配套 `intro` 资产按 markdown 语义成稿（§6.8）：元信息与示例成列表条目、规则/控制独立段落，**句中不加硬换行**（rich 重排把软换行按空格拼接，句中断行会在拼接点注入空格；实测「当前任务对象/可用能力域」「规则/控制」并段）。回归测试守卫：标记不透出、列表成条目、两处不并段 |
 | v4.13.2 | 2026-09-21 | **欢迎首屏富渲染（用户验收反馈：要开源 CLI 风格的炫酷首屏——排版之外要有 slogan 与配色）**：新表现层模块 `cli/console/banner.py`——ANSI Shadow 字形表拼装「AGENT EVAL」wordmark（零依赖，对齐由构造保证），竖直渐变色带（青→蓝→紫→洋红）着色，窄终端降级单行逐字渐变；分区配色（✦ 身份+slogan 斜体洋红 / ◆ 元信息与规则控制标签着色内容压暗 / ▸ 示例子弹轮换配色+解释压暗）；脚注右对齐版本 + GitHub 主页（终端超链接）。**文案资产同步结构化**：`intro:` 整块 markdown → `banner:` 段（identity/slogan/homepage/examples_label/examples/rules/control），`banner_parts()` 注入 `{root}`/`{domains}`——文案与表现彻底分离；`render_intro`/`intro_text` 删除（DRY，纯文本形态无消费方）。§6.8 成稿小节改资产键说明 + 演进注记 |
 | v4.13.3 | 2026-09-22 | **敏感输入掩码回显（用户验收反馈：hide 输入全静默不上屏，无法感知正在输入）**：`prompts.ask(hide=True)` 交互 TTY 下走 `_masked_input`——POSIX termios cbreak 逐键读取，每字符上屏 `*`、退格 `\b \b` 抹除（空栈退格不误抹）、回车提交；**ISIG 保留**故 ^C 仍以 KI 中断（v4.12.4 语义不变），^D/流尽 = EOF 抛 Abort（与 click.prompt 同语义，ask_fn 桥已有 Abort→KI 转换），终端态 `finally` 复原（中断路径不残留 cbreak 原始回显）。管道 / CliRunner / 非 POSIX 回退 click 隐藏回显（脚本化行为与既有测试零变化）。**散落直调收口**：`models.py`/`secrets.py` 两处裸 `typer.prompt(hide_input=True)` 迁入 `ask(hide=True)`（组织约定 5 全量兑现，且 --no-input 下获得 exit 2 旁路语义而非挂起）。单测 6 例：分流两向 + 掩码/退格/空栈退格/EOF/KI 终端态复原 |
+| v4.14 | 2026-09-22 | **通用文件读取原语升级（用户验收反馈：看 parquet 数据集被拒「无解码器」、Agent 借场景包工具逐数据集目录翻找触发连环授权弹窗——4 次允许 1 次任务）。系统性修复而非逐格式打补丁**：①**格式感知读取**——新原语 `workbench/file_read.py`（纯函数），`read_file` 按扩展名分派：parquet/CSV/JSONL/JSON/zip → 「列名 + 行数 + 样本行」结构化视图（`limit` 夹取 1-20、单值/容器递归截断防刷爆上下文；parquet 经 pyarrow 惰性导入，未装返回 `uv sync --extra datasets` 安装指引；大文件安全——parquet 只读首 batch、CSV/JSONL 只读前 N 行），文本类回落截断原文（回执向后兼容）；包根内 `datasets/*.csv` 同享解析（原语按路径不分域）。②**workspace 正名为自动授权只读域**——`PackageToolServer(workspace_root=…)`（agent.py 装配 `paths.default_workspace`）：数据集/run 产物/会话日志是本系统自己的产物，读取与列举免弹窗（凭证红线仍最优先）；未装配时行为不变（向后兼容）。③**授权记账提升到目录**——问句承诺「该目录含子目录不再询问」，实现从文件精确记账改为所在目录记账（兄弟文件/子文件免重复弹窗；拒绝保持精确路径拉黑不扩大化）。数据集域两工具（list_datasets/download_dataset）不动——「看数据集内容」即通用读能力的自然实例；提示词数据集段同步引导（先 list_files 看清单、再 read_file 取样本、workspace 免弹窗、勿凭记忆）。单测 8 例：workspace 零弹窗 / 包内数据文件 / parquet stub（顶层模块须带 parquet 属性——`import a.b as c` 走 getattr 绑定）/ 未装安装指引 / json+zip / 文本回退 / 缺省向后兼容 / 授权一次整目录放行 |

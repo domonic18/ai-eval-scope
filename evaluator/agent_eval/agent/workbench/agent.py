@@ -112,7 +112,9 @@ class WorkbenchAgent:
     ) -> None:
         self.config = config or WorkbenchAgentConfig()
         self.domain = domain  # 域档位：选择提示词段与门禁策略
-        self.server = PackageToolServer(Path(pkg_root), ask_fn=ask_fn)
+        self.server = PackageToolServer(
+            Path(pkg_root), ask_fn=ask_fn, workspace_root=paths.default_workspace
+        )
         # SUT 接入调试工具面：与文件沙盒并列；凭证域隔离到密钥区。
         # fact_sink：探测验证成功的事实由服务端机械回填进创建骨架（五阶段流程，
         # arch/15）——事实不经 LLM 转述，「验证过了又来一遍」从源头消失
