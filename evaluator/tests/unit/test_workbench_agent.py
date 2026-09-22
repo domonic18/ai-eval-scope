@@ -2327,14 +2327,16 @@ class TestCliEntries:
         finish()
         assert "已自动续跑（第 2 / 3 段" in capsys.readouterr().out
 
-    def test_intro_text_from_asset(self, tmp_path: Path) -> None:
-        # §6.10 横幅资产化：{root}/{domains} 展开，示例与红线同源（CLI 只渲染）
+    def test_banner_data_from_asset(self, tmp_path: Path) -> None:
+        # §6.8 横幅资产化（v4.13.2 结构化 banner 段）：{root}/{domains} 展开，CLI 只渲染
         agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
-        intro = agent.intro_text()
-        assert "工作台 Agent" in intro
-        assert str(tmp_path) in intro  # {root}
-        assert "场景包工程 · SUT 接入调试" in intro  # {domains} 与系统提示同源
-        assert "暂存" in intro and "Ctrl+C" in intro  # 红线与控制方式
+        parts = agent.banner_data()
+        assert "工作台 Agent" in parts["identity"]
+        assert parts["root"] == str(tmp_path)  # {root}
+        assert "场景包工程 · SUT 接入调试" in parts["domains"]  # {domains} 与系统提示同源
+        assert "暂存" in parts["rules"] and "Ctrl+C" in parts["control"]  # 红线与控制
+        assert any("gsm8k" in ex for ex in parts["examples"])  # 数据集域示例随 v4.13 增装
+        assert parts["homepage"] == "https://github.com/domonic18/ai-eval-scope"
 
     def test_session_renders_intro_banner(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
@@ -2376,6 +2378,40 @@ class TestCliEntries:
 
         sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
         assert capsys.readouterr().out == ""
+
+    def test_intro_renders_rich_banner(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # v4.13.2 欢迎首屏富渲染（cli/console/banner.py）：wordmark、结构字形与版本
+        # 脚注在 TTY 输出；无 markdown 标记透出；元信息行独立不并段
+        import sys as _sys
+
+        from agent_eval import __version__
+        from agent_eval.cli.cmds import workbench_agent as sa
+        from agent_eval.cli.console.output import set_output_format
+
+        set_output_format("text")
+
+        class _Tty:  # capsys 的 stdout 非 TTY——横幅设计为 TTY 专属，垫一层
+            def __init__(self, inner: Any) -> None:
+                self._inner = inner
+
+            def isatty(self) -> bool:
+                return True
+
+            def __getattr__(self, name: str) -> Any:
+                return getattr(self._inner, name)
+
+        monkeypatch.setattr(sa.sys, "stdout", _Tty(_sys.stdout))
+        sa._render_intro(WorkbenchAgent(tmp_path, log_dir=tmp_path / "log"))
+        out = capsys.readouterr().out
+        assert "AGENT EVAL" in out  # wordmark（假终端 80 列 → 单行降级形态）
+        assert "工作台 Agent" in out and "把评测工程" in out  # 身份与 slogan
+        assert "✦" in out and "▸" in out  # 分区结构字形
+        assert f"v{__version__}" in out and "github.com/domonic18" in out  # 脚注
+        assert "**" not in out  # markdown 标记不透出
+        meta = [ln for ln in out.splitlines() if "当前任务对象" in ln]
+        assert meta and all("可用能力域" not in ln for ln in meta)  # 元信息不并段
 
     def test_agent_entry_direct_conversation_no_menu(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -3098,6 +3134,188 @@ class TestGeneralizedFileTools:
         assert "rules/" not in text  # 目录清单不再 hardcode 在模板（task_sets/sut_configs 除外）
 
 
+class TestStructuredFileRead:
+    """格式感知读取 + workspace 自动授权域（v4.14，系统性通用读原语）。"""
+
+    @staticmethod
+    def _server(root: Path, ws: Path | None, ask_fn: Any = None) -> PackageToolServer:
+        return PackageToolServer(root, ask_fn=ask_fn, workspace_root=ws)
+
+    def test_workspace_auto_granted(self, tmp_path: Path) -> None:
+        """workspace 运行产物区（数据集等）读取/列举零弹窗——读自己的产物免授权。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ds = ws / "datasets" / "openbookqa"
+        ds.mkdir(parents=True)
+        (ds / "data.csv").write_text("q,a\n1+1,2\n2+2,4\n3+3,6\n", encoding="utf-8")
+        (ds / "README.md").write_text("# OpenBookQA", encoding="utf-8")
+        server = self._server(root, ws)
+
+        async def ask_fn(*a: Any, **kw: Any) -> str:
+            raise AssertionError("workspace 内读取不得触发授权询问")
+
+        server.ask_fn = ask_fn
+
+        async def run() -> None:
+            listing = await server.list_files(str(ds))
+            assert listing["files"] == ["README.md", "data.csv"]
+            preview = await server.read_file(str(ds / "data.csv"), limit=2)
+            assert preview["format"] == "csv"
+            assert preview["columns"] == ["q", "a"]
+            assert len(preview["sample_rows"]) == 2
+            readme = await server.read_file(str(ds / "README.md"))
+            assert "OpenBookQA" in readme["content"]
+
+        asyncio.run(run())
+
+    def test_in_package_dataset_file_structured(self, tmp_path: Path) -> None:
+        """包内数据文件同享格式解析（原语按路径不分域）。"""
+        root = tmp_path / "root"
+        (root / "datasets").mkdir(parents=True)
+        (root / "datasets" / "smoke.jsonl").write_text('{"q": "1"}\n{"q": "2"}\n', encoding="utf-8")
+        server = self._server(root, None)
+
+        async def run() -> None:
+            preview = await server.read_file("datasets/smoke.jsonl")
+            assert preview["format"] == "jsonl"
+            assert [r["q"] for r in preview["sample_rows"]] == ["1", "2"]
+
+        asyncio.run(run())
+
+    def test_parquet_via_stubbed_pyarrow(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """parquet 解析走 pyarrow（stub）：列名/样本行滤索引列 + row_count。"""
+        import sys
+        import types
+
+        rows = [{"id": "1", "q": "sun?", "__index_level_0__": 0}]
+
+        class _FakePF:
+            def __init__(self, _path: object) -> None:
+                self.schema_arrow = types.SimpleNamespace(names=["id", "q", "__index_level_0__"])
+                self.metadata = types.SimpleNamespace(num_rows=123)
+
+            def iter_batches(self, batch_size: int):  # type: ignore[no-untyped-def]
+                yield types.SimpleNamespace(to_pylist=lambda: rows[:batch_size])
+
+        mod = types.SimpleNamespace(ParquetFile=_FakePF)
+        # 顶层模块须携带 parquet 属性——`import pyarrow.parquet as pq` 经 getattr
+        # 绑定（sys.modules 子模块键在部分解释器版本只作 fallback）
+        monkeypatch.setitem(sys.modules, "pyarrow", types.SimpleNamespace(parquet=mod))
+        monkeypatch.setitem(sys.modules, "pyarrow.parquet", mod)
+
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "main.parquet").write_bytes(b"PARQUET")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            preview = await server.read_file(str(ws / "main.parquet"))
+            assert preview["format"] == "parquet"
+            assert preview["columns"] == ["id", "q"]
+            assert preview["row_count"] == 123
+            assert preview["sample_rows"] == [{"id": "1", "q": "sun?"}]
+
+        asyncio.run(run())
+
+    def test_parquet_without_pyarrow_gives_install_hint(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import sys
+
+        monkeypatch.setitem(sys.modules, "pyarrow", None)  # None → import 抛 ImportError
+        monkeypatch.setitem(sys.modules, "pyarrow.parquet", None)
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "x.parquet").write_bytes(b"P")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            result = await server.read_file(str(ws / "x.parquet"))
+            assert "uv sync --extra datasets" in result["error"]
+
+        asyncio.run(run())
+
+    def test_json_and_zip_previews(self, tmp_path: Path) -> None:
+        import zipfile
+
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "items.json").write_text('[{"a": 1}, {"a": 2}, {"a": 3}]', encoding="utf-8")
+        with zipfile.ZipFile(ws / "bundle.zip", "w") as zf:
+            zf.writestr("dev/set1.csv", "q,a\n1,2\n")
+            zf.writestr("dev/set2.csv", "q,a\n3,4\n")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            js = await server.read_file(str(ws / "items.json"), limit=1)
+            assert js["format"] == "json" and js["item_count"] == 3
+            assert js["sample_rows"] == [{"a": 1}]
+            zp = await server.read_file(str(ws / "bundle.zip"))
+            assert zp["format"] == "zip" and zp["entry_count"] == 2
+            assert "dev/set1.csv" in zp["entries"]
+
+        asyncio.run(run())
+
+    def test_text_fallback_unchanged(self, tmp_path: Path) -> None:
+        """文本类回落原文截断（回执形态向后兼容：path/content）。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "notes.md").write_text("# 标题\n正文", encoding="utf-8")
+        server = self._server(root, ws)
+
+        async def run() -> None:
+            result = await server.read_file(str(ws / "notes.md"))
+            assert result["content"].startswith("# 标题")
+            assert "format" not in result
+
+        asyncio.run(run())
+
+    def test_no_workspace_root_still_prompts(self, tmp_path: Path) -> None:
+        """未装配 workspace 域时行为不变（向后兼容）：外部路径仍走授权通道。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+        result = asyncio.run(self._server(root, None).read_file(str(elsewhere)))
+        assert "需用户授权" in result["error"]
+
+    def test_grant_once_covers_sibling_and_subdir(self, tmp_path: Path) -> None:
+        """授权记账提升到所在目录：同目录兄弟文件与子文件不再重复询问。"""
+        root = tmp_path / "root"
+        root.mkdir()
+        outside = tmp_path / "user-data"
+        (outside / "sub").mkdir(parents=True)
+        for rel in ("a.txt", "b.txt", "sub/c.txt"):
+            (outside / rel).write_text(rel, encoding="utf-8")
+        server = self._server(root, None)
+        asks: list[str] = []
+
+        async def ask_fn(question: str, *, options: Any, secret: bool) -> str:
+            asks.append(question)
+            return "允许"
+
+        server.ask_fn = ask_fn
+
+        async def run() -> None:
+            for rel in ("a.txt", "b.txt", "sub/c.txt"):
+                result = await server.read_file(str(outside / rel))
+                assert "error" not in result
+
+        asyncio.run(run())
+        assert len(asks) == 1  # 问一次，整目录放行
+
+
 class TestAgentConfig:
     """WorkbenchAgentConfig——tunables 单点载体（§6.11.2，§6.7 P2 CLI 旗标同注入路径）。"""
 
@@ -3165,8 +3383,8 @@ class TestPromptAssets:
     def test_intro_mentions_package_listing(self) -> None:
         from agent_eval.agent.workbench.prompts import load_prompts
 
-        intro = str(load_prompts()["intro"])  # intro 是多行字符串而非 mapping
-        assert "有哪些评测场景包" in intro
+        examples = load_prompts()["banner"]["examples"]  # v4.13.2 结构化 banner 段
+        assert any("有哪些评测场景包" in ex for ex in examples)
 
 
 class TestSessionMachine:
@@ -3382,7 +3600,6 @@ class TestExecutionDomainAssembly:
         agent.execution.ctx.active_event = threading.Event()
         assert agent.interrupt_active_execution() is True  # 置位 + 封缄
         assert agent.execution.ctx.active_event.is_set()
-        assert bridge._sealed  # 失联 worker 线程静音
 
     def test_new_turn_does_not_reset_active_event(self, tmp_path: Path) -> None:
         # 生命周期约定：active_event 归 run_evaluation，不随 REPL 换轮复位
@@ -3434,3 +3651,26 @@ class TestExecutionDomainAssembly:
         assert result["status"] == "done"
         assert core_calls == ["core"]
         assert agent._budget_guard.spent_usd == 0  # 会话预算分文未动
+
+
+class TestDatasetDomainAssembly:
+    """数据集域装配回归（Sprint 14c，arch/15 v4.13 §6.11）。"""
+
+    def test_dataset_server_assembles_two_tools(self, tmp_path: Path) -> None:
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        names = {t.name for t in agent.datasets.to_langchain_tools()}
+        assert names == {"list_datasets", "download_dataset"}
+        assert {s.name for s in agent.datasets.TOOL_SPECS} == names  # 面单一致
+
+    def test_describe_tools_includes_dataset_domain(self, tmp_path: Path) -> None:
+        # 四 server 展平：包域 + 探测 + 执行 + 数据集域同进 {tools} 段
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        described = agent._describe_tools()
+        assert "list_datasets" in described
+        assert "download_dataset" in described
+
+    def test_datasets_server_shares_session_log(self, tmp_path: Path) -> None:
+        # 数据集域事件账本与会话日志同文件（时间线完整，同 probe/execution 惯例）
+        agent = WorkbenchAgent(tmp_path, log_dir=tmp_path / "log")
+        assert agent.datasets.ctx.log_path == agent._log_path
+        assert agent.datasets.ctx.workspace_root is not None

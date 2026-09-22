@@ -9,8 +9,13 @@
   （防 ``..`` 与 symlink 逃逸），扩展名白名单 ``.yaml/.yml/.json/.md``，
   ``sut_configs/`` 凭证明文拒绝；无 shell、无网络、无包外写；
 - **读**（read_file / list_files）分级授权：会话根内（暂存视图优先）→ 随包资源
-  ``assets/``（自动授权只读）→ 外部路径经 ``ask_fn`` 向用户申请授权（拒绝即拉黑）；
+  ``assets/`` 与运行产物区 ``workspace/``（自动授权只读——读自己的产物不弹窗，
+  v4.14）→ 外部路径经 ``ask_fn`` 向用户申请授权（拒绝即拉黑，允许按目录记账
+  含子目录）；
   凭证类路径（密钥区 / sut_sessions / .env）一律硬拒，先于授权——凭证不回流 LLM 上下文。
+- **读的格式感知**（v4.14）：read_file 按扩展名分派——parquet/CSV/JSONL/JSON/
+  zip 解析为「列名 + 行数 + 样本行」结构化视图（:mod:`file_read` 原语），
+  文本类返回截断原文；数据集/run 产物等任意本地数据共用同一读取能力。
 
 工具实现为普通异步方法（可直接调用与测试，零框架依赖），经
 ``ToolExporterMixin`` 惰性导出为 LangChain Tool 绑定给 DeepAgents
@@ -127,14 +132,17 @@ class PackageToolServer(ToolExporterMixin):
     TOOL_SPECS: list[ToolSpec] = [
         ToolSpec(
             "list_files",
-            "列出目录文件：会话根内（含暂存态标记 added/staged/deleted/unchanged）或"
-            "随包资源 assets/；外部目录向用户申请授权后为普通清单",
+            "列出目录文件：会话根内（含暂存态标记 added/staged/deleted/unchanged）/ "
+            "随包资源 assets/ / 运行产物区 workspace/（数据集、run 产物，自动授权免弹窗）；"
+            "外部目录向用户申请授权后为普通清单",
             "list_files",
         ),
         ToolSpec(
             "read_file",
-            "读取文件：会话根内（暂存版本优先）/ 随包资源 assets/（自动授权只读，"
-            "如 guides/scenario-package-format.md 包结构规范）/ 外部路径（向用户申请授权）",
+            "读取文件（格式感知）：会话根内（暂存版本优先）/ assets/ / workspace/ "
+            "（自动授权）/ 外部路径（向用户申请授权）。结构化格式 parquet/CSV/JSONL/"
+            "JSON/zip 自动解析为列名 + 行数 + 样本行（limit 控制样本条数 1-20，"
+            "parquet 需 uv sync --extra datasets）；文本类返回截断原文（max_chars）",
             "read_file",
         ),
         ToolSpec(
@@ -209,9 +217,11 @@ class PackageToolServer(ToolExporterMixin):
         *,
         assets_root: Path | None = None,
         ask_fn: Any = None,  # async (question, *, options, secret) -> str（外部读取授权）
+        workspace_root: Path | None = None,  # 运行产物区（自动授权只读域，v4.14）
     ) -> None:
         self.root = Path(pkg_root).resolve()
         self.assets_root = (assets_root or _ASSETS_ROOT).resolve()
+        self.workspace_root = Path(workspace_root).resolve() if workspace_root else None
         self.ask_fn = ask_fn
         # 外部路径授权账本（host 边界同款：允许记账放行 / 拒绝拉黑防反复试探）
         self._granted: set[Path] = set()
@@ -229,6 +239,21 @@ class PackageToolServer(ToolExporterMixin):
         self.relocate_fn: Any = None
 
     # ─── 沙盒与视图 ───────────────────────────────────────────────
+
+    def _is_auto_read(self, target: Path) -> bool:
+        """自动授权只读域判定：会话根 / 随包资源 / 运行产物区 workspace/。
+
+        workspace 是本系统自己的运行产物根（数据集、run 产物、会话日志）——
+        读自己的产物不弹授权（v4.14：曾对 datasets 逐目录弹窗，用户一次任务
+        被问 4 次）；凭证红线（``_is_credential_path``）在调用方先于本判定。
+        """
+        if target == self.root or target.is_relative_to(self.root):
+            return True
+        if target == self.assets_root or target.is_relative_to(self.assets_root):
+            return True
+        return self.workspace_root is not None and (
+            target == self.workspace_root or target.is_relative_to(self.workspace_root)
+        )
 
     def _resolve_in(self, rel_path: str) -> Path:
         """把相对路径解析到包根内；越界（../、绝对、symlink 逃逸）抛 ValueError。"""
@@ -313,20 +338,19 @@ class PackageToolServer(ToolExporterMixin):
     async def list_files(self, path: str = "") -> dict[str, Any]:
         """列目录文件（分级授权）。
 
-        会话根内（空/相对路径，含暂存态标记）与随包资源 assets/ 直接列出；
-        其余外部目录复用 read_file 的授权账本（拒绝即拉黑）。
+        会话根内（空/相对路径，含暂存态标记）、随包资源 assets/ 与运行产物区
+        workspace/ 直接列出；其余外部目录复用 read_file 的授权账本（拒绝即拉黑）。
         """
         candidate = Path(path) if path else self.root
         target = (candidate if candidate.is_absolute() else self.root / candidate).resolve()
         if _is_credential_path(target):
             return {"error": f"安全红线：凭证类位置不可列（不回流 LLM 上下文）: {target}"}
-        in_session = target == self.root or target.is_relative_to(self.root)
-        in_assets = target == self.assets_root or target.is_relative_to(self.assets_root)
-        if not (in_session or in_assets):
+        in_session = target == self.root
+        if not self._is_auto_read(target):
             err = await self._ensure_grant(target, listing=True)
             if err:
                 return {"error": err}
-        if in_session and target == self.root:
+        if in_session:
             return self._list_session()
         if not target.is_dir():
             return {"error": f"不是目录或不存在: {target}"}
@@ -366,12 +390,19 @@ class PackageToolServer(ToolExporterMixin):
                 files.append({"path": rel, "status": "unchanged"})
         return {"files": files, "root": str(self.root)}
 
-    async def read_file(self, path: str, max_chars: int = _DEFAULT_READ_CHARS) -> dict[str, Any]:
-        """读文件（分级授权）。
+    async def read_file(
+        self,
+        path: str,
+        max_chars: int = _DEFAULT_READ_CHARS,
+        limit: int = 5,
+    ) -> dict[str, Any]:
+        """读文件（分级授权 + 格式感知）。
 
-        会话根内（相对或根内绝对路径）→ 暂存视图优先；随包资源 assets/ → 自动授权
-        只读；其余外部路径 → 经 ask_fn 向用户申请授权（拒绝即拉黑）。凭证路径一律
-        硬拒（先于授权——红线：凭证/token 不回流 LLM 上下文）。
+        会话根内（相对或根内绝对路径）→ 暂存视图优先；assets/ 与 workspace/ →
+        自动授权只读；其余外部路径 → 经 ask_fn 向用户申请授权（拒绝即拉黑）。
+        凭证路径一律硬拒（先于授权——红线：凭证/token 不回流 LLM 上下文）。
+        结构化格式（parquet/CSV/JSONL/JSON/zip）解析为列名 + 样本行（limit），
+        文本类返回截断原文（max_chars）。
         """
         candidate = Path(path)
         target = (candidate if candidate.is_absolute() else self.root / candidate).resolve()
@@ -383,19 +414,31 @@ class PackageToolServer(ToolExporterMixin):
                 content = self.staging[rel]
                 if content is None:
                     return {"error": f"文件已在暂存区标记删除: {rel}"}
-            else:
-                content = self._disk_text(target)
-                if content is None:
-                    return {"error": f"文件不存在或不可读: {rel}"}
-            return {"path": rel, "content": truncate(content, max_chars)}
-        if target.is_relative_to(self.assets_root):
-            return self._read_raw(target, max_chars)
-        err = await self._ensure_grant(target)
-        if err:
-            return {"error": err}
-        return self._read_raw(target, max_chars)
+                return {"path": rel, "content": truncate(content, max_chars)}
+            # 磁盘数据文件同享格式解析（包内 datasets/*.csv|parquet 与外部一致）
+            from agent_eval.agent.workbench.file_read import is_structured
 
-    def _read_raw(self, abs_path: Path, max_chars: int) -> dict[str, Any]:
+            if is_structured(target):
+                return self._read_raw(target, max_chars, limit)
+            content = self._disk_text(target)
+            if content is None:
+                return {"error": f"文件不存在或不可读: {rel}"}
+            return {"path": rel, "content": truncate(content, max_chars)}
+        if not self._is_auto_read(target):
+            err = await self._ensure_grant(target)
+            if err:
+                return {"error": err}
+        return self._read_raw(target, max_chars, limit)
+
+    def _read_raw(self, abs_path: Path, max_chars: int, limit: int = 5) -> dict[str, Any]:
+        """磁盘原文 / 结构化视图读取（自动授权域与已授权外部路径共用）。"""
+        from agent_eval.agent.workbench.file_read import is_structured, read_structured
+
+        if is_structured(abs_path):
+            try:
+                return {"path": str(abs_path), **read_structured(abs_path, limit)}
+            except ValueError as e:
+                return {"error": f"{abs_path}: {e}"}
         try:
             content = abs_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
@@ -417,14 +460,17 @@ class PackageToolServer(ToolExporterMixin):
             )
         verb = "列出目录" if listing else "读取文件"
         choice = await self.ask_fn(
-            f"允许 Agent {verb}吗？（会话工作区之外）\n{target}",
+            f"允许 Agent {verb}吗？（会话工作区与运行产物区之外；"
+            f"允许后本会话内该目录含子目录不再询问）\n{target}",
             options=["允许", "拒绝"],
             secret=False,
         )
         if choice != "允许":
             self._denied.add(target)
             return f"用户拒绝{verb}: {target}"
-        self._granted.add(target)
+        # 授权记账提升到所在目录（问句承诺「该目录含子目录不再询问」）——按文件
+        # 精确记账曾让同目录兄弟文件再次弹窗；拒绝保持精确路径拉黑（不扩大化）
+        self._granted.add(target if target.is_dir() else target.parent)
         return None
 
     async def write_file(self, path: str, content: str) -> dict[str, Any]:

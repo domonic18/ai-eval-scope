@@ -25,13 +25,14 @@ def _parse_key(key: str) -> tuple[str, str]:
 @secrets_app.command("set")
 def set_secret(key: str) -> None:
     """录入凭证字段（隐藏输入），保存到 ~/.agent_eval/sut_credentials.json（0600）。"""
+    from agent_eval.cli.console.prompts import ask
     from agent_eval.execution.auth.secrets_store import (
         load_secrets_file,
         save_secrets_file,
     )
 
     ref, field = _parse_key(key)
-    value = typer.prompt("值", hide_input=True, default="").strip()
+    value = ask("值", hide=True)
     if not value:
         rprint("[red]未输入值，已取消。[/red]")
         raise typer.Exit(code=1)

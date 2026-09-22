@@ -59,7 +59,7 @@ uv sync                      # 基础安装（pack/eval 即可用）
 | `models set/list/test/clear` | LLM 模型配置管理 | 配置 API Key 与各角色模型（Sprint 10 起 login/logout 更名 set/clear） |
 | `secrets set/list/delete` | SUT 凭证管理 | 录入被测系统账号密码 |
 | `scenario new/edit/show/validate/list/pull` | 场景包管理 | 创建（skeleton/agent）/Agent 改包/查看/校验/发现场景包（Sprint 10 起 package 组更名 scenario；`init` 并入 `new --mode skeleton`） |
-| `start / doctor / runs / open` | 交互式工作台（Sprint 10） | 向导式全流程 / 一键自检 / 本地结果浏览 / 浏览器直达 |
+| `start / doctor / runs / open` | 交互式工作台（Sprint 10） | 向导式全流程（首启未配模型有引导卡，可一步直达 `models set`）/ 一键自检 / 本地结果浏览 / 浏览器直达 |
 | `suite plan/run` | 声明式评测矩阵（suite.yaml 批量运行） | 多包多任务集对照评测 |
 | `rule-set validate/list-templates` | 规则集校验与模板浏览 | 包外规则集维护 |
 | `dataset download/list` | 评测数据集下载与索引 | 知识库/评测题数据 |

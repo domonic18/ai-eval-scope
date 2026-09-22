@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import NoReturn
 
 import typer
@@ -137,6 +138,55 @@ def confirm(label: str, *, default: bool = False, env_key: str | None = None) ->
     return bool(typer.confirm(f"? {label}", default=default))
 
 
+def _maskable() -> bool:
+    """掩码回显前提：交互 TTY 且 termios 可用；缺一则回退 click 隐藏回显。
+
+    管道 / CliRunner / 非 POSIX（Windows，无 termios）下不启用——脚本化输入
+    行为与既有测试完全不变。
+    """
+    try:
+        import termios  # noqa: F401 — 仅探测可用性（Windows 无此模块）
+    except ImportError:
+        return False
+    return sys.stdin is not None and sys.stdin.isatty()
+
+
+def _masked_input(prompt: str) -> str:
+    """掩码回显输入（POSIX termios cbreak）：逐键 ``*`` 上屏、退格抹除。
+
+    click 的 hide_input 全静默，用户无法感知输入是否生效（v4.13.3 验收反馈）。
+    cbreak 保留 ISIG——^C 仍以 KeyboardInterrupt 中断（v4.12.4 语义不变）；
+    ^D / 读尽视为 EOF 抛 Abort（与 click.prompt 同语义，ask_fn 桥已有
+    Abort→KI 转换）。终端态 finally 复原，中断路径不残留原始回显。
+    """
+    import termios
+    import tty
+
+    typer.echo(prompt, nl=False)
+    fd = sys.stdin.fileno()
+    saved = termios.tcgetattr(fd)
+    chars: list[str] = []
+    try:
+        tty.setcbreak(fd)
+        while True:
+            ch = sys.stdin.read(1)
+            if ch in ("\r", "\n"):
+                typer.echo()
+                return "".join(chars)
+            if ch in ("\x7f", "\b"):
+                if chars:
+                    chars.pop()
+                    typer.echo("\b \b", nl=False)
+                continue
+            if ch in ("", "\x04"):  # ^D / 流尽 = EOF，与 click.prompt 的 Abort 同语义
+                typer.echo()
+                raise typer.Abort()
+            chars.append(ch)
+            typer.echo("*", nl=False)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, saved)
+
+
 def ask(
     label: str,
     *,
@@ -144,7 +194,11 @@ def ask(
     env_key: str | None = None,
     hide: bool = False,
 ) -> str:
-    """文本输入（可隐藏回显）；--no-input 下走 env/default 旁路。"""
+    """文本输入；``hide=True`` 敏感输入掩码回显（逐键 ``*`` 上屏可感知）。
+
+    --no-input 下走 env/default 旁路。掩码仅在交互 TTY + POSIX（termios
+    可用）启用；管道 / CliRunner / 非 POSIX 退回 click 隐藏回显（行为不变）。
+    """
     if env_key:
         value = os.environ.get(env_key)
         if value is not None and value.strip():
@@ -155,12 +209,16 @@ def ask(
                 label, hint=f"可设环境变量 {env_key or 'AGENT_EVAL_INPUT'} 提供取值"
             )
         return default
-    value = str(
-        typer.prompt(
-            f"? {label}",
-            default=default if default is not None else "",
-            hide_input=hide,
-            show_default=bool(default),
+    if hide and _maskable():
+        value = _masked_input(f"? {label}: ")
+    else:
+        value = str(
+            typer.prompt(
+                f"? {label}",
+                default=default if default is not None else "",
+                hide_input=hide,
+                show_default=bool(default),
+            )
         )
-    ).strip()
+    value = value.strip()
     return value or (default or "")

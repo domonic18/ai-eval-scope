@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_eval.agent.core.callbacks import BudgetGuard
+from agent_eval.agent.workbench.datasets import DatasetToolServer
 from agent_eval.agent.workbench.execution import ExecutionToolServer
 from agent_eval.agent.workbench.gates import sut_evidence_gate
 from agent_eval.agent.workbench.memory import (
@@ -56,11 +57,11 @@ from agent_eval.agent.workbench.messages import (
     stream_collect,
 )
 from agent_eval.agent.workbench.prompts import (
-    load_prompts as _load_prompts,
+    banner_parts,
+    render_first_turn,
 )
 from agent_eval.agent.workbench.prompts import (
-    render_first_turn,
-    render_intro,
+    load_prompts as _load_prompts,
 )
 from agent_eval.agent.workbench.sut_probe import SUTProbeToolServer
 from agent_eval.agent.workbench.tool_filter import build_toolset_filter
@@ -111,7 +112,9 @@ class WorkbenchAgent:
     ) -> None:
         self.config = config or WorkbenchAgentConfig()
         self.domain = domain  # 域档位：选择提示词段与门禁策略
-        self.server = PackageToolServer(Path(pkg_root), ask_fn=ask_fn)
+        self.server = PackageToolServer(
+            Path(pkg_root), ask_fn=ask_fn, workspace_root=paths.default_workspace
+        )
         # SUT 接入调试工具面：与文件沙盒并列；凭证域隔离到密钥区。
         # fact_sink：探测验证成功的事实由服务端机械回填进创建骨架（五阶段流程，
         # arch/15）——事实不经 LLM 转述，「验证过了又来一遍」从源头消失
@@ -173,6 +176,14 @@ class WorkbenchAgent:
         self.execution = ExecutionToolServer(
             ask_fn=ask_fn,
             render_bridge=render_bridge,
+            workspace_root=paths.default_workspace,
+            log_path=self._log_path,
+        )
+        # 数据集域（Sprint 14c，arch/15 v4.13 §6.11）：会话内「查 → 下」数据集。
+        # 与 SUT 探测并列的第二个受控出网域——出网仅经 DatasetManager 单出口，
+        # 写路径白名单 workspace/datasets/，下载必经用户确认（tools ①③）
+        self.datasets = DatasetToolServer(
+            ask_fn=ask_fn,
             workspace_root=paths.default_workspace,
             log_path=self._log_path,
         )
@@ -297,6 +308,7 @@ class WorkbenchAgent:
             *PackageToolServer.TOOL_SPECS,
             *SUTProbeToolServer.TOOL_SPECS,
             *ExecutionToolServer.TOOL_SPECS,
+            *DatasetToolServer.TOOL_SPECS,
         ]
         return "\n".join(f"- {s.name}: {s.description}" for s in specs)
 
@@ -347,6 +359,7 @@ class WorkbenchAgent:
             *self.server.to_langchain_tools(),
             *self.probe.to_langchain_tools(),
             *self.execution.to_langchain_tools(),
+            *self.datasets.to_langchain_tools(),
             *todo_mw.tools,
         ]
         return create_deep_agent(
@@ -584,9 +597,9 @@ class WorkbenchAgent:
 
     # ─── 自我介绍横幅（文案资产化，CLI 只渲染不写死） ────────────────
 
-    def intro_text(self) -> str:
-        """渲染启动横幅文案（{root}/{domains} 字面 replace；资产无 intro 段返回空）。"""
-        return render_intro(_load_prompts(), self.domain, str(self.server.root))
+    def banner_data(self) -> dict[str, Any]:
+        """横幅结构化文案（§6.8）：CLI 富渲染的文案真相源（logo/配色是表现层）。"""
+        return banner_parts(_load_prompts(), self.domain, str(self.server.root))
 
     # ─── 首轮模板 ─────────────────────────────────────────────────
 

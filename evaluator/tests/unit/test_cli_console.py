@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import sys
+import types
+
 import pytest
 import typer
 from typer.testing import CliRunner
@@ -149,6 +152,104 @@ class TestConfirmAsk:
         assert console_prompts.ask("名称", env_key="WB_NAME") == "hello"
 
 
+class _FakeStdin:
+    """逐键回放的假 stdin（read(1) 一次消费一键；isatty 可切换）。"""
+
+    def __init__(self, keys: list[str], *, tty: bool = True) -> None:
+        self._keys = list(keys)
+        self._tty = tty
+
+    def fileno(self) -> int:
+        return 0
+
+    def isatty(self) -> bool:
+        return self._tty
+
+    def read(self, _n: int) -> str:
+        return self._keys.pop(0) if self._keys else ""
+
+
+class TestMaskedAsk:
+    """ask(hide=True) 掩码回显（v4.13.3）：TTY 逐键 ``*`` 上屏，非 TTY 回退隐藏回显。"""
+
+    @staticmethod
+    def _fake_termios(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, object]]:
+        calls: list[tuple[str, object]] = []
+        mod = types.SimpleNamespace(
+            TCSADRAIN=object(),
+            tcgetattr=lambda fd: ["saved"],
+            tcsetattr=lambda fd, when, attrs: calls.append(("restore", when)),
+        )
+        monkeypatch.setitem(sys.modules, "termios", mod)
+        tty_mod = types.SimpleNamespace(setcbreak=lambda fd: calls.append(("cbreak", fd)))
+        monkeypatch.setitem(sys.modules, "tty", tty_mod)
+        return calls
+
+    def test_hidden_uses_masked_input_on_tty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._fake_termios(monkeypatch)
+        seen: list[str] = []
+        monkeypatch.setattr(sys, "stdin", _FakeStdin(["s", "e", "c", "\r"]))
+        monkeypatch.setattr(console_prompts, "_masked_input", lambda p: seen.append(p) or "sec")
+        assert console_prompts.ask("token", hide=True) == "sec"
+        assert seen == ["? token: "]  # 提示形态与 typer.prompt 路径一致
+
+    def test_hidden_falls_back_without_tty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # 管道 / CliRunner：termios 路径不启用 → click 隐藏回显（既有行为不变）
+        self._fake_termios(monkeypatch)
+        monkeypatch.setattr(sys, "stdin", _FakeStdin(["x"], tty=False))
+        calls: list[dict[str, object]] = []
+        monkeypatch.setattr(
+            console_prompts.typer,
+            "prompt",
+            lambda *a, **kw: calls.append(kw) or "pw",
+        )
+        assert console_prompts.ask("token", hide=True) == "pw"
+        assert calls and calls[0]["hide_input"] is True
+
+    def test_masked_input_stars_backspace(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        self._fake_termios(monkeypatch)
+        monkeypatch.setattr(sys, "stdin", _FakeStdin(["a", "b", "\x7f", "c", "\r"]))
+        assert console_prompts._masked_input("? x: ") == "ac"
+        out = capsys.readouterr().out
+        assert "**\b \b*" in out  # 两星 + 退格抹除 + 补一星
+        assert out.endswith("\n")
+
+    def test_masked_input_backspace_on_empty_ignored(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        self._fake_termios(monkeypatch)
+        monkeypatch.setattr(sys, "stdin", _FakeStdin(["\x7f", "\x7f", "o", "k", "\r"]))
+        assert console_prompts._masked_input("? x: ") == "ok"
+        assert "\b \b" not in capsys.readouterr().out  # 空栈退格不误抹提示符
+
+    def test_masked_input_eof_aborts_and_restores(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        calls = self._fake_termios(monkeypatch)
+        monkeypatch.setattr(sys, "stdin", _FakeStdin(["\x04"]))
+        with pytest.raises(typer.Abort):
+            console_prompts._masked_input("? x: ")
+        assert calls[-1][0] == "restore"  # finally 复原终端态，不残留 cbreak
+        assert capsys.readouterr().out.endswith("\n")
+
+    def test_masked_input_keyboard_interrupt_restores(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # ^C（ISIG 保留）→ KI 穿透（v4.12.4 语义），终端态仍复原
+        calls = self._fake_termios(monkeypatch)
+
+        class _KiStdin(_FakeStdin):
+            def read(self, _n: int) -> str:
+                raise KeyboardInterrupt
+
+        monkeypatch.setattr(sys, "stdin", _KiStdin([]))
+        with pytest.raises(KeyboardInterrupt):
+            console_prompts._masked_input("? x: ")
+        assert calls[-1][0] == "restore"
+
+
 # ── output：退出码映射 ─────────────────────────────────────────────────
 
 
@@ -205,6 +306,18 @@ class TestEquiv:
             "20260831_093012",
             "--workspace",
             "./workspace",
+        ]
+
+    def test_dataset_argv_positional_and_flags(self) -> None:
+        argv = equiv.dataset_argv("gsm8k", source="ms", revision=None, force=False)
+        assert argv == ["agent-eval", "dataset", "download", "gsm8k", "--source", "ms"]
+        assert equiv.render(argv) == "agent-eval dataset download gsm8k --source ms"
+        assert equiv.dataset_argv("gsm8k", force=True) == [
+            "agent-eval",
+            "dataset",
+            "download",
+            "gsm8k",
+            "--force",
         ]
 
 
