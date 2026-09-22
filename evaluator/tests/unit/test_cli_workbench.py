@@ -512,12 +512,18 @@ class _WizardStubs:
             assert not type(value).__name__.endswith("OptionInfo"), f"参数 {key} 泄漏 OptionInfo"
 
     def patch(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from types import SimpleNamespace
+
         import agent_eval.cli._stages as stages
         import agent_eval.storage.package as storage_pkg
 
         # 上报隔离：仓库 .env 的 AGENT_EVAL_UPLOAD=true 会渗入 pipeline 直调测试
         # （core 内联上报段真发平台，禁联网）——显式钉死为关
         monkeypatch.setenv("AGENT_EVAL_UPLOAD", "0")
+        # 模型配置态自足：无 ~/.agent_eval/llm.json 的环境（CI/新机）start 首启
+        # 引导卡会弹出并吃掉喂给向导的输入序列——钉死为已配置
+        cfg = SimpleNamespace(roles={"text": SimpleNamespace(model="kimi-k2")})
+        monkeypatch.setattr("agent_eval.config.llm_file.load_llm_file", lambda: cfg)
         monkeypatch.setattr(stages, "resolve_run_inputs", lambda *a, **k: self.inputs)
         monkeypatch.setattr(
             stages, "resolve_eval_inputs", lambda *a, **k: "/tmp/rules/chat-quality.yaml"

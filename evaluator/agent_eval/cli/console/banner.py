@@ -45,7 +45,7 @@ def _assemble_logo() -> tuple[str, ...]:
         return ["".join(_GLYPHS[c][i] for c in letters) for i in range(6)]
 
     left, right = _word("AGENT"), _word("EVAL")
-    return [(lft + " " * _WORD_GAP + rgt).rstrip() for lft, rgt in zip(left, right)]
+    return tuple((lft + " " * _WORD_GAP + rgt).rstrip() for lft, rgt in zip(left, right))
 
 
 _LOGO: tuple[str, ...] = _assemble_logo()
