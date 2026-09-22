@@ -1,3 +1,18 @@
+## v0.4.1 (2026-09-22)
+
+### Feat
+
+- **cli**: start 首启引导 onboarding——引导卡 + 一步直达模型配置（v4.15）
+- **workbench**: 通用文件读取原语——格式感知 + workspace 授权域（v4.14）
+- **console**: 敏感输入掩码回显——逐键 * 上屏（v4.13.3）
+- **workbench**: 欢迎首屏富渲染——渐变 wordmark + slogan + 分区配色（v4.13.2）
+- **workbench**: 会话机装配数据集域四工具面 + 提示词与横幅
+- **workbench**: 数据集域工具面——list_datasets/download_dataset 双工具受控出网
+
+### Fix
+
+- **workbench**: 启动横幅 Markdown 渲染——intro 资产语义化重排（v4.13.1）
+
 ## v0.4.0 (2026-09-21)
 
 ### Feat
