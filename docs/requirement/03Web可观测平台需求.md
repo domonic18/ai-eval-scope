@@ -277,20 +277,23 @@ Sprint 7a 已交付 Web Portal MVP，技术栈为 React（前端）+ Express（�
 |----|------|--------|
 | F-O-VIEW-01 | 登录后默认进入"组织/项目切换器"，选择项目进入项目看板；看板数据来自 Query API（查 DB）。 | P0 |
 | F-O-VIEW-02 | 项目看板：项目卡片展示最新运行的 DR/CPR/Reward、运行总数、最近活跃时间（沿用现有 ProjectCard/StatCard 视觉）。 | P0 |
-| F-O-VIEW-03 | 趋势图：DR/CPR/Reward 随时间曲线（ECharts），数据由 DB 聚合（`GET /api/projects/:id/trends`），叠加阈值参考线。 | P0 |
+| F-O-VIEW-03 | 趋势视图：以**场景包为默认分组单位**的运行指标序列（同一场景包内指标同源可比），单指标轴 + 阈值参考线 + 包版本/SUT 版本切换处归因标注线；数据锚定 run 自带快照（`GET /api/projects/:id/trends` 按场景/清单过滤）。不做全项目混场景的自动趋势图。 | P0 |
 | F-O-VIEW-04 | 运行详情：汇总卡片（样本总数/DR/CPR/Reward/状态）、维度分解、任务结果表；数据来自 DB。 | P0 |
 | F-O-VIEW-05 | 任务/样本详情：约束逐项结果表（tier/规则/状态/得分/reason）、LLM Judge 溯源（provider/model/置信度/JudgeRecord 跳转）、制品预览（截图/产出物）。 | P0 |
 | F-O-VIEW-06 | 目录模式：检测到样本含 `module_results` 时切换为目录树可视化（沿用现有 DirectoryTree/ModuleScoreTable）。 | P1 |
 | F-O-VIEW-07 | Langfuse 跳转：任务/运行详情页提供"在 Langfuse 查看 LLM 调用链"按钮，跳转到 `langfuse_host` 下对应 `trace_id`。 | P1 |
+| F-O-VIEW-08 | 趋势视图落档（TrendView）：命名保存，成员二选一——**过滤定义**（scenario/mode/status/package_version/时间窗，新运行匹配即自动纳入）或**显式 run 清单**（cherry-pick，详情页提供追加入口）。可见性跟随项目：项目成员可看，公开项目（`is_public`）匿名只读，链接即分享。 | P1 |
+| F-O-VIEW-09 | 趋势图面规格：单指标选择器，**选项来自所选场景包定义的指标清单**（metrics/policy.yaml，按包动态生成），默认取包内综合得分（reward 类）指标；仅 completed/partial 参与并在图下注明排除数；tooltip 展示 run id/完整时间/包版本/SUT 版本；沿现有上限（500 点）。 | P1 |
 
 ### 4.7 查询、筛选与对比（F-O-QUERY）
 
 | ID | 需求 | 优先级 |
 |----|------|--------|
 | F-O-QUERY-01 | 运行列表支持分页、按时间/DR/CPR/Reward 排序，按规则集版本、SUT 版本、模式（eval_only/run/pipeline）筛选。 | P0 |
-| F-O-QUERY-02 | 趋势支持时间范围选择（最近 N 次 / 日期区间）。 | P1 |
+| F-O-QUERY-02 | 趋势支持时间范围选择（最近 N 次 / 日期区间）与场景包过滤（scenarioId）；全选操作限定在当前过滤范围内。 | P1 |
 | F-O-QUERY-03 | 跨运行对比：选择 2–N 次运行并排展示指标与失败规则差异。 | P1 |
 | F-O-QUERY-04 | 失败规则聚合视图：项目内"最常失败的约束"TopN（基于 `failure_breakdown` 聚合）。 | P1 |
+| F-O-QUERY-05 | 运行列表多选生成临时趋势：复选框 + 批量操作条（可另存为视图）。跨场景包组合分层放行——**同名指标**（按指标名匹配，如各包均定义的综合得分、回答交付率）跨包直接可比、免提示；某包独有的自定义指标混入需确认；缺失指标点断线呈现并标注场景归属。 | P1 |
 
 ### 4.8 运维与管理（F-O-OPS）
 
@@ -494,6 +497,16 @@ dimension_scores     -- 对应 scores.json 的 dimensions，预留扩展
   weight           double precision
   score            double precision
   status           text
+
+trend_views          -- 趋势视图落档（§4.6 F-O-VIEW-08/09）
+  id*              uuid
+  project_id       uuid FK projects
+  name             text
+  definition       jsonb            -- 二选一：{ filter:{scenario_id,mode,status,package_version,from,to} }
+                                    -- 或 { run_ids:[uuid,...] }（cherry-pick 显式清单）
+  created_by       uuid FK users
+  created_at       timestamptz
+  UNIQUE (project_id, name)
 ```
 
 ### 6.4 制品与审计
@@ -660,7 +673,9 @@ X-Eval-Client: agent-eval/0.x
 | GET | `/api/orgs/:org/projects` | 组织下项目看板（含每项目最新运行） |
 | GET | `/api/projects/:id` | 项目详情（最新运行、运行总数、聚合） |
 | GET | `/api/projects/:id/runs` | 运行列表（分页/排序/筛选：`?mode=&rule_set_version=&from=&to=&order=&page=&size=`） |
-| GET | `/api/projects/:id/trends` | 趋势（`?metric=DR,CPR,Reward&from=&to=&limit=`） |
+| GET | `/api/projects/:id/trends` | 趋势（`?metric=DR,CPR,Reward&from=&to=&scenario_id=&status=&limit=`；run 序列按 `created_at` 升序） |
+| GET/POST | `/api/projects/:id/trend-views` | 趋势视图落档列表 / 创建（definition 校验：filter 与 run_ids 二选一） |
+| GET/PATCH/DELETE | `/api/trend-views/:id` | 视图详情 / 改名 / 删除（可见性跟随项目：成员可读写，公开项目匿名只读） |
 | GET | `/api/runs/:id` | 运行详情（汇总 + 维度分解 + 任务结果） |
 | GET | `/api/runs/:id/samples/:sid` | 样本/任务详情（约束结果 + 溯源 + 制品列表） |
 | GET | `/api/artifacts/:id` | 制品下载（签名 URL 重定向，或代理流式返回） |
