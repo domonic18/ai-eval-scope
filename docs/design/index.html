@@ -134,9 +134,9 @@
     </div>
 
     <div class="metrics-strip r-6">
-      <div class="ms-item"><div class="ms-val" style="color:var(--success)">0.962</div><div class="ms-lab">交付率 DR</div></div>
-      <div class="ms-item"><div class="ms-val" style="color:var(--signal)">0.914</div><div class="ms-lab">常识通过率 CPR</div></div>
-      <div class="ms-item"><div class="ms-val">0.781</div><div class="ms-lab">平均 Reward</div></div>
+      <div class="ms-item"><div class="ms-val" style="color:var(--success)">0.962</div><div class="ms-lab">格式合格率</div></div>
+      <div class="ms-item"><div class="ms-val" style="color:var(--signal)">0.914</div><div class="ms-lab">内容合格率</div></div>
+      <div class="ms-item"><div class="ms-val">0.781</div><div class="ms-lab">综合得分均分</div></div>
       <div class="ms-item"><div class="ms-val">14</div><div class="ms-lab">内置评估器</div></div>
     </div>
   </section>
@@ -147,7 +147,7 @@
       <div class="feat">
         <div class="feat-ic" style="background:var(--accent-soft)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg></div>
         <h3>四维核心指标</h3>
-        <p>DR / CPR / Reward / CondR 自动聚合，每项带阈值对照与环比趋势，运行健康度一眼可判。</p>
+        <p>格式合格率 / 内容合格率 / 综合得分自动聚合，每项带阈值对照与环比趋势，运行健康度一眼可判。</p>
       </div>
       <div class="feat">
         <div class="feat-ic" style="background:var(--signal-soft)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
@@ -170,7 +170,7 @@
   <section class="section" id="packages">
     <div class="sec-head"><h2>一类场景包，多种评测域</h2><p>场景包把被测对象、任务集与指标定义打成一份清单，开箱即评</p></div>
     <div class="pkg-grid">
-      <div class="pkg"><div class="pkg-name">courseware</div><div class="pkg-desc">课件生成</div></div>
+      <div class="pkg"><div class="pkg-name">sasan-edu-function</div><div class="pkg-desc">课件生成</div></div>
       <div class="pkg"><div class="pkg-name">chat</div><div class="pkg-desc">对话质量</div></div>
       <div class="pkg"><div class="pkg-name">rag-qa</div><div class="pkg-desc">知识问答</div></div>
       <div class="pkg"><div class="pkg-name">codegen</div><div class="pkg-desc">代码生成</div></div>
@@ -189,10 +189,10 @@
       </div>
       <div class="pf-body">
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
-          <div class="metric"><div class="metric-top"><span class="metric-label">DR</span><span class="badge badge-success">达标</span></div><div class="metric-value" style="color:var(--success)">0.962</div><div class="gauge"><span class="gauge-fill" style="width:96%;background:var(--success)"></span><span class="gauge-thresh" style="left:95%"></span></div></div>
-          <div class="metric"><div class="metric-top"><span class="metric-label">CPR</span><span class="badge badge-success">达标</span></div><div class="metric-value" style="color:var(--signal)">0.914</div><div class="gauge"><span class="gauge-fill" style="width:91%;background:var(--signal)"></span><span class="gauge-thresh" style="left:90%"></span></div></div>
-          <div class="metric"><div class="metric-top"><span class="metric-label">Reward</span><span class="badge badge-warning">偏低</span></div><div class="metric-value">0.781</div><div class="gauge"><span class="gauge-fill" style="width:78%;background:var(--warning)"></span><span class="gauge-thresh" style="left:80%"></span></div></div>
-          <div class="metric"><div class="metric-top"><span class="metric-label">CondR</span></div><div class="metric-value">0.842</div><div class="gauge"><span class="gauge-fill" style="width:84%;background:var(--accent)"></span></div></div>
+          <div class="metric"><div class="metric-top"><span class="metric-label">格式合格率</span><span class="badge badge-success">达标</span></div><div class="metric-value" style="color:var(--success)">0.962</div><div class="gauge"><span class="gauge-fill" style="width:96%;background:var(--success)"></span><span class="gauge-thresh" style="left:95%"></span></div></div>
+          <div class="metric"><div class="metric-top"><span class="metric-label">内容合格率</span><span class="badge badge-success">达标</span></div><div class="metric-value" style="color:var(--signal)">0.914</div><div class="gauge"><span class="gauge-fill" style="width:91%;background:var(--signal)"></span><span class="gauge-thresh" style="left:90%"></span></div></div>
+          <div class="metric"><div class="metric-top"><span class="metric-label">综合得分</span><span class="badge badge-success">达标</span></div><div class="metric-value" style="color:var(--success)">0.781</div><div class="gauge"><span class="gauge-fill" style="width:78%;background:var(--success)"></span><span class="gauge-thresh" style="left:70%"></span></div></div>
+          <div class="metric"><div class="metric-top"><span class="metric-label">内容质量</span></div><div class="metric-value">0.842</div><div class="gauge"><span class="gauge-fill" style="width:84%;background:var(--accent)"></span></div></div>
         </div>
       </div>
     </div>

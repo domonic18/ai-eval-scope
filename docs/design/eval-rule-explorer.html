@@ -153,7 +153,7 @@
       <div class="snapshot-ref">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
         <div class="info">
-          <div class="title">courseware 场景包 · v1.0.0 · production</div>
+          <div class="title">sasan-edu-function 场景包 · v1.0.0 · production</div>
           <div class="hash">content_hash: sha256:a3f2c8e1… · 6 项指标定义 · 4 阶段聚合策略</div>
         </div>
       </div>
@@ -254,7 +254,7 @@
             <div class="tree-label">聚合策略</div>
             <div class="tree-item">
               <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
-              <span class="tree-name">courseware-default</span>
+              <span class="tree-name">sasan-edu-function</span>
             </div>
           </div>
 
@@ -262,27 +262,23 @@
             <div class="tree-label">指标定义</div>
             <div class="tree-item">
               <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span class="tree-name">DR · 交付率</span>
+              <span class="tree-name">格式合格率</span>
             </div>
             <div class="tree-item">
               <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span class="tree-name">CPR · 约束通过率</span>
+              <span class="tree-name">内容合格率</span>
             </div>
             <div class="tree-item">
               <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span class="tree-name">Reward · 综合评分</span>
+              <span class="tree-name">综合得分</span>
             </div>
             <div class="tree-item">
               <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span class="tree-name">Soft · 内容质量</span>
+              <span class="tree-name">内容质量</span>
             </div>
             <div class="tree-item">
               <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span class="tree-name">Pref · 用户偏好</span>
-            </div>
-            <div class="tree-item">
-              <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span class="tree-name">CondR · 条件Reward</span>
+              <span class="tree-name">偏好匹配度</span>
             </div>
           </div>
         </div>
@@ -315,11 +311,11 @@
           <div class="tab-panel active" id="tab-overview">
             <div class="rule-card" style="margin-bottom:16px">
               <div class="rule-head">
-                <span class="rule-name">聚合策略 courseware-default</span>
+                <span class="rule-name">聚合策略 sasan-edu-function</span>
               </div>
               <div class="rule-body">
                 4 个阶段加权归一化到 [0, 1]：<strong>format</strong>（门控，w=1.0）→ <strong>commonsense</strong>（门控，w=1.0）→ <strong>quality-soft</strong>（加权，w=1.0）→ <strong>quality-pref</strong>（加权，w=1.0）
-                <br>Reward = (S_format + S_common + S_soft + S_pref) / 4
+                <br>综合得分 = (S_format + S_common + S_soft + S_pref) / 4
               </div>
             </div>
 
@@ -339,12 +335,12 @@
                 <h4>🎯 6 项指标</h4>
                 <div class="ds-sub">场景化指标定义（来自运行配置快照）</div>
                 <div class="ds-rows">
-                  <div class="ds-row"><span class="ds-key">DR</span><span class="ds-val">交付率，阈值 ≥ 0.95</span></div>
-                  <div class="ds-row"><span class="ds-key">CPR</span><span class="ds-val">约束通过率，阈值 ≥ 0.90</span></div>
-                  <div class="ds-row"><span class="ds-key">Reward</span><span class="ds-val">综合评分，阈值 ≥ 0.70</span></div>
+                  <div class="ds-row"><span class="ds-key">edu:document_rate</span><span class="ds-val">格式合格率，阈值 ≥ 0.95</span></div>
+                  <div class="ds-row"><span class="ds-key">edu:constraint_pass_rate</span><span class="ds-val">内容合格率，阈值 ≥ 0.90</span></div>
+                  <div class="ds-row"><span class="ds-key">edu:reward</span><span class="ds-val">综合得分，阈值 ≥ 0.70</span></div>
                   <div class="ds-row"><span class="ds-key">Soft</span><span class="ds-val">内容质量分，[0,1]</span></div>
                   <div class="ds-row"><span class="ds-key">Pref</span><span class="ds-val">用户偏好分，[0,1]</span></div>
-                  <div class="ds-row"><span class="ds-key">CondR</span><span class="ds-val">条件 Reward，[0,1]</span></div>
+                  <div class="ds-row"><span class="ds-key">edu:soft / edu:pref</span><span class="ds-val">内容质量 / 偏好匹配度，[0,1]</span></div>
                 </div>
               </div>
             </div>
@@ -573,7 +569,7 @@
                 <div style="text-align:center;">
                   <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px; text-transform:uppercase;">指标 + 策略</div>
                   <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; margin-bottom:6px; font-size:11px;">
-                    DR 交付率 ≥0.95<br><span style="color:var(--text-tertiary);">count(format_gate)/total</span>
+                    格式合格率 ≥0.95<br><span style="color:var(--text-tertiary);">count(format_gate)/total</span>
                   </div>
                   <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; font-size:11px;">
                     聚合策略<br><span style="color:var(--text-tertiary);">3 阶段 w=1/1/1</span>
@@ -591,7 +587,7 @@
             <div style="margin-bottom:12px; font-size:13px; color:var(--text-tertiary)">规则集原始配置（只读 · 来自运行配置快照）</div>
 <div class="yaml-viewer"><span class="c"># coursework-quality.yaml — 课件质量评估规则集</span>
 <span class="k">version</span>: <span class="s">"1.0"</span>
-<span class="k">scenario</span>: courseware
+<span class="k">scenario</span>: edu
 
 <span class="k">dimensions</span>:
   - <span class="k">id</span>: functional
