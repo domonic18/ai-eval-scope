@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>调试台 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .dbg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .f-label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; }
+  .f-help { font-size: 12px; color: var(--text-tertiary); margin-top: 5px; line-height: 1.5; }
+  .f-field { margin-bottom: 14px; }
+  .pref-row { display: flex; align-items: center; gap: 8px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 12px; }
+  .console { background: #0d1017; border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.9; color: #8b949e; overflow-x: auto; }
+  .console .dir-in { color: #2fe6c8; } .console .dir-out { color: #79c0ff; } .console .ok { color: #3fb950; } .console .a { color: #e6edf3; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item active" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+      <a class="nav-item" href="org-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.6 10.6 6.4 17.4M14.3 10 18.6 6.4M13 14l4.5 4.5"/></svg> 组织设置</a>
+    </nav>
+    <div class="sidebar-foot">
+      <a class="nav-item" href="docs-integration.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 接入指南</a>
+      <a class="nav-item" href="docs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> 开发文档</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><a href="dashboard.html">项目看板</a><span class="sep">/</span><span class="current">调试台</span></div>
+      <div class="topbar-right"><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1>调试台 <span class="badge badge-warning" style="font-size:12px">owner 专属</span></h1>
+          <div class="sub">直连 gateway 提交评测任务（multipart + HMAC 签名摄取）· 用于验证 SUT 接入与场景包配置</div>
+        </div>
+        <div class="page-actions"><a class="btn" href="docs-integration.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 接入文档</a></div>
+      </div>
+
+      <!-- 提交表单 -->
+      <div class="card r-2" style="margin-bottom:16px">
+        <div class="card-head"><h3>提交评测</h3><span class="hint">场景包目录来自平台发现接口（list_packages），production 标签优先</span></div>
+        <div class="card-body">
+          <div class="dbg-grid">
+            <div class="f-field">
+              <label class="f-label">场景包</label>
+              <select class="select" style="width:100%"><option>sasan-edu-function · production（v2.3）</option><option>sasan-edu-function · v2.2</option><option>sasan-edu-safety · v1.0.0</option></select>
+              <div class="f-help">场景包引用（scenario/package:label），executor 据此解析规则集文件，不做自动补全。</div>
+            </div>
+            <div class="f-field">
+              <label class="f-label">package_ref（自动推导，只读）</label>
+              <div class="pref-row"><span class="mono" style="font-size:12.5px">edu/sasan-edu-function:production</span></div>
+              <div class="f-help">由所选目录项推导：scenario / asset_id : label。</div>
+            </div>
+            <div class="f-field">
+              <label class="f-label">task_id</label>
+              <input class="input" value="demo_task_0301" style="width:100%">
+              <div class="f-help">可由调用方设置；样本 id 取任务内题面，不再恒为内容全文。</div>
+            </div>
+            <div class="f-field">
+              <label class="f-label">task_title</label>
+              <input class="input" value="课件生成冒烟 #0301" style="width:100%">
+            </div>
+            <div class="f-field">
+              <label class="f-label">API Key</label>
+              <input class="input" type="password" value="eval-9f2c…" placeholder="eval-…" style="width:100%">
+              <div class="f-help">项目级摄取密钥；401 时优先检查 Key 是否为该项目所有。</div>
+            </div>
+            <div class="f-field" style="display:flex;align-items:flex-end;gap:10px">
+              <button class="btn btn-primary">▶ 提交评测</button>
+              <button class="btn">重置</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 调试控制台 -->
+      <div class="card r-3">
+        <div class="card-head"><h3>控制台</h3><span class="hint">每轮请求 / 响应原样落在此处，密钥打码</span></div>
+        <div class="card-body">
+          <div class="console">
+            <div><span class="dir-in">→</span> <span class="a">POST /api/v1/jobs</span> · multipart + HMAC · package_ref=edu/sasan-edu-function:production</div>
+            <div><span class="dir-out">←</span> 202 Accepted · {"job_id":"0bc0b717-4e2a-…","status":"pending"}</div>
+            <div><span class="dir-in">→</span> <span class="a">GET /api/v1/jobs/0bc0b717-4e2a-…</span> · 轮询 3s</div>
+            <div><span class="dir-out">←</span> 200 · {"status":"running","progress":"18/120"}</div>
+            <div><span class="dir-in">→</span> <span class="a">GET /api/v1/jobs/0bc0b717-4e2a-…</span> · 轮询 3s</div>
+            <div><span class="ok">✓</span> completed · run <a href="run-detail.html" style="color:#79c0ff">#run_2f8a</a> · 格式合格率 0.962 · 综合得分 0.781</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="muted r-4" style="font-size:12.5px;margin-top:12px">仅项目 owner 可见；提交的任务与常规上报同样进入该项目的运行列表，可关闭自动上报通道单独验证。</p>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>
