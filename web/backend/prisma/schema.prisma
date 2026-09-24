@@ -536,7 +536,7 @@ model LlmModel {
   id              String   @id @default(uuid())
   name            String
   provider        String // openai | anthropic
-  role            String   @default("text") // LLM③（arch/16 §6.2-四）：text | vision | agent——executor 按角色拉取
+  role            String   @default("text") // LLM③（arch/16 §6.2-四）：text | vision | agent | jev——executor 按角色拉取（jev=判定专线）
   baseUrl         String? @map("base_url")
   apiKeyEncrypted String  @map("api_key_encrypted")
   modelName       String  @map("model_name")

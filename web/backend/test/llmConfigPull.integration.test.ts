@@ -82,6 +82,16 @@ describe("GET /api/public/llm-config", () => {
       baseUrl: "https://v.example.com",
       apiKey: "sk-vision",
     })
+    // jev 判定专线行（filter-only，executor 拉取后经 JevClient 走 Noul 通道）
+    await createModel(app, admin.accessToken, {
+      name: "Jev Line",
+      provider: "openai",
+      role: "jev",
+      modelName: "typesafe/jev-1.13",
+      baseUrl: "https://openrouter.ai/api",
+      apiKey: "sk-jev",
+      extra: { timeout_sec: 10 },
+    })
 
     const project = await createProject(app, admin)
     const key = await issueKey(app, { accessToken: admin.accessToken, projectId: project.id })
@@ -90,7 +100,7 @@ describe("GET /api/public/llm-config", () => {
       .get("/api/public/llm-config")
       .set("Authorization", `Bearer ${key.token}`)
     expect(pull.status).toBe(200)
-    expect(Object.keys(pull.body.roles).sort()).toEqual(["text", "vision"])
+    expect(Object.keys(pull.body.roles).sort()).toEqual(["jev", "text", "vision"])
     // 同角色 isDefault 优先（Default 后建但被拉高）
     expect(pull.body.roles.text.model).toBe("text-default")
     expect(pull.body.roles.text.api_key).toBe("sk-text-def")
@@ -102,6 +112,14 @@ describe("GET /api/public/llm-config", () => {
       model: "vision-model",
       api_key: "sk-vision",
       base_url: "https://v.example.com",
+    })
+    // jev 行解密透传：评估器 LLMPlatform 按 ROLES 过滤后建 JevClient（timeout_sec 走 extra）
+    expect(pull.body.roles.jev).toMatchObject({
+      provider: "openai",
+      model: "typesafe/jev-1.13",
+      api_key: "sk-jev",
+      base_url: "https://openrouter.ai/api",
+      timeout_sec: 10,
     })
 
     const anon = await request(app).get("/api/public/llm-config")

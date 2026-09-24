@@ -9,6 +9,9 @@ import { PlatformError } from "../middleware/errorHandler"
 
 export type LlmProtocol = "openai" | "anthropic"
 
+/** 合法角色注册表（与执行面 ROLES 对齐；jev=Jev 判定专线，filter-only）。 */
+const LLM_ROLES = ["text", "vision", "agent", "jev"]
+
 /** 对外回显形状（api_key 仅脱敏，明文永不下发）。 */
 export interface LlmModelVO {
   id: string
@@ -103,8 +106,8 @@ class LlmModelRepository {
     if (!["openai", "anthropic"].includes(input.provider)) {
       throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
     }
-    if (input.role !== undefined && !["text", "vision", "agent"].includes(input.role)) {
-      throw new PlatformError("role 必须为 text、vision 或 agent", { status: 400, code: "VALIDATION_ERROR" })
+    if (input.role !== undefined && !LLM_ROLES.includes(input.role)) {
+      throw new PlatformError(`role 必须为 ${LLM_ROLES.join("、")} 之一`, { status: 400, code: "VALIDATION_ERROR" })
     }
     const apiKey = input.apiKey
     return this.prisma.$transaction(async (tx) => {
@@ -130,8 +133,8 @@ class LlmModelRepository {
     if (input.provider && !["openai", "anthropic"].includes(input.provider)) {
       throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
     }
-    if (input.role !== undefined && !["text", "vision", "agent"].includes(input.role)) {
-      throw new PlatformError("role 必须为 text、vision 或 agent", { status: 400, code: "VALIDATION_ERROR" })
+    if (input.role !== undefined && !LLM_ROLES.includes(input.role)) {
+      throw new PlatformError(`role 必须为 ${LLM_ROLES.join("、")} 之一`, { status: 400, code: "VALIDATION_ERROR" })
     }
     const existing = await this.getRaw(id)
     if (!existing) throw new PlatformError("llm model not found", { status: 404, code: "NOT_FOUND" })

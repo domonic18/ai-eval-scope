@@ -1,7 +1,8 @@
 /** 超管后台 · LLM 模型配置（arch/16 §6.2-四 云端形态）。
- * 多模型 CRUD + 连通性测试 + 设默认；role 为角色（text/vision/agent），
+ * 多模型 CRUD + 连通性测试 + 设默认；role 为角色（text/vision/agent/jev），
  * executor 经 /api/public/llm-config 按角色拉取（替代原导出 llm_config.yaml）。
- * provider 为协议（OpenAI / Anthropic）；api_key 加密存储，回显仅脱敏。 */
+ * provider 为协议（OpenAI / Anthropic）；jev 判定专线走 Noul 探针测试。
+ * api_key 加密存储，回显仅脱敏。 */
 import { useEffect, useState } from "react"
 import { api, type LlmModelInput, type LlmModelVO } from "../../api/client"
 import { Button } from "@/components/shadcn/button"
@@ -22,8 +23,13 @@ import { Pencil, Plus, Star, Trash2, Zap } from "lucide-react"
 
 type Provider = "openai" | "anthropic"
 const PROVIDER_LABEL: Record<Provider, string> = { openai: "OpenAI 协议", anthropic: "Anthropic 协议" }
-type Role = "text" | "vision" | "agent"
-const ROLE_LABEL: Record<Role, string> = { text: "text·评估文本", vision: "vision·视觉", agent: "agent·执行侧" }
+type Role = "text" | "vision" | "agent" | "jev"
+const ROLE_LABEL: Record<Role, string> = {
+  text: "text·评估文本",
+  vision: "vision·视觉",
+  agent: "agent·执行侧",
+  jev: "jev·判定专线",
+}
 
 const emptyForm: LlmModelInput = {
   name: "",
@@ -231,6 +237,7 @@ export default function AdminLlmModels() {
                   <option value="text">text·评估文本</option>
                   <option value="vision">vision·视觉</option>
                   <option value="agent">agent·执行侧</option>
+                  <option value="jev">jev·Jev 判定专线</option>
                 </select>
               </div>
             </div>
@@ -241,7 +248,13 @@ export default function AdminLlmModels() {
                   className="font-mono text-xs"
                   value={form.baseUrl ?? ""}
                   onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
-                  placeholder={form.provider === "anthropic" ? "https://api.anthropic.com" : "https://api.openai.com/v1"}
+                  placeholder={
+                    form.role === "jev"
+                      ? "https://openrouter.ai/api"
+                      : form.provider === "anthropic"
+                        ? "https://api.anthropic.com"
+                        : "https://api.openai.com/v1"
+                  }
                 />
               </div>
               <div>
@@ -250,7 +263,7 @@ export default function AdminLlmModels() {
                   className="font-mono text-xs"
                   value={form.modelName}
                   onChange={(e) => setForm({ ...form, modelName: e.target.value })}
-                  placeholder="如 moonshot-v1-128k"
+                  placeholder={form.role === "jev" ? "如 typesafe/jev-1.13" : "如 moonshot-v1-128k"}
                 />
               </div>
             </div>

@@ -640,7 +640,7 @@ export interface LlmModelVO {
 export interface LlmModelInput {
   name: string
   provider: string
-  role?: string // text | vision | agent
+  role?: string // text | vision | agent | jev
   baseUrl?: string | null
   apiKey?: string
   modelName: string
