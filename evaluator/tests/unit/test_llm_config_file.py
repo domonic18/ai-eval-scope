@@ -200,6 +200,59 @@ class TestResolve:
         )
 
 
+class TestJevRole:
+    """jev 判定专线：解析透传、不作 default、不进 chat 池。"""
+
+    def _save_with_jev(self) -> None:
+        save_llm_file(
+            LLMFileConfig(
+                roles={
+                    "text": _role(),
+                    "agent": None,
+                    "jev": RoleConfig(
+                        provider="custom",
+                        protocol="openai",
+                        model="typesafe/jev-1.13",
+                        api_key="sk-jev",
+                        base_url="https://openrouter.ai/api",
+                    ),
+                }
+            )
+        )
+
+    def test_jev_role_passthrough_never_default(self, _isolated_env: Path) -> None:
+        """jev 随 ROLES 透传（解析层零改动），但不作 default、不参与回退。"""
+        self._save_with_jev()
+        config = resolve_llm_config(platform=_StubPlatform(None))
+        assert config.providers["jev"].model == "typesafe/jev-1.13"
+        assert config.default == "text"
+
+    def test_jev_only_config_rejected(self, _isolated_env: Path) -> None:
+        """仅配 jev 无 chat 角色 → ConfigError（判定专线不能单独使用）。"""
+        save_llm_file(
+            LLMFileConfig(
+                roles={
+                    "jev": RoleConfig(
+                        provider="custom", model="typesafe/jev-1.13", api_key="sk-jev"
+                    )
+                }
+            )
+        )
+        with pytest.raises(ConfigError, match="jev 为判定专线"):
+            resolve_llm_config(platform=_StubPlatform(None))
+
+    def test_provider_pool_skips_jev_line(self, _isolated_env: Path) -> None:
+        """ProviderPool 只管 chat 线路——jev 不被误建为 chat 客户端。"""
+        from agent_eval.core.exceptions import ProviderNotFoundError
+        from agent_eval.llm.pool import ProviderPool
+
+        self._save_with_jev()
+        pool = ProviderPool(resolve_llm_config(platform=_StubPlatform(None)))
+        assert "jev" not in [p.name for p in pool.list_providers()]
+        with pytest.raises(ProviderNotFoundError):
+            pool.get("jev")
+
+
 class TestModelsCommand:
     def test_login_writes_0600_file_and_list_masks_key(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner
@@ -208,8 +261,9 @@ class TestModelsCommand:
 
         runner = CliRunner()
         # 提供商（默认1 deepseek）→ 协议（默认1 anthropic，预置端点免输）→ api-key
-        # → text（默认y）→ 模型（默认 deepseek-v4-pro）→ vision（n）→ 立即测试（n）
-        result = runner.invoke(models_app, ["set"], input="\n\nsk-test-1234567890\n\n\nn\nn\n")
+        # → text（默认y）→ 模型（默认 deepseek-v4-pro）→ vision（n）→ jev（n）
+        # → 立即测试（n）
+        result = runner.invoke(models_app, ["set"], input="\n\nsk-test-1234567890\n\n\nn\n\nn\n")
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
         assert cfg is not None
@@ -221,6 +275,7 @@ class TestModelsCommand:
         assert cfg.roles["text"].model == "deepseek-v4-pro"
         assert cfg.roles["vision"] is None
         assert cfg.roles["agent"] is None  # 未询问，且无既有配置可保留
+        assert cfg.roles["jev"] is None  # 可选角色默认不配置
         assert stat_mode(_isolated_env) == 0o600
 
         listing = runner.invoke(models_app, ["list"])
@@ -235,8 +290,8 @@ class TestModelsCommand:
 
         runner = CliRunner()
         # 提供商5 custom → 协议2 OpenAI 兼容 → base_url → api-key → text y → 模型自输
-        # → vision n → 立即测试 n
-        _input = "5\n2\nhttps://gw.example.com/v1\nsk-custom-123456789\n\nmy-model\nn\nn\n"
+        # → vision n → jev n → 立即测试 n
+        _input = "5\n2\nhttps://gw.example.com/v1\nsk-custom-123456789\n\nmy-model\nn\n\nn\n"
         result = runner.invoke(models_app, ["set"], input=_input)
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
@@ -269,8 +324,10 @@ class TestModelsCommand:
         monkeypatch.setattr(
             models_mod, "_test_configured_roles", lambda: (calls.append(1), False)[1]
         )
-        # 全默认 → vision n → 立即测试 y
-        result = CliRunner().invoke(models_app, ["set"], input="\n\nsk-wire-123456789\n\n\nn\ny\n")
+        # 全默认 → vision n → jev n → 立即测试 y
+        result = CliRunner().invoke(
+            models_app, ["set"], input="\n\nsk-wire-123456789\n\n\nn\n\ny\n"
+        )
         assert result.exit_code == 0, result.output
         assert calls == [1]
         assert "连通性测试全部通过" in result.output
@@ -297,14 +354,47 @@ class TestModelsCommand:
             )
         )
         runner = CliRunner()
-        # 提供商/协议/api-key/text/vision 全默认，vision 否决，立即测试否决
-        result = runner.invoke(models_app, ["set"], input="\n\nsk-new-1234567890\n\n\nn\nn\n")
+        # 提供商/协议/api-key/text/vision 全默认，vision 否决，jev 否决，立即测试否决
+        result = runner.invoke(models_app, ["set"], input="\n\nsk-new-1234567890\n\n\nn\n\nn\n")
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
         assert cfg is not None
         assert cfg.roles["text"] is not None and cfg.roles["text"].api_key == "sk-new-1234567890"
         agent = cfg.roles["agent"]
         assert agent is not None and agent.model == "kimi-k3" and agent.api_key == "sk-agent"
+
+    def test_set_optional_jev_role_configured(self, _isolated_env: Path) -> None:
+        """jev 判定专线可选配置：渠道独立（默认 OpenRouter 端点），Key 单独输入。"""
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        # 全默认 → vision n → jev y → 模型默认 → base 默认 → key → 立即测试 n
+        _input = "\n\nsk-chat-1234567890\n\n\nn\ny\n\n\nsk-jev-1234567890\nn\n"
+        result = CliRunner().invoke(models_app, ["set"], input=_input)
+        assert result.exit_code == 0, result.output
+        cfg = load_llm_file()
+        assert cfg is not None
+        jev = cfg.roles["jev"]
+        assert jev is not None
+        assert jev.model == "typesafe/jev-1.13"
+        assert jev.base_url == "https://openrouter.ai/api"
+        assert jev.api_key == "sk-jev-1234567890"
+
+    def test_set_jev_incomplete_key_skips_role(self, _isolated_env: Path) -> None:
+        """jev 信息不完整（空 Key）→ 跳过该角色，不写脏配置。"""
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        # 全默认 → vision n → jev y → 模型默认 → base 默认 → key 空 → 立即测试 n
+        _input = "\n\nsk-chat-1234567890\n\n\nn\ny\n\n\n\nn\n"
+        result = CliRunner().invoke(models_app, ["set"], input=_input)
+        assert result.exit_code == 0, result.output
+        assert "跳过 jev 角色" in result.output
+        cfg = load_llm_file()
+        assert cfg is not None
+        assert cfg.roles["jev"] is None
 
     def test_list_without_config_exits_1(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner

@@ -8,7 +8,8 @@
 anthropic 与 openai 兼容双协议、端点由 ``(厂商, 协议)`` 预置矩阵给出（免输
 URL）；custom 需自备 base_url。角色只问 text/vision——agent 角色为执行引擎/
 工作台 Agent 专用（``--llm-role`` 可覆盖），未配置时解析层自动回退 text，不进
-向导（已有配置原样保留）。
+向导（已有配置原样保留）。jev（System One 判定专线）可选配置：渠道
+独立（api_key 通常与 chat 线路不同），连通性测试走 Noul 冒烟而非 chat 探针。
 """
 
 from __future__ import annotations
@@ -52,7 +53,32 @@ def _test_configured_roles() -> bool:
             rprint(f"[dim]· {role}: 跳过（未配置）[/dim]")
             continue
         try:
-            client = LLMClientFactory.create(
+            start = time.perf_counter()
+            if role == "jev":
+                # 判定专线无 chat 接口——走 Noul 冒烟（chat 探针对 Jev 无意义）
+                from agent_eval.llm.jev import JevClient, NoulQuestion
+
+                jev = JevClient(
+                    role,
+                    ProviderConfig(
+                        provider=effective_protocol(rc.provider, rc.protocol),
+                        model=rc.model,
+                        api_key=rc.api_key,
+                        base_url=rc.base_url,
+                    ),
+                )
+                ans = jev.noul(
+                    NoulQuestion(
+                        name="connectivity",
+                        instructions="连通性测试：state.text 是否包含字符串 ping？",
+                        criteria={"true": "包含", "false": "不包含"},
+                    ),
+                    {"text": "ping"},
+                )
+                ms = (time.perf_counter() - start) * 1000
+                rprint(f"[green]✅ {role}[/green] {rc.model} — {ms:.0f}ms：P={ans.p_yes:.2f}")
+                continue
+            chat_client = LLMClientFactory.create(
                 role,
                 ProviderConfig(
                     # 分发键归一为线路协议（厂商键自定义 provider 不被工厂识别）
@@ -62,8 +88,7 @@ def _test_configured_roles() -> bool:
                     base_url=rc.base_url,
                 ),
             )
-            start = time.perf_counter()
-            resp = client.chat([Message(role="user", content="ping，请只回复 pong")])
+            resp = chat_client.chat([Message(role="user", content="ping，请只回复 pong")])
             ms = (time.perf_counter() - start) * 1000
             text = (resp.content or "").strip()[:40]
             rprint(f"[green]✅ {role}[/green] {rc.model} — {ms:.0f}ms：「{text}」")
@@ -157,6 +182,30 @@ def models_set() -> None:
     # agent 角色（执行引擎/工作台 Agent 专用，--llm-role 可覆盖）不进向导：未配置时
     # 解析层自动回退 text；已有配置（手改 llm.json）原样保留不被冲掉
     roles["agent"] = existing.roles.get("agent")
+    # jev 角色（System One 判定专线）可选：渠道独立（如 OpenRouter），
+    # api_key 通常与 chat 线路不同，单独输入；未配置保持 None（功能静默禁用）
+    roles["jev"] = existing.roles.get("jev")
+    if typer.confirm(
+        "配置 jev 角色（System One 判定模型，误触过滤专线；渠道独立）",
+        default=roles["jev"] is not None,
+    ):
+        cur = existing.roles.get("jev")
+        model = str(
+            typer.prompt("  jev 模型 ID", default=(cur.model if cur else "") or "typesafe/jev-1.13")
+        ).strip()
+        base = str(
+            typer.prompt(
+                "  jev API Base URL",
+                default=(cur.base_url if cur else "") or "https://openrouter.ai/api",
+            )
+        ).strip()
+        key = ask("  jev API Key", hide=True)
+        if model and base and key:
+            roles["jev"] = RoleConfig(
+                provider="custom", protocol="openai", model=model, api_key=key, base_url=base
+            )
+        else:
+            rprint("[yellow]jev 信息不完整（模型/端点/Key 须齐备），跳过 jev 角色。[/yellow]")
     if roles.get("text") is None and roles.get("vision") is None and roles.get("agent") is None:
         rprint("[red]至少需配置一个角色（text 建议必配），已取消。[/red]")
         raise typer.Exit(code=1)
