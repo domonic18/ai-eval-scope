@@ -24,6 +24,10 @@ class ProviderPool:
         self._providers: dict[str, LLMClient] = {}
         self._default_name: str = config.default
         for name, pcfg in config.providers.items():
+            if name == "jev":
+                # 判定专线：非 chat 线路，由 JevFactFilter 直接构造，
+                # 不进 chat 客户端池（误建会以 chat 协议打判定端点必然报错）
+                continue
             self._providers[name] = LLMClientFactory.create(name, pcfg)
 
     def get(self, name: str | None = None) -> LLMClient:

@@ -17,8 +17,9 @@ from agent_eval.core.exceptions import ConfigError
 
 FILE_VERSION = 1
 
-#: 固定三角色（providers 键）
-ROLES = ("text", "vision", "agent")
+#: 固定角色（providers 键）；jev = System One 判定专线——不做 chat、
+#: 不回退 text、不作 default，经 JevClient 专线消费
+ROLES = ("text", "vision", "agent", "jev")
 DEFAULT_ROLE = "text"
 
 #: 线路协议（分发键）——预置厂商均双协议提供，向导第二层选择
