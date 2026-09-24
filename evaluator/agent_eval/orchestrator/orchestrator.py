@@ -102,6 +102,7 @@ class Orchestrator:
         rule_set: Any | None = None,
         *,
         judge_orchestrator: Any | None = None,
+        jev_client: Any | None = None,
         run_workspace: RunWorkspace | None = None,
         project: str | None = None,
         with_vision: bool = False,
@@ -122,6 +123,7 @@ class Orchestrator:
             package_dir: ExecutionPackage 目录路径（单个包或包含多个包的目录）。
             rule_set: 规则集（RuleSet 实例）。
             judge_orchestrator: LLM Judge 编排器（可选，无则评估器降级）。
+            jev_client: Jev 判定专线客户端（可选，无则误触过滤静默禁用）。
             run_workspace: 运行工作空间（可选，自动创建）。
             project: 项目 ID（可选，用于 workspace index）。
             with_vision: 是否启用视觉评估器 vision.quality（默认 False）。
@@ -225,6 +227,8 @@ class Orchestrator:
         extra_context: dict[str, Any] = {}
         if judge_orchestrator is not None:
             extra_context["judge_orchestrator"] = judge_orchestrator
+        if jev_client is not None:
+            extra_context["jev_client"] = jev_client
         if screenshot_renderer is not None:
             extra_context["screenshot_renderer"] = screenshot_renderer
         if trace_id is not None:
@@ -645,6 +649,31 @@ def _init_judge_orchestrator(
         return None
 
 
+def _init_jev_client(llm_config: Any | None = None) -> Any | None:
+    """初始化 jev 判定专线客户端（可选）——高置信误触过滤的传输层。
+
+    role="jev" 未配置 / 初始化失败 → None（过滤功能静默禁用，全量走 LLM，
+    与未启用逐字节一致）。timeout 用 EvaluatorDefaults.jev_timeout_sec 覆写
+    ProviderConfig（秒级判定要求快失败；瞬时重试由 JevClient 内部承担）。
+    """
+    if llm_config is None:
+        return None
+    try:
+        from agent_eval.config import EVALUATOR_DEFAULTS, LLMConfig
+        from agent_eval.llm.jev import JevClient
+
+        if not isinstance(llm_config, LLMConfig):
+            return None
+        pcfg = llm_config.providers.get("jev")
+        if pcfg is None:
+            return None
+        cfg = pcfg.model_copy(update={"timeout_sec": EVALUATOR_DEFAULTS.jev_timeout_sec})
+        return JevClient("jev", cfg)
+    except Exception as e:
+        logger.warning("jev 判定专线初始化失败，误触过滤禁用（全量走 LLM）", error=str(e))
+        return None
+
+
 def eval_packages(
     package_dir: str | Path,
     rule_set_path: str | Path | None = None,
@@ -703,6 +732,9 @@ def eval_packages(
         prompts_dir=scenario_package_dir / "prompts" if scenario_package_dir else None,
     )
 
+    # jev 判定专线（可选）—— 高置信误触过滤；未配置即禁用（零行为变化）
+    jev_client = _init_jev_client(llm_config)
+
     # 创建 Workspace
     workspace = Workspace(output_dir) if output_dir else Workspace()
 
@@ -727,6 +759,7 @@ def eval_packages(
             Path(package_dir),
             rule_set,
             judge_orchestrator=judge_orch,
+            jev_client=jev_client,
             project=project,
             with_vision=want_vision,
             screenshot_renderer=renderer,

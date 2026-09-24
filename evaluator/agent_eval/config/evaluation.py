@@ -122,6 +122,21 @@ class EvaluatorDefaults:
     content_media_tags: list[str] = field(
         default_factory=lambda: ["img", "table", "video", "audio", "svg", "canvas", "iframe"]
     )
+    # ─── Jev 高置信误触过滤（commonsense.info_accuracy 规则候选预筛）───
+    # filter-only 语义：Jev 只有剔除权、无确认权，真错误的裁定与解释一律由 LLM
+    # fact_verdict 产出。以上各项均可被规则集 params 覆盖（同 fact_verdict_batch_size）。
+    # 功能总开关（默认关——合入零行为变化）
+    jev_enabled: bool = False
+    # P(真错误) 低于此值判高置信误触 → 剔除。0.50 为对拍校准值（误触带 ≤0.29 /
+    # 真错误带 ≥0.79 空谷定标，勿回退 0.10）；阈值或模型版本变更须重跑对拍
+    jev_drop_below: float = 0.50
+    # Noul 并发上限（官方限流 1200 req/min，保守取值）
+    jev_max_concurrency: int = 8
+    # 单次 Noul 请求超时（秒）——建 jev 线路客户端时覆写 ProviderConfig.timeout_sec
+    # （判定要求快失败；瞬时重试由 JevClient 内部承担）
+    jev_timeout_sec: float = 10.0
+    # 问题正文覆盖（None=内置默认；仅替换 instructions，criteria 双侧定义固定）
+    jev_question_template: str | None = None
 
 
 # 模块级单例
