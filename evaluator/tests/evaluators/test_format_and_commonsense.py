@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 from agent_eval.core.types import EvalStatus
 from agent_eval.evaluation.evaluators import *  # trigger registration
 from agent_eval.evaluation.registry import registry
+from agent_eval.llm import JevAnswer
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 GOLDEN = FIXTURES / "golden"
@@ -858,6 +859,142 @@ class TestInfoAccuracyLLM:
         )
 
         assert result.status == EvalStatus.PASS
+
+
+# ─── InfoAccuracy Jev 预筛（Phase 2.5）路径测试 ───
+
+
+class _JevStub:
+    """JevClient 替身：按 claim 关键字映射概率（默认升级带），记录调用。"""
+
+    def __init__(self, probs_by_keyword=None, default=0.90, model="jev-1.13-stub"):
+        self._probs = probs_by_keyword or {}
+        self._default = default
+        self.model = model
+        self.calls = []
+
+    def noul(self, question, state):
+        self.calls.append({"text": state.get("text", ""), "claim": state.get("claim", "")})
+        p = self._default
+        for kw, v in self._probs.items():
+            if kw in state.get("claim", ""):
+                p = v
+                break
+        return JevAnswer(p_yes=p, question_name=question.name, model=self.model)
+
+
+class TestInfoAccuracyJevPrecheck:
+    """Jev 高置信误触过滤启用后的端到端行为（复核面收窄 + 审计字段 + 证据落盘）。"""
+
+    IA_SCORES = {"factual_correctness": 10.0, "statement_accuracy": 10.0}
+
+    def _orch(self, fv_verdicts):
+        """双 judge mock：第 1 次 info_accuracy、第 2 次 fact_verdict（未调用即不消费）。"""
+        orch = MagicMock()
+        ia_record, fv_record = MagicMock(), MagicMock()
+        ia_record.judge_id = "judge_ia_jev"
+        ia_record.provider_name = "deepseek_judge"
+        ia_record.model = "deepseek-chat"
+        ia_record.confidence = {}
+        ia_record.raw_response = {"errors_found": []}
+        fv_record.judge_id = "judge_fv_jev"
+        fv_record.raw_response = ""
+        fv_record.parsed_scores = {"verdict_quality": 9.0, "verdicts": fv_verdicts}
+        orch.judge.side_effect = [
+            (self.IA_SCORES, ia_record),
+            ({"verdict_quality": 9.0}, fv_record),
+        ]
+        tpl = MagicMock()
+        d1 = MagicMock(dim_id="factual_correctness", name="事实正确性", weight=0.6)
+        d2 = MagicMock(dim_id="statement_accuracy", name="陈述准确性", weight=0.4)
+        tpl.dimensions = [d1, d2]
+        orch.templates.get.return_value = tpl
+        return orch
+
+    def test_dropped_candidate_skips_fact_verdict(self, tmp_path: Path) -> None:
+        """高置信误触（p<0.5）被 Jev 剔除：fact_verdict 不被调用，error 不再一票否决。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        orch = self._orch([{"index": 0, "is_real_error": True, "reason": "会被确认——但不应被咨询"}])
+        jev = _JevStub({"沸点": 0.04})
+        ev = registry.create("commonsense.info_accuracy", {"jev_enabled": True})
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence", "jev_client": jev},
+        )
+
+        assert orch.judge.call_count == 1  # 仅 info_accuracy，fact_verdict 未被咨询
+        assert len(jev.calls) == 1 and "沸点" in jev.calls[0]["claim"]
+        assert result.status == EvalStatus.PASS
+        assert result.details["errors"] == 0
+        finding = result.details["findings"][0]
+        assert finding["_jev_filtered"] is True  # 被剔除候选保留 findings 可溯
+        assert finding["_jev_probability"] == 0.04
+        assert (tmp_path / "evidence" / "jev_fact_filter.json").exists()
+
+    def test_escalated_candidate_still_confirmed_by_llm(self, tmp_path: Path) -> None:
+        """升级带候选照旧送 fact_verdict 终审：真错误保留 → FAIL（剔除权语义）。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        orch = self._orch([{"index": 0, "is_real_error": True, "reason": "沸点应为100"}])
+        jev = _JevStub(default=0.90)  # 升级带
+        ev = registry.create("commonsense.info_accuracy", {"jev_enabled": True})
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence", "jev_client": jev},
+        )
+
+        assert orch.judge.call_count == 2  # info_accuracy + fact_verdict
+        assert result.status == EvalStatus.FAIL
+        assert result.details["errors"] == 1
+        finding = result.details["findings"][0]
+        assert finding["_jev_probability"] == 0.90
+        assert "_jev_filtered" not in finding
+
+    def test_disabled_default_keeps_legacy_behavior(self, tmp_path: Path) -> None:
+        """默认关（未注入 jev_client）：与现状完全一致，无 Jev 调用、无审计字段、无证据文件。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        orch = self._orch([{"index": 0, "is_real_error": False, "reason": "误报"}])
+        ev = registry.create("commonsense.info_accuracy")
+        result = ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence"},
+        )
+
+        assert orch.judge.call_count == 2  # 误报仍由 fact_verdict 复核剔除
+        assert result.status == EvalStatus.PASS
+        assert all(
+            "_jev_probability" not in f and "_jev_filtered" not in f
+            for f in result.details["findings"]
+        )
+        assert not (tmp_path / "evidence" / "jev_fact_filter.json").exists()
+
+    def test_evidence_file_schema_and_no_secret(self, tmp_path: Path) -> None:
+        """证据文件：counts/模型快照/schema 对齐约定，零凭证泄漏。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        orch = self._orch([])
+        jev = _JevStub({"沸点": 0.04}, model="jev-1.13-20260917")
+        ev = registry.create("commonsense.info_accuracy", {"jev_enabled": True})
+        ev.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch, "evidence_dir": tmp_path / "evidence", "jev_client": jev},
+        )
+
+        import json
+
+        payload = json.loads(
+            (tmp_path / "evidence" / "jev_fact_filter.json").read_text(encoding="utf-8")
+        )
+        assert payload["counts"] == {"total": 1, "dropped": 1, "escalated": 0}
+        assert payload["model"] == "jev-1.13-20260917"
+        assert payload["items"][0]["decision"] == "drop"
+        assert "sk-" not in json.dumps(payload)
 
 
 # ─── LogicalConsistency LLM 路径测试 ───
