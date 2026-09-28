@@ -72,7 +72,7 @@ class TestJudgeTemplate:
         assert t.output_schema == {}
         assert t.temperature == 0.0
         assert t.seed == 42
-        assert t.num_samples == 3
+        assert t.num_samples == 1
 
 
 class TestTemplateManager:
