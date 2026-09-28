@@ -167,7 +167,20 @@ class InfoAccuracyLLMVerify:
             suffix = f"（共 {len(rule_errors)} 处）" if len(rule_errors) > 5 else ""
             reason += f"；发现错误（经 LLM 二次确认）：{detail}{suffix}"
         elif error_findings:
-            reason += f"；规则标记 {len(error_findings)} 处疑似错误经 LLM 二次确认均不成立"
+            # 救援路径要如实区分：判定专线预筛剔除（未送 LLM 复核）与 fact_verdict
+            # 二次确认不成立是不同机制，混称会误导审计（对照实验中 ON 版 reason
+            # 曾在零 LLM 复核时谎称「经 LLM 二次确认」）
+            dropped = sum(1 for f in error_findings if f.get("_decision_filtered"))
+            total = len(error_findings)
+            if dropped == total:
+                reason += f"；规则标记 {total} 处疑似错误经判定专线预筛剔除（未送 LLM 复核）"
+            elif dropped:
+                reason += (
+                    f"；规则标记 {total} 处疑似错误均不成立"
+                    f"（判定专线剔除 {dropped} 处，其余 {total - dropped} 处经 LLM 二次确认不成立）"
+                )
+            else:
+                reason += f"；规则标记 {total} 处疑似错误经 LLM 二次确认均不成立"
 
         record_path = None
         if record:

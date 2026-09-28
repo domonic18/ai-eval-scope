@@ -1008,6 +1008,35 @@ class TestInfoAccuracyDecisionPrecheck:
         assert payload["items"][0]["decision"] == "drop"
         assert "sk-" not in json.dumps(payload)
 
+    def test_reason_wording_matches_rescue_mechanism(self, tmp_path: Path) -> None:
+        """审计 reason 如实区分救援机制：专线剔除不得谎称「经 LLM 二次确认」。"""
+        out = _prepare_output(tmp_path)
+        (out / "doc.html").write_text("水的沸点是 50 度。\n", encoding="utf-8")
+
+        # 全部候选被专线剔除（fact_verdict 未被咨询）
+        orch = self._orch([])
+        client = _DecisionStub({"沸点": 0.04})
+        ev = registry.create("commonsense.info_accuracy", {"decision_enabled": True})
+        dropped = ev.evaluate(
+            tmp_path,
+            {
+                "judge_orchestrator": orch,
+                "evidence_dir": tmp_path / "evidence",
+                "decision_client": client,
+            },
+        )
+        assert "判定专线预筛剔除" in dropped.reason
+        assert "二次确认" not in dropped.reason
+
+        # 无专线（既有路径）：误报由 fact_verdict 复核剔除，文案保持原语义
+        orch2 = self._orch([{"index": 0, "is_real_error": False, "reason": "误报"}])
+        legacy = registry.create("commonsense.info_accuracy")
+        rescued = legacy.evaluate(
+            tmp_path,
+            {"judge_orchestrator": orch2, "evidence_dir": tmp_path / "evidence"},
+        )
+        assert "经 LLM 二次确认均不成立" in rescued.reason
+
 
 # ─── LogicalConsistency LLM 路径测试 ───
 
