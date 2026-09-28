@@ -84,6 +84,7 @@ def _build_provider(
     max_tokens: Any = None,
     temperature: Any = None,
     seed: Any = None,
+    timeout: Any = None,
 ) -> ProviderConfig:
     """构造 ProviderConfig（None 字段落回模型自身缺省——temperature/seed 非可空）。"""
     kwargs: dict[str, Any] = {"provider": provider, "model": model, "api_key": api_key}
@@ -95,6 +96,8 @@ def _build_provider(
         kwargs["temperature"] = float(temperature)
     if seed is not None:
         kwargs["seed"] = int(seed)
+    if timeout is not None:
+        kwargs["timeout_sec"] = float(timeout)
     return ProviderConfig(**kwargs)
 
 
@@ -145,6 +148,7 @@ def _from_roles(roles: dict[str, dict[str, Any]]) -> LLMConfig:
             cfg.get("max_tokens"),
             cfg.get("temperature"),
             cfg.get("seed"),
+            cfg.get("timeout_sec"),
         )
     return _finalize(providers)
 

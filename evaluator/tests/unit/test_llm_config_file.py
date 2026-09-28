@@ -175,6 +175,25 @@ class TestResolve:
         assert config.providers["text"].api_key == "sk-p"
         assert config.providers["agent"].model == "p-1"
 
+    def test_platform_timeout_sec_threaded(self, _isolated_env: Path) -> None:
+        """平台角色配置的 timeout_sec 必须透传到 ProviderConfig（缺省落回 180s）。"""
+        roles = {
+            "text": {
+                "provider": "anthropic",
+                "model": "p-1",
+                "api_key": "sk-p",
+                "timeout_sec": 600,
+            }
+        }
+        config = resolve_llm_config(platform=_StubPlatform(roles))
+        assert config.providers["text"].timeout_sec == 600.0
+
+    def test_platform_timeout_sec_missing_falls_back(self, _isolated_env: Path) -> None:
+        """平台未配 timeout_sec 时保持 ProviderConfig 缺省（180s），不报错。"""
+        roles = {"text": {"provider": "anthropic", "model": "p-1", "api_key": "sk-p"}}
+        config = resolve_llm_config(platform=_StubPlatform(roles))
+        assert config.providers["text"].timeout_sec == 180.0
+
     def test_unavailable_raises_with_guidance(self, _isolated_env: Path) -> None:
         with pytest.raises(ConfigError, match="models set"):
             resolve_llm_config(platform=_StubPlatform(None))
