@@ -30,6 +30,7 @@ from agent_eval.config.llm_file import (
     effective_protocol,
     load_llm_file,
 )
+from agent_eval.config.llm_roles import is_chat_role
 from agent_eval.core.exceptions import ConfigError
 
 
@@ -98,12 +99,15 @@ def _build_provider(
 
 
 def _finalize(providers: dict[str, ProviderConfig]) -> LLMConfig:
-    """agent 回退 text、定 default。"""
+    """agent 回退 text、定 default（decision 为判定专线：不回退、不作 default）。"""
     if "agent" not in providers and "text" in providers:
         providers["agent"] = providers["text"]
-    if not providers:
-        raise ConfigError("LLM 角色配置为空（至少需 text 或 vision 之一）")
-    default = DEFAULT_ROLE if DEFAULT_ROLE in providers else next(iter(providers))
+    chat_roles = [r for r in providers if is_chat_role(r)]
+    if not chat_roles:
+        raise ConfigError(
+            "LLM 角色配置为空（至少需 text 或 vision 之一；decision 为判定专线不能单独使用）"
+        )
+    default = DEFAULT_ROLE if DEFAULT_ROLE in providers else chat_roles[0]
     return LLMConfig(default=default, providers=providers)
 
 

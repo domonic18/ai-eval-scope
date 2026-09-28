@@ -1,8 +1,8 @@
-"""commonsense.info_accuracy 评估器 — 三层检查架构的组合主体。
+"""commonsense.info_accuracy 评估器 — 多层检查架构的组合主体。
 
-Phase 1 内置自动检查 / Phase 2 可配置规则检查 / Phase 3 LLM 语义验证分别
-定义在同包 `_builtin_checks` / `_rule_checks` / `_llm_verify` mixin，
-本模块组合三者并承载编排入口 evaluate() 与计分。
+内置自动检查 / 可配置规则检查 / 判定专线误触预筛 / LLM 语义验证分别定义在
+同包 `_builtin_checks` / `_rule_checks` / `_decision_precheck` / `_llm_verify`
+mixin，本模块组合各层并承载编排入口 evaluate() 与计分。
 """
 
 from __future__ import annotations
@@ -14,6 +14,9 @@ from agent_eval.core.types import ConstraintTier, EvalMethod, EvalStatus
 from agent_eval.evaluation.base import BaseEvaluator
 from agent_eval.evaluation.evaluators.commonsense._builtin_checks import (
     InfoAccuracyBuiltinChecks,
+)
+from agent_eval.evaluation.evaluators.commonsense._decision_precheck import (
+    InfoAccuracyDecisionPrecheck,
 )
 from agent_eval.evaluation.evaluators.commonsense._llm_verify import InfoAccuracyLLMVerify
 from agent_eval.evaluation.evaluators.commonsense._rule_checks import InfoAccuracyRuleChecks
@@ -27,13 +30,18 @@ from agent_eval.evaluation.text_utils import get_output_dir as _get_output_dir
 
 @registry.register("commonsense.info_accuracy")
 class InfoAccuracyEvaluator(
-    InfoAccuracyBuiltinChecks, InfoAccuracyRuleChecks, InfoAccuracyLLMVerify, BaseEvaluator
+    InfoAccuracyBuiltinChecks,
+    InfoAccuracyRuleChecks,
+    InfoAccuracyDecisionPrecheck,
+    InfoAccuracyLLMVerify,
+    BaseEvaluator,
 ):
-    """知识准确性检查 — 三层检查架构。
+    """知识准确性检查 — 多层检查架构。
 
-    Phase 1: 内置自动检查（算术表达式验证、常数校验、常识错误检测）
-    Phase 2: 可配置规则检查（must_contain / must_not_contain / value_range / 新规则类型）
-    Phase 3: LLM 语义验证（当 judge_orchestrator 可用时）
+    第 1 层: 内置自动检查（算术表达式验证、常数校验、常识错误检测）
+    第 2 层: 可配置规则检查（must_contain / must_not_contain / value_range / 新规则类型）
+    第 2.5 层: 判定专线高置信误触预筛（可选，decision_enabled + decision 线路注入时启用）
+    第 3 层: LLM 语义验证（当 judge_orchestrator 可用时）
     """
 
     evaluator_id = "commonsense.info_accuracy"

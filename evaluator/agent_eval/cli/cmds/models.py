@@ -8,7 +8,8 @@
 anthropic 与 openai 兼容双协议、端点由 ``(厂商, 协议)`` 预置矩阵给出（免输
 URL）；custom 需自备 base_url。角色只问 text/vision——agent 角色为执行引擎/
 工作台 Agent 专用（``--llm-role`` 可覆盖），未配置时解析层自动回退 text，不进
-向导（已有配置原样保留）。
+向导（已有配置原样保留）。decision（判定专线）可选配置：渠道独立（api_key
+通常与 chat 线路不同），协议 noul，连通性测试走 Noul 冒烟而非 chat 探针。
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ def _test_configured_roles() -> bool:
     """
     from agent_eval.config.llm import ProviderConfig
     from agent_eval.config.llm_file import ROLES, effective_protocol, load_llm_file
+    from agent_eval.config.llm_roles import ROLE_KINDS
     from agent_eval.llm.factory import LLMClientFactory
     from agent_eval.llm.models import Message
 
@@ -52,7 +54,32 @@ def _test_configured_roles() -> bool:
             rprint(f"[dim]· {role}: 跳过（未配置）[/dim]")
             continue
         try:
-            client = LLMClientFactory.create(
+            start = time.perf_counter()
+            if ROLE_KINDS.get(role) == "decision":
+                # 判定专线无 chat 接口——走 Noul 冒烟（chat 探针对判定线无意义）
+                from agent_eval.llm.decision import DecisionClient, NoulQuestion
+
+                client = DecisionClient(
+                    role,
+                    ProviderConfig(
+                        provider=effective_protocol(rc.provider, rc.protocol),
+                        model=rc.model,
+                        api_key=rc.api_key,
+                        base_url=rc.base_url,
+                    ),
+                )
+                ans = client.noul(
+                    NoulQuestion(
+                        name="connectivity",
+                        instructions="连通性测试：state.text 是否包含字符串 ping？",
+                        criteria={"true": "包含", "false": "不包含"},
+                    ),
+                    {"text": "ping"},
+                )
+                ms = (time.perf_counter() - start) * 1000
+                rprint(f"[green]✅ {role}[/green] {rc.model} — {ms:.0f}ms：P={ans.p_yes:.2f}")
+                continue
+            chat_client = LLMClientFactory.create(
                 role,
                 ProviderConfig(
                     # 分发键归一为线路协议（厂商键自定义 provider 不被工厂识别）
@@ -62,8 +89,7 @@ def _test_configured_roles() -> bool:
                     base_url=rc.base_url,
                 ),
             )
-            start = time.perf_counter()
-            resp = client.chat([Message(role="user", content="ping，请只回复 pong")])
+            resp = chat_client.chat([Message(role="user", content="ping，请只回复 pong")])
             ms = (time.perf_counter() - start) * 1000
             text = (resp.content or "").strip()[:40]
             rprint(f"[green]✅ {role}[/green] {rc.model} — {ms:.0f}ms：「{text}」")
@@ -78,7 +104,7 @@ def models_set() -> None:
     """交互式配置模型（提供商/协议/模型/api-key），保存到 ~/.agent_eval/llm.json（0600）。"""
     from agent_eval.cli.console.prompts import ask, select
     from agent_eval.config.llm_file import (
-        PROTOCOLS,
+        CHAT_PROTOCOLS,
         PROVIDER_DEFAULT_BASE_URLS,
         PROVIDER_LABELS,
         PROVIDER_MODEL_SUGGESTIONS,
@@ -89,9 +115,26 @@ def models_set() -> None:
         load_llm_file,
         save_llm_file,
     )
+    from agent_eval.config.llm_roles import DECISION_ROLE
+    from agent_eval.core.exceptions import ConfigError
+    from agent_eval.llm.decision import _DEFAULT_BASE_URL, SUGGESTED_MODEL
 
-    existing = load_llm_file() or LLMFileConfig()
-    rprint("[bold]═ LLM 配置向导 ═[/bold]（保存到 " + str(llm_file_path()) + "，权限 0600）")
+    # 旧配置不可读（跨版本角色改名 / 手改损坏）时 fail-fast 门禁照常生效，但向导
+    # 本身不能因此变砖：给出「备份重建 / 退出」由用户决定（工作台 onboard 捕获
+    # typer.Exit 后回落主菜单，语义衔接）。
+    path = llm_file_path()
+    try:
+        existing = load_llm_file() or LLMFileConfig()
+    except ConfigError as exc:
+        rprint(f"[red]现有配置无法读取：{exc}[/red]")
+        from datetime import datetime
+
+        backup = path.with_name(f"{path.name}.bak-{datetime.now():%Y%m%d%H%M%S}")
+        if not typer.confirm(f"是否备份为 {backup.name} 并重新开始配置？", default=True):
+            raise typer.Exit(1) from None
+        path.replace(backup)  # rename 保留原 0600 权限，密钥不外泄
+        existing = LLMFileConfig()
+    rprint("[bold]═ LLM 配置向导 ═[/bold]（保存到 " + str(path) + "，权限 0600）")
 
     # ① 提供商（预置厂商 + custom）
     vendor_options = [PROVIDER_LABELS[v] for v in PROVIDERS] + [_CUSTOM_LABEL]
@@ -99,9 +142,10 @@ def models_set() -> None:
     is_custom = vendor_choice == _CUSTOM_LABEL
     vendor = "custom" if is_custom else PROVIDERS[vendor_options.index(vendor_choice)]
 
-    # ② 协议（所有厂商均双协议提供；分发键随之确定）
-    protocol_options = [_PROTOCOL_LABELS[p] for p in PROTOCOLS]
-    protocol = PROTOCOLS[protocol_options.index(select("选择协议", protocol_options))]
+    # ② 协议（chat 厂商均双协议提供；分发键随之确定。noul 属判定专线协议，
+    # 仅 decision 段使用，不进本菜单）
+    protocol_options = [_PROTOCOL_LABELS[p] for p in CHAT_PROTOCOLS]
+    protocol = CHAT_PROTOCOLS[protocol_options.index(select("选择协议", protocol_options))]
 
     # ③ 端点：预置厂商直接采用 (厂商, 协议) 端点（展示不提问）；custom 必答
     if is_custom:
@@ -157,6 +201,34 @@ def models_set() -> None:
     # agent 角色（执行引擎/工作台 Agent 专用，--llm-role 可覆盖）不进向导：未配置时
     # 解析层自动回退 text；已有配置（手改 llm.json）原样保留不被冲掉
     roles["agent"] = existing.roles.get("agent")
+    # decision 角色（判定专线，Noul 概率原语）可选：渠道独立（如 OpenRouter），
+    # api_key 通常与 chat 线路不同，单独输入；未配置保持 None（功能静默禁用）
+    roles[DECISION_ROLE] = existing.roles.get(DECISION_ROLE)
+    if typer.confirm(
+        "配置 decision 角色（判定专线，误触预筛；渠道独立）",
+        default=roles[DECISION_ROLE] is not None,
+    ):
+        cur = existing.roles.get(DECISION_ROLE)
+        model = str(
+            typer.prompt(
+                "  decision 模型 ID", default=(cur.model if cur else "") or SUGGESTED_MODEL
+            )
+        ).strip()
+        base = str(
+            typer.prompt(
+                "  decision API Base URL",
+                default=(cur.base_url if cur else "") or _DEFAULT_BASE_URL,
+            )
+        ).strip()
+        key = ask("  decision API Key", hide=True)
+        if model and base and key:
+            roles[DECISION_ROLE] = RoleConfig(
+                provider="custom", protocol="noul", model=model, api_key=key, base_url=base
+            )
+        else:
+            rprint(
+                "[yellow]decision 信息不完整（模型/端点/Key 须齐备），跳过 decision 角色。[/yellow]"
+            )
     if roles.get("text") is None and roles.get("vision") is None and roles.get("agent") is None:
         rprint("[red]至少需配置一个角色（text 建议必配），已取消。[/red]")
         raise typer.Exit(code=1)

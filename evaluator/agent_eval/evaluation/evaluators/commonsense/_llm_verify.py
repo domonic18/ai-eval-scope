@@ -32,6 +32,7 @@ class InfoAccuracyLLMVerify:
     tier: Any
     params: dict[str, Any]
     _compute_result: Callable[..., Any]
+    _apply_decision_filter: Callable[..., Any]
 
     def _effective_prompt_id(self, default: str) -> str:
         """优先使用规则层传入的 prompt_id，回退到 params.template_id，最后才是默认值。"""
@@ -166,7 +167,20 @@ class InfoAccuracyLLMVerify:
             suffix = f"（共 {len(rule_errors)} 处）" if len(rule_errors) > 5 else ""
             reason += f"；发现错误（经 LLM 二次确认）：{detail}{suffix}"
         elif error_findings:
-            reason += f"；规则标记 {len(error_findings)} 处疑似错误经 LLM 二次确认均不成立"
+            # 救援路径要如实区分：判定专线预筛剔除（未送 LLM 复核）与 fact_verdict
+            # 二次确认不成立是不同机制，混称会误导审计（对照实验中 ON 版 reason
+            # 曾在零 LLM 复核时谎称「经 LLM 二次确认」）
+            dropped = sum(1 for f in error_findings if f.get("_decision_filtered"))
+            total = len(error_findings)
+            if dropped == total:
+                reason += f"；规则标记 {total} 处疑似错误经判定专线预筛剔除（未送 LLM 复核）"
+            elif dropped:
+                reason += (
+                    f"；规则标记 {total} 处疑似错误均不成立"
+                    f"（判定专线剔除 {dropped} 处，其余 {total - dropped} 处经 LLM 二次确认不成立）"
+                )
+            else:
+                reason += f"；规则标记 {total} 处疑似错误经 LLM 二次确认均不成立"
 
         record_path = None
         if record:
@@ -215,16 +229,12 @@ class InfoAccuracyLLMVerify:
         被判为误报（is_real_error=false）的 finding 仍保留在原列表（写审计字段
         _llm_confirmed/_llm_reason），但不计入返回值（即不进入 rule_errors 一票否决）。
         调用/解析异常由调用方捕获并降级为"保留全部"（召回优先）。
+
+        候选构建前先经判定专线高置信误触预筛（_apply_decision_filter，未启用时原样直构）：
+        被剔除候选写 _decision_filtered 审计字段并从复核集合排除——判定专线只有剔除权，
+        升级侧候选的裁定语义与本函数原先行为完全一致。
         """
-        candidates = [
-            {
-                "index": i,
-                "file": f.get("file", ""),
-                "message": f.get("message", ""),
-                "context": self._extract_finding_context(f, file_texts),
-            }
-            for i, f in enumerate(error_findings)
-        ]
+        candidates = self._apply_decision_filter(error_findings, file_texts, context, evidence_dir)
         ev_dir = evidence_dir if isinstance(evidence_dir, Path) else Path(evidence_dir)
         batch_size = self.params.get("fact_verdict_batch_size", FACT_VERDICT_BATCH_SIZE)
         variables_base = {
@@ -265,6 +275,8 @@ class InfoAccuracyLLMVerify:
 
         confirmed: list[dict[str, Any]] = []
         for i, f in enumerate(error_findings):
+            if f.get("_decision_filtered"):
+                continue  # 判定专线高置信误触已剔除：不进 rule_errors（filter-only 剔除权）
             v = verdict_map.get(i)
             # 缺裁定 → 默认 True（召回优先，不漏报）
             is_real = bool(v.get("is_real_error", True)) if v else True

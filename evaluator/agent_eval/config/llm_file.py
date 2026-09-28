@@ -13,16 +13,21 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from agent_eval.config.llm_roles import ROLES
 from agent_eval.core.exceptions import ConfigError
 
 FILE_VERSION = 1
 
-#: 固定三角色（providers 键）
-ROLES = ("text", "vision", "agent")
+# 固定角色（providers 键）单源在 ``llm_roles.ROLE_SPECS``（能力轴注册表，kind 派发
+# chat/decision 行为）；上方 import 重导出保持既有 ``from llm_file import ROLES`` 兼容。
+# 判定专线（decision）不做 chat、不回退 text、不作 default，经 DecisionClient 消费
 DEFAULT_ROLE = "text"
 
-#: 线路协议（分发键）——预置厂商均双协议提供，向导第二层选择
-PROTOCOLS = ("anthropic", "openai")
+#: 线路协议（分发键）：chat 线路双协议（预置厂商均提供，向导第二层选择）；
+#: 判定专线走 noul 概率原语协议（不提供给 chat 厂商菜单）
+CHAT_PROTOCOLS = ("anthropic", "openai")
+DECISION_PROTOCOL = "noul"
+PROTOCOLS = CHAT_PROTOCOLS + (DECISION_PROTOCOL,)
 
 #: 预置厂商（展示名与存储键分离；custom 之外免输 base_url）
 PROVIDER_LABELS = {
@@ -59,8 +64,9 @@ PROVIDER_MODEL_SUGGESTIONS: dict[str, dict[str, str]] = {
 
 
 def effective_protocol(provider: str, protocol: str | None) -> str:
-    """角色配置的线路协议归一（分发键）：新配置读显式 ``protocol``；旧文件（v1，
-    无 protocol 字段）按 provider 值推断——``anthropic`` 之外均按 OpenAI 兼容。"""
+    """角色配置的线路协议归一（分发键）：新配置读显式 ``protocol``（chat 双协议或
+    判定专线的 ``noul``）；旧文件（v1，无 protocol 字段）按 provider 值推断——
+    ``anthropic`` 之外均按 OpenAI 兼容。"""
     if protocol in PROTOCOLS:
         return protocol
     return "anthropic" if provider == "anthropic" else "openai"
@@ -71,7 +77,8 @@ class RoleConfig(BaseModel):
 
     provider: str = Field(description="厂商: deepseek | kimi | zhipu | minimax | custom")
     protocol: str | None = Field(
-        default=None, description="线路协议: anthropic | openai（缺省=旧版文件，按 provider 推断）"
+        default=None,
+        description="线路协议: anthropic | openai | noul（缺省=旧版文件，按 provider 推断）",
     )
     model: str
     api_key: str = Field(repr=False)
@@ -132,6 +139,8 @@ def save_llm_file(cfg: LLMFileConfig, path: Path | None = None) -> Path:
 
 
 __all__ = [
+    "CHAT_PROTOCOLS",
+    "DECISION_PROTOCOL",
     "DEFAULT_ROLE",
     "PROTOCOLS",
     "PROVIDERS",

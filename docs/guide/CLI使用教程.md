@@ -108,6 +108,7 @@ uv run agent-eval models set
    - `text` — 文本 LLM Judge（默认必配）
    - `vision` — 视觉评估模型（用视觉规则集时需要）
    - `agent` — 执行侧模型（`run`/`pipeline` 驱动被测 Agent 用；未配置时自动回退 `text`）
+   - `decision` — 判定专线（可选；Noul 是/否概率原语，用于误触预筛；渠道独立，未配置即静默禁用）
 
 ### 查看与验证
 
