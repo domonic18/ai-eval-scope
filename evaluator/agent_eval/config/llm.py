@@ -80,8 +80,8 @@ class JudgeDefaults:
     """LLM Judge 评审模板默认参数。
 
     这些默认值用于 JudgeTemplate 数据类及从 YAML prompt 模板加载时的缺省值。
-    单个 prompt 模板可以通过 YAML 中的字段覆盖这些默认值，例如视觉评估模板通常
-    将 num_samples 设为 1 以节省成本。
+    单个 prompt 模板可以通过 YAML 中的字段覆盖这些默认值，例如对结果稳定性
+    要求高的模板可将 num_samples 调大做多采样中位数平滑。
     """
 
     # temperature=0 表示让 LLM 以确定性方式输出评分，减少随机波动；
@@ -91,7 +91,10 @@ class JudgeDefaults:
     seed: int = 42
     # num_samples 决定单个约束/模板一次 judge 调用会对同一份输入做几次 LLM 采样，
     # 最终取中位数作为得分。值越大成本越高、结果越稳定；值越低越便宜但波动更大。
-    num_samples: int = 3
+    # 默认 1（单采样即定分，中位数退化为其自身）：样本量大的场景（如课件逐文档
+    # 评审）评审调用量随采样数线性放大，成本优先；需要方差平滑的模板在包内
+    # prompts 模板显式声明更大的 num_samples。
+    num_samples: int = 1
     # score_range 是各评分维度的默认取值范围，与 prompt 中要求的 0-10 分制对齐。
     score_range: tuple[float, float] = field(default_factory=lambda: (0.0, 10.0))
 
@@ -106,7 +109,7 @@ class StabilityDefaults:
 
     # 默认采样次数；与 JudgeDefaults.num_samples 保持一致，避免两个地方配置冲突。
     # 若此处与模板级 num_samples 同时设置，以模板级为准。
-    num_samples: int = 3
+    num_samples: int = 1
     # 置信度判定阈值：同一维度在多次采样中的标准差超过该值时，置信度标记为 low。
     # 值越小越严格，越大越宽松。1.5 对应 0-10 分制下约 15% 的波动容忍度。
     stddev_threshold: float = 1.5

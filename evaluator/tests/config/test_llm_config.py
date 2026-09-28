@@ -119,12 +119,12 @@ class TestDefaults:
         """Judge 模板默认参数。"""
         assert JUDGE_DEFAULTS.temperature == 0.0
         assert JUDGE_DEFAULTS.seed == 42
-        assert JUDGE_DEFAULTS.num_samples == 3
+        assert JUDGE_DEFAULTS.num_samples == 1
         assert JUDGE_DEFAULTS.score_range == (0.0, 10.0)
 
     def test_stability_defaults(self) -> None:
         """稳定性控制器默认参数。"""
-        assert STABILITY_DEFAULTS.num_samples == 3
+        assert STABILITY_DEFAULTS.num_samples == 1
         assert STABILITY_DEFAULTS.stddev_threshold == 1.5
 
     def test_structured_output_defaults(self) -> None:
