@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -237,6 +238,9 @@ class InfoAccuracyLLMVerify:
         candidates = self._apply_decision_filter(error_findings, file_texts, context, evidence_dir)
         ev_dir = evidence_dir if isinstance(evidence_dir, Path) else Path(evidence_dir)
         batch_size = self.params.get("fact_verdict_batch_size", FACT_VERDICT_BATCH_SIZE)
+        max_concurrency = self.params.get(
+            "fact_verdict_max_concurrency", EVALUATOR_DEFAULTS.fact_verdict_max_concurrency
+        )
         variables_base = {
             "title": context.get("task_input", {}).get("title", "未知标题"),
             "subject": context.get("task_input", {}).get("subject", "未知学科"),
@@ -244,30 +248,54 @@ class InfoAccuracyLLMVerify:
 
         # 分批调用 fact_verdict（候选过多时单次 prompt 过大会导致 LLM 调用失败）
         verdict_prompt_id = self.params.get("fact_verdict_prompt_id", "fact_verdict")
-        all_verdicts: list[dict[str, Any]] = []
-        for batch_start in range(0, len(candidates), batch_size):
-            batch = candidates[batch_start : batch_start + batch_size]
-            batch_idx = batch_start // batch_size
+        batches: list[list[dict[str, Any]]] = [
+            candidates[bs : bs + batch_size] for bs in range(0, len(candidates), batch_size)
+        ]
+
+        def _judge_batch(batch_idx: int) -> list[dict[str, Any]]:
+            _scores, record = orchestrator.judge(
+                constraint_id=self.evaluator_id,
+                sample_id=context.get("sample_id", "unknown"),
+                template_id=verdict_prompt_id,
+                variables={**variables_base, "candidates": batches[batch_idx]},
+                evidence_dir=ev_dir,
+                provider_name=self.params.get("llm_role"),
+                judge_id_suffix=f"fact_verdict_{batch_idx}",
+            )
+            parsed = getattr(record, "parsed_scores", None) if record else None
+            return parsed.get("verdicts", []) if isinstance(parsed, dict) else []
+
+        def _keep_batch(batch_idx: int, exc: bool) -> None:
+            logger.warning(
+                "fact_verdict 批次裁定失败，该批保留（召回优先）",
+                batch=batch_idx,
+                batch_size=len(batches[batch_idx]),
+                exc_info=exc,
+            )
+
+        # 批间无顺序依赖（verdicts 按自带 index 键控合并），按结果槽位回填；
+        # 单批失败 → 该批空裁定 → findings 缺裁定 → 默认保留（召回优先，不漏报）
+        verdicts_by_batch: list[list[dict[str, Any]]] = [[] for _ in batches]
+        if len(batches) > 1 and max_concurrency > 1:
+            executor = ThreadPoolExecutor(max_workers=min(max_concurrency, len(batches)))
             try:
-                _scores, record = orchestrator.judge(
-                    constraint_id=self.evaluator_id,
-                    sample_id=context.get("sample_id", "unknown"),
-                    template_id=verdict_prompt_id,
-                    variables={**variables_base, "candidates": batch},
-                    evidence_dir=ev_dir,
-                    provider_name=self.params.get("llm_role"),
-                    judge_id_suffix=f"fact_verdict_{batch_idx}",
-                )
-                parsed = getattr(record, "parsed_scores", None) if record else None
-                all_verdicts.extend(parsed.get("verdicts", []) if isinstance(parsed, dict) else [])
-            except Exception:
-                # 单批失败 → 该批 findings 缺裁定 → 默认保留（召回优先，不漏报）
-                logger.warning(
-                    "fact_verdict 批次裁定失败，该批保留（召回优先）",
-                    batch=batch_idx,
-                    batch_size=len(batch),
-                    exc_info=True,
-                )
+                futures = [executor.submit(_judge_batch, i) for i in range(len(batches))]
+                for i, future in enumerate(futures):
+                    try:
+                        verdicts_by_batch[i] = future.result()
+                    except Exception:
+                        _keep_batch(i, True)
+            finally:
+                executor.shutdown(wait=False, cancel_futures=True)
+        else:
+            for i in range(len(batches)):
+                try:
+                    verdicts_by_batch[i] = _judge_batch(i)
+                except Exception:
+                    _keep_batch(i, True)
+        all_verdicts: list[dict[str, Any]] = [
+            v for batch_verdicts in verdicts_by_batch for v in batch_verdicts
+        ]
 
         verdict_map = {
             v.get("index"): v for v in all_verdicts if isinstance(v, dict) and "index" in v

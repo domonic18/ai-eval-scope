@@ -137,6 +137,9 @@ class EvaluatorDefaults:
     decision_timeout_sec: float = 10.0
     # 问题正文覆盖（None=内置默认；仅替换 instructions，criteria 双侧定义固定）
     decision_question_template: str | None = None
+    # fact_verdict 分批复核的批间并发上限（1=串行；批间无顺序依赖，verdicts 按
+    # 自带 index 键控合并）。候选 > 单批容量时多批才并发，减少整段复核墙钟时间。
+    fact_verdict_max_concurrency: int = 1
 
 
 # 模块级单例
