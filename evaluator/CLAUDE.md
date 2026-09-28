@@ -11,7 +11,7 @@
 ## 配置
 
 - 环境变量从仓库根 `.env` 读取（`load_dotenv()` 自动向上查找）。
-- LLM 配置走双形态（arch/06 §4.6）：`agent-eval models set` 交互配置 → `~/.agent_eval/llm.json`（0600）；云端经 `AGENT_EVAL_HOST/API_KEY` 拉 `/api/public/llm-config`。固定四角色 text/vision/agent/jev（`config/llm_resolution.py` 解析；jev 为 Jev 误触过滤判定专线，未配置即静默禁用，不参与默认回退）。
+- LLM 配置走双形态（arch/06 §4.6）：`agent-eval models set` 交互配置 → `~/.agent_eval/llm.json`（0600）；云端经 `AGENT_EVAL_HOST/API_KEY` 拉 `/api/public/llm-config`。固定四角色 text/vision/agent/decision（角色注册表单源 `config/llm_roles.py`，行为按 kind 派发；`config/llm_resolution.py` 解析；decision 为判定专线（protocol=`noul`，具体模型纯配置），用于误触预筛，未配置即静默禁用，不参与默认回退）。
 
 ## 代码风格（强制）
 
