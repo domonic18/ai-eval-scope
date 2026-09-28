@@ -457,6 +457,48 @@ class TestModelsCommand:
         assert cfg is not None
         assert cfg.roles["decision"] is None
 
+    def test_set_unknown_role_offers_backup_and_restart(self, _isolated_env: Path) -> None:
+        """旧配置含未知角色（如跨版本角色改名）→ 向导不变砖：备份后重新开始。"""
+        import json
+
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        _isolated_env.write_text(
+            json.dumps({"version": 1, "default_role": "text", "roles": {"jev": None}}),
+            encoding="utf-8",
+        )
+        runner = CliRunner()
+        # 备份 y → 提供商/协议默认 → api-key → text 默认 y → 模型默认
+        # → vision n → decision n → 立即测试 n
+        result = runner.invoke(
+            models_app, ["set"], input="y\n\n\nsk-fresh-1234567890\n\n\nn\n\nn\n"
+        )
+        assert result.exit_code == 0, result.output
+        assert "备份" in result.output
+        backups = list(_isolated_env.parent.glob("llm.json.bak-*"))
+        assert len(backups) == 1  # 旧文件原样保留（含旧角色），供人工迁移/找回
+        assert "jev" in backups[0].read_text(encoding="utf-8")
+        cfg = load_llm_file()
+        assert cfg is not None
+        assert cfg.roles["text"] is not None and cfg.roles["text"].api_key == "sk-fresh-1234567890"
+
+    def test_set_unknown_role_decline_backup_exits(self, _isolated_env: Path) -> None:
+        """拒绝备份 → 退出码 1，旧文件原样不动（用户可能想先手工迁移）。"""
+        import json
+
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        raw = json.dumps({"version": 1, "default_role": "text", "roles": {"jev": None}})
+        _isolated_env.write_text(raw, encoding="utf-8")
+        result = CliRunner().invoke(models_app, ["set"], input="n\n")
+        assert result.exit_code == 1
+        assert "未知角色" in result.output
+        assert _isolated_env.read_text(encoding="utf-8") == raw
+
     def test_list_without_config_exits_1(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner
 

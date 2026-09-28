@@ -116,10 +116,25 @@ def models_set() -> None:
         save_llm_file,
     )
     from agent_eval.config.llm_roles import DECISION_ROLE
+    from agent_eval.core.exceptions import ConfigError
     from agent_eval.llm.decision import _DEFAULT_BASE_URL, SUGGESTED_MODEL
 
-    existing = load_llm_file() or LLMFileConfig()
-    rprint("[bold]═ LLM 配置向导 ═[/bold]（保存到 " + str(llm_file_path()) + "，权限 0600）")
+    # 旧配置不可读（跨版本角色改名 / 手改损坏）时 fail-fast 门禁照常生效，但向导
+    # 本身不能因此变砖：给出「备份重建 / 退出」由用户决定（工作台 onboard 捕获
+    # typer.Exit 后回落主菜单，语义衔接）。
+    path = llm_file_path()
+    try:
+        existing = load_llm_file() or LLMFileConfig()
+    except ConfigError as exc:
+        rprint(f"[red]现有配置无法读取：{exc}[/red]")
+        from datetime import datetime
+
+        backup = path.with_name(f"{path.name}.bak-{datetime.now():%Y%m%d%H%M%S}")
+        if not typer.confirm(f"是否备份为 {backup.name} 并重新开始配置？", default=True):
+            raise typer.Exit(1) from None
+        path.replace(backup)  # rename 保留原 0600 权限，密钥不外泄
+        existing = LLMFileConfig()
+    rprint("[bold]═ LLM 配置向导 ═[/bold]（保存到 " + str(path) + "，权限 0600）")
 
     # ① 提供商（预置厂商 + custom）
     vendor_options = [PROVIDER_LABELS[v] for v in PROVIDERS] + [_CUSTOM_LABEL]
