@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>趋势视图 · sasan-edu-function 主趋势 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .trend-card .card-body { padding: 16px 20px 8px; }
+  .trend-svg { width: 100%; height: 280px; }
+  .legend { display: flex; gap: 18px; justify-content: center; padding: 8px 0 4px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-line { width: 16px; height: 2px; border-radius: 1px; }
+  .vline { width: 0; height: 12px; border-left: 2px dashed var(--text-quaternary); display: inline-block; }
+  .def-chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .def-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-family: var(--mono); color: var(--text-secondary); background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 4px 10px; }
+  .def-chip b { color: var(--text-primary); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar">智</div><div class="org-meta"><div class="org-name">智能教育研发组</div><div class="org-plan">Team · 5 项目</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <nav class="nav-section">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 项目看板</a>
+      <a class="nav-item" href="run-detail.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg> 全部运行</a>
+      <div class="nav-label">组织</div>
+      <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
+      <a class="nav-item" href="org-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 组织设置</a>
+    </nav>
+    <div class="sidebar-foot">
+      <a class="nav-item" href="docs-integration.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指南</a>
+      <a class="nav-item" href="docs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> 开发文档</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><a href="dashboard.html">项目看板</a><span class="sep">/</span><a href="project-detail.html" style="color:var(--text-secondary)">课件生成评估</a><span class="sep">/</span><span class="current">趋势视图</span></div>
+      <div class="topbar-right"><button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1>sasan-edu-function 主趋势 <span class="badge badge-info" style="font-size:12px">过滤驱动</span> <span class="badge badge-neutral" style="font-size:12px">项目成员可见</span></h1>
+          <div class="sub">34 次运行 · 张三 创建 · 1 小时前更新</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 复制链接</button>
+          <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 追加运行</button>
+        </div>
+      </div>
+
+      <!-- 视图定义（过滤驱动） -->
+      <div class="card r-2" style="margin-bottom:16px"><div class="card-body" style="padding:12px 16px">
+        <div class="def-chips">
+          <span class="muted" style="font-size:12px">定义</span>
+          <span class="def-chip">场景包 <b>sasan-edu-function</b></span>
+          <span class="def-chip">状态 <b>completed · partial</b></span>
+          <span class="def-chip">时间 <b>近 90 天</b></span>
+          <span class="def-chip">上限 <b>500 点</b></span>
+          <a class="hint" style="margin-left:auto;cursor:pointer">编辑定义</a>
+        </div>
+      </div></div>
+
+      <!-- 趋势图 -->
+      <div class="card trend-card r-3" style="margin-bottom:16px">
+        <div class="card-head">
+          <div class="segment"><button class="active">综合得分</button><button>格式合格率</button><button>内容合格率</button><button>内容质量</button><button>偏好匹配度</button></div>
+          <span class="hint">指标来自 sasan-edu-function 包定义</span>
+        </div>
+        <div class="card-body">
+          <svg class="trend-svg" viewBox="0 0 720 280" preserveAspectRatio="none">
+            <line x1="0" y1="70" x2="720" y2="70" stroke="var(--border)" stroke-dasharray="3 4"/><line x1="0" y1="140" x2="720" y2="140" stroke="var(--border)" stroke-dasharray="3 4"/><line x1="0" y1="210" x2="720" y2="210" stroke="var(--border)" stroke-dasharray="3 4"/>
+            <line x1="452" y1="12" x2="452" y2="268" stroke="var(--text-quaternary)" stroke-dasharray="4 4"/>
+            <text x="460" y="26" font-size="10" fill="var(--text-quaternary)">包版本 v2.2 → v2.3</text>
+            <line x1="0" y1="180" x2="720" y2="180" stroke="var(--warning)" stroke-dasharray="5 4" opacity=".7"/>
+            <text x="8" y="174" font-size="10" fill="var(--warning)">达标 0.70</text>
+            <polyline fill="none" stroke="var(--accent)" stroke-width="2.5" points="0,150 60,142 120,155 180,136 240,147 300,130 360,140 420,124 452,128 510,138 570,120 630,108 690,98 720,94"/>
+            <circle cx="510" cy="138" r="3.5" fill="var(--accent)"/>
+            <text x="518" y="156" font-size="10" fill="var(--text-tertiary)">partial · 0.774</text>
+          </svg>
+          <div class="legend"><div class="legend-item"><span class="legend-line" style="background:var(--accent)"></span>综合得分</div><div class="legend-item"><span class="legend-line" style="background:var(--warning)"></span>达标阈值</div><div class="legend-item"><span class="vline"></span>版本切换归因</div></div>
+          <div class="muted" style="font-size:12px;text-align:center;padding-bottom:8px">已排除 3 次运行（无指标状态）· 34 / 500 点</div>
+        </div>
+      </div>
+
+      <!-- 视图内运行 -->
+      <div class="card r-4">
+        <div class="card-head">
+          <h3>视图内运行 <span class="count">34</span></h3>
+          <span class="hint">匹配过滤条件的新运行将自动出现在此与上方趋势中</span>
+        </div>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>运行</th><th>场景包</th><th>包版本</th><th>SUT 版本</th><th>状态</th><th class="num">综合得分</th><th>时间</th></tr></thead>
+          <tbody>
+            <tr onclick="location.href='run-detail.html'"><td class="mono">#run_2f8a</td><td><span class="chip">sasan-edu-function</span></td><td class="mono muted">v2.3</td><td class="mono muted">sut_9c2</td><td><span class="badge badge-success">completed</span></td><td class="num">0.781</td><td class="muted">12 分钟前</td></tr>
+            <tr onclick="location.href='run-detail.html'"><td class="mono">#run_2e91</td><td><span class="chip">sasan-edu-function</span></td><td class="mono muted">v2.3</td><td class="mono muted">sut_9c2</td><td><span class="badge badge-success">completed</span></td><td class="num">0.802</td><td class="muted">3 小时前</td></tr>
+            <tr onclick="location.href='run-detail.html'"><td class="mono">#run_2d7c</td><td><span class="chip">sasan-edu-function</span></td><td class="mono muted">v2.3</td><td class="mono muted">sut_9c2</td><td><span class="badge badge-warning">partial</span></td><td class="num">0.774</td><td class="muted">昨天 21:04</td></tr>
+            <tr onclick="location.href='run-detail.html'"><td class="mono">#run_2b18</td><td><span class="chip">sasan-edu-function</span></td><td class="mono muted">v2.2</td><td class="mono muted">sut_7a1</td><td><span class="badge badge-success">completed</span></td><td class="num">0.795</td><td class="muted">2 天前</td></tr>
+            <tr onclick="location.href='run-detail.html'"><td class="mono">#run_2a03</td><td><span class="chip">sasan-edu-function</span></td><td class="mono muted">v2.2</td><td class="mono muted">sut_7a1</td><td><span class="badge badge-success">completed</span></td><td class="num">0.788</td><td class="muted">3 天前</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <div class="callout callout-info r-5" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <b>过滤驱动</b>视图：新运行匹配条件即自动纳入；<b>固定清单</b>视图经「追加运行」勾选补入。跨包组合时同名指标直接可比，缺失点断线并标注场景。</div>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>
