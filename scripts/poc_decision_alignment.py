@@ -1,15 +1,16 @@
-"""Jev 误触过滤 Phase 0 对拍 PoC（一次性人工运行工具，不入测试/CI）。
+"""判定专线（decision）误触预筛对拍 PoC（一次性人工运行工具，不入测试/CI）。
 
-工作流（Jev 误触过滤 Phase 0 对拍校准）：
+工作流（判定专线误触预筛对拍校准）：
   smoke  — 连通性冒烟：单次 Noul 调用验证 key/网络/契约/resolved model（缺省命令）
   export — 规则引擎重放导出 error 级候选 JSONL（label 留空，人工标注：1=真错误 / 0=误触）
   run    — Noul 判定 vs 人工标签：agreement / Cohen's κ / 漏报率 / 延迟 / 成本
 
-用法（evaluator/ 下）：uv run python ../scripts/poc_jev_alignment.py [smoke|export|run]
+用法（evaluator/ 下）：uv run python ../scripts/poc_decision_alignment.py [smoke|export|run]
     export 加 --source <样本目录>；run 加 --candidates <jsonl> [--limit 20 先小样]
+    模型/端点/阈值可参数化：--model / --api-url / --drop-below（换模型须重跑对拍）
 
 密钥纪律：OPENROUTER_API_KEY 只从环境/仓库根 .env 读取，禁止出现在任何输出/日志/报告中。
-通道绑定：结论仅对 OpenRouter 通道（POST /api/alpha/decisions）成立，切官方直连须重跑对拍。
+通道绑定：结论仅对所配通道（缺省 OpenRouter POST /api/alpha/decisions）成立，切换须重跑对拍。
 """
 
 from __future__ import annotations
@@ -31,10 +32,10 @@ import httpx
 from dotenv import load_dotenv
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-API_URL = "https://openrouter.ai/api/alpha/decisions"
-JEV_MODEL = "typesafe/jev-1.13"  # 版本 pin；勿用 ~typesafe/jev-latest（漂移别名）
+DEFAULT_API_URL = "https://openrouter.ai/api/alpha/decisions"
+DEFAULT_MODEL = "typesafe/jev-1.13"  # 当前选型 pin（--model 可换同协议模型）；勿用漂移别名
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
-DROP_BELOW = 0.50  # Phase 0 对拍校准定标（2026-09-24），勿回退 0.10
+DEFAULT_DROP_BELOW = 0.50  # 对拍校准定标（2026-09-24），勿回退 0.10
 DEFAULT_SOURCE = REPO_ROOT / "samples" / "大单元学习总导"
 DEFAULT_OUT = REPO_ROOT / "evaluator" / "workspace" / "poc" / "jev_candidates.jsonl"
 
@@ -73,17 +74,19 @@ def _noul_call(
     client: httpx.Client,
     api_key: str,
     state: dict[str, str],
+    model: str = DEFAULT_MODEL,
+    api_url: str = DEFAULT_API_URL,
     counters: dict[str, int] | None = None,
 ) -> tuple[float, float, dict[str, Any]]:
-    """单候选 Noul 判定 → (p_yes, latency_ms, raw)；瞬时错误重试 1 次（对齐 JevClient 设计）。"""
-    body = {"model": JEV_MODEL, "state": state, "questions": {"is_real_error": NOUL_QUESTION}}
+    """单候选 Noul 判定 → (p_yes, latency_ms, raw)；瞬时错误重试 1 次（对齐 DecisionClient 设计）。"""
+    body = {"model": model, "state": state, "questions": {"is_real_error": NOUL_QUESTION}}
     last: Exception | None = None
     for attempt in (1, 2):
         if attempt == 2 and counters is not None:  # GIL 下 dict 单键自增足够用于 PoC 统计
             counters["retries"] = counters.get("retries", 0) + 1
         start = time.perf_counter()
         try:
-            resp = client.post(API_URL, json=body, headers={"Authorization": f"Bearer {api_key}"})
+            resp = client.post(api_url, json=body, headers={"Authorization": f"Bearer {api_key}"})
             if resp.status_code in RETRYABLE_STATUS:
                 raise _TransientError(f"HTTP {resp.status_code}", status=resp.status_code)
             if resp.status_code != 200:
@@ -111,7 +114,9 @@ def _cmd_smoke(args: argparse.Namespace) -> int:
             "text": "食堂每天消耗大米 25 千克，一个月按 30 天计算，共需要大米 7500 千克。",
             "claim": "算术错误: 25 × 30 = 7500（应为 750）",
         }
-        p_yes, latency_ms, data = _noul_call(client, api_key, state)  # 期望 p ≥ 0.9
+        p_yes, latency_ms, data = _noul_call(
+            client, api_key, state, model=args.model, api_url=args.api_url
+        )  # 期望 p ≥ 0.9
     print(
         f"resolved model : {data.get('model', '(响应未回显)')}\n"
         f"p(claim 成立)  : {p_yes:.4f}（构造为真实错误，期望 ≥ 0.9）｜latency: {latency_ms:.0f} ms\n"
@@ -180,9 +185,15 @@ def _cmd_export(args: argparse.Namespace) -> int:
 
 
 def _judge_one(
-    client: httpx.Client, api_key: str, rec: dict[str, Any]
+    client: httpx.Client, api_key: str, rec: dict[str, Any], model: str, api_url: str
 ) -> tuple[str, float, float, float]:
-    p, lat, data = _noul_call(client, api_key, {"text": rec["context"], "claim": rec["message"]})
+    p, lat, data = _noul_call(
+        client,
+        api_key,
+        {"text": rec["context"], "claim": rec["message"]},
+        model=model,
+        api_url=api_url,
+    )
     return rec["id"], p, lat, float(data.get("usage", {}).get("cost") or 0.0)
 
 
@@ -207,7 +218,10 @@ def _cmd_run(args: argparse.Namespace) -> int:
         httpx.Client(timeout=httpx.Timeout(args.timeout)) as client,
         ThreadPoolExecutor(max_workers=args.concurrency) as pool,
     ):
-        futures = {pool.submit(_judge_one, client, api_key, r): r for r in labeled}
+        futures = {
+            pool.submit(_judge_one, client, api_key, r, args.model, args.api_url): r
+            for r in labeled
+        }
         for done, fut in enumerate(as_completed(futures), 1):
             rec = futures[fut]
             try:
@@ -222,12 +236,14 @@ def _cmd_run(args: argparse.Namespace) -> int:
                 print(f"  进度 {done}/{total}（失败 {len(failed)}）")
 
     def _bucket(label: int, pid: str) -> str:
-        """混淆矩阵分桶：predicted_real = p >= DROP_BELOW（对齐 v1 过滤语义）。"""
+        """混淆矩阵分桶：predicted_real = p >= drop_below（对齐 v1 过滤语义）。"""
         if label == 1:
             return (
-                "tp" if results[pid][0] >= DROP_BELOW else "fn"
+                "tp" if results[pid][0] >= args.drop_below else "fn"
             )  # 真错误：升级 / 剔除=漏报（红线）
-        return "fp" if results[pid][0] >= DROP_BELOW else "tn"  # 误触：漏过滤（LLM 兜底）/ 正确剔除
+        return (
+            "fp" if results[pid][0] >= args.drop_below else "tn"
+        )  # 误触：漏过滤（LLM 兜底）/ 正确剔除
 
     counts = Counter(_bucket(r["label"], r["id"]) for r in labeled if r["id"] in results)
     tp, fp, fn, tn = counts["tp"], counts["fp"], counts["fn"], counts["tn"]
@@ -241,9 +257,9 @@ def _cmd_run(args: argparse.Namespace) -> int:
     p95 = lat_sorted[max(0, math.ceil(0.95 * len(lat_sorted)) - 1)] if lat_sorted else 0.0
     report = {
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
-        "channel": "openrouter:/api/alpha/decisions",  # 通道绑定声明
-        "model": JEV_MODEL,
-        "drop_below": DROP_BELOW,
+        "api_url": args.api_url,  # 通道绑定声明
+        "model": args.model,
+        "drop_below": args.drop_below,
         "confusion": {"tp": tp, "fp": fp, "tn": tn, "fn": fn},
         "agreement": round(agreement, 4),
         "kappa": round(kappa, 4),
@@ -284,6 +300,14 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit", type=int, default=0, help="run：只取前 N 条已标注候选")
     parser.add_argument("--concurrency", type=int, default=8, help="run：并发上限")
     parser.add_argument("--timeout", type=float, default=30.0, help="单次 HTTP 超时（秒）")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="判定模型 ID（换模型须重跑对拍）")
+    parser.add_argument("--api-url", default=DEFAULT_API_URL, help="Noul 决策端点 URL")
+    parser.add_argument(
+        "--drop-below",
+        type=float,
+        default=DEFAULT_DROP_BELOW,
+        help="阈值分带下界（对齐 drop_below 语义）",
+    )
     return parser
 
 
