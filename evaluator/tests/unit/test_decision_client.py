@@ -35,7 +35,7 @@ def _ok_response(name: str = "is_real_error") -> httpx.Response:
     return httpx.Response(
         200,
         json={
-            "model": "jev-1.13-20260917",
+            "model": "typesafe/jev-1.13-20260917",
             "answers": {name: {"noul": 0.92}},
             "usage": {"input_tokens": 494, "output_tokens": 22, "cost": 2.07e-05},
         },
@@ -74,7 +74,7 @@ class TestNoulSuccess:
         ans = client.noul(_QUESTION, {"text": "课件原文", "claim": "疑似错误"})
         assert ans.p_yes == 0.92
         assert ans.question_name == "is_real_error"
-        assert ans.model == "jev-1.13-20260917"  # 服务端 resolved 快照
+        assert ans.model == "typesafe/jev-1.13-20260917"  # 服务端 resolved 快照
         assert ans.latency_ms > 0
         assert ans.raw["usage"]["cost"] == pytest.approx(2.07e-05)
         req = calls[0]

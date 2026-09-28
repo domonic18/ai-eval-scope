@@ -76,7 +76,7 @@ class DecisionAnswer:
 
     p_yes: float  # P(yes)（服务端量化至 2 位小数）
     question_name: str  # 对应问题名
-    model: str = ""  # 服务端 resolved 模型快照（如 jev-1.13-20260917），供证据落盘
+    model: str = ""  # 服务端 resolved 模型快照（如 typesafe/jev-1.13-20260917），供证据落盘
     latency_ms: float = 0.0
     raw: dict[str, Any] = field(default_factory=dict)  # 完整响应（含 usage/cost）
 
