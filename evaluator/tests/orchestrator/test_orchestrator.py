@@ -663,9 +663,7 @@ class TestEvalOnlyConcurrency:
         """克隆 golden 样本为多个 task 目录（内容相同、task_id 不同）。"""
         import shutil
 
-        golden_dir = (
-            Path(__file__).parent.parent / "fixtures" / "golden" / "valid_docset"
-        )
+        golden_dir = Path(__file__).parent.parent / "fixtures" / "golden" / "valid_docset"
         for tid in task_ids:
             pkg_dir = tmp_path / "packages" / tid
             shutil.copytree(golden_dir, pkg_dir / "output")
