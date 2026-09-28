@@ -32,7 +32,7 @@ class InfoAccuracyLLMVerify:
     tier: Any
     params: dict[str, Any]
     _compute_result: Callable[..., Any]
-    _apply_jev_filter: Callable[..., Any]
+    _apply_decision_filter: Callable[..., Any]
 
     def _effective_prompt_id(self, default: str) -> str:
         """优先使用规则层传入的 prompt_id，回退到 params.template_id，最后才是默认值。"""
@@ -217,11 +217,11 @@ class InfoAccuracyLLMVerify:
         _llm_confirmed/_llm_reason），但不计入返回值（即不进入 rule_errors 一票否决）。
         调用/解析异常由调用方捕获并降级为"保留全部"（召回优先）。
 
-        候选构建前先经 Jev 高置信误触预筛（_apply_jev_filter，未启用时原样直构）：
-        被剔除候选写 _jev_filtered 审计字段并从复核集合排除——Jev 只有剔除权，
+        候选构建前先经判定专线高置信误触预筛（_apply_decision_filter，未启用时原样直构）：
+        被剔除候选写 _decision_filtered 审计字段并从复核集合排除——判定专线只有剔除权，
         升级侧候选的裁定语义与本函数原先行为完全一致。
         """
-        candidates = self._apply_jev_filter(error_findings, file_texts, context, evidence_dir)
+        candidates = self._apply_decision_filter(error_findings, file_texts, context, evidence_dir)
         ev_dir = evidence_dir if isinstance(evidence_dir, Path) else Path(evidence_dir)
         batch_size = self.params.get("fact_verdict_batch_size", FACT_VERDICT_BATCH_SIZE)
         variables_base = {
@@ -262,8 +262,8 @@ class InfoAccuracyLLMVerify:
 
         confirmed: list[dict[str, Any]] = []
         for i, f in enumerate(error_findings):
-            if f.get("_jev_filtered"):
-                continue  # Jev 高置信误触已剔除：不进 rule_errors（filter-only 剔除权）
+            if f.get("_decision_filtered"):
+                continue  # 判定专线高置信误触已剔除：不进 rule_errors（filter-only 剔除权）
             v = verdict_map.get(i)
             # 缺裁定 → 默认 True（召回优先，不漏报）
             is_real = bool(v.get("is_real_error", True)) if v else True

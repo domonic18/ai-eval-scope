@@ -1,4 +1,4 @@
-"""JevClient 单测 — httpx.MockTransport 全离线（禁联网纪律）。
+"""DecisionClient 单测 — httpx.MockTransport 全离线（禁联网纪律）。
 
 覆盖：成功契约（URL/body/鉴权头/noul 解析/resolved model）、瞬时错误重试一次
 （429/5xx/超时）、重试耗尽分级抛出、401 即失败不重试、响应畸形（缺 noul/非数值/
@@ -15,15 +15,15 @@ import pytest
 
 from agent_eval.config.llm import ProviderConfig
 from agent_eval.core.exceptions import (
-    JevResponseError,
+    DecisionResponseError,
     LLMAuthError,
     LLMError,
     LLMNetworkError,
     LLMRateLimitError,
 )
-from agent_eval.llm.jev import JevClient, NoulQuestion
+from agent_eval.llm.decision import DecisionClient, NoulQuestion
 
-_API_KEY = "sk-jev-unit-test-0000"
+_API_KEY = "sk-decision-unit-test-0000"
 _QUESTION = NoulQuestion(
     name="is_real_error",
     instructions="判定疑似错误是否成立",
@@ -45,7 +45,7 @@ def _ok_response(name: str = "is_real_error") -> httpx.Response:
 def _make_client(
     handler: Callable[[httpx.Request], httpx.Response],
     base_url: str | None = "https://router.test/api",
-) -> tuple[JevClient, list[httpx.Request]]:
+) -> tuple[DecisionClient, list[httpx.Request]]:
     calls: list[httpx.Request] = []
 
     def _recording(request: httpx.Request) -> httpx.Response:
@@ -59,13 +59,13 @@ def _make_client(
         base_url=base_url,
         timeout_sec=5.0,
     )
-    return JevClient("jev", config, transport=httpx.MockTransport(_recording)), calls
+    return DecisionClient("decision", config, transport=httpx.MockTransport(_recording)), calls
 
 
 @pytest.fixture(autouse=True)
 def _no_retry_delay(monkeypatch: pytest.MonkeyPatch) -> None:
     """重试退避归零（单元测试不等 0.5s 墙钟）。"""
-    monkeypatch.setattr("agent_eval.llm.jev._RETRY_DELAY_SEC", 0.0)
+    monkeypatch.setattr("agent_eval.llm.decision._RETRY_DELAY_SEC", 0.0)
 
 
 class TestNoulSuccess:
@@ -147,25 +147,25 @@ class TestTransientRetry:
 
 class TestMalformedResponse:
     def test_missing_answers_raises_response_error(self) -> None:
-        client, _ = _make_client(lambda _r: httpx.Response(200, json={"model": "jev"}))
-        with pytest.raises(JevResponseError, match="noul"):
+        client, _ = _make_client(lambda _r: httpx.Response(200, json={"model": "x"}))
+        with pytest.raises(DecisionResponseError, match="noul"):
             client.noul(_QUESTION, {"text": "t"})
 
     def test_non_numeric_noul_raises(self) -> None:
         body = {"answers": {"is_real_error": {"noul": "high"}}}
         client, _ = _make_client(lambda _r: httpx.Response(200, json=body))
-        with pytest.raises(JevResponseError):
+        with pytest.raises(DecisionResponseError):
             client.noul(_QUESTION, {"text": "t"})
 
     def test_out_of_range_noul_raises(self) -> None:
         body = {"answers": {"is_real_error": {"noul": 1.5}}}
         client, _ = _make_client(lambda _r: httpx.Response(200, json=body))
-        with pytest.raises(JevResponseError, match="越界"):
+        with pytest.raises(DecisionResponseError, match="越界"):
             client.noul(_QUESTION, {"text": "t"})
 
-    def test_jev_errors_are_llm_errors(self) -> None:
-        """分级异常均落 LLMError 族——过滤层单点捕获（Jev 故障时放行降级，不阻塞评测）。"""
-        assert issubclass(JevResponseError, LLMError)
+    def test_decision_errors_are_llm_errors(self) -> None:
+        """分级异常均落 LLMError 族——过滤层单点捕获（判定线故障时放行降级，不阻塞评测）。"""
+        assert issubclass(DecisionResponseError, LLMError)
 
 
 class TestHygiene:

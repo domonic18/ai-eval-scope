@@ -291,10 +291,12 @@ class TestDoctor:
         monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
         monkeypatch.delenv("AGENT_EVAL_HOST", raising=False)
         monkeypatch.delenv("AGENT_EVAL_API_KEY", raising=False)
+        # 隔离本机 llm.json（模型检查须确定性，不随开发机配置漂移）
+        monkeypatch.setenv("AGENT_EVAL_LLM_CONFIG", str(tmp_path / "absent-llm.json"))
         checks = {c["name"]: c for c in doctor.run_checks()}
         assert set(checks) == {"平台", "模型", "凭证", "场景包", "workspace", "依赖 extras"}
         assert checks["平台"]["status"] == "warn"
-        assert checks["模型"]["status"] in ("ok", "err")  # 取决于本机 llm.json
+        assert checks["模型"]["status"] in ("ok", "err", "warn")  # 隔离后为未配置告警
         assert checks["场景包"]["status"] == "ok"  # 内置包随 wheel 发布
 
     def test_has_blocking_only_on_models_err(self) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from agent_eval.config import LLMConfig
+from agent_eval.config.llm_roles import is_chat_role
 from agent_eval.core.exceptions import ProviderNotFoundError
 from agent_eval.llm.client import LLMClient
 from agent_eval.llm.factory import LLMClientFactory
@@ -24,9 +25,9 @@ class ProviderPool:
         self._providers: dict[str, LLMClient] = {}
         self._default_name: str = config.default
         for name, pcfg in config.providers.items():
-            if name == "jev":
-                # 判定专线：非 chat 线路，由 JevFactFilter 直接构造，
-                # 不进 chat 客户端池（误建会以 chat 协议打判定端点必然报错）
+            if not is_chat_role(name):
+                # 非 chat 线路（判定专线等）：由对应专线构造器（如 DecisionClient）
+                # 直接消费，不进 chat 客户端池（误建会以 chat 协议打判定端点必然报错）
                 continue
             self._providers[name] = LLMClientFactory.create(name, pcfg)
 

@@ -1,13 +1,16 @@
-"""Jev（TypeSafe System One）判定模型客户端 — Noul 原语 HTTP 直连。
+"""判定（decision）模型客户端 — Noul 原语 HTTP 直连。
 
-Jev 是「判定模型」而非对话模型：state + 是/否问题 → P(yes)，无生成能力，
+判定模型是「判定线」而非对话线：state + 是/否问题 → P(yes)，无生成能力，
 **不继承 LLMClient**（chat 抽象与 noul(state+question) 原语不兼容）；
-由 jev_filter（Phase 2）直接构造消费，不进 ProviderPool。
+由 decision_filter（策略层）直接构造消费，不进 ProviderPool。
 
-通道绑定（Phase 0 已定，对拍结论仅对此通道成立）：OpenRouter
+三轴定位：role=decision（能力，见 config/llm_roles.py）× protocol=noul
+（wire 契约）× model=模型选型（纯配置字段）。
+
+通道绑定（对拍校准结论仅对此通道成立）：OpenRouter
 ``POST {base_url}/alpha/decisions``，base_url 缺省 ``https://openrouter.ai/api``；
-model 用 slug ``typesafe/jev-1.13``（版本 pin，勿用 ``~typesafe/jev-latest``
-漂移别名）；切官方直连须重跑 Phase 0 对拍。
+model 用版本 pin 的 slug（当前选型 ``typesafe/jev-1.13``，勿用漂移别名）；
+切通道或换模型须重跑对拍校准。
 
 凭证纪律：api_key 仅经 ProviderConfig 注入（llm.json 0600 / 平台 DB），
 禁止出现在日志、异常消息与任何落盘产物。
@@ -26,24 +29,28 @@ import structlog
 
 from agent_eval.config import ProviderConfig
 from agent_eval.core.exceptions import (
-    JevError,
-    JevResponseError,
+    DecisionError,
+    DecisionResponseError,
     LLMAuthError,
     LLMError,
     LLMNetworkError,
     LLMRateLimitError,
 )
 
-#: OpenRouter 决策端点（Phase 0 验证过的通道；切官方直连时改此常量并重跑对拍）
+#: 当前选型的模型 slug（示例非契约：换同 Noul 协议模型只改此值或配置的
+#: model 字段，零代码改动；向导/文档单源引用）
+SUGGESTED_MODEL = "typesafe/jev-1.13"
+
+#: OpenRouter 决策端点（对拍校准过的通道；切通道时改此常量并重跑对拍）
 _DEFAULT_BASE_URL = "https://openrouter.ai/api"
 _DECISIONS_PATH = "/alpha/decisions"
 
-#: 瞬时错误（超时/连接中断/429/5xx）重试 1 次（与 Phase 0 对拍 PoC 同口径）
+#: 瞬时错误（超时/连接中断/429/5xx）重试 1 次（与对拍校准 PoC 同口径）
 _MAX_RETRIES = 1
 _RETRY_DELAY_SEC = 0.5
 _RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 
-LOG = structlog.get_logger("llm.jev")
+LOG = structlog.get_logger("llm.decision")
 
 
 @dataclass
@@ -64,10 +71,10 @@ class NoulQuestion:
 
 
 @dataclass
-class JevAnswer:
+class DecisionAnswer:
     """单次 Noul 判定结果。"""
 
-    p_yes: float  # P(yes)（OpenRouter 量化至 2 位小数）
+    p_yes: float  # P(yes)（服务端量化至 2 位小数）
     question_name: str  # 对应问题名
     model: str = ""  # 服务端 resolved 模型快照（如 jev-1.13-20260917），供证据落盘
     latency_ms: float = 0.0
@@ -85,16 +92,18 @@ class _TransientError(Exception):
 def _map_status_error(status: int, body_text: str, details: dict[str, Any]) -> LLMError:
     """HTTP 状态 → LLM 分级异常（沿用全系统分级语义，消费方统一按 LLMError 捕获）。"""
     if status == 429:
-        return LLMRateLimitError("Jev 限流（HTTP 429）", details=details)
+        return LLMRateLimitError("判定线路限流（HTTP 429）", details=details)
     if status in (401, 403):
-        return LLMAuthError(f"Jev 鉴权失败（HTTP {status}）——检查该线路 API Key", details=details)
+        return LLMAuthError(
+            f"判定线路鉴权失败（HTTP {status}）——检查该线路 API Key", details=details
+        )
     if status >= 500:
-        return LLMNetworkError(f"Jev 服务端错误（HTTP {status}）", details=details)
-    return JevError(f"Jev HTTP {status}: {body_text[:200]}", details=details)
+        return LLMNetworkError(f"判定线路服务端错误（HTTP {status}）", details=details)
+    return DecisionError(f"判定线路 HTTP {status}: {body_text[:200]}", details=details)
 
 
-class JevClient:
-    """Jev Noul 判定客户端（httpx 直连，复用连接池）。
+class DecisionClient:
+    """Noul 判定客户端（httpx 直连，复用连接池）。
 
     httpx.Client 官方支持多线程共享（连接池内部加锁），filter 层
     ThreadPoolExecutor 并发判定可共用单实例。
@@ -107,8 +116,8 @@ class JevClient:
         self._config = config
         base = (config.base_url or _DEFAULT_BASE_URL).rstrip("/")
         self._url = f"{base}{_DECISIONS_PATH}"
-        # timeout 显式化：ProviderConfig 缺省 180s 对秒级判定过宽，Phase 2 由
-        # EvaluatorDefaults.jev_timeout_sec 覆写后传入
+        # timeout 显式化：ProviderConfig 缺省 180s 对秒级判定过宽，由
+        # EvaluatorDefaults.decision_timeout_sec 覆写后传入
         self._client = httpx.Client(
             timeout=config.timeout_sec,
             headers={"Authorization": f"Bearer {config.api_key}"},
@@ -117,23 +126,23 @@ class JevClient:
 
     @property
     def name(self) -> str:
-        """线路名（与 ProviderConfig 命名惯例一致，如 "jev"）。"""
+        """线路名（与 ProviderConfig 命名惯例一致，如 "decision"）。"""
         return self._name
 
     @property
     def model(self) -> str:
-        """配置的模型 slug（服务端 resolved 快照随 JevAnswer.model 返回）。"""
+        """配置的模型 slug（服务端 resolved 快照随 DecisionAnswer.model 返回）。"""
         return self._config.model
 
-    def noul(self, question: NoulQuestion, state: Mapping[str, str]) -> JevAnswer:
-        """判定一个是/否问题 → JevAnswer。
+    def noul(self, question: NoulQuestion, state: Mapping[str, str]) -> DecisionAnswer:
+        """判定一个是/否问题 → DecisionAnswer。
 
         Raises:
             LLMNetworkError: 超时/连接中断/5xx，重试 1 次后仍失败。
             LLMRateLimitError: 限流（429），重试 1 次后仍失败。
             LLMAuthError: 鉴权失败（不重试）。
-            JevError: 其他非 200 响应。
-            JevResponseError: 响应结构异常（缺 answers/noul、数值越界）。
+            DecisionError: 其他非 200 响应。
+            DecisionResponseError: 响应结构异常（缺 answers/noul、数值越界）。
         """
         body = {
             "model": self._config.model,
@@ -148,7 +157,7 @@ class JevClient:
                     raise exc.error from exc
                 # 每次重试必须留痕（openai_compat 同款纪律）
                 LOG.warning(
-                    "jev.noul.retry",
+                    "decision.noul.retry",
                     provider=self._name,
                     model=self._config.model,
                     attempt=attempt + 1,
@@ -166,13 +175,13 @@ class JevClient:
         """释放连接池（常驻进程复用后显式关闭；CLI 一次性进程可省略）。"""
         self._client.close()
 
-    def _post_once(self, body: dict[str, Any], question_name: str) -> JevAnswer:
+    def _post_once(self, body: dict[str, Any], question_name: str) -> DecisionAnswer:
         start = time.perf_counter()
         try:
             resp = self._client.post(self._url, json=body)
         except httpx.TransportError as e:  # 超时/连接中断均属此族
             raise _TransientError(
-                LLMNetworkError(f"Jev 网络错误: {type(e).__name__}", details=self._details())
+                LLMNetworkError(f"判定线路网络错误: {type(e).__name__}", details=self._details())
             ) from e
         if resp.status_code == 200:
             return self._parse_answer(resp, question_name, start)
@@ -181,21 +190,25 @@ class JevClient:
             raise _TransientError(error)
         raise error
 
-    def _parse_answer(self, resp: httpx.Response, question_name: str, start: float) -> JevAnswer:
+    def _parse_answer(
+        self, resp: httpx.Response, question_name: str, start: float
+    ) -> DecisionAnswer:
         latency_ms = (time.perf_counter() - start) * 1000
         try:
             data = resp.json()
             p_yes = float(data["answers"][question_name]["noul"])
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
             top_keys = sorted(data) if isinstance(data, dict) else type(data).__name__
-            raise JevResponseError(
-                f"Jev 响应缺 answers.{question_name}.noul 数值（顶层键: {top_keys}）",
+            raise DecisionResponseError(
+                f"判定线路响应缺 answers.{question_name}.noul 数值（顶层键: {top_keys}）",
                 details=self._details(),
             ) from e
         if not 0.0 <= p_yes <= 1.0:
-            raise JevResponseError(f"Jev 响应 noul 越界 [0,1]: {p_yes}", details=self._details())
+            raise DecisionResponseError(
+                f"判定线路响应 noul 越界 [0,1]: {p_yes}", details=self._details()
+            )
         model = data.get("model") if isinstance(data, dict) else None
-        return JevAnswer(
+        return DecisionAnswer(
             p_yes=p_yes,
             question_name=question_name,
             model=model if isinstance(model, str) else "",

@@ -1,18 +1,18 @@
-"""Jev 高置信误触过滤层 — 规则 error 候选送 LLM 复核前的预筛（策略层）。
+"""判定专线高置信误触过滤层 — 规则 error 候选送 LLM 复核前的预筛（策略层）。
 
-在 commonsense.info_accuracy 的 fact_verdict 批量复核前，用 Jev Noul 原语
+在 commonsense.info_accuracy 的 fact_verdict 批量复核前，用 Noul 原语
 （state + 是/否问题 → P(yes)）做纯语义二值预判：P(真错误) < drop_below 的
-高置信误触直接剔除。**filter-only 语义**：Jev 只有剔除权、无确认权——真错误
-的最终裁定与解释一律由 LLM 产出。
+高置信误触直接剔除。**filter-only 语义**：判定专线只有剔除权、无确认权——
+真错误的最终裁定与解释一律由 LLM 产出。
 
 降级语义（召回优先不变式）：
-- 未启用 / jev 线路未注入 → 不调 Jev，全量走 LLM（与未启用逐字节一致）
+- 未启用 / decision 线路未注入 → 不调判定专线，全量走 LLM（与未启用逐字节一致）
 - 单候选调用/解析失败 → 该候选 ESCALATE（不 DROP）
 - p ∈ [drop_below, 1.0] → ESCALATE → LLM 终审
 
-阈值 drop_below=0.50 为对拍校准值（误触带 ≤0.29 / 真错误带 ≥0.79 空谷定标）；
-任何阈值或模型版本变更须重跑对拍。候选 context 来自被评课件文本，判定结果
-只影响「是否送 LLM」，最坏后果=漏过滤（无提权面）。
+阈值 drop_below=0.50 为对拍校准值（误触带 ≤0.29 / 真错误带 ≥0.79 空谷定标，
+基于当前选型 typesafe/jev-1.13）；任何阈值或模型变更须重跑对拍。候选 context
+来自被评课件文本，判定结果只影响「是否送 LLM」，最坏后果=漏过滤（无提权面）。
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ from typing import Any
 
 import structlog
 
-from agent_eval.llm.jev import JevError, NoulQuestion
+from agent_eval.llm.decision import DecisionError, NoulQuestion
 
-logger = structlog.get_logger("evaluation.jev")
+logger = structlog.get_logger("evaluation.decision")
 
 #: 默认问题正文（对齐 fact_verdict 判定原则：成立需「原文确实陈述该事实，
 #: 且该陈述确实错误」；语用框架——否定标记/反例/假设/纠错表述——不算成立）
@@ -45,8 +45,8 @@ DEFAULT_CRITERIA: dict[str, str] = {
 
 
 @dataclass
-class JevStageReport:
-    """单次过滤阶段的审计报告（供 jev_fact_filter.json 落盘；不含任何凭证）。"""
+class DecisionStageReport:
+    """单次过滤阶段的审计报告（供 decision_fact_filter.json 落盘；不含任何凭证）。"""
 
     enabled: bool = True
     model: str = ""  # 服务端 resolved 快照，缺 resolved 时回退配置 slug
@@ -66,10 +66,10 @@ class JevStageReport:
         }
 
 
-class JevFactFilter:
-    """规则 error 候选的 Jev 预筛器（filter-only：产出 DROP/ESCALATE 分带）。
+class DecisionFactFilter:
+    """规则 error 候选的判定专线预筛器（filter-only：产出 DROP/ESCALATE 分带）。
 
-    构造注入 JevClient（单测经替身 client 注入，禁联网纪律不破）；httpx.Client
+    构造注入 DecisionClient（单测经替身 client 注入，禁联网纪律不破）；httpx.Client
     官方支持多线程共享，run() 内 ThreadPoolExecutor 并发判定共用单实例。
     """
 
@@ -83,7 +83,7 @@ class JevFactFilter:
     ) -> None:
         """
         Args:
-            client: JevClient 实例（或同形替身：noul(question, state) -> JevAnswer）。
+            client: DecisionClient 实例（或同形替身：noul(question, state) -> DecisionAnswer）。
             drop_below: P(真错误) 低于此值判高置信误触 → 剔除。
             max_concurrency: Noul 并发上限。
             instructions: 问题正文覆盖（None=内置默认）。
@@ -95,11 +95,11 @@ class JevFactFilter:
         self._instructions = instructions or DEFAULT_INSTRUCTIONS
         self._criteria = dict(criteria) if criteria else dict(DEFAULT_CRITERIA)
 
-    def run(self, candidates: list[dict[str, Any]]) -> JevStageReport:
+    def run(self, candidates: list[dict[str, Any]]) -> DecisionStageReport:
         """并发判定候选集合，产出分带报告。候选形态：{index, file, message, context}。
 
-        逐候选异常（JevError）吞并 → 该候选 ESCALATE；本方法不主动抛
-        JevError（整体故障等价于全量升级，语义与未启用一致）。
+        逐候选异常（DecisionError）吞并 → 该候选 ESCALATE；本方法不主动抛
+        DecisionError（整体故障等价于全量升级，语义与未启用一致）。
         """
         question = NoulQuestion(
             name="is_real_error", instructions=self._instructions, criteria=self._criteria
@@ -111,7 +111,7 @@ class JevFactFilter:
                 items[i] = fut.result()
         dropped = sum(1 for it in items if it.get("decision") == "drop")
         model = next((it["model"] for it in items if it.get("model")), "") or self._client.model
-        return JevStageReport(
+        return DecisionStageReport(
             model=model,
             drop_below=self._drop_below,
             counts={"total": len(items), "dropped": dropped, "escalated": len(items) - dropped},
@@ -124,9 +124,9 @@ class JevFactFilter:
         start = time.monotonic()
         try:
             ans = self._client.noul(question, state)
-        except JevError as e:
+        except DecisionError as e:
             logger.warning(
-                "jev 单候选判定失败 → 升级 LLM（召回优先）",
+                "判定专线单候选失败 → 升级 LLM（召回优先）",
                 index=candidate.get("index"),
                 error=str(e),
             )

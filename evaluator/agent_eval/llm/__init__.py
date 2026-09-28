@@ -2,8 +2,13 @@
 
 from agent_eval.config import LLMConfig, ProviderConfig
 from agent_eval.llm.client import LLMClient
+from agent_eval.llm.decision import (
+    DecisionAnswer,
+    DecisionClient,
+    DecisionResponseError,
+    NoulQuestion,
+)
 from agent_eval.llm.factory import LLMClientFactory
-from agent_eval.llm.jev import JevAnswer, JevClient, JevResponseError, NoulQuestion
 from agent_eval.llm.models import (
     JudgeRecord,
     LLMResponse,
@@ -14,9 +19,9 @@ from agent_eval.llm.models import (
 from agent_eval.llm.pool import ProviderPool
 
 __all__ = [
-    "JevAnswer",
-    "JevClient",
-    "JevResponseError",
+    "DecisionAnswer",
+    "DecisionClient",
+    "DecisionResponseError",
     "LLMClient",
     "LLMConfig",
     "LLMClientFactory",

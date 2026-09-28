@@ -221,12 +221,12 @@ class LLMAuthError(LLMError):
     """LLM 鉴权失败（401/API Key 无效）— 不可恢复，不应重试。"""
 
 
-class JevError(LLMError):
-    """Jev 判定模型调用异常（llm 域；网络/鉴权/限流沿用上方 LLM 分级异常）。"""
+class DecisionError(LLMError):
+    """判定（decision）线路调用异常（llm 域；网络/鉴权/限流沿用上方 LLM 分级异常）。"""
 
 
-class JevResponseError(JevError):
-    """Jev 响应结构异常（缺 answers/noul、数值越界等）— 不重试。"""
+class DecisionResponseError(DecisionError):
+    """判定线路响应结构异常（缺 answers/noul、数值越界等）— 不重试。"""
 
 
 # ─── 编排调度相关 ───

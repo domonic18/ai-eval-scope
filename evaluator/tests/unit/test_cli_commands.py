@@ -376,12 +376,15 @@ class TestOpenCommand:
 class TestDoctorCommand:
     def test_doctor_table(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        # 隔离本机 llm.json（doctor 的模型检查须确定性，不随开发机配置漂移）
+        monkeypatch.setenv("AGENT_EVAL_LLM_CONFIG", str(tmp_path / "absent-llm.json"))
         result = runner.invoke(app, ["doctor"])
         assert result.exit_code == 0, result.output
         assert "检查项" in result.output
 
     def test_doctor_json(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path))
+        monkeypatch.setenv("AGENT_EVAL_LLM_CONFIG", str(tmp_path / "absent-llm.json"))
         result = runner.invoke(app, ["--output-format", "json", "doctor"])
         assert result.exit_code == 0, result.output
         payload = json.loads(result.output)
