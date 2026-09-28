@@ -328,6 +328,7 @@ def evaluate_stage(
     gate: str = "off",
     report_formats: list[str] | None = None,
     package_id: str = "",
+    max_concurrency: int = 1,
 ) -> Any:
     """评估（原 eval 命令 5 段）。
 
@@ -369,6 +370,7 @@ def evaluate_stage(
             gate=gate,
             report_formats=report_formats,
             package_id=package_id,
+            max_concurrency=max_concurrency,
         )
     finally:
         if judge_ctx.renderer is not None:
