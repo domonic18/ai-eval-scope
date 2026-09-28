@@ -7,10 +7,24 @@ import { getPrisma } from "../infra/prisma"
 import { decryptToken, encryptToken, maskToken } from "../infra/crypto"
 import { PlatformError } from "../middleware/errorHandler"
 
-export type LlmProtocol = "openai" | "anthropic"
+export type LlmProtocol = "openai" | "anthropic" | "noul"
 
-/** 合法角色注册表（与执行面 ROLES 对齐；jev=Jev 判定专线，filter-only）。 */
-const LLM_ROLES = ["text", "vision", "agent", "jev"]
+/**
+ * 角色注册表（与执行面 evaluator/agent_eval/config/llm_roles.py 的 ROLE_SPECS 对齐）。
+ * probe 决定连通性探针派发：chat 走对话冒烟，noul 走判定协议探针（llm-client.service）。
+ */
+const ROLE_REGISTRY = [
+  { role: "text", label: "text·评估文本", probe: "chat" },
+  { role: "vision", label: "vision·视觉", probe: "chat" },
+  { role: "agent", label: "agent·执行侧", probe: "chat" },
+  { role: "decision", label: "decision·判定专线", probe: "noul" },
+] as const
+
+/** 合法角色名（由注册表派生；放宽为 string[] 供入参校验）。 */
+const LLM_ROLES: readonly string[] = ROLE_REGISTRY.map((r) => r.role)
+
+/** provider 白名单：chat 双协议 + 判定专线 noul（decision 行）。 */
+const LLM_PROVIDERS: readonly string[] = ["openai", "anthropic", "noul"]
 
 /** 对外回显形状（api_key 仅脱敏，明文永不下发）。 */
 export interface LlmModelVO {
@@ -103,8 +117,11 @@ class LlmModelRepository {
 
   async create(input: LlmModelInput): Promise<LlmModelVO> {
     if (!input.apiKey) throw new PlatformError("api_key 必填", { status: 400, code: "VALIDATION_ERROR" })
-    if (!["openai", "anthropic"].includes(input.provider)) {
-      throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
+    if (!LLM_PROVIDERS.includes(input.provider)) {
+      throw new PlatformError(`provider 必须为 ${LLM_PROVIDERS.join("、")} 之一`, {
+        status: 400,
+        code: "VALIDATION_ERROR",
+      })
     }
     if (input.role !== undefined && !LLM_ROLES.includes(input.role)) {
       throw new PlatformError(`role 必须为 ${LLM_ROLES.join("、")} 之一`, { status: 400, code: "VALIDATION_ERROR" })
@@ -130,8 +147,11 @@ class LlmModelRepository {
   }
 
   async update(id: string, input: Partial<LlmModelInput>): Promise<LlmModelVO> {
-    if (input.provider && !["openai", "anthropic"].includes(input.provider)) {
-      throw new PlatformError("provider 必须为 openai 或 anthropic", { status: 400, code: "VALIDATION_ERROR" })
+    if (input.provider && !LLM_PROVIDERS.includes(input.provider)) {
+      throw new PlatformError(`provider 必须为 ${LLM_PROVIDERS.join("、")} 之一`, {
+        status: 400,
+        code: "VALIDATION_ERROR",
+      })
     }
     if (input.role !== undefined && !LLM_ROLES.includes(input.role)) {
       throw new PlatformError(`role 必须为 ${LLM_ROLES.join("、")} 之一`, { status: 400, code: "VALIDATION_ERROR" })

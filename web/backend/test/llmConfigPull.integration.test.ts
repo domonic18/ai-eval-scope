@@ -82,14 +82,14 @@ describe("GET /api/public/llm-config", () => {
       baseUrl: "https://v.example.com",
       apiKey: "sk-vision",
     })
-    // jev 判定专线行（filter-only，executor 拉取后经 JevClient 走 Noul 通道）
+    // decision 判定专线行（filter-only，executor 拉取后经 DecisionClient 走 Noul 通道）
     await createModel(app, admin.accessToken, {
-      name: "Jev Line",
-      provider: "openai",
-      role: "jev",
+      name: "Decision Line",
+      provider: "noul",
+      role: "decision",
       modelName: "typesafe/jev-1.13",
       baseUrl: "https://openrouter.ai/api",
-      apiKey: "sk-jev",
+      apiKey: "sk-decision",
       extra: { timeout_sec: 10 },
     })
 
@@ -100,7 +100,7 @@ describe("GET /api/public/llm-config", () => {
       .get("/api/public/llm-config")
       .set("Authorization", `Bearer ${key.token}`)
     expect(pull.status).toBe(200)
-    expect(Object.keys(pull.body.roles).sort()).toEqual(["jev", "text", "vision"])
+    expect(Object.keys(pull.body.roles).sort()).toEqual(["decision", "text", "vision"])
     // 同角色 isDefault 优先（Default 后建但被拉高）
     expect(pull.body.roles.text.model).toBe("text-default")
     expect(pull.body.roles.text.api_key).toBe("sk-text-def")
@@ -113,11 +113,11 @@ describe("GET /api/public/llm-config", () => {
       api_key: "sk-vision",
       base_url: "https://v.example.com",
     })
-    // jev 行解密透传：评估器 LLMPlatform 按 ROLES 过滤后建 JevClient（timeout_sec 走 extra）
-    expect(pull.body.roles.jev).toMatchObject({
-      provider: "openai",
+    // decision 行解密透传：评估器 LLMPlatform 按 ROLES 过滤后建 DecisionClient（timeout_sec 走 extra）
+    expect(pull.body.roles.decision).toMatchObject({
+      provider: "noul",
       model: "typesafe/jev-1.13",
-      api_key: "sk-jev",
+      api_key: "sk-decision",
       base_url: "https://openrouter.ai/api",
       timeout_sec: 10,
     })

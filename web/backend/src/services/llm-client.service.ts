@@ -3,7 +3,7 @@
  *
  * 协议分支裸 HTTP：openai 走 /chat/completions，anthropic 走 /v1/messages。
  * - testModel(id): 1-token ping，返回 {status, detail}（失败也为 200，body 字段），写回 last_test_*；
- *   role=jev 判定专线走 Noul 决策端点探针（非 chat 协议）。
+ *   判定专线（role=decision）按角色注册表 probe 派发走 Noul 决策端点探针（非 chat 协议）。
  * - chat({messages, modelId?}): 通用 chat 入口，供 /api/v1/ai/* 生成功能复用。
  *
  * 不引入 SDK 依赖，仅用全局 fetch（Node 18+）。
@@ -34,7 +34,11 @@ const ANTHROPIC_VERSION = "2023-06-01"
 const DEFAULT_BASE: Record<string, string> = {
   openai: "https://api.openai.com/v1",
   anthropic: "https://api.anthropic.com",
+  noul: "https://openrouter.ai/api",
 }
+
+/** 走 Noul 判定探针的角色（与执行面角色注册表 probe 字段对齐，llm_roles.py）。 */
+const NOUL_PROBE_ROLES: readonly string[] = ["decision"]
 
 function resolveKey(model: LlmModel): string {
   try {
@@ -130,8 +134,8 @@ class LlmHttpError extends Error {
   }
 }
 
-/** jev 判定专线（role=jev）连通性探针：Noul 决策端点（非 chat 协议）。
- * 请求/响应契约与执行面 JevClient 同源：POST {base}/alpha/decisions，
+/** 判定专线（role=decision）连通性探针：Noul 决策端点（非 chat 协议）。
+ * 请求/响应契约与执行面 DecisionClient 同源：POST {base}/alpha/decisions，
  * body {model, state, questions: {name: {type:"noul", instructions, criteria}}}，
  * 响应 answers[name].noul = P(yes)。返回该概率供测试回显。 */
 async function noulProbe(m: ResolvedModel, timeoutMs = TEST_TIMEOUT_MS): Promise<number> {
@@ -204,12 +208,12 @@ class LlmClientService {
     }
   }
 
-  /** 连通性测试：1-token ping（jev 线路走 Noul 探针），返回成功/失败（失败也为 HTTP 200，body 字段）。 */
+  /** 连通性测试：1-token ping（判定专线按注册表 probe 走 Noul 探针），返回成功/失败（失败也为 HTTP 200，body 字段）。 */
   async testModel(model: LlmModel): Promise<TestResult> {
     const testedAt = new Date().toISOString()
     try {
       const m = resolve(model)
-      if (model.role === "jev") {
+      if (NOUL_PROBE_ROLES.includes(model.role)) {
         const p = await noulProbe(m)
         await llmModelRepository.recordTest(model.id, "success", null)
         return { status: "success", detail: `判定专线 ${model.modelName} 连通正常（Noul p=${p}）`, testedAt }

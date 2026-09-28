@@ -1,6 +1,6 @@
 /**
  * LLM 客户端服务单测 — mock 加密与仓储，stubGlobal fetch 隔离网络（禁联网纪律）。
- * 聚焦 testModel 的 role 分支：jev 判定专线走 Noul 决策端点探针，chat 角色走原协议。
+ * 聚焦 testModel 的 role 分支：decision 判定专线走 Noul 决策端点探针，chat 角色走原协议。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 
@@ -49,12 +49,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("testModel — role=jev 判定专线", () => {
+describe("testModel — role=decision 判定专线", () => {
   it("走 Noul 决策端点探针（/alpha/decisions），成功回显概率", async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ answers: { connectivity: { noul: 0.87 } } }), { status: 200 }),
     )
-    const r = await llmClientService.testModel(fakeModel({ role: "jev", modelName: "typesafe/jev-1.13" }))
+    const r = await llmClientService.testModel(fakeModel({ role: "decision", provider: "noul", modelName: "typesafe/jev-1.13" }))
     expect(r.status).toBe("success")
     expect(r.detail).toContain("Noul p=0.87")
     expect(recordTestMock).toHaveBeenCalledWith("m1", "success", null)
@@ -69,7 +69,7 @@ describe("testModel — role=jev 判定专线", () => {
 
   it("响应缺 noul 概率字段 → failed（畸形响应不误报连通）", async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ answers: {} }), { status: 200 }))
-    const r = await llmClientService.testModel(fakeModel({ role: "jev" }))
+    const r = await llmClientService.testModel(fakeModel({ role: "decision", provider: "noul" }))
     expect(r.status).toBe("failed")
     expect(r.detail).toContain("noul")
     expect(recordTestMock).toHaveBeenCalledWith("m1", "failed", expect.stringContaining("noul"))
@@ -77,7 +77,7 @@ describe("testModel — role=jev 判定专线", () => {
 
   it("HTTP 401 → failed 且 detail 带状态码（鉴权失效可见）", async () => {
     fetchMock.mockResolvedValue(new Response("unauthorized", { status: 401 }))
-    const r = await llmClientService.testModel(fakeModel({ role: "jev" }))
+    const r = await llmClientService.testModel(fakeModel({ role: "decision", provider: "noul" }))
     expect(r.status).toBe("failed")
     expect(r.detail).toContain("HTTP 401")
     expect(recordTestMock).toHaveBeenCalledWith("m1", "failed", expect.stringContaining("HTTP 401"))
