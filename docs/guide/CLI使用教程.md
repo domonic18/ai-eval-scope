@@ -298,7 +298,7 @@ uv run agent-eval eval --package-dir ... --package courseware --on-missing-capab
 
 > **规则集三档怎么选**：`coursework-gate` 仅规则检查（零 token）；`coursework-quality` 增加 LLM Judge；`coursework-vision` 再增加截图视觉评估（需 `--extra vision` 与已配置的 `vision` 角色）。缺省取包清单的 `default_rule_set`（当前为 `coursework-vision`）。
 >
-> `eval` 还有两个高频参数：`--no-cache` 强制忽略评估缓存重评；`--upload/--no-upload` 评估完成后推送到可观测平台（见第十一节）。
+> `eval` 还有三个高频参数：`--no-cache` 强制忽略评估缓存重评；`--upload/--no-upload` 评估完成后推送到可观测平台（见第十一节）；`--concurrency N` 多样本有界并发评估（默认 1=串行；视觉渲染自动回退串行，判官采样另有独立并发上限）。
 
 ---
 

@@ -110,6 +110,11 @@ class StabilityDefaults:
     # 置信度判定阈值：同一维度在多次采样中的标准差超过该值时，置信度标记为 low。
     # 值越小越严格，越大越宽松。1.5 对应 0-10 分制下约 15% 的波动容忍度。
     stddev_threshold: float = 1.5
+    # 采样并发上限：多次独立采样（seed 按 sample_index 区分）彼此无数据依赖，
+    # 可并发执行缩短 judge 墙钟时间。实际并发 = min(max_concurrency, 本次采样数)，
+    # =1 退化为串行。上限同时约束单个 judge 调用的在飞 LLM 请求量，防止与
+    # 样本级并发叠乘放大 provider 限流。
+    max_concurrency: int = 4
 
 
 @dataclass(frozen=True)

@@ -90,6 +90,21 @@ def _extract_dim_detail(value: Any) -> dict[str, Any]:
     return {k: value[k] for k in ("reason", "issues", "highlights") if k in value}
 
 
+def _flatten_attempts(raw_attempts: list[list[str]]) -> list[str]:
+    """按采样下标展开各采样的响应尝试日志（含解析失败重试的中间响应）。"""
+    return [content for attempts in raw_attempts for content in attempts]
+
+
+def _sum_usage(usages: list[TokenUsage]) -> TokenUsage:
+    """汇总是次 judge 全部采样的 token 用量（仅在采样 join 后的主线程调用）。"""
+    total = TokenUsage()
+    for usage in usages:
+        total.prompt_tokens += usage.prompt_tokens
+        total.completion_tokens += usage.completion_tokens
+        total.total_tokens += usage.total_tokens
+    return total
+
+
 class JudgeOrchestrator:
     """LLM Judge 调用编排器。
 
@@ -194,8 +209,12 @@ class JudgeOrchestrator:
             root_span = trace_info[0] if trace_info else None
 
         # 4. 采样并记录
-        all_raw_responses: list[str] = []
-        total_tokens = TokenUsage()
+        # 并发采样下闭包共享状态只写「本采样专属槽位」：raw_attempts 按采样下标
+        # 分桶 append（各桶仅所属采样线程写），usage 槽位由本采样线程独占累加——
+        # 原跨线程 total_tokens += 与无序 append 在并发下会丢更新/乱序，join 后
+        # 由主线程单线程汇总（_sum_usage）。
+        raw_attempts: list[list[str]] = [[] for _ in range(template.num_samples)]
+        usage_by_sample: list[TokenUsage] = [TokenUsage() for _ in range(template.num_samples)]
 
         def single_judge(sample_index: int) -> dict[str, float]:
             messages = [
@@ -260,13 +279,15 @@ class JudgeOrchestrator:
                     )
                     generation.end()
 
-                all_raw_responses.append(response.content)
+                raw_attempts[sample_index].append(response.content)
 
-                # 累计 token 用量（失败尝试的 tokens 同样计入——消耗是真消耗）
+                # 累计 token 用量（失败尝试的 tokens 同样计入——消耗是真消耗）。
+                # 槽位对象仅本采样线程可见，直接累加无竞争。
+                _slot_usage = usage_by_sample[sample_index]
                 if response.usage:
-                    total_tokens.prompt_tokens += response.usage.prompt_tokens
-                    total_tokens.completion_tokens += response.usage.completion_tokens
-                    total_tokens.total_tokens += response.usage.total_tokens
+                    _slot_usage.prompt_tokens += response.usage.prompt_tokens
+                    _slot_usage.completion_tokens += response.usage.completion_tokens
+                    _slot_usage.total_tokens += response.usage.total_tokens
 
                 # 解析结构化输出（失败可重试）
                 try:
@@ -333,14 +354,17 @@ class JudgeOrchestrator:
                 provider_info=provider_info,
                 evidence_dir=evidence_dir,
                 error=e,
-                raw_responses=all_raw_responses,
-                token_usage=total_tokens,
+                raw_responses=_flatten_attempts(raw_attempts),
+                token_usage=_sum_usage(usage_by_sample),
                 duration_ms=total_duration_ms,
                 images=images,
                 judge_id_suffix=judge_id_suffix,
             )
             raise
         total_duration_ms = (time.monotonic() - start_time) * 1000
+        # join 后主线程单线程汇总（并发采样时槽位已齐）
+        all_raw_responses = _flatten_attempts(raw_attempts)
+        total_tokens = _sum_usage(usage_by_sample)
 
         # 6. 生成 JudgeRecord
         timestamp = datetime.now(tz=UTC).isoformat()

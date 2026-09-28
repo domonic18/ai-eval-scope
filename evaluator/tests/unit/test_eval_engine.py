@@ -84,8 +84,20 @@ def test_failed_package_reevaluation_hits_cache(tmp_path: Path) -> None:
     pkg = _package(PackageStatus.FAILED, tmp_path)
     r1 = engine.evaluate_sample(pkg, {"sample_id": "t1"})
     r2 = engine.evaluate_sample(pkg, {"sample_id": "t1"})
-    assert r1 is r2
-    assert r2.status == EvalStatus.RUN_ERROR
+    # 命中返回深拷贝（调用方改写不写回缓存），按值断言等价
+    assert r1 is not r2
+    assert r2.status == r1.status
+    assert r2.reward == r1.reward
+
+
+def test_cache_hit_returns_copy_caller_mutation_not_written_back(tmp_path: Path) -> None:
+    """缓存命中返回深拷贝：调用方对命中结果的改写不污染缓存。"""
+    engine = _engine()
+    pkg = _package(PackageStatus.FAILED, tmp_path)
+    r1 = engine.evaluate_sample(pkg, {"sample_id": "t1"})
+    r1.error_summary = "调用方改写"
+    r2 = engine.evaluate_sample(pkg, {"sample_id": "t1"})
+    assert r2.error_summary != "调用方改写"
 
 
 def test_partial_package_still_evaluated(tmp_path: Path) -> None:

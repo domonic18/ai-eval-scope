@@ -1037,6 +1037,87 @@ class TestInfoAccuracyDecisionPrecheck:
         )
         assert "经 LLM 二次确认均不成立" in rescued.reason
 
+    def test_fact_verdict_batches_run_concurrently(self, tmp_path: Path) -> None:
+        """多批复核并发执行且按槽位回填：裁定不跨批错位，缺裁定批召回优先。"""
+        import threading
+        import time
+
+        findings = [
+            {"severity": "error", "message": f"疑似错误 {i}", "file": "doc.html"} for i in range(25)
+        ]
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {"fact_verdict_batch_size": 10, "fact_verdict_max_concurrency": 3},
+        )
+
+        lock = threading.Lock()
+        state = {"active": 0, "peak": 0}
+        suffixes: list[str] = []
+
+        def fake_judge(**kw):
+            suffix = kw["judge_id_suffix"]
+            batch_idx = int(suffix.rsplit("_", 1)[1])
+            with lock:
+                suffixes.append(suffix)
+                state["active"] += 1
+                state["peak"] = max(state["peak"], state["active"])
+            time.sleep(0.02)
+            with lock:
+                state["active"] -= 1
+            rec = MagicMock()
+            rec.parsed_scores = {
+                "verdicts": [
+                    {"index": batch_idx * 10, "is_real_error": True, "reason": f"批{batch_idx}"}
+                ]
+            }
+            return {"verdict_quality": 9.0}, rec
+
+        orch = MagicMock()
+        orch.judge.side_effect = fake_judge
+        confirmed = ev._confirm_findings_with_llm(
+            findings, {"doc.html": "正文"}, orch, tmp_path / "evidence", {"task_input": {}}
+        )
+
+        # 3 批（10/10/5）各自被咨询且并发在飞 >1
+        assert sorted(suffixes) == ["fact_verdict_0", "fact_verdict_1", "fact_verdict_2"]
+        assert state["peak"] >= 2
+        # 批裁定按自带 index 键控落位，不因并发完成顺序错位
+        assert findings[0]["_llm_reason"] == "批0"
+        assert findings[10]["_llm_reason"] == "批1"
+        assert findings[20]["_llm_reason"] == "批2"
+        # 缺裁定候选默认保留（召回优先不漏报）
+        assert len(confirmed) == 25
+
+    def test_fact_verdict_concurrent_batch_failure_keeps_batch(self, tmp_path: Path) -> None:
+        """并发下单批异常 → 该批空裁定（保留），其余批照常回填。"""
+        findings = [
+            {"severity": "error", "message": f"疑似错误 {i}", "file": "doc.html"} for i in range(20)
+        ]
+        ev = registry.create(
+            "commonsense.info_accuracy",
+            {"fact_verdict_batch_size": 10, "fact_verdict_max_concurrency": 2},
+        )
+
+        def fake_judge(**kw):
+            batch_idx = int(kw["judge_id_suffix"].rsplit("_", 1)[1])
+            if batch_idx == 1:
+                raise RuntimeError("批1 裁定超时")
+            rec = MagicMock()
+            rec.parsed_scores = {
+                "verdicts": [{"index": batch_idx * 10, "is_real_error": False, "reason": "误报"}]
+            }
+            return {"verdict_quality": 9.0}, rec
+
+        orch = MagicMock()
+        orch.judge.side_effect = fake_judge
+        confirmed = ev._confirm_findings_with_llm(
+            findings, {"doc.html": "正文"}, orch, tmp_path / "evidence", {"task_input": {}}
+        )
+        # 批0 的误报被剔除（index 0 → is_real_error=False），批1 异常整批保留
+        assert findings[0]["_llm_confirmed"] is False
+        assert findings[10]["_llm_confirmed"] is True  # 缺裁定 → 默认 True
+        assert len(confirmed) == 19
+
 
 # ─── LogicalConsistency LLM 路径测试 ───
 

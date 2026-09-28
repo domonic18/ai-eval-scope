@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -116,6 +117,7 @@ class Orchestrator:
         gate: str = "off",
         report_formats: list[str] | None = None,
         package_id: str = "",
+        max_concurrency: int = 1,
     ) -> EvalResult:
         """eval-only 模式：加载 packages → 评估 → 报告。
 
@@ -244,9 +246,10 @@ class Orchestrator:
         # 使用 per-sample context override
 
         # 7. 逐样本评估
-        sample_results: list[SampleResult] = []
-        result_map: dict[str, EvaluationResult] = {}
-
+        # 上下文构建保持在主线程：纯 CPU 无 LLM 调用，且 task_id 唯一性守卫
+        # 必须先于并发派发（同名 task_id 共写同一 results/ 目录，并发下互踩）。
+        sample_slots: list[tuple[str, Path, dict[str, Any]]] = []
+        seen_task_ids: set[str] = set()
         for i, pkg in enumerate(packages):
             # 构建单个样本的上下文
             context = self.pipeline_engine._build_context(pkg, rule_set, index=i)
@@ -258,9 +261,21 @@ class Orchestrator:
             # 设置 evidence_dir
             task_id = context.get("sample_id", f"task_{i:03d}")
             result_dir = run_workspace.get_result_dir(task_id)
-            evidence_dir = result_dir / "evidence"
-            context["evidence_dir"] = evidence_dir
+            context["evidence_dir"] = result_dir / "evidence"
+            if task_id in seen_task_ids:
+                if max_concurrency > 1:
+                    raise OrchestratorError(
+                        f"样本 task_id 重复（{task_id!r}）：并发评估要求 task_id 唯一"
+                        "（同名样本共写同一 results/ 目录），请检查包清单或改回串行"
+                    )
+                logger.warning("样本 task_id 重复，结果目录将互相覆盖", task_id=task_id)
+            seen_task_ids.add(task_id)
+            sample_slots.append((task_id, result_dir, context))
 
+        def _evaluate_one(
+            pkg: Any, context: dict[str, Any], result_dir: Path, task_id: str
+        ) -> tuple[str, SampleResult, EvaluationResult]:
+            """评估单样本：评估 → 过程指标注入 → 落盘（各样本输入输出彼此隔离）。"""
             sample_result = self.pipeline_engine.evaluate_sample(pkg, context)
 
             # 过程指标注入：执行链路的轮次/工具调用/耗时来自包内
@@ -279,9 +294,7 @@ class Orchestrator:
                 _pkg_metrics.get("total_duration_ms") or _resp.get("duration_ms") or 0.0
             )
 
-            sample_results.append(sample_result)
-
-            # 8. 转为 EvaluationResult 并保存
+            # 转为 EvaluationResult 并保存
             eval_result = self._sample_to_evaluation_result(
                 sample_result,
                 pkg,
@@ -289,7 +302,6 @@ class Orchestrator:
                 rule_set_version,
             )
             eval_result.save(result_dir)
-            result_map[task_id] = eval_result
 
             logger.info(
                 "样本评估完成",
@@ -297,6 +309,42 @@ class Orchestrator:
                 status=sample_result.status.value,
                 reward=sample_result.reward,
             )
+            return task_id, sample_result, eval_result
+
+        sample_results: list[SampleResult] = []
+        result_map: dict[str, EvaluationResult] = {}
+        workers = min(max_concurrency, len(packages)) if max_concurrency > 1 else 1
+        if workers > 1 and screenshot_renderer is not None:
+            # sync Playwright 的 Browser/Page 绑定创建线程，跨线程调用会抛
+            # greenlet 错——视觉渲染与样本级线程池互斥，保守回退串行
+            logger.warning(
+                "视觉渲染器与并发评估互斥（sync Playwright 线程亲和），回退串行",
+                requested_concurrency=max_concurrency,
+            )
+            workers = 1
+        if workers > 1 and len(packages) > 1:
+            # 有界并发评估：样本间无共享可变状态（context 每样本新建、evidence/
+            # results 目录按 task_id 隔离、评估器无跨样本实例态）。结果按下标回填
+            # 保持与 packages 同序（聚合与报告的样本顺序稳定）；首个异常按下标顺序
+            # 上抛（fail-fast 与串行一致），在飞样本不等待——异常路径不为补齐结果
+            # 拖住整批。
+            executor = ThreadPoolExecutor(max_workers=workers)
+            try:
+                futures = [
+                    executor.submit(_evaluate_one, pkg, ctx, rdir, tid)
+                    for pkg, (tid, rdir, ctx) in zip(packages, sample_slots)
+                ]
+                for future in futures:
+                    tid, sr, er = future.result()
+                    sample_results.append(sr)
+                    result_map[tid] = er
+            finally:
+                executor.shutdown(wait=False, cancel_futures=True)
+        else:
+            for pkg, (tid, rdir, ctx) in zip(packages, sample_slots):
+                _, sr, er = _evaluate_one(pkg, ctx, rdir, tid)
+                sample_results.append(sr)
+                result_map[tid] = er
 
         # 9. 计算聚合指标
         metrics_report = self.pipeline_engine.compute_metrics(

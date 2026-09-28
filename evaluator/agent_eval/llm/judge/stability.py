@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import statistics
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -34,15 +35,19 @@ class StabilityController:
         self,
         num_samples: int = STABILITY_DEFAULTS.num_samples,
         stddev_threshold: float = STABILITY_DEFAULTS.stddev_threshold,
+        max_concurrency: int = STABILITY_DEFAULTS.max_concurrency,
     ) -> None:
         """初始化稳定性控制器。
 
         Args:
             num_samples: 采样次数。
             stddev_threshold: 标准差阈值，超过则标记为低置信度。
+            max_concurrency: 采样并发上限（实际并发 = min(max_concurrency, 采样数)，
+                =1 串行）。
         """
         self.num_samples = num_samples
         self.stddev_threshold = stddev_threshold
+        self.max_concurrency = max(1, max_concurrency)
 
     def evaluate_stable(
         self,
@@ -70,10 +75,24 @@ class StabilityController:
                 f"num_samples 必须 ≥ 1（收到 {n}）——该参数决定判官独立采样次数"
                 "（prompts 模板的 num_samples 字段）"
             )
-        all_samples: list[dict[str, Any]] = []
-        for i in range(n):
-            scores = judge_fn(i)
-            all_samples.append(scores)
+        samples: list[dict[str, Any] | None] = [None] * n
+        workers = min(self.max_concurrency, n)
+        if workers <= 1:
+            for i in range(n):
+                samples[i] = judge_fn(i)
+        else:
+            # 有界并发采样：seed 已按 sample_index 区分、采样间零数据依赖，并发只改
+            # 墙钟不改语义。按下标回填保证 all_samples 顺序与串行一致（调用方的
+            # 「末样本」语义依赖它）；首个异常按下标顺序原样上抛（与串行短路等价），
+            # 在飞采样不等待——异常路径不为补齐结果拖住整次 judge。
+            executor = ThreadPoolExecutor(max_workers=workers)
+            try:
+                futures = [executor.submit(judge_fn, i) for i in range(n)]
+                for i, future in enumerate(futures):
+                    samples[i] = future.result()
+            finally:
+                executor.shutdown(wait=False, cancel_futures=True)
+        all_samples: list[dict[str, Any]] = [s for s in samples if s is not None]
 
         final_scores: dict[str, float] = {}
         confidence: dict[str, str] = {}
