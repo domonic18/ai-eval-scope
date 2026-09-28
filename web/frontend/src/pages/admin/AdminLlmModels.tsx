@@ -1,7 +1,7 @@
 /** 超管后台 · LLM 模型配置（arch/16 §6.2-四 云端形态）。
- * 多模型 CRUD + 连通性测试 + 设默认；role 为角色（text/vision/agent/jev），
+ * 多模型 CRUD + 连通性测试 + 设默认；role 为角色（text/vision/agent/decision），
  * executor 经 /api/public/llm-config 按角色拉取（替代原导出 llm_config.yaml）。
- * provider 为协议（OpenAI / Anthropic）；jev 判定专线走 Noul 探针测试。
+ * provider 为协议（OpenAI / Anthropic；decision 判定专线为 noul，走 Noul 决策端点探针）。
  * api_key 加密存储，回显仅脱敏。 */
 import { useEffect, useState } from "react"
 import { api, type LlmModelInput, type LlmModelVO } from "../../api/client"
@@ -21,14 +21,18 @@ import { Badge } from "@/components/shadcn/badge"
 import { DataTable, Page, PageHead, type Column } from "../../components/shared"
 import { Pencil, Plus, Star, Trash2, Zap } from "lucide-react"
 
-type Provider = "openai" | "anthropic"
-const PROVIDER_LABEL: Record<Provider, string> = { openai: "OpenAI 协议", anthropic: "Anthropic 协议" }
-type Role = "text" | "vision" | "agent" | "jev"
+type Provider = "openai" | "anthropic" | "noul"
+const PROVIDER_LABEL: Record<Provider, string> = {
+  openai: "OpenAI 协议",
+  anthropic: "Anthropic 协议",
+  noul: "Noul 判定协议",
+}
+type Role = "text" | "vision" | "agent" | "decision"
 const ROLE_LABEL: Record<Role, string> = {
   text: "text·评估文本",
   vision: "vision·视觉",
   agent: "agent·执行侧",
-  jev: "jev·判定专线",
+  decision: "decision·判定专线",
 }
 
 const emptyForm: LlmModelInput = {
@@ -192,7 +196,7 @@ export default function AdminLlmModels() {
     <Page>
       <PageHead
         title="LLM 模型配置"
-        sub="管理系统所用 LLM（OpenAI / Anthropic 协议）；按角色供评估器/执行侧拉取，默认模型供配置资产 AI 生成使用"
+        sub="管理系统所用 LLM（OpenAI / Anthropic / Noul 协议）；按角色供评估器/执行侧拉取，默认模型供配置资产 AI 生成使用"
         right={
           <div className="flex gap-2">
             <Button onClick={openCreate}>
@@ -225,6 +229,7 @@ export default function AdminLlmModels() {
                 >
                   <option value="openai">OpenAI 协议</option>
                   <option value="anthropic">Anthropic 协议</option>
+                  <option value="noul">Noul 判定协议</option>
                 </select>
               </div>
               <div>
@@ -232,12 +237,20 @@ export default function AdminLlmModels() {
                 <select
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
                   value={form.role ?? "text"}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  onChange={(e) => {
+                    const role = e.target.value
+                    setForm({
+                      ...form,
+                      role,
+                      // 联动：decision 走 noul 判定协议；从 decision 切走时 noul 回落 openai
+                      provider: role === "decision" ? "noul" : form.provider === "noul" ? "openai" : form.provider,
+                    })
+                  }}
                 >
                   <option value="text">text·评估文本</option>
                   <option value="vision">vision·视觉</option>
                   <option value="agent">agent·执行侧</option>
-                  <option value="jev">jev·Jev 判定专线</option>
+                  <option value="decision">decision·判定专线</option>
                 </select>
               </div>
             </div>
@@ -249,7 +262,7 @@ export default function AdminLlmModels() {
                   value={form.baseUrl ?? ""}
                   onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
                   placeholder={
-                    form.role === "jev"
+                    form.role === "decision"
                       ? "https://openrouter.ai/api"
                       : form.provider === "anthropic"
                         ? "https://api.anthropic.com"
@@ -263,7 +276,7 @@ export default function AdminLlmModels() {
                   className="font-mono text-xs"
                   value={form.modelName}
                   onChange={(e) => setForm({ ...form, modelName: e.target.value })}
-                  placeholder={form.role === "jev" ? "如 typesafe/jev-1.13" : "如 moonshot-v1-128k"}
+                  placeholder={form.role === "decision" ? "如 typesafe/jev-1.13" : "如 moonshot-v1-128k"}
                 />
               </div>
             </div>
