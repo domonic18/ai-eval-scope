@@ -221,6 +221,12 @@ def pipeline(
     no_cache: bool = typer.Option(
         False, "--no-cache", help="跳过评估缓存，强制重新评估（含 LLM 调用）"
     ),
+    concurrency: int = typer.Option(
+        1,
+        "--concurrency",
+        min=1,
+        help="样本级并发数（>1 时多样本有界并发评估；视觉渲染自动回退串行）",
+    ),
     gate: str = typer.Option(
         "off",
         "--gate",
@@ -253,6 +259,7 @@ def pipeline(
         upload=upload,
         on_missing=on_missing,
         no_cache=no_cache,
+        concurrency=concurrency,
         gate=gate,
         report_formats=list(report_formats) if report_formats else None,
         log_level=log_level,
@@ -311,6 +318,7 @@ def execute_pipeline(
     upload: bool | None = None,
     on_missing: str = "skip",
     no_cache: bool = False,
+    concurrency: int = 1,
     gate: str = "off",
     report_formats: list[str] | None = None,
     log_level: str = "normal",
@@ -339,6 +347,7 @@ def execute_pipeline(
         upload=upload,
         on_missing=on_missing,
         no_cache=no_cache,
+        concurrency=concurrency,
         gate=gate,
         report_formats=formats,
         log_level=log_level,
