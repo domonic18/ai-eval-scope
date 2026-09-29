@@ -43,7 +43,7 @@ class PipelineStage(str, Enum):
 
 @dataclass(frozen=True, slots=True)
 class PipelineParams:
-    """pipeline_core 入参（字段= CLI ``pipeline`` 命令 14 参数原样）。
+    """pipeline_core 入参（字段= CLI ``pipeline`` 命令 17 参数原样）。
 
     ``report_formats`` 传**已解析**形态（壳负责 ``_parse_report_formats``——
     用法错误 BadParameter 是 CLI 语义，不进 core）；``log_level`` 由 core 驱动
@@ -63,6 +63,7 @@ class PipelineParams:
     upload: bool | None = None
     on_missing: str = "skip"
     no_cache: bool = False
+    concurrency: int = 1  # 样本级并发评估（与 eval --concurrency 同语义，透传 evaluate_stage）
     gate: str = "off"
     report_formats: list[str] | None = None
     log_level: str = "normal"
@@ -278,6 +279,7 @@ def pipeline_core(
             gate=params.gate,
             report_formats=params.report_formats,
             package_id=(inputs.resolved_pkg.manifest.id if inputs.resolved_pkg else ""),
+            max_concurrency=params.concurrency,
         )
         _emit(PipelineStage.FINALIZE)
         flush_traces()

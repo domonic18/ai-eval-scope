@@ -357,6 +357,8 @@ uv run agent-eval pipeline --package chat --upload
 
 `pipeline` 是 `run` + `eval` 的参数并集（`--package/--task-set/--task/--sut-name/--rule-set/--upload/--project` 等），复用同一 `runs/{run_id}/` 目录，适合日常回归与 CI 定时任务。
 
+评估阶段支持 `--concurrency N` 多样本有界并发评估（默认 1=串行；视觉渲染自动回退串行，语义与 `eval --concurrency` 一致——只加速 judge 墙钟，SUT 执行阶段不受影响）。
+
 ### CI 集成：--report-formats 与 --gate（质量门禁）
 
 面向 Jenkins / GitLab CI 等通用 CI 的原生报告与门禁（requirement/06）：
