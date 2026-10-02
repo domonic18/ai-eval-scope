@@ -651,3 +651,117 @@ class TestEvalOnlyCiIntegration:
         txt = (reports / "summary.txt").read_text(encoding="utf-8")
         assert "❌" in txt.splitlines()[0]
         assert "门禁结论:     ❌ 未通过" in txt
+
+
+# ── 样本级有界并发评估 ─────────────────────────────────────────────────────────
+
+
+class TestEvalOnlyConcurrency:
+    """eval_only max_concurrency>1 的有界并发：真实并行、结果同序、守卫生效。"""
+
+    def _packages(self, tmp_path: Path, task_ids: list[str]) -> Path:
+        """克隆 golden 样本为多个 task 目录（内容相同、task_id 不同）。"""
+        import shutil
+
+        golden_dir = Path(__file__).parent.parent / "fixtures" / "golden" / "valid_docset"
+        for tid in task_ids:
+            pkg_dir = tmp_path / "packages" / tid
+            shutil.copytree(golden_dir, pkg_dir / "output")
+            (pkg_dir / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "package_id": f"pkg_{tid}",
+                        "created_at": "2026-06-09T12:00:00+00:00",
+                        "task_id": tid,
+                        "sut_config_id": "manual",
+                        "status": "success",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (pkg_dir / "task.json").write_text(
+                json.dumps({"id": tid, "input": {"title": tid}, "constraints": {}}),
+                encoding="utf-8",
+            )
+            (pkg_dir / "metadata.json").write_text(
+                json.dumps({"sut_name": "manual"}), encoding="utf-8"
+            )
+        return tmp_path / "packages"
+
+    def _track_peak(self, orch: Orchestrator, state: dict, sleep: float = 0.1) -> Any:
+        """包一层 evaluate_sample：记录峰值在飞数，其余行为不变。"""
+        import threading
+        import time
+
+        lock = threading.Lock()
+        original = orch.pipeline_engine.evaluate_sample
+
+        def _slow(pkg: ExecutionPackage, context: dict) -> Any:
+            with lock:
+                state["active"] += 1
+                state["peak"] = max(state["peak"], state["active"])
+            time.sleep(sleep)
+            with lock:
+                state["active"] -= 1
+            return original(pkg, context)
+
+        return _slow
+
+    def test_concurrent_eval_parallel_ordered_and_isolated(
+        self, tmp_path: Path, workspace: Workspace
+    ) -> None:
+        packages_dir = self._packages(tmp_path, ["task_a", "task_b", "task_c"])
+        orch = Orchestrator(workspace=workspace)
+        state = {"active": 0, "peak": 0}
+
+        with patch.object(
+            orch.pipeline_engine, "evaluate_sample", side_effect=self._track_peak(orch, state)
+        ):
+            result = orch.eval_only(packages_dir, no_cache=True, max_concurrency=3)
+
+        # 真实并发（峰值在飞 >1）
+        assert state["peak"] >= 2
+        # 结果与 packages 同序（子目录排序加载 → 聚合样本顺序稳定）
+        assert [s.sample_id for s in result.samples] == ["task_a", "task_b", "task_c"]
+        # 各样本 evidence/results 目录彼此隔离、全部落盘
+        run_ws = workspace.get_run(result.run_id)
+        for tid in ("task_a", "task_b", "task_c"):
+            assert (run_ws.results_dir / tid).is_dir()
+            assert (run_ws.results_dir / tid / "evidence").is_dir()
+
+    def test_duplicate_task_id_rejected_under_concurrency(
+        self, tmp_path: Path, workspace: Workspace
+    ) -> None:
+        packages_dir = self._packages(tmp_path, ["task_dup"])
+        # 克隆第二个包但复用同一 task_id（同名 results/ 目录互踩）
+        import shutil
+
+        src = tmp_path / "packages" / "task_dup"
+        dst = tmp_path / "packages" / "task_dup_copy"
+        shutil.copytree(src, dst)
+
+        orch = Orchestrator(workspace=workspace)
+        with pytest.raises(OrchestratorError, match="task_id 重复"):
+            orch.eval_only(packages_dir, no_cache=True, max_concurrency=2)
+
+    def test_vision_renderer_forces_serial(self, tmp_path: Path, workspace: Workspace) -> None:
+        packages_dir = self._packages(tmp_path, ["task_a", "task_b", "task_c"])
+        orch = Orchestrator(workspace=workspace)
+        state = {"active": 0, "peak": 0}
+
+        with (
+            patch.object(
+                orch.pipeline_engine, "evaluate_sample", side_effect=self._track_peak(orch, state)
+            ),
+            patch("agent_eval.orchestrator.orchestrator.logger") as mock_logger,
+        ):
+            orch.eval_only(
+                packages_dir,
+                no_cache=True,
+                max_concurrency=4,
+                screenshot_renderer=MagicMock(),
+            )
+
+        # sync Playwright 线程亲和 → 强制串行（峰值在飞 == 1）且给出告警
+        assert state["peak"] == 1
+        assert mock_logger.warning.called

@@ -217,7 +217,10 @@ class PipelineEngine:
         if not context.get("no_cache"):
             cached = self._cache.get(cache_key)
             if cached is not None:
-                return cached
+                # 深拷贝返回：调用方会原地改写命中对象（agent_turns 等过程指标回填），
+                # 共享引用会把改写写回缓存（串行下已存在的缓存污染）；并发评估下
+                # 同 key 双命中更会跨样本互踩同一对象
+                return copy.deepcopy(cached)
 
         sample_id = context.get("sample_id", "unknown")
 
@@ -239,7 +242,9 @@ class PipelineEngine:
                 error_summary=error_summary,
             )
             self._cache[cache_key] = result
-            return result
+            # 缓存存原件、调用方拿拷贝：首个调用者的改写不得触及缓存本体
+            # （否则后续命中拷贝出的就是被改写过的对象）
+            return copy.deepcopy(result)
 
         result = SampleResult(
             sample_id=sample_id,
@@ -280,7 +285,8 @@ class PipelineEngine:
             result.status = EvalStatus.FAIL
 
         self._cache[cache_key] = result
-        return result
+        # 同短路路径：缓存存原件、调用方拿拷贝
+        return copy.deepcopy(result)
 
     def evaluate_batch(
         self,

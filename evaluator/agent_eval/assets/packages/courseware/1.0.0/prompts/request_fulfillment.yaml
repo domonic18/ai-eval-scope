@@ -185,4 +185,4 @@ output_schema:
     - quality
 temperature: 0.0
 seed: 42
-num_samples: 3
+num_samples: 1

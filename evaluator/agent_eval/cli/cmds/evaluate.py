@@ -59,6 +59,12 @@ def eval(
     no_cache: bool = typer.Option(
         False, "--no-cache", help="跳过评估缓存，强制重新评估（含 LLM 调用）"
     ),
+    concurrency: int = typer.Option(
+        1,
+        "--concurrency",
+        min=1,
+        help="样本级并发数（>1 时多样本有界并发评估；视觉渲染自动回退串行）",
+    ),
     log_level: str = typer.Option(
         "normal",
         "--log-level",
@@ -77,6 +83,7 @@ def eval(
         upload=upload,
         on_missing=on_missing,
         no_cache=no_cache,
+        concurrency=concurrency,
         log_level=log_level,
     )
 
@@ -91,6 +98,7 @@ def execute_eval(
     upload: bool | None = None,
     on_missing: str = "skip",
     no_cache: bool = False,
+    concurrency: int = 1,
     log_level: str = "normal",
 ) -> None:
     """评估动作（纯函数，向导/工作台复用）。
@@ -151,6 +159,7 @@ def execute_eval(
             no_cache=no_cache,
             mode=run_mode,
             scenario_package_dir=scenario_pkg_dir,
+            max_concurrency=concurrency,
         )
 
         # 6-8. trace 刷新 + 摘要 + SUT 身份回填 + 平台上报（共享段）

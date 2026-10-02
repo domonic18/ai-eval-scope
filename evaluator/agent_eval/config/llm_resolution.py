@@ -30,6 +30,7 @@ from agent_eval.config.llm_file import (
     effective_protocol,
     load_llm_file,
 )
+from agent_eval.config.llm_roles import is_chat_role
 from agent_eval.core.exceptions import ConfigError
 
 
@@ -83,6 +84,7 @@ def _build_provider(
     max_tokens: Any = None,
     temperature: Any = None,
     seed: Any = None,
+    timeout: Any = None,
 ) -> ProviderConfig:
     """构造 ProviderConfig（None 字段落回模型自身缺省——temperature/seed 非可空）。"""
     kwargs: dict[str, Any] = {"provider": provider, "model": model, "api_key": api_key}
@@ -94,16 +96,21 @@ def _build_provider(
         kwargs["temperature"] = float(temperature)
     if seed is not None:
         kwargs["seed"] = int(seed)
+    if timeout is not None:
+        kwargs["timeout_sec"] = float(timeout)
     return ProviderConfig(**kwargs)
 
 
 def _finalize(providers: dict[str, ProviderConfig]) -> LLMConfig:
-    """agent 回退 text、定 default。"""
+    """agent 回退 text、定 default（decision 为判定专线：不回退、不作 default）。"""
     if "agent" not in providers and "text" in providers:
         providers["agent"] = providers["text"]
-    if not providers:
-        raise ConfigError("LLM 角色配置为空（至少需 text 或 vision 之一）")
-    default = DEFAULT_ROLE if DEFAULT_ROLE in providers else next(iter(providers))
+    chat_roles = [r for r in providers if is_chat_role(r)]
+    if not chat_roles:
+        raise ConfigError(
+            "LLM 角色配置为空（至少需 text 或 vision 之一；decision 为判定专线不能单独使用）"
+        )
+    default = DEFAULT_ROLE if DEFAULT_ROLE in providers else chat_roles[0]
     return LLMConfig(default=default, providers=providers)
 
 
@@ -141,6 +148,7 @@ def _from_roles(roles: dict[str, dict[str, Any]]) -> LLMConfig:
             cfg.get("max_tokens"),
             cfg.get("temperature"),
             cfg.get("seed"),
+            cfg.get("timeout_sec"),
         )
     return _finalize(providers)
 

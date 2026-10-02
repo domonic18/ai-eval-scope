@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平台管理 · 总览 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .admin-nav-label { font-size: 11px; color: var(--text-quaternary); letter-spacing: .08em; padding: 14px 12px 6px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="scanlines"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <a href="index.html" class="logo" style="margin-bottom:14px"><span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span><span class="logo-text">Eval<b>Scope</b></span></a>
+      <div class="org-switcher"><div class="org-avatar" style="background:var(--danger)">管</div><div class="org-meta"><div class="org-name">平台管理</div><div class="org-plan">platformAdmin</div></div></div>
+    </div>
+    <nav class="nav-section">
+      <div class="admin-nav-label">平台管理</div>
+      <a class="nav-item active" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> 总览</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> 用户管理</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg> 工作组</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 项目管理</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 评估任务</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 产出物</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg> LLM 配置</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> 样本视图</a>
+      <a class="nav-item" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 审计日志</a>
+    </nav>
+    <div class="sidebar-foot">
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> 返回控制台</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><span class="current">平台管理</span><span class="sep">/</span><span class="current" style="color:var(--text-secondary)">总览</span></div>
+      <div class="topbar-right"><button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button><div class="avatar">张</div></div>
+    </header>
+
+    <div class="page reveal">
+      <div class="page-head r-1">
+        <div class="page-title">
+          <h1>总览 <span class="badge badge-danger" style="font-size:12px">platformAdmin</span></h1>
+          <div class="sub">全平台用户 / 工作组 / 项目 / 评估任务 / 产出物管控 · 首位注册用户自动获得平台管理员角色</div>
+        </div>
+      </div>
+
+      <!-- 六张统计卡（对齐 AdminOverview） -->
+      <div class="stat-grid r-2">
+        <div class="metric"><div class="metric-top"><span class="metric-label">用户</span></div><div class="metric-value">128</div><div class="metric-foot"><span class="muted">活跃 96 · 禁用 4 · 超管 1</span></div></div>
+        <div class="metric"><div class="metric-top"><span class="metric-label">工作组</span></div><div class="metric-value">5</div><div class="metric-foot"><span class="muted">含申请待审批 2</span></div></div>
+        <div class="metric"><div class="metric-top"><span class="metric-label">项目</span></div><div class="metric-value">23</div><div class="metric-foot"><span class="muted">归档 3</span></div></div>
+        <div class="metric"><div class="metric-top"><span class="metric-label">评估任务</span></div><div class="metric-value">1,284</div><div class="metric-foot"><span class="muted">完成 1,180 · 失败 71 · 进行 33</span></div></div>
+        <div class="metric"><div class="metric-top"><span class="metric-label">样本</span></div><div class="metric-value">152,309</div><div class="metric-foot"><span class="muted">近 7 天 +8,412</span></div></div>
+        <div class="metric"><div class="metric-top"><span class="metric-label">产出物</span></div><div class="metric-value">412</div><div class="metric-foot"><span class="muted">存储 46.2 GB</span></div></div>
+      </div>
+
+      <!-- 用户管理预览 -->
+      <div class="card r-3" style="margin-bottom:16px">
+        <div class="card-head"><h3>用户管理 <span class="count">128</span></h3><span class="hint">禁用 / 授予超管在此操作 · 全站只读，管理员也不例外</span></div>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>用户</th><th>所属工作组</th><th>角色</th><th>状态</th><th>最近活跃</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600">张三</td><td class="muted">智能教育研发组</td><td><span class="badge badge-danger">platformAdmin</span></td><td><span class="badge badge-success">active</span></td><td class="muted">3 分钟前</td></tr>
+            <tr><td style="font-weight:600">李四</td><td class="muted">智能教育研发组</td><td><span class="badge badge-neutral">member</span></td><td><span class="badge badge-success">active</span></td><td class="muted">1 小时前</td></tr>
+            <tr><td style="font-weight:600">王五</td><td class="muted">数据平台组</td><td><span class="badge badge-neutral">member</span></td><td><span class="badge badge-warning">disabled</span></td><td class="muted">2 周前</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <!-- 审计日志预览 -->
+      <div class="card r-4">
+        <div class="card-head"><h3>审计日志</h3><span class="hint">敏感管理动作全量留痕</span></div>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>时间</th><th>操作者</th><th>动作</th><th>对象</th></tr></thead>
+          <tbody>
+            <tr><td class="mono muted">09-23 10:12:04</td><td>张三</td><td><span class="badge badge-warning">user.disable</span></td><td>用户 王五</td></tr>
+            <tr><td class="mono muted">09-23 09:47:51</td><td>张三</td><td><span class="badge badge-info">llm_config.update</span></td><td>text 线路 timeout_sec 600</td></tr>
+            <tr><td class="mono muted">09-22 18:03:29</td><td>系统</td><td><span class="badge badge-neutral">join_request.approve</span></td><td>李四 → 智能教育研发组</td></tr>
+            <tr><td class="mono muted">09-22 14:22:10</td><td>李四</td><td><span class="badge badge-neutral">project.archive</span></td><td>项目 旧版冒烟</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/ui.js"></script>
+</body>
+</html>

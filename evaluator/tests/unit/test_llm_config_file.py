@@ -14,6 +14,8 @@ import pytest
 
 from agent_eval.config.llm import LLMConfig, ProviderConfig
 from agent_eval.config.llm_file import (
+    CHAT_PROTOCOLS,
+    DECISION_PROTOCOL,
     PROTOCOLS,
     PROVIDER_DEFAULT_BASE_URLS,
     PROVIDER_LABELS,
@@ -88,9 +90,11 @@ class TestProviderProtocolMatrix:
 
     def test_matrix_covers_every_vendor_protocol_pair(self) -> None:
         assert tuple(PROVIDER_LABELS) == PROVIDERS
-        assert PROTOCOLS == ("anthropic", "openai")
+        assert CHAT_PROTOCOLS == ("anthropic", "openai")
+        # 协议全集 = chat 双协议 + 判定专线 noul；预置端点矩阵只覆盖 chat 协议
+        assert PROTOCOLS == CHAT_PROTOCOLS + (DECISION_PROTOCOL,)
         for vendor in PROVIDERS:
-            for protocol in PROTOCOLS:
+            for protocol in CHAT_PROTOCOLS:
                 url = PROVIDER_DEFAULT_BASE_URLS[(vendor, protocol)]
                 assert url.startswith("https://"), f"{vendor}×{protocol} 预置端点须为 https"
         assert set(PROVIDER_MODEL_SUGGESTIONS) == {*PROVIDERS, "custom"}
@@ -171,6 +175,25 @@ class TestResolve:
         assert config.providers["text"].api_key == "sk-p"
         assert config.providers["agent"].model == "p-1"
 
+    def test_platform_timeout_sec_threaded(self, _isolated_env: Path) -> None:
+        """平台角色配置的 timeout_sec 必须透传到 ProviderConfig（缺省落回 180s）。"""
+        roles = {
+            "text": {
+                "provider": "anthropic",
+                "model": "p-1",
+                "api_key": "sk-p",
+                "timeout_sec": 600,
+            }
+        }
+        config = resolve_llm_config(platform=_StubPlatform(roles))
+        assert config.providers["text"].timeout_sec == 600.0
+
+    def test_platform_timeout_sec_missing_falls_back(self, _isolated_env: Path) -> None:
+        """平台未配 timeout_sec 时保持 ProviderConfig 缺省（180s），不报错。"""
+        roles = {"text": {"provider": "anthropic", "model": "p-1", "api_key": "sk-p"}}
+        config = resolve_llm_config(platform=_StubPlatform(roles))
+        assert config.providers["text"].timeout_sec == 180.0
+
     def test_unavailable_raises_with_guidance(self, _isolated_env: Path) -> None:
         with pytest.raises(ConfigError, match="models set"):
             resolve_llm_config(platform=_StubPlatform(None))
@@ -200,6 +223,115 @@ class TestResolve:
         )
 
 
+class TestRoleRegistry:
+    """角色注册表一致性（能力轴单源：llm_roles.ROLE_SPECS 派生 ROLES/CHAT_ROLES）。"""
+
+    def test_roles_derived_from_registry(self) -> None:
+        from agent_eval.config.llm_roles import CHAT_ROLES, ROLE_KINDS, ROLE_SPECS, ROLES
+
+        assert ROLES == tuple(s.name for s in ROLE_SPECS)
+        assert ROLES == tuple(ROLE_KINDS)  # 键序一致
+        assert CHAT_ROLES == tuple(s.name for s in ROLE_SPECS if s.kind == "chat")
+
+    def test_decision_not_in_chat_roles(self) -> None:
+        from agent_eval.config.llm_roles import CHAT_ROLES, DECISION_ROLE, is_chat_role
+
+        assert DECISION_ROLE not in CHAT_ROLES
+        assert not is_chat_role(DECISION_ROLE)
+        assert is_chat_role("text") and is_chat_role("vision") and is_chat_role("agent")
+        assert not is_chat_role("nonexistent")  # 未注册角色保守按非 chat
+
+
+class TestDecisionProtocol:
+    """协议轴契约：decision 行走 noul；chat 行旧文件推断不受影响。"""
+
+    def test_noul_protocol_passthrough(self) -> None:
+        from agent_eval.config.llm_file import effective_protocol
+
+        assert effective_protocol("custom", "noul") == "noul"
+        # 旧形态（无 protocol 字段）chat 行推断不变
+        assert effective_protocol("deepseek", None) == "openai"
+        assert effective_protocol("anthropic", None) == "anthropic"
+
+    def test_decision_provider_normalized_via_noul(self, _isolated_env: Path) -> None:
+        """llm.json decision 行 protocol="noul" → ProviderConfig.provider 归一为 noul。"""
+        save_llm_file(
+            LLMFileConfig(
+                roles={
+                    "text": _role(),
+                    "decision": RoleConfig(
+                        provider="custom",
+                        protocol="noul",
+                        model="typesafe/jev-1.13",
+                        api_key="sk-decision",
+                        base_url="https://openrouter.ai/api",
+                    ),
+                }
+            )
+        )
+        config = resolve_llm_config(platform=_StubPlatform(None))
+        assert config.providers["decision"].provider == "noul"
+
+
+class TestDecisionRole:
+    """decision 判定专线：解析透传、不作 default、不进 chat 池。"""
+
+    def _save_with_decision(self, model: str = "typesafe/jev-1.13") -> None:
+        save_llm_file(
+            LLMFileConfig(
+                roles={
+                    "text": _role(),
+                    "agent": None,
+                    "decision": RoleConfig(
+                        provider="custom",
+                        protocol="noul",
+                        model=model,
+                        api_key="sk-decision",
+                        base_url="https://openrouter.ai/api",
+                    ),
+                }
+            )
+        )
+
+    def test_decision_role_passthrough_never_default(self, _isolated_env: Path) -> None:
+        """decision 随 ROLES 透传（解析层零改动），但不作 default、不参与回退。"""
+        self._save_with_decision()
+        config = resolve_llm_config(platform=_StubPlatform(None))
+        assert config.providers["decision"].model == "typesafe/jev-1.13"
+        assert config.default == "text"
+
+    def test_decision_model_swap_is_pure_config(self, _isolated_env: Path) -> None:
+        """零代码换模型：同 noul 协议换 model 字段，解析原样透传（通用性契约）。"""
+        self._save_with_decision(model="typesafe/other-fast-2.0")
+        config = resolve_llm_config(platform=_StubPlatform(None))
+        assert config.providers["decision"].model == "typesafe/other-fast-2.0"
+
+    def test_decision_only_config_rejected(self, _isolated_env: Path) -> None:
+        """仅配 decision 无 chat 角色 → ConfigError（判定专线不能单独使用）。"""
+        save_llm_file(
+            LLMFileConfig(
+                roles={
+                    "decision": RoleConfig(
+                        provider="custom", model="typesafe/jev-1.13", api_key="sk-decision"
+                    )
+                }
+            )
+        )
+        with pytest.raises(ConfigError, match="decision 为判定专线"):
+            resolve_llm_config(platform=_StubPlatform(None))
+
+    def test_provider_pool_skips_decision_line(self, _isolated_env: Path) -> None:
+        """ProviderPool 只管 chat 线路——decision 不被误建为 chat 客户端。"""
+        from agent_eval.core.exceptions import ProviderNotFoundError
+        from agent_eval.llm.pool import ProviderPool
+
+        self._save_with_decision()
+        pool = ProviderPool(resolve_llm_config(platform=_StubPlatform(None)))
+        assert "decision" not in [p.name for p in pool.list_providers()]
+        with pytest.raises(ProviderNotFoundError):
+            pool.get("decision")
+
+
 class TestModelsCommand:
     def test_login_writes_0600_file_and_list_masks_key(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner
@@ -208,8 +340,9 @@ class TestModelsCommand:
 
         runner = CliRunner()
         # 提供商（默认1 deepseek）→ 协议（默认1 anthropic，预置端点免输）→ api-key
-        # → text（默认y）→ 模型（默认 deepseek-v4-pro）→ vision（n）→ 立即测试（n）
-        result = runner.invoke(models_app, ["set"], input="\n\nsk-test-1234567890\n\n\nn\nn\n")
+        # → text（默认y）→ 模型（默认 deepseek-v4-pro）→ vision（n）→ decision（n）
+        # → 立即测试（n）
+        result = runner.invoke(models_app, ["set"], input="\n\nsk-test-1234567890\n\n\nn\n\nn\n")
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
         assert cfg is not None
@@ -221,6 +354,7 @@ class TestModelsCommand:
         assert cfg.roles["text"].model == "deepseek-v4-pro"
         assert cfg.roles["vision"] is None
         assert cfg.roles["agent"] is None  # 未询问，且无既有配置可保留
+        assert cfg.roles["decision"] is None  # 可选角色默认不配置
         assert stat_mode(_isolated_env) == 0o600
 
         listing = runner.invoke(models_app, ["list"])
@@ -235,8 +369,8 @@ class TestModelsCommand:
 
         runner = CliRunner()
         # 提供商5 custom → 协议2 OpenAI 兼容 → base_url → api-key → text y → 模型自输
-        # → vision n → 立即测试 n
-        _input = "5\n2\nhttps://gw.example.com/v1\nsk-custom-123456789\n\nmy-model\nn\nn\n"
+        # → vision n → decision n → 立即测试 n
+        _input = "5\n2\nhttps://gw.example.com/v1\nsk-custom-123456789\n\nmy-model\nn\n\nn\n"
         result = runner.invoke(models_app, ["set"], input=_input)
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
@@ -269,8 +403,10 @@ class TestModelsCommand:
         monkeypatch.setattr(
             models_mod, "_test_configured_roles", lambda: (calls.append(1), False)[1]
         )
-        # 全默认 → vision n → 立即测试 y
-        result = CliRunner().invoke(models_app, ["set"], input="\n\nsk-wire-123456789\n\n\nn\ny\n")
+        # 全默认 → vision n → decision n → 立即测试 y
+        result = CliRunner().invoke(
+            models_app, ["set"], input="\n\nsk-wire-123456789\n\n\nn\n\ny\n"
+        )
         assert result.exit_code == 0, result.output
         assert calls == [1]
         assert "连通性测试全部通过" in result.output
@@ -297,14 +433,90 @@ class TestModelsCommand:
             )
         )
         runner = CliRunner()
-        # 提供商/协议/api-key/text/vision 全默认，vision 否决，立即测试否决
-        result = runner.invoke(models_app, ["set"], input="\n\nsk-new-1234567890\n\n\nn\nn\n")
+        # 提供商/协议/api-key/text/vision 全默认，vision 否决，decision 否决，立即测试否决
+        result = runner.invoke(models_app, ["set"], input="\n\nsk-new-1234567890\n\n\nn\n\nn\n")
         assert result.exit_code == 0, result.output
         cfg = load_llm_file()
         assert cfg is not None
         assert cfg.roles["text"] is not None and cfg.roles["text"].api_key == "sk-new-1234567890"
         agent = cfg.roles["agent"]
         assert agent is not None and agent.model == "kimi-k3" and agent.api_key == "sk-agent"
+
+    def test_set_optional_decision_role_configured(self, _isolated_env: Path) -> None:
+        """decision 判定专线可选配置：渠道独立（默认端点），Key 单独输入，协议 noul。"""
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        # 全默认 → vision n → decision y → 模型默认 → base 默认 → key → 立即测试 n
+        _input = "\n\nsk-chat-1234567890\n\n\nn\ny\n\n\nsk-decision-1234567890\nn\n"
+        result = CliRunner().invoke(models_app, ["set"], input=_input)
+        assert result.exit_code == 0, result.output
+        cfg = load_llm_file()
+        assert cfg is not None
+        decision = cfg.roles["decision"]
+        assert decision is not None
+        assert decision.model == "typesafe/jev-1.13"  # 建议值（当前选型示例）
+        assert decision.protocol == "noul"
+        assert decision.base_url == "https://openrouter.ai/api"
+        assert decision.api_key == "sk-decision-1234567890"
+
+    def test_set_decision_incomplete_key_skips_role(self, _isolated_env: Path) -> None:
+        """decision 信息不完整（空 Key）→ 跳过该角色，不写脏配置。"""
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        # 全默认 → vision n → decision y → 模型默认 → base 默认 → key 空 → 立即测试 n
+        _input = "\n\nsk-chat-1234567890\n\n\nn\ny\n\n\n\nn\n"
+        result = CliRunner().invoke(models_app, ["set"], input=_input)
+        assert result.exit_code == 0, result.output
+        assert "跳过 decision 角色" in result.output
+        cfg = load_llm_file()
+        assert cfg is not None
+        assert cfg.roles["decision"] is None
+
+    def test_set_unknown_role_offers_backup_and_restart(self, _isolated_env: Path) -> None:
+        """旧配置含未知角色（如跨版本角色改名）→ 向导不变砖：备份后重新开始。"""
+        import json
+
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        _isolated_env.write_text(
+            json.dumps({"version": 1, "default_role": "text", "roles": {"jev": None}}),
+            encoding="utf-8",
+        )
+        runner = CliRunner()
+        # 备份 y → 提供商/协议默认 → api-key → text 默认 y → 模型默认
+        # → vision n → decision n → 立即测试 n
+        result = runner.invoke(
+            models_app, ["set"], input="y\n\n\nsk-fresh-1234567890\n\n\nn\n\nn\n"
+        )
+        assert result.exit_code == 0, result.output
+        assert "备份" in result.output
+        backups = list(_isolated_env.parent.glob("llm.json.bak-*"))
+        assert len(backups) == 1  # 旧文件原样保留（含旧角色），供人工迁移/找回
+        assert "jev" in backups[0].read_text(encoding="utf-8")
+        cfg = load_llm_file()
+        assert cfg is not None
+        assert cfg.roles["text"] is not None and cfg.roles["text"].api_key == "sk-fresh-1234567890"
+
+    def test_set_unknown_role_decline_backup_exits(self, _isolated_env: Path) -> None:
+        """拒绝备份 → 退出码 1，旧文件原样不动（用户可能想先手工迁移）。"""
+        import json
+
+        from typer.testing import CliRunner
+
+        from agent_eval.cli.cmds.models import models_app
+
+        raw = json.dumps({"version": 1, "default_role": "text", "roles": {"jev": None}})
+        _isolated_env.write_text(raw, encoding="utf-8")
+        result = CliRunner().invoke(models_app, ["set"], input="n\n")
+        assert result.exit_code == 1
+        assert "未知角色" in result.output
+        assert _isolated_env.read_text(encoding="utf-8") == raw
 
     def test_list_without_config_exits_1(self, _isolated_env: Path) -> None:
         from typer.testing import CliRunner

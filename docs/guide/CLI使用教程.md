@@ -108,6 +108,7 @@ uv run agent-eval models set
    - `text` — 文本 LLM Judge（默认必配）
    - `vision` — 视觉评估模型（用视觉规则集时需要）
    - `agent` — 执行侧模型（`run`/`pipeline` 驱动被测 Agent 用；未配置时自动回退 `text`）
+   - `decision` — 判定专线（可选；Noul 是/否概率原语，用于误触预筛；渠道独立，未配置即静默禁用）
 
 ### 查看与验证
 
@@ -297,7 +298,7 @@ uv run agent-eval eval --package-dir ... --package courseware --on-missing-capab
 
 > **规则集三档怎么选**：`coursework-gate` 仅规则检查（零 token）；`coursework-quality` 增加 LLM Judge；`coursework-vision` 再增加截图视觉评估（需 `--extra vision` 与已配置的 `vision` 角色）。缺省取包清单的 `default_rule_set`（当前为 `coursework-vision`）。
 >
-> `eval` 还有两个高频参数：`--no-cache` 强制忽略评估缓存重评；`--upload/--no-upload` 评估完成后推送到可观测平台（见第十一节）。
+> `eval` 还有三个高频参数：`--no-cache` 强制忽略评估缓存重评；`--upload/--no-upload` 评估完成后推送到可观测平台（见第十一节）；`--concurrency N` 多样本有界并发评估（默认 1=串行；视觉渲染自动回退串行，判官采样另有独立并发上限）。
 
 ---
 

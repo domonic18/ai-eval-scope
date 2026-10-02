@@ -45,6 +45,7 @@ class JudgeContext:
 
     rule_set_obj: Any  # RuleSet
     judge_orch: Any | None = None
+    decision_client: Any | None = None  # 判定专线（decision 角色，误触过滤；None=禁用）
     llm_signature: str = "no-llm"
     want_vision: bool = False
     renderer: Any | None = None  # PlaywrightScreenshotRenderer（用毕须 close）
@@ -186,6 +187,9 @@ def build_judge_context(rule_set_path: str, *, strict: bool = False) -> JudgeCon
     if _pp.exists():
         prompts_dir = str(_pp)
     judge_orch = _init_judge_orchestrator(llm_cfg, prompts_dir=prompts_dir)
+    from agent_eval.orchestrator.orchestrator import _init_decision_client
+
+    decision_client = _init_decision_client(llm_cfg)
     llm_signature = _llm_sig(llm_cfg) if llm_cfg is not None else "no-llm"
     _check_llm_availability(rule_set_obj, judge_orch, strict)
 
@@ -204,6 +208,7 @@ def build_judge_context(rule_set_path: str, *, strict: bool = False) -> JudgeCon
     return JudgeContext(
         rule_set_obj=rule_set_obj,
         judge_orch=judge_orch,
+        decision_client=decision_client,
         llm_signature=llm_signature,
         want_vision=want_vision,
         renderer=renderer,
@@ -323,6 +328,7 @@ def evaluate_stage(
     gate: str = "off",
     report_formats: list[str] | None = None,
     package_id: str = "",
+    max_concurrency: int = 1,
 ) -> Any:
     """评估（原 eval 命令 5 段）。
 
@@ -351,6 +357,7 @@ def evaluate_stage(
             Path(packages_dir),
             judge_ctx.rule_set_obj,
             judge_orchestrator=judge_ctx.judge_orch,
+            decision_client=judge_ctx.decision_client,
             project=project,
             with_vision=judge_ctx.want_vision,
             screenshot_renderer=judge_ctx.renderer,
@@ -363,6 +370,7 @@ def evaluate_stage(
             gate=gate,
             report_formats=report_formats,
             package_id=package_id,
+            max_concurrency=max_concurrency,
         )
     finally:
         if judge_ctx.renderer is not None:

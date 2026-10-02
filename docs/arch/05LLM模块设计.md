@@ -293,7 +293,7 @@ class JudgeTemplate:
     output_schema: dict
     temperature: float = 0.0
     seed: int = 42
-    num_samples: int = 3
+    num_samples: int = 1
 
 class TemplateManager:
     """从文件系统加载和管理 Prompt 评估模板。"""
@@ -342,7 +342,7 @@ class StabilityController:
     3. 一致性校验：标准差 > 阈值 → 标记"低置信度"
     """
 
-    def __init__(self, num_samples: int = 3, stddev_threshold: float = 1.5): ...
+    def __init__(self, num_samples: int = 1, stddev_threshold: float = 1.5): ...
 
     def evaluate_stable(self, judge_fn, sample, template) -> dict:
         scores_list = [judge_fn(sample, template, seed=self._derive_seed(i))

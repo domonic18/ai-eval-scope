@@ -64,7 +64,10 @@
       <div class="nav-label">组织</div>
       <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
     </nav>
-    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+    <div class="sidebar-foot">
+      <a class="nav-item" href="docs-integration.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指南</a>
+      <a class="nav-item" href="docs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> 开发文档</a>
+    </div>
   </aside>
 
   <div class="main">
@@ -88,7 +91,7 @@
 
       <!-- 紧凑信息条：规则集深链只读规则浏览器；平均耗时按秒带单位；模式字段不再展示 -->
       <div class="info-strip r-2">
-        <span class="info-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="lab">规则集</span><a class="val mono" href="eval-rule-explorer.html" title="在只读规则浏览器中查看该版本">courseware:2.3</a></span>
+        <span class="info-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="lab">规则集</span><a class="val mono" href="eval-rule-explorer.html" title="在只读规则浏览器中查看该版本">edu:2.3</a></span>
         <span class="sep">·</span>
         <span class="info-item"><span class="lab">样本数</span><span class="val mono">120</span></span>
         <span class="sep">·</span>
@@ -102,19 +105,19 @@
         <h3 class="sec-title">场景化指标</h3>
         <div class="mgrid">
           <div class="mcard">
-            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">DR 交付率</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>DR · Delivery Rate <span class="code-inline">交付率</span></h5><dl><dt>定义</dt><dd>通过<b style="color:var(--text-primary)">格式硬门禁</b>的样本占比，衡量产物能否被正常交付。</dd><dt>计算</dt><dd><span class="mono">格式通过样本数 / 总样本数</span></dd><dt>标准</dt><dd>达标线 <span class="mono">≥ 0.95</span>；低于即判定该运行不达标。</dd></dl></span></span></span></div>
+            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">格式合格率</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>格式合格率 <span class="code-inline">edu:document_rate</span></h5><dl><dt>定义</dt><dd>能正常打开、<b style="color:var(--text-primary)">格式符合基本要求</b>的样本占比，衡量产物能否被正常使用。</dd><dt>计算</dt><dd><span class="mono">格式合格样本数 ÷ 全部样本数</span></dd><dt>标准</dt><dd>达标线 <span class="mono">≥ 0.95</span>；低于即判定该运行不达标。</dd></dl></span></span></span></div>
             <div class="mvalue" style="color:var(--success)">0.962</div>
           </div>
           <div class="mcard">
-            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">CPR 常识</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>CPR · Commonsense Pass Rate <span class="code-inline">常识通过率</span></h5><dl><dt>定义</dt><dd>通过<b style="color:var(--text-primary)">常识硬约束</b>（史实、数理、单位、逻辑等）的样本占比。</dd><dt>计算</dt><dd><span class="mono">常识通过样本数 / 总样本数</span></dd><dt>标准</dt><dd>达标线 <span class="mono">≥ 0.90</span>。</dd></dl></span></span></span></div>
+            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">内容合格率</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>内容合格率 <span class="code-inline">edu:constraint_pass_rate</span></h5><dl><dt>定义</dt><dd><b style="color:var(--text-primary)">格式 + 常识双门控</b>（史实、数理、单位、逻辑等）都通过的样本占比。</dd><dt>计算</dt><dd><span class="mono">双门控通过样本数 ÷ 全部样本数</span></dd><dt>标准</dt><dd>达标线 <span class="mono">≥ 0.90</span>。</dd></dl></span></span></span></div>
             <div class="mvalue" style="color:var(--success)">0.914</div>
           </div>
           <div class="mcard">
-            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">Reward</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>Reward <span class="code-inline">综合奖励</span></h5><dl><dt>定义</dt><dd>样本综合得分，聚合各阶段得分的加权和。</dd><dt>计算</dt><dd><span class="mono">S_format + S_common + w₃·S_soft + w₄·S_pref</span> 后对全部样本取均值。</dd><dt>标准</dt><dd>达标线 <span class="mono">≥ 0.80</span>；反映整体质量水位。</dd></dl></span></span></span></div>
-            <div class="mvalue" style="color:var(--danger)">0.781</div>
+            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">综合得分</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>综合得分 <span class="code-inline">edu:reward</span></h5><dl><dt>定义</dt><dd>归一化到 <b style="color:var(--text-primary)">[0,1]</b> 的样本综合质量分。</dd><dt>计算</dt><dd><span class="mono">(S_format + S_common + S_soft + S_pref) / 4</span> 后对全部样本取均值。</dd><dt>标准</dt><dd>达标线 <span class="mono">≥ 0.70</span>；反映整体质量水位。</dd></dl></span></span></span></div>
+            <div class="mvalue">0.781</div>
           </div>
           <div class="mcard">
-            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">CondR 条件</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>CondR · Conditional Reward <span class="code-inline">条件奖励</span></h5><dl><dt>定义</dt><dd><b style="color:var(--text-primary)">同时通过格式与常识门禁</b>的样本的平均 Reward，排除「直接判负」样本的干扰。</dd><dt>计算</dt><dd><span class="mono">Σ Reward(已过门禁) / 已过门禁样本数</span></dd><dt>用途</dt><dd>反映「合格产物」的真实质量上限。</dd></dl></span></span></span></div>
+            <div class="metric-top"><span class="row" style="gap:0"><span class="metric-label mlabel">内容质量</span><span class="explain"><button class="explain-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button><span class="explain-pop"><h5>内容质量 <span class="code-inline">edu:soft</span></h5><dl><dt>定义</dt><dd><b style="color:var(--text-primary)">教学逻辑、内容多样性</b>等软约束维度的平均得分。</dd><dt>范围</dt><dd><span class="mono">[0, 1]</span>，越高越好，不设达标线。</dd><dt>同组</dt><dd>偏好匹配度 <span class="mono">edu:pref</span> 同为软约束维度。</dd></dl></span></span></span></div>
             <div class="mvalue">0.842</div>
           </div>
         </div>

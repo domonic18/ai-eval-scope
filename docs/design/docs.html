@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>开发文档 — EvalScope</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* 文档站骨架：顶栏复用 .nav/.nav-in（浅色覆盖自动生效），左树 + 主区两栏 */
+  .nav { height: 60px; border-bottom: 1px solid var(--border); position: relative; z-index: 10; background: rgba(10,12,16,0.7); backdrop-filter: blur(12px); }
+  .nav-in { max-width: 1160px; margin: 0 auto; padding: 0 32px; height: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .doc-mid { flex: 1; max-width: 460px; margin: 0 28px; }
+  .doc-mid .doc-search { position: relative; }
+  .doc-mid .kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .docs-shell { display: flex; max-width: 1160px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+  .docs-side { width: 236px; flex-shrink: 0; border-right: 1px solid var(--border); padding: 22px 12px 32px; position: sticky; top: 0; height: calc(100vh - 60px); overflow-y: auto; }
+  .docs-side .nav-item { font-size: 13px; padding: 6px 10px; }
+  .docs-main { flex: 1; min-width: 0; padding: 40px 0 72px 40px; }
+  .docs-hero { margin-bottom: 36px; }
+  .docs-hero h1 { font-size: 30px; font-weight: 750; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .docs-hero p { font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; max-width: 560px; line-height: 1.65; }
+  .doc-sec-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin: 40px 0 14px; }
+  .api-card .card-body { padding: 0; }
+  .doc-pager { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); margin-top: 44px; padding-top: 20px; font-size: 13.5px; }
+  .doc-pager a { color: var(--text-secondary); display: inline-flex; align-items: center; gap: 7px; }
+  .doc-pager a:hover { color: var(--accent); }
+  @media (max-width: 920px) { .docs-side { display: none; } .docs-main { padding-left: 0; } .doc-mid { display: none; } }
+</style>
+</head>
+<body data-doc-page="">
+<div class="ambient"></div>
+<div class="scanlines"></div>
+
+<!-- 文档站顶栏 -->
+<nav class="nav">
+  <div class="nav-in">
+    <div class="row" style="gap:10px;">
+      <a href="index.html" class="logo">
+        <span class="logo-mark"><img src="assets/logo.svg" alt="" style="width:100%"></span>
+        <span class="logo-text">Eval<b>Scope</b></span>
+      </a>
+      <span class="logo-badge">DOCS</span>
+    </div>
+    <div class="doc-mid">
+      <div class="doc-search input-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="input" id="doc-search" type="text" placeholder="搜索文档…" autocomplete="off">
+        <span class="kbd">⌘K</span>
+      </div>
+    </div>
+    <div class="row" style="gap:16px;">
+      <a href="https://github.com/domonic18/ai-eval-scope" style="font-size:13px;font-weight:500;color:var(--text-secondary)">GitHub ↗</a>
+      <a href="dashboard.html" class="btn btn-primary btn-sm">进入控制台</a>
+      <div class="topbar-right"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-shell">
+  <!-- 左侧目录树（docs.js 渲染） -->
+  <aside class="docs-side"><div id="doc-tree"></div></aside>
+
+  <main class="docs-main reveal">
+    <div class="docs-hero r-1">
+      <h1>EvalScope 文档</h1>
+      <p>从安装评估器、四通道接入，到指标口径与可观测平台自部署——评估全生命周期的参考手册。</p>
+      <a href="docs-quickstart.html" class="btn btn-primary">开始使用
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+
+    <!-- 默认视图：目录索引卡墙 + API 摘要（搜索时整体切换为结果列表） -->
+    <div id="docs-home">
+      <div class="doc-wall r-2" id="doc-wall"></div>
+
+      <div class="doc-sec-title r-3" id="api">API 摘要</div>
+      <div class="card api-card r-3">
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th style="width:70px">方法</th><th>端点</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-accent">POST</span></td><td class="mono">/api/v1/jobs</td><td>提交评测任务（JSON 内联 / 字节流 / 大文件直传）</td></tr>
+              <tr><td><span class="badge badge-accent">POST</span></td><td class="mono">/api/v1/jobs/request-upload</td><td>申请大文件直传（presigned PUT，&gt;50MB）</td></tr>
+              <tr><td><span class="badge badge-info">GET</span></td><td class="mono">/api/v1/jobs/{id}</td><td>查询任务状态与评估结果</td></tr>
+              <tr><td><span class="badge badge-info">GET</span></td><td class="mono">/api/v1/jobs/{id}/overview</td><td>评测速览：指标与结论摘要</td></tr>
+              <tr><td><span class="badge badge-success">MCP</span></td><td class="mono">/api/v1/mcp</td><td>MCP Streamable HTTP 挂载（智能体工具调用）</td></tr>
+              <tr><td><span class="badge badge-accent">POST</span></td><td class="mono">/api/v1/projects/{id}/test-webhook</td><td>发送 Webhook 测试回调</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="doc-pager r-4">
+        <a href="index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          返回官网
+        </a>
+        <a href="docs-quickstart.html">快速开始
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- 搜索结果列表（有 query 时由 docs.js 填充） -->
+    <div id="doc-results" style="display:none"></div>
+  </main>
+</div>
+
+<script src="assets/ui.js"></script>
+<script src="assets/docs.js"></script>
+</body>
+</html>

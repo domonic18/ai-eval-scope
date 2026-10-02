@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>聚合策略 courseware-default — EvalScope</title>
+<title>聚合策略 sasan-edu-function — EvalScope</title>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="stylesheet" href="assets/theme.css">
 <style>
@@ -25,7 +25,7 @@
   .ew-item { font-family: var(--mono); font-size: 11.5px; color: var(--text-secondary); }
   .ew-item .w { color: var(--text-tertiary); }
 
-  /* ── Reward 公式 ── */
+  /* ── 综合得分公式 ── */
   .formula-box { background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px 28px; margin-bottom: 20px; position: relative; overflow: hidden; }
   .formula-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent-line), transparent); }
   .formula-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
@@ -85,7 +85,10 @@
       <div class="nav-label">组织</div>
       <a class="nav-item" href="members.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> 成员</a>
     </nav>
-    <div class="sidebar-foot"><a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指引</a></div>
+    <div class="sidebar-foot">
+      <a class="nav-item" href="docs-integration.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 接入指南</a>
+      <a class="nav-item" href="docs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> 开发文档</a>
+    </div>
   </aside>
 
   <!-- 主区域 -->
@@ -93,8 +96,8 @@
     <header class="topbar">
       <div class="crumbs">
         <a href="eval-rule-explorer.html">评测规则</a><span class="sep">/</span>
-        <a href="eval-rule-explorer.html">聚合策略</a><span class="sep">/</span>
-        <span class="current mono">courseware-default</span>
+        <span class="current mono">sasan-edu-function</span><span class="sep">/</span>
+        <span class="current">聚合策略</span>
       </div>
       <div class="topbar-right"><div class="avatar">张</div></div>
     </header>
@@ -103,8 +106,8 @@
       <!-- 页头 -->
       <div class="page-head r-1">
         <div class="page-title">
-          <h1><span class="mono">courseware-default</span> <span class="badge badge-neutral" style="font-size:12px">scenario: courseware</span></h1>
-          <div class="sub">4 阶段加权归一化 · 门控短路 + 软/偏好质量聚合 · normalize_to [0.0, 1.0]</div>
+          <h1><span class="mono">sasan-edu-function</span> <span class="badge badge-neutral" style="font-size:12px">scenario: edu</span> <span class="badge badge-info" style="font-size:12px">只读</span></h1>
+          <div class="sub">场景包详情视图（无编辑/发版）· 资产真相源为仓库 YAML · 4 阶段加权归一化 · normalize_to [0.0, 1.0]</div>
         </div>
         <div class="page-actions">
           <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载 policy.yaml</button>
@@ -166,12 +169,12 @@
         </div>
       </div>
 
-      <!-- Reward 公式 -->
-      <div class="section-title r-3">Reward 计算公式</div>
+      <!-- 综合得分公式 -->
+      <div class="section-title r-3">综合得分计算公式</div>
       <div class="formula-box r-3">
-        <div class="formula-label">单样本 Reward（加权平均后归一化到 [0,1]）</div>
+        <div class="formula-label">单样本综合得分（加权平均后归一化到 [0,1]）</div>
         <div class="formula">
-          <span class="op">Reward =</span>
+          <span class="op">综合得分 =</span>
           <span class="op">(</span>
           <span class="c c-format">S<sub>format</sub></span><span class="op">+</span>
           <span class="c c-common">S<sub>common</sub></span><span class="op">+</span>
@@ -185,7 +188,7 @@
           <span class="legend-item"><span class="legend-dot" style="background:var(--danger)"></span> S<sub>format</sub> · 格式门控（w=1.0）</span>
           <span class="legend-item"><span class="legend-dot" style="background:var(--warning)"></span> S<sub>common</sub> · 常识门控（w=1.0）</span>
           <span class="legend-item"><span class="legend-dot" style="background:var(--tier-soft)"></span> S<sub>soft</sub> · 内容质量（w₃=1.0）</span>
-          <span class="legend-item"><span class="legend-dot" style="background:var(--tier-pref)"></span> S<sub>pref</sub> · 用户偏好（w₄=1.0）</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--tier-pref)"></span> S<sub>pref</sub> · 偏好匹配度（w₄=1.0）</span>
         </div>
         <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-tertiary)">
           当前权重代入：<span class="mono" style="color:var(--text-secondary)">(S_format + S_common + S_soft + S_pref) / 4</span>

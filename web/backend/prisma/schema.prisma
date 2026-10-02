@@ -530,13 +530,13 @@ model RunConfigSnapshot {
   @@map("run_config_snapshots")
 }
 
-/// LLM 模型配置（docs/arch/13）。provider 为协议（openai | anthropic）；
+/// LLM 模型配置（docs/arch/13）。provider 为协议（openai | anthropic | noul——仅 decision 行）；
 /// api_key AES-256-GCM 加密存储；is_default 全局唯一（partial unique index 见迁移）。
 model LlmModel {
   id              String   @id @default(uuid())
   name            String
-  provider        String // openai | anthropic
-  role            String   @default("text") // LLM③（arch/16 §6.2-四）：text | vision | agent——executor 按角色拉取
+  provider        String // openai | anthropic | noul（判定专线 decision 行）
+  role            String   @default("text") // LLM③（arch/16 §6.2-四）：text | vision | agent | decision——executor 按角色拉取（decision=判定专线）
   baseUrl         String? @map("base_url")
   apiKeyEncrypted String  @map("api_key_encrypted")
   modelName       String  @map("model_name")
