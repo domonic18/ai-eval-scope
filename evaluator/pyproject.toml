@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 # distribution 名 ai-eval-scope（agent-eval 在 PyPI 已被占用）；
 # import 名 agent_eval 与 CLI 命令名 agent-eval 不变
 name = "ai-eval-scope"
-version = "0.5.0"
+version = "0.5.1"
 description = "Agent evaluation framework: agent-driven execution with rule + LLM-judge scoring"
 readme = "README.md"
 requires-python = ">=3.11"

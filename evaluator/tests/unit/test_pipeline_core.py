@@ -251,8 +251,13 @@ def test_params_passthrough_to_evaluate_stage(tmp_path, monkeypatch) -> None:
         "evaluate_stage",
         lambda *a, **k: (calls.update(k), _result())[1],
     )
-    pipeline_core(h.params(gate="strict", no_cache=True, report_formats=["junit"], project="p1"))
+    pipeline_core(
+        h.params(
+            gate="strict", no_cache=True, report_formats=["junit"], project="p1", concurrency=4
+        )
+    )
     assert calls["gate"] == "strict"
     assert calls["no_cache"] is True
     assert calls["report_formats"] == ["junit"]  # 已解析形态透传（壳解析留 CLI 语义）
     assert calls["project"] == "p1"
+    assert calls["max_concurrency"] == 4  # 样本级并发评估（CLI --concurrency）
