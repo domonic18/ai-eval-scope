@@ -327,11 +327,20 @@ def test_poll_server_errors_do_not_abort_polling() -> None:
 
 
 def test_poll_timeout_raises_with_evidence() -> None:
-    """超时整体失败（SUTChannelError），错误含尝试次数与最后响应摘录。"""
+    """超时整体失败（SUTChannelError），错误含尝试次数与最后响应摘录。
+
+    时钟与 sleep 一并虚拟化（monotonic 由 fake_sleep 推进）：超时判定
+    不依赖真实耗时——慢机（CI）上首击即超出 timeout_s 时也不至于只跑
+    一轮，do-while「至少两次尝试」在任意机器速度下都成立。
+    """
     polls = {"n": 0}
+    clock = {"t": 0.0}
+
+    def fake_monotonic() -> float:
+        return clock["t"]
 
     async def fake_sleep(seconds: float) -> None:
-        pass
+        clock["t"] += seconds
 
     steps = [
         RequestStepConfig(
@@ -354,12 +363,15 @@ def test_poll_timeout_raises_with_evidence() -> None:
         return httpx.Response(200, json={"data": {"state": f"running-{polls['n']}"}})
 
     original_sleep = http_steps._sleep
+    original_monotonic = http_steps.time.monotonic
     http_steps._sleep = fake_sleep
+    http_steps.time.monotonic = fake_monotonic
     try:
         with pytest.raises(SUTChannelError, match="轮询超时") as exc_info:
             asyncio.run(_channel(sut, handler).run("hi", metadata={}))
     finally:
         http_steps._sleep = original_sleep
+        http_steps.time.monotonic = original_monotonic
 
     message = str(exc_info.value)
     assert "尝试" in message
